@@ -886,7 +886,9 @@ export const App: React.FC = () => {
 
               <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-serif text-xl font-bold">Últimos Libros Añadidos</h2>
+                  <h2 className="font-serif text-xl font-bold flex items-center gap-2">
+                    <span className="text-amber-400">★</span> Favoritos
+                  </h2>
                   <button
                     type="button"
                     onClick={() => setActiveSection('library')}
@@ -906,10 +908,25 @@ export const App: React.FC = () => {
                       con portada automática.
                     </p>
                   </div>
+                ) : books.filter((b) => b.puntuacion !== null).length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-[#283246] p-8 text-center">
+                    <p className="font-serif text-lg text-slate-300">
+                      Aún no tienes libros valorados en Favoritos
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Pulsa sobre cualquier libro de tu biblioteca y asígnale una puntuación con
+                      estrellas (⭐) para destacar aquí tus mejores lecturas.
+                    </p>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {[...books]
-                      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                      .filter((b) => b.puntuacion !== null)
+                      .sort((a, b) => {
+                        const diff = (b.puntuacion || 0) - (a.puntuacion || 0);
+                        if (diff !== 0) return diff;
+                        return b.createdAt.localeCompare(a.createdAt);
+                      })
                       .slice(0, 5)
                       .map((book) => (
                         <BookCard
