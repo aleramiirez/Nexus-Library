@@ -976,9 +976,29 @@ export const App: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative w-full sm:w-64 md:w-72">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={filters.search}
+                      onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                      placeholder="Buscar título, autor, ISBN..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs focus:border-amber-400 focus:outline-none transition"
+                    />
+                    {filters.search && (
+                      <button
+                        type="button"
+                        onClick={() => setFilters((f) => ({ ...f, search: '' }))}
+                        aria-label="Limpiar búsqueda"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
                   {(() => {
                     const activeFilterCount = [
-                      Boolean(filters.search.trim()),
                       Boolean(filters.genero),
                       Boolean(filters.subgenero),
                       Boolean(filters.progreso),
@@ -1068,19 +1088,8 @@ export const App: React.FC = () => {
 
               {showFilters && (
                 <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-4 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                    <div className="md:col-span-5 relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                        placeholder="Buscar en mi biblioteca por título, autor o ISBN..."
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] pl-10 pr-4 py-2 text-xs"
-                      />
-                    </div>
-
-                    <div className="md:col-span-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
+                    <div className="md:col-span-4">
                       <select
                         value={filters.genero}
                         onChange={(e) =>
@@ -1097,7 +1106,24 @@ export const App: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-4">
+                      <select
+                        value={filters.subgenero}
+                        onChange={(e) =>
+                          setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
+                        }
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Todos los subgéneros</option>
+                        {SUBGENRES.map((sub) => (
+                          <option key={sub} value={sub}>
+                            {sub}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-4">
                       <select
                         value={filters.progreso}
                         onChange={(e) =>
@@ -1116,8 +1142,10 @@ export const App: React.FC = () => {
                         ))}
                       </select>
                     </div>
+                  </div>
 
-                    <div className="md:col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-1">
+                    <div className="md:col-span-3">
                       <select
                         value={filters.puntuacion === null ? '' : String(filters.puntuacion)}
                         onChange={(e) => {
@@ -1143,27 +1171,8 @@ export const App: React.FC = () => {
                         <option value="unrated">Sin puntuar</option>
                       </select>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-1">
                     <div className="md:col-span-4">
-                      <select
-                        value={filters.subgenero}
-                        onChange={(e) =>
-                          setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
-                        }
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                      >
-                        <option value="">Todos los subgéneros</option>
-                        {SUBGENRES.map((sub) => (
-                          <option key={sub} value={sub}>
-                            {sub}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="md:col-span-3">
                       <select
                         value={filters.sagaId}
                         onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
