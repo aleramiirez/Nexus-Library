@@ -41,3 +41,31 @@ iframe[src*="netlify"],
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+/* Haces de luz cálida para el fondo animado (AnimatedBackground) */
+.nexus-rays {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse 55% 45% at 18% 12%, rgba(212, 155, 75, 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 20%, rgba(176, 64, 82, 0.1), transparent 70%),
+    conic-gradient(
+      from 205deg at 50% -15%,
+      transparent 0deg,
+      rgba(229, 193, 88, 0.06) 18deg,
+      transparent 38deg,
+      rgba(212, 155, 75, 0.05) 56deg,
+      transparent 80deg
+    );
+  filter: blur(42px);
+  animation: nexusRaysSway 18s ease-in-out infinite alternate;
+}
+
+@keyframes nexusRaysSway {
+  0% {
+    transform: translate3d(-1.5%, -1%, 0) rotate(-1deg) scale(1);
+  }
+  100% {
+    transform: translate3d(1.5%, 1%, 0) rotate(1deg) scale(1.04);
+  }
+}

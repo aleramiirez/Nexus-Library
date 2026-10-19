@@ -70,6 +70,7 @@ import { AddEditBookModal } from './components/AddEditBookModal';
 import { ImportModal } from './components/ImportModal';
 import { AuthSyncModal } from './components/AuthSyncModal';
 import { AuthScreen } from './components/AuthScreen';
+import { AnimatedBackground } from './components/AnimatedBackground';
 
 type NavigationSection =
   | 'dashboard'
@@ -425,15 +426,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-[#080C15] text-slate-900 dark:text-slate-100 relative">
-      <div className="hidden dark:block pointer-events-none select-none fixed inset-0 z-0 overflow-hidden">
-        <img
-          src="/hero-library.jpg"
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover object-center opacity-20 scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#080C15]/80 via-[#080C15]/85 to-[#080C15]/95" />
-      </div>
+      <AnimatedBackground />
 
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-[#222B3C] bg-white dark:bg-[#111622]/95 backdrop-blur-md z-30">
         <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222B3C] flex items-center justify-between">
