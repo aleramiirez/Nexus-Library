@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  BookOpen,
   Mail,
   Lock,
   Eye,
@@ -138,9 +137,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
         {/* Columna Izquierda: Presentación Editorial */}
         <div className="lg:col-span-7 space-y-8 pr-0 lg:pr-6">
           <div className="inline-flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-[#6E1E2A] flex items-center justify-center shadow-xl shadow-amber-950/40 ring-1 ring-amber-400/30">
-              <BookOpen className="w-6 h-6 text-white" />
-            </div>
+            <img
+              src="/logo.jpg"
+              alt="Nexus Library Logo"
+              className="w-12 h-12 rounded-2xl object-cover shadow-xl shadow-amber-950/40 ring-1 ring-amber-400/30"
+            />
             <div>
               <span className="font-serif text-2xl font-bold tracking-wider block leading-none text-white">
                 NEXUS

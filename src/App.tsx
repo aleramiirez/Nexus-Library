@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  BookOpen,
   LayoutDashboard,
   Library,
   Layers,
@@ -404,9 +403,11 @@ export const App: React.FC = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B0E14] text-slate-100 gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-[#6E1E2A] flex items-center justify-center shadow-xl animate-pulse">
-          <BookOpen className="w-6 h-6 text-white" />
-        </div>
+        <img
+          src="/logo.jpg"
+          alt="Nexus Library Logo"
+          className="w-16 h-16 rounded-2xl object-cover shadow-xl border border-amber-500/30 animate-pulse"
+        />
         <p className="font-serif text-lg text-amber-300 tracking-wide">
           Cargando NEXUS LIBRARY...
         </p>
@@ -427,9 +428,11 @@ export const App: React.FC = () => {
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-[#222B3C] bg-white dark:bg-[#111622] z-30">
         <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222B3C] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-[#6E1E2A] flex items-center justify-center shadow-md">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo.jpg"
+              alt="Nexus Library Logo"
+              className="w-10 h-10 rounded-xl object-cover shadow-md border border-amber-500/30"
+            />
             <div>
               <span className="font-serif text-lg font-bold tracking-wide block leading-none">
                 NEXUS
@@ -641,9 +644,11 @@ export const App: React.FC = () => {
 
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 dark:border-[#222B3C] bg-white/95 dark:bg-[#111622]/95 backdrop-blur px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-[#6E1E2A] flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-white" />
-          </div>
+          <img
+            src="/logo.jpg"
+            alt="Nexus Library Logo"
+            className="w-8 h-8 rounded-lg object-cover border border-amber-500/30"
+          />
           <span className="font-serif text-lg font-bold">NEXUS LIBRARY</span>
         </div>
         <div className="flex items-center gap-2">
