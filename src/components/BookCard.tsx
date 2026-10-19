@@ -33,7 +33,7 @@ export const BookCard: React.FC<BookCardProps> = ({
           onOpenDetail(book);
         }
       }}
-      className="group relative flex flex-col cursor-pointer rounded-xl border border-slate-800/90 dark:border-[#283246] bg-white dark:bg-[#161C28]/95 p-3.5 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-200"
+      className="group relative flex flex-col cursor-pointer rounded-xl border border-slate-800/90 dark:border-[#283246] bg-white dark:bg-[#161C28]/95 hover:bg-slate-50 dark:hover:bg-[#1B2333] p-3.5 shadow-sm hover:-translate-y-1.5 hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
     >
       <div className="relative mb-3">
         <BookCover

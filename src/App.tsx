@@ -733,7 +733,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('library')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:border-amber-500/40 transition"
+                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
                 >
                   <span className="text-xs text-slate-400">Total de Libros</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.total}</p>
@@ -741,7 +741,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-reading')}
-                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left hover:border-amber-400 transition"
+                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
                 >
                   <span className="text-xs text-amber-300">⏳ Leyendo</span>
                   <p className="font-serif text-3xl font-bold text-amber-200 mt-1">
@@ -751,7 +751,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-unread')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:border-amber-500/40 transition"
+                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
                 >
                   <span className="text-xs text-slate-400">❌ Por leer</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.unread}</p>
@@ -759,7 +759,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-paused')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:border-amber-500/40 transition"
+                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
                 >
                   <span className="text-xs text-rose-300">⏸️ Pausados</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.paused}</p>
@@ -767,7 +767,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-read')}
-                  className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:border-emerald-400 transition col-span-2 sm:col-span-1"
+                  className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
                 >
                   <span className="text-xs text-emerald-300">✅ Leídos</span>
                   <p className="font-serif text-3xl font-bold text-emerald-200 mt-1">
@@ -804,7 +804,7 @@ export const App: React.FC = () => {
                           <div
                             key={book.id}
                             onClick={() => setDetailBookId(book.id)}
-                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:border-amber-500/40 cursor-pointer transition"
+                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.18)] cursor-pointer transition-all duration-300"
                           >
                             <div className="w-16 shrink-0">
                               <BookCover
@@ -860,10 +860,12 @@ export const App: React.FC = () => {
                           <div
                             key={item.saga.id}
                             onClick={() => setActiveSection('sagas')}
-                            className="p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] cursor-pointer hover:border-amber-500/40 transition"
+                            className="group p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
                           >
                             <div className="flex items-center justify-between text-xs font-semibold">
-                              <span className="truncate">{item.saga.nombre}</span>
+                              <span className="truncate group-hover:text-amber-300 transition">
+                                {item.saga.nombre}
+                              </span>
                               <span className="text-amber-400 shrink-0">
                                 {item.readCount}/{item.registeredCount} leídos
                               </span>
@@ -1605,7 +1607,7 @@ export const App: React.FC = () => {
                             <div
                               key={book.id}
                               onClick={() => setDetailBookId(book.id)}
-                              className="group cursor-pointer rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] p-2.5 hover:border-amber-400 transition flex flex-col justify-between"
+                              className="group cursor-pointer rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-400/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >
                               <div>
                                 <div className="flex items-center justify-between text-[11px] font-bold text-amber-300 mb-1.5">

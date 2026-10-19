@@ -55,7 +55,7 @@ export const BookCover: React.FC<BookCoverProps> = ({
   return (
     <div
       className={
-        'relative aspect-[2/3] w-full overflow-hidden rounded-lg border border-amber-500/20 bg-gradient-to-b from-[#1A2130] via-[#131824] to-[#0E131D] shadow-md flex items-center justify-center p-1.5 select-none ' +
+        'relative aspect-[2/3] w-full overflow-hidden rounded-lg border border-amber-500/20 group-hover:border-amber-400/50 bg-gradient-to-b from-[#1A2130] via-[#131824] to-[#0E131D] shadow-md flex items-center justify-center p-1.5 select-none transition-all duration-300 ' +
         className
       }
     >
@@ -67,7 +67,7 @@ export const BookCover: React.FC<BookCoverProps> = ({
             onError={handleImageError}
             onLoad={handleImageLoad}
             loading="lazy"
-            className="w-full h-full object-contain object-center transition-transform duration-300"
+            className="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (
           <div
