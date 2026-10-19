@@ -104,12 +104,42 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setPuntuacion(editingBook.puntuacion);
       setProgreso(editingBook.progreso);
       if (editingBook.sagaId) {
-        setSagaMode('existing');
-        setSelectedSagaId(editingBook.sagaId);
-        setNewSagaName('');
+        const matchedSaga = sagas.find((s) => s.id === editingBook.sagaId);
+        if (matchedSaga) {
+          setSagaMode('existing');
+          setSelectedSagaId(matchedSaga.id);
+          setNewSagaName(matchedSaga.nombre);
+        } else if (editingBook.sagaNombre) {
+          const byName = sagas.find(
+            (s) => s.nombre.trim().toLowerCase() === editingBook.sagaNombre.trim().toLowerCase()
+          );
+          if (byName) {
+            setSagaMode('existing');
+            setSelectedSagaId(byName.id);
+            setNewSagaName(byName.nombre);
+          } else {
+            setSagaMode('new');
+            setSelectedSagaId('');
+            setNewSagaName(editingBook.sagaNombre);
+          }
+        } else {
+          setSagaMode('none');
+          setSelectedSagaId('');
+          setNewSagaName('');
+        }
       } else if (editingBook.sagaNombre) {
-        setSagaMode('new');
-        setNewSagaName(editingBook.sagaNombre);
+        const byName = sagas.find(
+          (s) => s.nombre.trim().toLowerCase() === editingBook.sagaNombre.trim().toLowerCase()
+        );
+        if (byName) {
+          setSagaMode('existing');
+          setSelectedSagaId(byName.id);
+          setNewSagaName(byName.nombre);
+        } else {
+          setSagaMode('new');
+          setSelectedSagaId('');
+          setNewSagaName(editingBook.sagaNombre);
+        }
       } else {
         setSagaMode('none');
         setSelectedSagaId('');
@@ -250,7 +280,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       const found = sagas.find((s) => s.id === selectedSagaId);
       if (found) {
         finalSagaId = found.id;
-        finalSagaNombre = found.nombre;
+        finalSagaNombre = newSagaName.trim() || found.nombre;
       }
     } else if (sagaMode === 'new' && newSagaName.trim()) {
       finalSagaNombre = newSagaName.trim();
@@ -565,32 +595,61 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                     <label className="block text-xs font-semibold mb-1">Asociación a Saga</label>
                     <select
                       value={sagaMode}
-                      onChange={(e) =>
-                        setSagaMode(e.target.value as 'none' | 'existing' | 'new')
-                      }
+                      onChange={(e) => {
+                        const nextMode = e.target.value as 'none' | 'existing' | 'new';
+                        setSagaMode(nextMode);
+                        if (nextMode === 'existing' && selectedSagaId) {
+                          const found = sagas.find((s) => s.id === selectedSagaId);
+                          if (found) setNewSagaName(found.nombre);
+                        } else if (nextMode === 'new' && selectedSagaId) {
+                          setSelectedSagaId('');
+                          setNewSagaName('');
+                        }
+                      }}
                       className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
                     >
                       <option value="none">Libro independiente (Sin saga)</option>
                       <option value="existing">Saga existente ({sagas.length})</option>
-                      <option value="new">+ Crear nueva saga</option>
+                      <option value="new">Crear nueva saga</option>
                     </select>
                   </div>
 
                   {sagaMode === 'existing' && (
-                    <div className="sm:col-span-5">
-                      <label className="block text-xs font-semibold mb-1">Seleccionar Saga</label>
-                      <select
-                        value={selectedSagaId}
-                        onChange={(e) => setSelectedSagaId(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
-                      >
-                        <option value="">— Elige una saga —</option>
-                        {sagas.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.nombre}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="sm:col-span-5 space-y-2">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1">Seleccionar Saga</label>
+                        <select
+                          value={selectedSagaId}
+                          onChange={(e) => {
+                            const id = e.target.value;
+                            setSelectedSagaId(id);
+                            const found = sagas.find((s) => s.id === id);
+                            setNewSagaName(found ? found.nombre : '');
+                          }}
+                          className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
+                        >
+                          <option value="">— Elige una saga —</option>
+                          {sagas.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {selectedSagaId && (
+                        <div>
+                          <label className="block text-[11px] font-semibold text-amber-400 mb-1">
+                            Editar nombre de la saga
+                          </label>
+                          <input
+                            type="text"
+                            value={newSagaName}
+                            onChange={(e) => setNewSagaName(e.target.value)}
+                            placeholder="Nombre de la saga..."
+                            className="w-full rounded-lg border border-amber-500/40 bg-white dark:bg-[#0D1017] px-2.5 py-1.5 text-xs focus:border-amber-400 focus:outline-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 

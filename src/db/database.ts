@@ -227,12 +227,47 @@ async function upsertBookToSupabase(userId: string, book: Book): Promise<void> {
     .from('books')
     .upsert(payload, { onConflict: 'id,user_id' });
   if (error) {
-    throw new Error(`Error al guardar el libro en Supabase: ${error.message}`);
+    // Fallback a update explícito si upsert choca con políticas RLS
+    const { error: updateError } = await supabase
+      .from('books')
+      .update({
+        data: book,
+        updated_at: book.updatedAt
+      })
+      .eq('id', book.id)
+      .eq('user_id', userId);
+    if (updateError) {
+      throw new Error(`Error al guardar el libro en Supabase: ${updateError.message}`);
+    }
   }
   addBookIdToSyncedCache(userId, book.id);
 }
 
 async function upsertSagaToSupabase(userId: string, saga: Saga): Promise<void> {
+  const { data: existingRows, error: selectErr } = await supabase
+    .from('sagas')
+    .select('id')
+    .eq('id', saga.id)
+    .eq('user_id', userId);
+
+  if (!selectErr && Array.isArray(existingRows) && existingRows.length > 0) {
+    const { error: updateErr } = await supabase
+      .from('sagas')
+      .update({
+        nombre: saga.nombre,
+        descripcion: saga.descripcion,
+        updated_at: saga.updatedAt
+      })
+      .eq('id', saga.id)
+      .eq('user_id', userId);
+
+    if (updateErr) {
+      throw new Error(`Error al actualizar la saga en Supabase: ${updateErr.message}`);
+    }
+    addSagaIdToSyncedCache(userId, saga.id);
+    return;
+  }
+
   const payload: SupabaseSagaRow = {
     id: saga.id,
     user_id: userId,
@@ -241,11 +276,11 @@ async function upsertSagaToSupabase(userId: string, saga: Saga): Promise<void> {
     created_at: saga.createdAt,
     updated_at: saga.updatedAt
   };
-  const { error } = await supabase
+  const { error: insertErr } = await supabase
     .from('sagas')
     .upsert(payload, { onConflict: 'id,user_id' });
-  if (error) {
-    throw new Error(`Error al guardar la saga en Supabase: ${error.message}`);
+  if (insertErr) {
+    throw new Error(`Error al guardar la saga en Supabase: ${insertErr.message}`);
   }
   addSagaIdToSyncedCache(userId, saga.id);
 }
@@ -588,7 +623,17 @@ export async function saveBookRecord(
   } else if (sagaId) {
     const saga = await db.sagas.get(sagaId);
     if (saga) {
-      sagaNombre = saga.nombre;
+      if (sagaNombre && sagaNombre !== saga.nombre) {
+        const updatedSaga = await upsertSaga(sagaNombre, saga.descripcion, saga.id);
+        sagaId = updatedSaga.id;
+        sagaNombre = updatedSaga.nombre;
+      } else {
+        sagaNombre = saga.nombre;
+      }
+    } else if (sagaNombre) {
+      const created = await findOrCreateSagaByName(sagaNombre);
+      sagaId = created ? created.id : null;
+      sagaNombre = created ? created.nombre : '';
     } else {
       sagaId = null;
       sagaNombre = '';
@@ -779,7 +824,9 @@ export async function upsertSaga(
 
   if (sagaId) {
     const validSagaId = ensureValidUuid(sagaId);
-    const existing = await db.sagas.get(sagaId);
+    const existing = (await db.sagas.get(sagaId)) || (await db.sagas.get(validSagaId));
+    const oldNameNorm = existing ? normalizeText(existing.nombre) : '';
+
     const updated: Saga = {
       id: validSagaId,
       nombre: cleanName,
@@ -791,12 +838,22 @@ export async function upsertSaga(
     if (user) {
       await upsertSagaToSupabase(user.id, updated);
     }
+    if (sagaId !== validSagaId) {
+      await db.sagas.delete(sagaId);
+    }
     await db.sagas.put(updated);
 
-    const linkedBooks = await db.books.where('sagaId').equals(validSagaId).toArray();
+    const allBooks = await db.books.toArray();
+    const linkedBooks = allBooks.filter(
+      (b) =>
+        b.sagaId === sagaId ||
+        b.sagaId === validSagaId ||
+        (oldNameNorm && normalizeText(b.sagaNombre) === oldNameNorm)
+    );
     for (const b of linkedBooks) {
       const updatedBook: Book = {
         ...b,
+        sagaId: validSagaId,
         sagaNombre: cleanName,
         updatedAt: now
       };

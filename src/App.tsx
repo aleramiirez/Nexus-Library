@@ -1394,13 +1394,13 @@ export const App: React.FC = () => {
                 </button>
               </div>
 
-              {sagaFormOpen && (
+              {sagaFormOpen && !editingSaga && (
                 <form
                   onSubmit={handleSaveSagaForm}
                   className="rounded-2xl border border-amber-500/40 bg-white dark:bg-[#141A26] p-5 space-y-4"
                 >
                   <h2 className="font-serif text-lg font-bold text-amber-300">
-                    {editingSaga ? 'Editar Saga: ' + editingSaga.nombre : 'Crear Nueva Saga'}
+                    Crear Nueva Saga
                   </h2>
                   {sagaError && <p className="text-xs text-rose-400">{sagaError}</p>}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1411,6 +1411,7 @@ export const App: React.FC = () => {
                       <input
                         type="text"
                         required
+                        autoFocus
                         value={sagaNameInput}
                         onChange={(e) => setSagaNameInput(e.target.value)}
                         placeholder="Ej. Nacidos de la Bruma (Mistborn)"
@@ -1506,15 +1507,21 @@ export const App: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setEditingSaga(item.saga);
-                              setSagaNameInput(item.saga.nombre);
-                              setSagaDescInput(item.saga.descripcion);
-                              setSagaFormOpen(true);
+                              if (sagaFormOpen && editingSaga?.id === item.saga.id) {
+                                setSagaFormOpen(false);
+                                setEditingSaga(null);
+                              } else {
+                                setEditingSaga(item.saga);
+                                setSagaNameInput(item.saga.nombre);
+                                setSagaDescInput(item.saga.descripcion);
+                                setSagaError('');
+                                setSagaFormOpen(true);
+                              }
                             }}
-                            className="p-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white"
-                            title="Editar saga"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 hover:border-amber-400 hover:text-amber-300 transition"
+                            title="Editar nombre o descripción de la saga"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-3.5 h-3.5" /> Editar
                           </button>
                           <button
                             type="button"
@@ -1544,6 +1551,62 @@ export const App: React.FC = () => {
                           </button>
                         </div>
                       </div>
+
+                      {sagaFormOpen && editingSaga?.id === item.saga.id && (
+                        <form
+                          onSubmit={handleSaveSagaForm}
+                          className="rounded-xl border border-amber-500/40 bg-slate-50 dark:bg-[#101520] p-4 space-y-3"
+                        >
+                          <h3 className="font-serif text-base font-bold text-amber-300">
+                            Editar Saga
+                          </h3>
+                          {sagaError && <p className="text-xs text-rose-400">{sagaError}</p>}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold mb-1">
+                                Nombre de la saga *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                autoFocus
+                                value={sagaNameInput}
+                                onChange={(e) => setSagaNameInput(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-3 py-2 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-semibold mb-1">
+                                Descripción opcional
+                              </label>
+                              <input
+                                type="text"
+                                value={sagaDescInput}
+                                onChange={(e) => setSagaDescInput(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-3 py-2 text-xs"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSagaFormOpen(false);
+                                setEditingSaga(null);
+                              }}
+                              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-1.5 text-xs"
+                            >
+                              Guardar cambios
+                            </button>
+                          </div>
+                        </form>
+                      )}
 
                       <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                         <div
