@@ -702,32 +702,41 @@ export const App: React.FC = () => {
           )}
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
-              <div className="rounded-2xl border border-[#283246] bg-gradient-to-r from-[#1A1423] via-[#151C2B] to-[#101622] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400 font-semibold">
+              <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-[#080C15] p-6 sm:p-8 lg:p-10 shadow-2xl min-h-[220px] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <img
+                  src="/hero-library.jpg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center md:object-[72%_center] opacity-90"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#080C15] via-[#080C15]/85 to-[#080C15]/20" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080C15]/80 via-transparent to-transparent md:hidden" />
+
+                <div className="relative z-10 max-w-xl">
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-amber-400 font-semibold">
                     Biblioteca Digital Personal
                   </span>
-                  <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-0.5">
+                  <h1 className="font-serif text-2xl sm:text-4xl font-bold text-white mt-1 drop-shadow">
                     Panel de Lectura NEXUS
                   </h1>
-                  <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+                  <p className="text-xs sm:text-sm text-slate-200/90 mt-2 leading-relaxed">
                     Explora tu colección visual de libros, organiza tus lecturas por estanterías y
                     sagas, y añade nuevas ediciones buscando por título, autor o ISBN con portada
                     automática.
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
                   <button
                     type="button"
                     onClick={handleOpenCreateBook}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg transition"
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-amber-950/50 transition"
                   >
                     <Plus className="w-4 h-4" /> Añadir libro
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveSection('library')}
-                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-[#0B0E14]/75 hover:bg-amber-500/20 backdrop-blur-sm text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
                   >
                     <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>

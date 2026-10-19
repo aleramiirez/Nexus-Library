@@ -128,14 +128,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0B0E14] text-slate-100 selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
+    <div className="min-h-screen flex bg-[#080C15] text-slate-100 selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
+      {/* Ilustración de fondo ambiental */}
+      <img
+        src="/hero-library.jpg"
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-25 scale-105"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#080C15]/95 via-[#080C15]/80 to-[#080C15]/90" />
+
       {/* Luces ambientales de fondo */}
       <div className="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-amber-500/10 blur-[130px]" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-[#6E1E2A]/20 blur-[140px]" />
 
       <div className="w-full max-w-6xl mx-auto my-auto p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
         {/* Columna Izquierda: Presentación Editorial */}
-        <div className="lg:col-span-7 space-y-8 pr-0 lg:pr-6">
+        <div className="lg:col-span-7 space-y-6 pr-0 lg:pr-6">
           <div className="inline-flex items-center gap-3">
             <img
               src="/logo.jpg"
@@ -166,6 +175,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               Cataloga tus lecturas con portadas automáticas, organiza tus sagas por volumen y
               explora tus estanterías visuales desde cualquier dispositivo.
             </p>
+          </div>
+
+          <div className="hidden sm:block relative rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl shadow-black/80 h-44">
+            <img
+              src="/hero-library.jpg"
+              alt="Estantería iluminada de Nexus Library"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#080C15]/85 via-transparent to-transparent flex items-end p-4">
+              <p className="font-serif italic text-sm text-amber-100/95">
+                «Una biblioteca no es un lujo, sino una de las necesidades de la vida.» — Henry Ward Beecher
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
@@ -199,15 +221,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               </p>
             </div>
           </div>
-
-          <blockquote className="hidden sm:block border-l-2 border-amber-500/40 pl-4 py-1">
-            <p className="font-serif italic text-base text-slate-300">
-              «Una biblioteca no es un lujo, sino una de las necesidades de la vida.»
-            </p>
-            <footer className="text-xs text-amber-400/80 mt-1 font-medium">
-              — Henry Ward Beecher
-            </footer>
-          </blockquote>
         </div>
 
         {/* Columna Derecha: Tarjeta de Acceso */}
