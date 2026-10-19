@@ -424,8 +424,18 @@ export const App: React.FC = () => {
     : 'L';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-[#0D1017] text-slate-900 dark:text-slate-100">
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-[#222B3C] bg-white dark:bg-[#111622] z-30">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-[#080C15] text-slate-900 dark:text-slate-100 relative">
+      <div className="hidden dark:block pointer-events-none select-none fixed inset-0 z-0 overflow-hidden">
+        <img
+          src="/hero-library.jpg"
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover object-center opacity-20 scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#080C15]/80 via-[#080C15]/85 to-[#080C15]/95" />
+      </div>
+
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-[#222B3C] bg-white dark:bg-[#111622]/95 backdrop-blur-md z-30">
         <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222B3C] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
@@ -683,7 +693,7 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 lg:pl-64 pb-24 lg:pb-12">
+      <main className="relative z-10 flex-1 lg:pl-64 pb-24 lg:pb-12">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           {globalError && (
             <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
@@ -702,41 +712,32 @@ export const App: React.FC = () => {
           )}
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-[#080C15] p-6 sm:p-8 lg:p-10 shadow-2xl min-h-[220px] flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <img
-                  src="/hero-library.jpg"
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center md:object-[72%_center] opacity-90"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#080C15] via-[#080C15]/85 to-[#080C15]/20" />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080C15]/80 via-transparent to-transparent md:hidden" />
-
-                <div className="relative z-10 max-w-xl">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-amber-400 font-semibold">
+              <div className="rounded-2xl border border-[#283246] bg-gradient-to-r from-[#1A1423]/90 via-[#151C2B]/90 to-[#101622]/90 backdrop-blur-sm p-5 sm:p-6 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400 font-semibold">
                     Biblioteca Digital Personal
                   </span>
-                  <h1 className="font-serif text-2xl sm:text-4xl font-bold text-white mt-1 drop-shadow">
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-0.5">
                     Panel de Lectura NEXUS
                   </h1>
-                  <p className="text-xs sm:text-sm text-slate-200/90 mt-2 leading-relaxed">
+                  <p className="text-xs text-slate-300 mt-1 max-w-2xl">
                     Explora tu colección visual de libros, organiza tus lecturas por estanterías y
                     sagas, y añade nuevas ediciones buscando por título, autor o ISBN con portada
                     automática.
                   </p>
                 </div>
-                <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                   <button
                     type="button"
                     onClick={handleOpenCreateBook}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-amber-950/50 transition"
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg transition"
                   >
                     <Plus className="w-4 h-4" /> Añadir libro
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveSection('library')}
-                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-[#0B0E14]/75 hover:bg-amber-500/20 backdrop-blur-sm text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
                   >
                     <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>

@@ -177,19 +177,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
             </p>
           </div>
 
-          <div className="hidden sm:block relative rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl shadow-black/80 h-44">
-            <img
-              src="/hero-library.jpg"
-              alt="Estantería iluminada de Nexus Library"
-              className="w-full h-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#080C15]/85 via-transparent to-transparent flex items-end p-4">
-              <p className="font-serif italic text-sm text-amber-100/95">
-                «Una biblioteca no es un lujo, sino una de las necesidades de la vida.» — Henry Ward Beecher
-              </p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
             <div className="rounded-2xl border border-[#232C3F] bg-[#121723]/80 backdrop-blur p-4 space-y-1.5">
               <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -221,6 +208,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               </p>
             </div>
           </div>
+
+          <blockquote className="hidden sm:block border-l-2 border-amber-500/40 pl-4 py-1">
+            <p className="font-serif italic text-base text-slate-300">
+              «Una biblioteca no es un lujo, sino una de las necesidades de la vida.»
+            </p>
+            <footer className="text-xs text-amber-400/80 mt-1 font-medium">
+              — Henry Ward Beecher
+            </footer>
+          </blockquote>
         </div>
 
         {/* Columna Derecha: Tarjeta de Acceso */}
