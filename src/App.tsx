@@ -22,6 +22,8 @@ import {
   HardDrive,
   Cloud,
   ChevronRight,
+  ChevronDown,
+  SlidersHorizontal,
   ArrowUpDown,
   AlertTriangle,
   LogIn,
@@ -100,8 +102,9 @@ export const App: React.FC = () => {
 
   const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
   const [darkMode, setDarkMode] = useState(true);
-  const [viewMode, setViewMode] = useState<LibraryViewMode>('grid');
+  const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -968,12 +971,63 @@ export const App: React.FC = () => {
                   <h1 className="font-serif text-3xl font-bold">Mi Biblioteca</h1>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Mostrando <strong>{filteredBooks.length}</strong> de{' '}
-                    <strong>{books.length}</strong> libros almacenados localmente
+                    <strong>{books.length}</strong> libros almacenados
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {(() => {
+                    const activeFilterCount = [
+                      Boolean(filters.search.trim()),
+                      Boolean(filters.genero),
+                      Boolean(filters.subgenero),
+                      Boolean(filters.progreso),
+                      Boolean(filters.sagaId),
+                      filters.puntuacion !== ''
+                    ].filter(Boolean).length;
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setShowFilters((s) => !s)}
+                        className={
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ' +
+                          (showFilters || activeFilterCount > 0
+                            ? 'border-amber-400/60 bg-amber-500/15 text-amber-300'
+                            : 'border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] text-slate-600 dark:text-slate-300 hover:border-amber-400/50')
+                        }
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        <span>Filtros</span>
+                        {activeFilterCount > 0 && (
+                          <span className="rounded-full bg-amber-500 text-slate-950 px-1.5 py-0.2 text-[10px] font-bold">
+                            {activeFilterCount}
+                          </span>
+                        )}
+                        <ChevronDown
+                          className={
+                            'w-3.5 h-3.5 transition-transform duration-200 ' +
+                            (showFilters ? 'rotate-180' : '')
+                          }
+                        />
+                      </button>
+                    );
+                  })()}
+
                   <div className="inline-flex rounded-xl border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('shelf')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
+                        (viewMode === 'shelf'
+                          ? 'bg-amber-500 text-slate-950 font-semibold'
+                          : 'text-slate-400 hover:text-white')
+                      }
+                      title="Vista de estantería visual"
+                    >
+                      <Rows3 className="w-3.5 h-3.5" /> Estantería
+                    </button>
                     <button
                       type="button"
                       onClick={() => setViewMode('grid')}
@@ -1000,19 +1054,6 @@ export const App: React.FC = () => {
                     >
                       <List className="w-3.5 h-3.5" /> Lista
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('shelf')}
-                      className={
-                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
-                        (viewMode === 'shelf'
-                          ? 'bg-amber-500 text-slate-950 font-semibold'
-                          : 'text-slate-400 hover:text-white')
-                      }
-                      title="Vista de estantería visual"
-                    >
-                      <Rows3 className="w-3.5 h-3.5" /> Estantería
-                    </button>
                   </div>
 
                   <button
@@ -1025,159 +1066,161 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-4 space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                  <div className="md:col-span-5 relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={filters.search}
-                      onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                      placeholder="Buscar en mi biblioteca por título, autor o ISBN..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] pl-10 pr-4 py-2 text-xs"
-                    />
+              {showFilters && (
+                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div className="md:col-span-5 relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={filters.search}
+                        onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                        placeholder="Buscar en mi biblioteca por título, autor o ISBN..."
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] pl-10 pr-4 py-2 text-xs"
+                      />
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <select
+                        value={filters.genero}
+                        onChange={(e) =>
+                          setFilters((f) => ({ ...f, genero: e.target.value as Genre | '' }))
+                        }
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Todos los géneros</option>
+                        {GENRES.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <select
+                        value={filters.progreso}
+                        onChange={(e) =>
+                          setFilters((f) => ({
+                            ...f,
+                            progreso: e.target.value as ReadingStatus | ''
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Todos los estados</option>
+                        {READING_STATUSES.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <select
+                        value={filters.puntuacion === null ? '' : String(filters.puntuacion)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFilters((f) => ({
+                            ...f,
+                            puntuacion:
+                              val === ''
+                                ? ''
+                                : val === 'unrated'
+                                ? 'unrated'
+                                : (Number(val) as StarRating)
+                          }));
+                        }}
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Cualquier puntuación</option>
+                        {STAR_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                        <option value="unrated">Sin puntuar</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="md:col-span-3">
-                    <select
-                      value={filters.genero}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, genero: e.target.value as Genre | '' }))
-                      }
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="">Todos los géneros</option>
-                      {GENRES.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-1">
+                    <div className="md:col-span-4">
+                      <select
+                        value={filters.subgenero}
+                        onChange={(e) =>
+                          setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
+                        }
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Todos los subgéneros</option>
+                        {SUBGENRES.map((sub) => (
+                          <option key={sub} value={sub}>
+                            {sub}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="md:col-span-2">
-                    <select
-                      value={filters.progreso}
-                      onChange={(e) =>
-                        setFilters((f) => ({
-                          ...f,
-                          progreso: e.target.value as ReadingStatus | ''
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="">Todos los estados</option>
-                      {READING_STATUSES.map((st) => (
-                        <option key={st} value={st}>
-                          {st}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="md:col-span-3">
+                      <select
+                        value={filters.sagaId}
+                        onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
+                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="">Todas las sagas</option>
+                        <option value="__none__">Libros independientes (Sin saga)</option>
+                        {sagas.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            Saga: {s.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div className="md:col-span-2">
-                    <select
-                      value={filters.puntuacion === null ? '' : String(filters.puntuacion)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFilters((f) => ({
-                          ...f,
-                          puntuacion:
-                            val === ''
-                              ? ''
-                              : val === 'unrated'
-                              ? 'unrated'
-                              : (Number(val) as StarRating)
-                        }));
-                      }}
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="">Cualquier puntuación</option>
-                      {STAR_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                      <option value="unrated">Sin puntuar</option>
-                    </select>
+                    <div className="md:col-span-3 flex items-center gap-1.5">
+                      <select
+                        value={filters.sortBy}
+                        onChange={(e) =>
+                          setFilters((f) => ({ ...f, sortBy: e.target.value as SortField }))
+                        }
+                        className="flex-1 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      >
+                        <option value="createdAt">Ordenar: Fecha incorporación</option>
+                        <option value="nombre">Ordenar: Título</option>
+                        <option value="autor">Ordenar: Autor</option>
+                        <option value="fechaPublicacion">Ordenar: Año publicación</option>
+                        <option value="puntuacion">Ordenar: Puntuación</option>
+                        <option value="paginas">Ordenar: Número de páginas</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFilters((f) => ({
+                            ...f,
+                            sortOrder: f.sortOrder === 'asc' ? 'desc' : 'asc'
+                          }))
+                        }
+                        title="Invertir orden ascendente/descendente"
+                        className="p-2 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] hover:border-amber-400"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="md:col-span-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setFilters(initialFilters)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-[#283246] hover:border-amber-400 px-3 py-2 text-xs text-slate-300 transition"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> Limpiar filtros
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-1">
-                  <div className="md:col-span-4">
-                    <select
-                      value={filters.subgenero}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
-                      }
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="">Todos los subgéneros</option>
-                      {SUBGENRES.map((sub) => (
-                        <option key={sub} value={sub}>
-                          {sub}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-3">
-                    <select
-                      value={filters.sagaId}
-                      onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="">Todas las sagas</option>
-                      <option value="__none__">Libros independientes (Sin saga)</option>
-                      {sagas.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          Saga: {s.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-3 flex items-center gap-1.5">
-                    <select
-                      value={filters.sortBy}
-                      onChange={(e) =>
-                        setFilters((f) => ({ ...f, sortBy: e.target.value as SortField }))
-                      }
-                      className="flex-1 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
-                    >
-                      <option value="createdAt">Ordenar: Fecha incorporación</option>
-                      <option value="nombre">Ordenar: Título</option>
-                      <option value="autor">Ordenar: Autor</option>
-                      <option value="fechaPublicacion">Ordenar: Año publicación</option>
-                      <option value="puntuacion">Ordenar: Puntuación</option>
-                      <option value="paginas">Ordenar: Número de páginas</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFilters((f) => ({
-                          ...f,
-                          sortOrder: f.sortOrder === 'asc' ? 'desc' : 'asc'
-                        }))
-                      }
-                      title="Invertir orden ascendente/descendente"
-                      className="p-2 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] hover:border-amber-400"
-                    >
-                      <ArrowUpDown className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="md:col-span-2 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setFilters(initialFilters)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-[#283246] hover:border-amber-400 px-3 py-2 text-xs text-slate-300 transition"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Limpiar filtros
-                    </button>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {filteredBooks.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 dark:border-[#283246] p-12 text-center">
