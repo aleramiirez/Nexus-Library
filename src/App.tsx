@@ -478,7 +478,7 @@ export const App: React.FC = () => {
             }
           >
             <span className="flex items-center gap-2.5">
-              <LayoutDashboard className="w-4 h-4" /> Inicio — Dashboard
+              <LayoutDashboard className="w-4 h-4" /> Inicio
             </span>
           </button>
 
