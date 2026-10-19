@@ -37,6 +37,7 @@ import {
   saveBookRecord,
   syncAndMigrateWithSupabase,
   SyncMigrationResult,
+  updateBookQuickDates,
   updateBookQuickRating,
   updateBookQuickStatus,
   upsertSaga
@@ -1907,6 +1908,7 @@ export const App: React.FC = () => {
         onDelete={(b) => setBookToDelete(b)}
         onStatusChange={updateBookQuickStatus}
         onRatingChange={updateBookQuickRating}
+        onDatesChange={updateBookQuickDates}
       />
 
       <AddEditBookModal

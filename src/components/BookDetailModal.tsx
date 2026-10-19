@@ -23,6 +23,7 @@ interface BookDetailModalProps {
   onDelete: (book: Book) => void;
   onStatusChange: (bookId: string, status: ReadingStatus) => void;
   onRatingChange: (bookId: string, rating: StarRating) => void;
+  onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
 }
 
 export const BookDetailModal: React.FC<BookDetailModalProps> = ({
@@ -31,7 +32,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
-  onRatingChange
+  onRatingChange,
+  onDatesChange
 }) => {
   if (!book) return null;
 
@@ -230,12 +232,30 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="rounded-lg border border-slate-200 dark:border-[#242E42] p-3">
-                <span className="text-slate-400 block">Fecha Inicio</span>
-                <span className="font-medium text-sm">{book.fechaInicio || '—'}</span>
+                <label className="text-slate-400 block mb-1">Fecha Inicio</label>
+                {onDatesChange ? (
+                  <input
+                    type="date"
+                    value={book.fechaInicio || ''}
+                    onChange={(e) => onDatesChange(book.id, e.target.value, book.fechaFin)}
+                    className="w-full rounded-md border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] px-2 py-1 text-xs font-medium focus:border-amber-400 focus:outline-none"
+                  />
+                ) : (
+                  <span className="font-medium text-sm">{book.fechaInicio || '—'}</span>
+                )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-[#242E42] p-3">
-                <span className="text-slate-400 block">Fecha Fin</span>
-                <span className="font-medium text-sm">{book.fechaFin || '—'}</span>
+                <label className="text-slate-400 block mb-1">Fecha Fin</label>
+                {onDatesChange ? (
+                  <input
+                    type="date"
+                    value={book.fechaFin || ''}
+                    onChange={(e) => onDatesChange(book.id, book.fechaInicio, e.target.value)}
+                    className="w-full rounded-md border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] px-2 py-1 text-xs font-medium focus:border-amber-400 focus:outline-none"
+                  />
+                ) : (
+                  <span className="font-medium text-sm">{book.fechaFin || '—'}</span>
+                )}
               </div>
               <div className="rounded-lg border border-slate-200 dark:border-[#242E42] p-3">
                 <span className="text-slate-400 block">Lectura Virtual</span>

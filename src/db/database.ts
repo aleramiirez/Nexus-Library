@@ -641,9 +641,20 @@ export async function saveBookRecord(
   }
 
   const now = new Date().toISOString();
+  const today = getTodayLocalDateString();
+  let fechaInicio = bookData.fechaInicio;
+  let fechaFin = bookData.fechaFin;
+
+  if (bookData.progreso === '⏳ Leyendo' && !fechaInicio) {
+    fechaInicio = today;
+  }
+  if (bookData.progreso === '✅ Leído' && !fechaFin) {
+    fechaFin = today;
+  }
+
   const tiempoLectura = calculateReadingTimeLabel(
-    bookData.fechaInicio,
-    bookData.fechaFin,
+    fechaInicio,
+    fechaFin,
     bookData.tiempoLectura
   );
 
@@ -657,6 +668,8 @@ export async function saveBookRecord(
       id: validId,
       sagaId,
       sagaNombre,
+      fechaInicio,
+      fechaFin,
       tiempoLectura,
       createdAt: current?.createdAt || now,
       updatedAt: now
@@ -667,6 +680,8 @@ export async function saveBookRecord(
       id: crypto.randomUUID(),
       sagaId,
       sagaNombre,
+      fechaInicio,
+      fechaFin,
       tiempoLectura,
       createdAt: now,
       updatedAt: now
@@ -682,6 +697,14 @@ export async function saveBookRecord(
   return recordToSave;
 }
 
+export function getTodayLocalDateString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export async function updateBookQuickStatus(
   bookId: string,
   newStatus: Book['progreso']
@@ -689,7 +712,7 @@ export async function updateBookQuickStatus(
   const book = await db.books.get(bookId);
   if (!book) return;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayLocalDateString();
   let fechaInicio = book.fechaInicio;
   let fechaFin = book.fechaFin;
 
@@ -704,6 +727,31 @@ export async function updateBookQuickStatus(
   const updatedBook: Book = {
     ...book,
     progreso: newStatus,
+    fechaInicio,
+    fechaFin,
+    tiempoLectura,
+    updatedAt: new Date().toISOString()
+  };
+
+  const user = await getActiveUser();
+  if (user) {
+    await upsertBookToSupabase(user.id, updatedBook);
+  }
+
+  await db.books.put(updatedBook);
+}
+
+export async function updateBookQuickDates(
+  bookId: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<void> {
+  const book = await db.books.get(bookId);
+  if (!book) return;
+
+  const tiempoLectura = calculateReadingTimeLabel(fechaInicio, fechaFin, '');
+  const updatedBook: Book = {
+    ...book,
     fechaInicio,
     fechaFin,
     tiempoLectura,

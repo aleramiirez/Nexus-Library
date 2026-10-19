@@ -538,7 +538,17 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                         <button
                           key={st}
                           type="button"
-                          onClick={() => setProgreso(st)}
+                          onClick={() => {
+                            setProgreso(st);
+                            const d = new Date();
+                            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            if (st === '⏳ Leyendo' && !fechaInicio) {
+                              setFechaInicio(today);
+                            }
+                            if (st === '✅ Leído' && !fechaFin) {
+                              setFechaFin(today);
+                            }
+                          }}
                           className={
                             'py-2 px-2 rounded-lg text-xs font-medium border transition ' +
                             (progreso === st
