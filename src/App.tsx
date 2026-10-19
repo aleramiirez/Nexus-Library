@@ -1627,13 +1627,12 @@ export const App: React.FC = () => {
                               className="group cursor-pointer rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-400/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >
                               <div>
-                                <div className="flex items-center justify-between text-[11px] font-bold text-amber-300 mb-1.5">
+                                <div className="text-[11px] font-bold text-amber-300 mb-1.5">
                                   <span>
                                     {book.volumen
                                       ? 'Volumen ' + String(book.volumen)
                                       : 'Sin núm.'}
                                   </span>
-                                  <span>{book.progreso.split(' ')[0]}</span>
                                 </div>
                                 <BookCover
                                   nombre={book.nombre}
