@@ -803,12 +803,10 @@ export const App: React.FC = () => {
                         .map((book) => (
                           <div
                             key={book.id}
-                            className="flex gap-3.5 p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520]"
+                            onClick={() => setDetailBookId(book.id)}
+                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:border-amber-500/40 cursor-pointer transition"
                           >
-                            <div
-                              onClick={() => setDetailBookId(book.id)}
-                              className="w-16 shrink-0 cursor-pointer"
-                            >
+                            <div className="w-16 shrink-0">
                               <BookCover
                                 nombre={book.nombre}
                                 autor={book.autor}
@@ -818,38 +816,17 @@ export const App: React.FC = () => {
                                 size="sm"
                               />
                             </div>
-                            <div className="flex-1 min-w-0 flex flex-col justify-between">
-                              <div>
-                                <h3
-                                  onClick={() => setDetailBookId(book.id)}
-                                  className="font-serif font-bold text-base hover:text-amber-300 cursor-pointer truncate"
-                                >
-                                  {book.nombre}
-                                </h3>
-                                <p className="text-xs text-slate-400 truncate">{book.autor}</p>
-                                {book.sagaNombre && (
-                                  <span className="inline-block mt-1 text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded">
-                                    {book.sagaNombre}{' '}
-                                    {book.volumen ? '#' + String(book.volumen) : ''}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-2">
-                                <button
-                                  type="button"
-                                  onClick={() => updateBookQuickStatus(book.id, '✅ Leído')}
-                                  className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 text-[11px] font-medium hover:bg-emerald-500/30 transition"
-                                >
-                                  ✅ Marcar leído
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => updateBookQuickStatus(book.id, '⏸️ Pausado')}
-                                  className="rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 px-2 py-1 text-[11px] hover:bg-rose-500/25 transition"
-                                >
-                                  ⏸️ Pausar
-                                </button>
-                              </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-serif font-bold text-base group-hover:text-amber-300 truncate transition">
+                                {book.nombre}
+                              </h3>
+                              <p className="text-xs text-slate-400 truncate">{book.autor}</p>
+                              {book.sagaNombre && (
+                                <span className="inline-block mt-1.5 text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded">
+                                  {book.sagaNombre}{' '}
+                                  {book.volumen ? '#' + String(book.volumen) : ''}
+                                </span>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1205,20 +1182,17 @@ export const App: React.FC = () => {
                           <th className="p-3">Año / Págs.</th>
                           <th className="p-3">Puntuación</th>
                           <th className="p-3">Estado</th>
-                          <th className="p-3 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 dark:divide-[#20293A]">
                         {filteredBooks.map((book) => (
                           <tr
                             key={book.id}
-                            className="hover:bg-slate-50 dark:hover:bg-[#192131] transition"
+                            onClick={() => setDetailBookId(book.id)}
+                            className="group hover:bg-slate-50 dark:hover:bg-[#192131] cursor-pointer transition"
                           >
                             <td className="p-3 w-14">
-                              <div
-                                onClick={() => setDetailBookId(book.id)}
-                                className="w-11 cursor-pointer"
-                              >
+                              <div className="w-11">
                                 <BookCover
                                   nombre={book.nombre}
                                   autor={book.autor}
@@ -1230,13 +1204,9 @@ export const App: React.FC = () => {
                               </div>
                             </td>
                             <td className="p-3">
-                              <button
-                                type="button"
-                                onClick={() => setDetailBookId(book.id)}
-                                className="font-serif font-bold text-base text-left hover:text-amber-400 block"
-                              >
+                              <span className="font-serif font-bold text-base text-left group-hover:text-amber-400 block transition">
                                 {book.nombre}
-                              </button>
+                              </span>
                               <span className="text-slate-400">{book.autor || '—'}</span>
                             </td>
                             <td className="p-3">{book.genero || '—'}</td>
@@ -1260,42 +1230,9 @@ export const App: React.FC = () => {
                             </td>
                             <td className="p-3">{formatStars(book.puntuacion) || '—'}</td>
                             <td className="p-3">
-                              <select
-                                value={book.progreso}
-                                onChange={(e) =>
-                                  updateBookQuickStatus(
-                                    book.id,
-                                    e.target.value as ReadingStatus
-                                  )
-                                }
-                                className="rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-2 py-1 text-xs"
-                              >
-                                {READING_STATUSES.map((st) => (
-                                  <option key={st} value={st}>
-                                    {st}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="p-3 text-right">
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEditBook(book)}
-                                  className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-sky-400"
-                                  title="Editar"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setBookToDelete(book)}
-                                  className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-rose-400"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-200">
+                                {book.progreso}
+                              </span>
                             </td>
                           </tr>
                         ))}

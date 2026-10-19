@@ -1,5 +1,4 @@
 import React from 'react';
-import { Edit3, Trash2, Eye } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover } from './BookCover';
 import { formatStars, ReadingStatus } from '../constants/catalogs';
@@ -7,9 +6,9 @@ import { formatStars, ReadingStatus } from '../constants/catalogs';
 interface BookCardProps {
   book: Book;
   onOpenDetail: (book: Book) => void;
-  onEdit: (book: Book) => void;
-  onDelete: (book: Book) => void;
-  onQuickStatusChange: (bookId: string, status: ReadingStatus) => void;
+  onEdit?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
+  onQuickStatusChange?: (bookId: string, status: ReadingStatus) => void;
 }
 
 const statusBadgeStyles: Record<ReadingStatus, string> = {
@@ -21,25 +20,22 @@ const statusBadgeStyles: Record<ReadingStatus, string> = {
 
 export const BookCard: React.FC<BookCardProps> = ({
   book,
-  onOpenDetail,
-  onEdit,
-  onDelete,
-  onQuickStatusChange
+  onOpenDetail
 }) => {
   return (
-    <article className="group relative flex flex-col rounded-xl border border-slate-800/90 dark:border-[#283246] bg-white dark:bg-[#161C28]/95 p-3.5 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-200">
-      <div
-        onClick={() => onOpenDetail(book)}
-        className="relative cursor-pointer mb-3"
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpenDetail(book);
-          }
-        }}
-      >
+    <article
+      onClick={() => onOpenDetail(book)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenDetail(book);
+        }
+      }}
+      className="group relative flex flex-col cursor-pointer rounded-xl border border-slate-800/90 dark:border-[#283246] bg-white dark:bg-[#161C28]/95 p-3.5 shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all duration-200"
+    >
+      <div className="relative mb-3">
         <BookCover
           nombre={book.nombre}
           autor={book.autor}
@@ -77,8 +73,7 @@ export const BookCard: React.FC<BookCardProps> = ({
           </div>
 
           <h3
-            onClick={() => onOpenDetail(book)}
-            className="font-serif text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-500 dark:group-hover:text-amber-300 cursor-pointer line-clamp-2 leading-snug"
+            className="font-serif text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-500 dark:group-hover:text-amber-300 line-clamp-2 leading-snug"
             title={book.nombre}
           >
             {book.nombre}
@@ -93,77 +88,6 @@ export const BookCard: React.FC<BookCardProps> = ({
               {book.genero}
             </p>
           )}
-        </div>
-
-        <div className="pt-2.5 mt-1 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-1">
-          <div className="flex items-center gap-1" role="group" aria-label="Cambiar estado de lectura">
-            <button
-              type="button"
-              onClick={() => onQuickStatusChange(book.id, '⏳ Leyendo')}
-              title="▶️ Marcar como leyendo"
-              className={
-                'px-1.5 py-1 rounded text-xs transition ' +
-                (book.progreso === '⏳ Leyendo'
-                  ? 'bg-amber-500/25 border border-amber-400/50 text-amber-200'
-                  : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400')
-              }
-            >
-              ▶️
-            </button>
-            <button
-              type="button"
-              onClick={() => onQuickStatusChange(book.id, '⏸️ Pausado')}
-              title="⏸️ Marcar como pausado"
-              className={
-                'px-1.5 py-1 rounded text-xs transition ' +
-                (book.progreso === '⏸️ Pausado'
-                  ? 'bg-rose-500/25 border border-rose-400/50 text-rose-200'
-                  : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400')
-              }
-            >
-              ⏸️
-            </button>
-            <button
-              type="button"
-              onClick={() => onQuickStatusChange(book.id, '✅ Leído')}
-              title="✅ Marcar como leído"
-              className={
-                'px-1.5 py-1 rounded text-xs transition ' +
-                (book.progreso === '✅ Leído'
-                  ? 'bg-emerald-500/25 border border-emerald-400/50 text-emerald-200'
-                  : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400')
-              }
-            >
-              ✅
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => onOpenDetail(book)}
-              title="Abrir ficha completa"
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              <Eye className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(book)}
-              title="Editar libro"
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(book)}
-              title="Eliminar libro"
-              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
       </div>
     </article>

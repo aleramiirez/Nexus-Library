@@ -29,3 +29,15 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #d49b4b;
 }
+
+/* Ocultar cualquier badge flotante externo inyectado por el proveedor de hosting (ej. Powered by Netlify) */
+body > a[href*="netlify"],
+body > div:not(#root) a[href*="netlify"],
+iframe[src*="netlify"],
+[class*="netlify-badge"],
+[id*="netlify-badge"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
