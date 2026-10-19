@@ -53,10 +53,10 @@ export const BookCard: React.FC<BookCardProps> = ({
 
       <div className="flex-1 flex flex-col justify-between gap-2">
         <div>
-          <div className="flex items-center justify-between gap-1.5 mb-1">
+          <div className="flex items-center justify-between gap-1 mb-1">
             <span
               className={
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ' +
+                'inline-flex items-center whitespace-nowrap shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ' +
                 statusBadgeStyles[book.progreso]
               }
             >
@@ -64,7 +64,7 @@ export const BookCard: React.FC<BookCardProps> = ({
             </span>
             {book.puntuacion && (
               <span
-                className="text-xs tracking-tight"
+                className="text-[11px] tracking-tighter whitespace-nowrap shrink-0"
                 title={String(book.puntuacion) + ' de 5 estrellas'}
               >
                 {formatStars(book.puntuacion)}
