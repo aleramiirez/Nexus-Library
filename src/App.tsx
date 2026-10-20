@@ -74,16 +74,7 @@ import { ImportModal } from './components/ImportModal';
 import { AuthSyncModal } from './components/AuthSyncModal';
 import { AuthScreen } from './components/AuthScreen';
 import { AnimatedBackground } from './components/AnimatedBackground';
-
-type NavigationSection =
-  | 'dashboard'
-  | 'library'
-  | 'shelf-unread'
-  | 'shelf-reading'
-  | 'shelf-paused'
-  | 'shelf-read'
-  | 'sagas'
-  | 'stats';
+import { BookSidebar, NavigationSection } from './components/BookSidebar';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -429,227 +420,27 @@ export const App: React.FC = () => {
     : 'L';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-[#080C15] text-slate-900 dark:text-slate-100 relative">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#f7f0df] dark:bg-[#080C15] text-stone-900 dark:text-slate-100 relative">
       <AnimatedBackground />
 
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-slate-200 dark:border-[#222B3C] bg-white dark:bg-[#111622]/95 backdrop-blur-md z-30">
-        <div className="px-6 py-5 border-b border-slate-200 dark:border-[#222B3C] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img
-              src="/logo.jpg"
-              alt="Nexus Library Logo"
-              className="w-10 h-10 rounded-xl object-cover shadow-md border border-amber-500/30"
-            />
-            <div>
-              <span className="font-serif text-lg font-bold tracking-wide block leading-none">
-                NEXUS
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.22em] text-amber-500 dark:text-amber-400 font-semibold">
-                Library
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDarkMode((d) => !d)}
-            title="Cambiar tema claro/oscuro"
-            className="p-2 rounded-lg border border-slate-200 dark:border-[#283246] text-slate-400 hover:text-amber-400 transition"
-          >
-            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-        </div>
+      <BookSidebar
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+        darkMode={darkMode}
+        onToggleTheme={() => setDarkMode((d) => !d)}
+        onAddBook={handleOpenCreateBook}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenImport={() => setIsImportOpen(true)}
+        onLeaveGuestMode={() => setOfflineGuestMode(false)}
+        metrics={metrics}
+        sagasCount={sagas.length}
+        hasUser={Boolean(currentUser)}
+        userEmail={currentUser?.email}
+        userInitial={userInitial}
+        isSyncing={isSyncing}
+      />
 
-        <div className="p-4">
-          <button
-            type="button"
-            onClick={handleOpenCreateBook}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2.5 px-4 text-xs shadow-lg transition"
-          >
-            <Plus className="w-4 h-4" /> Añadir libro
-          </button>
-        </div>
-
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto text-xs font-medium">
-          <button
-            type="button"
-            onClick={() => setActiveSection('dashboard')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ' +
-              (activeSection === 'dashboard'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <LayoutDashboard className="w-4 h-4" /> Inicio
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('library')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ' +
-              (activeSection === 'library'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <Library className="w-4 h-4" /> Mi Biblioteca
-            </span>
-            <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px]">
-              {metrics.total}
-            </span>
-          </button>
-
-          <div className="pt-4 pb-1 px-3 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-            Estanterías de lectura
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('shelf-reading')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl transition ' +
-              (activeSection === 'shelf-reading'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <Clock className="w-4 h-4 text-amber-400" /> Leyendo
-            </span>
-            <span className="text-[11px]">{metrics.reading}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('shelf-unread')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl transition ' +
-              (activeSection === 'shelf-unread'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <BookMarked className="w-4 h-4 text-slate-400" /> Por leer
-            </span>
-            <span className="text-[11px]">{metrics.unread}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('shelf-paused')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl transition ' +
-              (activeSection === 'shelf-paused'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <PauseCircle className="w-4 h-4 text-rose-400" /> Pausados
-            </span>
-            <span className="text-[11px]">{metrics.paused}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('shelf-read')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2 rounded-xl transition ' +
-              (activeSection === 'shelf-read'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <BookmarkCheck className="w-4 h-4 text-emerald-400" /> Leídos
-            </span>
-            <span className="text-[11px]">{metrics.read}</span>
-          </button>
-
-          <div className="pt-4 pb-1 px-3 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-            Colección y Análisis
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('sagas')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ' +
-              (activeSection === 'sagas'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4" /> Sagas
-            </span>
-            <span className="rounded-full bg-slate-200 dark:bg-slate-800 px-2 py-0.5 text-[10px]">
-              {sagas.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSection('stats')}
-            className={
-              'w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ' +
-              (activeSection === 'stats'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#192030]')
-            }
-          >
-            <span className="flex items-center gap-2.5">
-              <BarChart3 className="w-4 h-4" /> Estadísticas
-            </span>
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-slate-200 dark:border-[#222B3C] space-y-2.5">
-          {currentUser ? (
-            <button
-              type="button"
-              onClick={() => setIsAuthModalOpen(true)}
-              className="w-full flex items-center gap-2.5 rounded-xl border border-[#283246] bg-slate-50 dark:bg-[#151C2B] hover:border-amber-500/40 p-2.5 text-left transition"
-            >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0">
-                {userInitial}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold truncate">
-                  {currentUser.email || 'Lector Invitado'}
-                </p>
-                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  {isSyncing ? 'Sincronizando...' : 'Nube sincronizada'}
-                </span>
-              </div>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setOfflineGuestMode(false)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
-            >
-              <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión / Cuenta
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setIsImportOpen(true)}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-100 dark:bg-[#161D2B] hover:border-amber-500/40 text-slate-600 dark:text-slate-300 py-2 px-3 text-xs font-semibold transition"
-          >
-            <HardDrive className="w-3.5 h-3.5" /> Copias de Seguridad
-          </button>
-        </div>
-      </aside>
-
-      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 dark:border-[#222B3C] bg-white/95 dark:bg-[#111622]/95 backdrop-blur px-4 py-3">
+      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-stone-300 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur px-4 py-3">
         <div className="flex items-center gap-2">
           <img
             src="/logo.jpg"
@@ -666,7 +457,7 @@ export const App: React.FC = () => {
               'p-2 rounded-lg border ' +
               (currentUser
                 ? 'border-emerald-500/40 text-emerald-400'
-                : 'border-slate-300 dark:border-[#283246] text-amber-400')
+                : 'border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400')
             }
             title="Nube Supabase y Cuenta"
           >
@@ -675,7 +466,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsImportOpen(true)}
-            className="p-2 rounded-lg border border-slate-300 dark:border-[#283246] text-amber-400"
+            className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400"
             title="Copias de Seguridad"
           >
             <HardDrive className="w-4 h-4" />
@@ -691,7 +482,7 @@ export const App: React.FC = () => {
       </header>
 
       <main className="relative z-10 flex-1 lg:pl-64 pb-24 lg:pb-12">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div key={activeSection} className="book-turn max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           {globalError && (
             <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
               <span className="flex items-center gap-2">
