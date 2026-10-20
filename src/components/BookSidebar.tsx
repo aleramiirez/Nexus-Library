@@ -14,6 +14,7 @@ import {
   PauseCircle,
   LogIn,
   HardDrive,
+  X,
   type LucideIcon
 } from 'lucide-react';
 import { BookmarkMarker } from './BookmarkMarker';
@@ -43,6 +44,8 @@ interface BookSidebarProps {
   userEmail?: string | null;
   userInitial: string;
   isSyncing: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 interface NavItemProps {
@@ -56,7 +59,7 @@ interface NavItemProps {
 /**
  * Menú lateral con aspecto de página izquierda de un libro abierto:
  * canto de páginas, pliegue central, índice con puntos guía y marcapáginas.
- * Los estilos "book-*" están en book-sidebar.css.
+ * En escritorio es fijo; en móvil se despliega como cajón lateral (drawer).
  */
 export const BookSidebar: React.FC<BookSidebarProps> = ({
   activeSection,
@@ -72,14 +75,21 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
   hasUser,
   userEmail,
   userInitial,
-  isSyncing
+  isSyncing,
+  mobileOpen = false,
+  onCloseMobile
 }) => {
+  const handleSelectSection = (id: NavigationSection) => {
+    onNavigate(id);
+    onCloseMobile?.();
+  };
+
   const NavItem: React.FC<NavItemProps> = ({ id, label, icon: Icon, iconClass = '', count }) => {
     const active = activeSection === id;
     return (
       <button
         type="button"
-        onClick={() => onNavigate(id)}
+        onClick={() => handleSelectSection(id)}
         aria-current={active ? 'page' : undefined}
         className={
           'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
@@ -117,21 +127,35 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
 
   return (
     <>
-      <aside className="book-page hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30">
+      {/* Fondo oscurecido al abrir el libro en móvil */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] lg:hidden transition-opacity"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={
+          'book-page fixed inset-y-0 left-0 z-50 lg:z-30 w-72 sm:w-64 flex flex-col transition-transform duration-300 ease-out ' +
+          (mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0')
+        }
+      >
         {/* Canto de las páginas (borde exterior) y pliegue central (borde interior) */}
         <div className="book-edges" aria-hidden="true" />
         <div className="book-fold" aria-hidden="true" />
 
         <div className="relative flex flex-col h-full pl-2">
           {/* Cabecera */}
-          <div className="px-6 pt-5 pb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+          <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
               <img
                 src="/logo.jpg"
                 alt="Nexus Library Logo"
-                className="w-10 h-10 rounded-xl object-cover shadow-md border border-amber-500/30"
+                className="w-10 h-10 rounded-xl object-cover shadow-md border border-amber-500/30 shrink-0"
               />
-              <div>
+              <div className="min-w-0">
                 <span className="font-serif font-bold leading-none block tracking-[0.1em] text-stone-900 dark:text-slate-100">
                   <span className="text-3xl text-amber-600 dark:text-amber-400">N</span>
                   <span className="text-lg">EXUS</span>
@@ -141,14 +165,26 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              title="Cambiar tema claro/oscuro"
-              className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-500 dark:text-slate-400 hover:text-amber-500 transition"
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                title="Cambiar tema claro/oscuro"
+                className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-500 dark:text-slate-400 hover:text-amber-500 transition"
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              {onCloseMobile && (
+                <button
+                  type="button"
+                  onClick={onCloseMobile}
+                  aria-label="Cerrar menú"
+                  className="lg:hidden p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Adorno */}
@@ -161,7 +197,10 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
           <div className="px-4 pt-3 pb-2">
             <button
               type="button"
-              onClick={onAddBook}
+              onClick={() => {
+                onCloseMobile?.();
+                onAddBook();
+              }}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2.5 px-4 text-xs shadow-lg transition"
             >
               <Plus className="w-4 h-4" /> Añadir libro
@@ -217,7 +256,10 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
             {hasUser ? (
               <button
                 type="button"
-                onClick={onOpenAuth}
+                onClick={() => {
+                  onCloseMobile?.();
+                  onOpenAuth();
+                }}
                 className="w-full flex items-center gap-2.5 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/40 p-2.5 text-left transition"
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0">
@@ -236,7 +278,10 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
             ) : (
               <button
                 type="button"
-                onClick={onLeaveGuestMode}
+                onClick={() => {
+                  onCloseMobile?.();
+                  onLeaveGuestMode();
+                }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
               >
                 <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión / Cuenta
@@ -245,7 +290,10 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
 
             <button
               type="button"
-              onClick={onOpenImport}
+              onClick={() => {
+                onCloseMobile?.();
+                onOpenImport();
+              }}
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] hover:border-amber-500/40 text-stone-600 dark:text-slate-300 py-2 px-3 text-xs font-semibold transition"
             >
               <HardDrive className="w-3.5 h-3.5" /> Copias de Seguridad

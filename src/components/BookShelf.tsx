@@ -8,17 +8,13 @@ interface BookShelfProps {
   onOpenDetail: (bookId: string) => void;
 }
 
-// Debe coincidir con --shelf-pad y --shelf-gap de book-shelf.css
-const SHELF_PAD = 14;
-const SHELF_GAP = 20;
-const MIN_BOOK_WIDTH = 128;
 const MAX_COLS = 6;
 
 /**
  * Vista de estantería: una librería de madera con baldas.
  * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo.
  * - Título de cada libro en una placa de latón en el canto de la balda.
- * - El número de libros por balda se adapta al ancho disponible.
+ * - El número de libros por balda se adapta al ancho disponible (3 en móvil estándar, hasta 6 en escritorio).
  */
 export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
   const backRef = useRef<HTMLDivElement>(null);
@@ -29,8 +25,13 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     const el = backRef.current;
     if (!el) return;
     const update = () => {
-      const available = el.clientWidth - SHELF_PAD * 2;
-      const fit = Math.floor((available + SHELF_GAP) / (MIN_BOOK_WIDTH + SHELF_GAP));
+      const w = el.clientWidth;
+      const isCompact = w < 520;
+      const pad = isCompact ? 10 : 14;
+      const gap = isCompact ? 12 : 20;
+      const minBookWidth = isCompact ? 86 : 128;
+      const available = w - pad * 2;
+      const fit = Math.floor((available + gap) / (minBookWidth + gap));
       setCols(Math.min(MAX_COLS, Math.max(2, fit)));
     };
     update();

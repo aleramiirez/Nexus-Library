@@ -37,9 +37,9 @@ export const BookCard: React.FC<BookCardProps> = ({
           onOpenDetail(book);
         }
       }}
-      className="group relative flex flex-col cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-3.5 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(180,115,30,0.22)] dark:hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
+      className="group relative flex flex-col cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3.5 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(180,115,30,0.22)] dark:hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
     >
-      <div className="relative mb-3">
+      <div className="relative mb-2 sm:mb-3">
         <BookCover
           nombre={book.nombre}
           autor={book.autor}
@@ -49,18 +49,18 @@ export const BookCard: React.FC<BookCardProps> = ({
         />
 
         {book.sagaNombre && (
-          <span className="absolute top-2.5 left-2.5 max-w-[85%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-2 py-0.5 text-[10px] font-medium text-amber-200 shadow">
+          <span className="absolute top-2 left-2 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
             {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
           </span>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-between gap-2">
+      <div className="flex-1 flex flex-col justify-between gap-1.5 sm:gap-2">
         <div>
-          <div className="flex items-center justify-between gap-1 mb-1">
+          <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
             <span
               className={
-                'inline-flex items-center whitespace-nowrap shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ' +
+                'inline-flex items-center whitespace-nowrap shrink-0 rounded-full border px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-medium ' +
                 statusBadgeStyles[book.progreso]
               }
             >
@@ -68,7 +68,7 @@ export const BookCard: React.FC<BookCardProps> = ({
             </span>
             {book.puntuacion && (
               <span
-                className="text-[11px] tracking-tighter whitespace-nowrap shrink-0"
+                className="text-[10px] sm:text-[11px] tracking-tighter whitespace-nowrap shrink-0"
                 title={String(book.puntuacion) + ' de 5 estrellas'}
               >
                 {formatStars(book.puntuacion)}
@@ -77,18 +77,18 @@ export const BookCard: React.FC<BookCardProps> = ({
           </div>
 
           <h3
-            className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300 line-clamp-2 leading-snug"
+            className="font-serif text-sm sm:text-lg font-bold text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300 line-clamp-2 leading-snug"
             title={book.nombre}
           >
             {book.nombre}
           </h3>
 
-          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-1 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400 line-clamp-1 mt-0.5">
             {book.autor || 'Autor sin especificar'}
           </p>
 
           {book.genero && (
-            <p className="mt-1.5 inline-block rounded bg-amber-900/10 dark:bg-slate-800/80 px-2 py-0.5 text-[11px] text-stone-700 dark:text-slate-300">
+            <p className="mt-1 sm:mt-1.5 inline-block rounded bg-amber-900/10 dark:bg-slate-800/80 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] text-stone-700 dark:text-slate-300 truncate max-w-full">
               {book.genero}
             </p>
           )}

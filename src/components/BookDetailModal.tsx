@@ -41,33 +41,33 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="detail-book-title"
     >
-      <div className="relative w-full max-w-4xl rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-8">
-        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
-            <BookOpen className="w-4 h-4" />
-            <span>Ficha Bibliográfica</span>
+      <div className="relative w-full max-w-4xl rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-8 max-h-[92dvh] flex flex-col">
+        <div className="flex items-center justify-between gap-2 border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-4 bg-[#f0e5cc] dark:bg-[#101520] shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold min-w-0">
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="truncate">Ficha Bibliográfica</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => onEdit(book)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-transparent px-3 py-1.5 text-xs font-medium text-stone-800 dark:text-slate-200 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-transparent px-2.5 sm:px-3 py-1.5 text-xs font-medium text-stone-800 dark:text-slate-200 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              Editar
+              <span>Editar</span>
             </button>
             <button
               type="button"
               onClick={() => onDelete(book)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Eliminar
+              <span className="hidden sm:inline">Eliminar</span>
             </button>
             <button
               type="button"
@@ -80,9 +80,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           </div>
         </div>
 
-        <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-8 max-h-[82vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-8 overflow-y-auto">
           <div className="md:col-span-4 flex flex-col items-center">
-            <div className="w-56 md:w-full max-w-[260px]">
+            <div className="w-36 sm:w-48 md:w-full max-w-[260px]">
               <BookCover
                 nombre={book.nombre}
                 autor={book.autor}
@@ -93,7 +93,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               />
             </div>
 
-            <div className="mt-5 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3.5 text-center">
+            <div className="mt-4 sm:mt-5 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3 sm:p-3.5 text-center">
               <p className="text-xs font-medium text-stone-600 dark:text-slate-400 mb-2">Puntuación Personal</p>
               <div className="flex items-center justify-center gap-1.5 flex-wrap">
                 {STAR_OPTIONS.map((opt) => (
@@ -104,7 +104,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       onRatingChange(book.id, book.puntuacion === opt.value ? null : opt.value)
                     }
                     className={
-                      'px-2 py-1 rounded-lg text-xs border transition ' +
+                      'px-2.5 py-1.5 sm:px-2 sm:py-1 rounded-lg text-xs border transition ' +
                       (book.puntuacion === opt.value
                         ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-semibold'
                         : 'border-transparent hover:bg-amber-900/10 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-400')
@@ -117,8 +117,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="md:col-span-8 flex flex-col gap-5">
-            <div>
+          <div className="md:col-span-8 flex flex-col gap-4 sm:gap-5">
+            <div className="text-center md:text-left">
               {book.sagaNombre && (
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-3 py-1 text-xs font-medium text-amber-900 dark:text-amber-300 mb-2">
                   <Layers className="w-3.5 h-3.5" />
@@ -131,11 +131,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
               <h2
                 id="detail-book-title"
-                className="font-serif text-2xl md:text-3xl font-bold text-stone-900 dark:text-white leading-tight"
+                className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-stone-900 dark:text-white leading-tight"
               >
                 {book.nombre}
               </h2>
-              <p className="text-base text-stone-600 dark:text-slate-300 mt-1 font-medium">
+              <p className="text-sm sm:text-base text-stone-600 dark:text-slate-300 mt-1 font-medium">
                 {book.autor || 'Autor no especificado'}
               </p>
             </div>
@@ -151,7 +151,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     type="button"
                     onClick={() => onStatusChange(book.id, status)}
                     className={
-                      'py-2 px-3 rounded-lg text-xs font-medium border text-center transition ' +
+                      'py-2.5 sm:py-2 px-3 rounded-lg text-xs font-medium border text-center transition ' +
                       (book.progreso === status
                         ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-semibold shadow-sm'
                         : 'border-amber-900/20 dark:border-[#263147] bg-[#f4ead4] dark:bg-[#1A2232] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-slate-500')
@@ -181,7 +181,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               ))}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-4 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3.5 sm:p-4 text-xs">
               <div>
                 <span className="text-stone-600 dark:text-slate-400 flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" /> Año Publicación
@@ -230,8 +230,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
+              <div className="rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-2.5 sm:p-3">
                 <label className="text-stone-600 dark:text-slate-400 block mb-1">Fecha Inicio</label>
                 {onDatesChange ? (
                   <input
@@ -244,7 +244,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <span className="font-medium text-sm">{book.fechaInicio || '—'}</span>
                 )}
               </div>
-              <div className="rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3">
+              <div className="rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-2.5 sm:p-3">
                 <label className="text-stone-600 dark:text-slate-400 block mb-1">Fecha Fin</label>
                 {onDatesChange ? (
                   <input
@@ -257,7 +257,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <span className="font-medium text-sm">{book.fechaFin || '—'}</span>
                 )}
               </div>
-              <div className="rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3">
+              <div className="col-span-2 sm:col-span-1 rounded-lg border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-2.5 sm:p-3">
                 <span className="text-stone-600 dark:text-slate-400 block">Lectura Virtual</span>
                 {book.lecturaVirtual ? (
                   isUrl ? (
@@ -281,7 +281,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             </div>
 
             {book.sinopsis && (
-              <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-4">
+              <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3.5 sm:p-4">
                 <h3 className="text-xs uppercase tracking-wider text-stone-600 dark:text-slate-400 font-semibold mb-1.5">
                   Sinopsis
                 </h3>

@@ -333,15 +333,15 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-5xl rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
-        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
+      <div className="relative w-full max-w-5xl rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-6">
+        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-4 bg-[#f0e5cc] dark:bg-[#101520]">
           <div className="flex items-center gap-2.5">
             <BookPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
-            <h2 className="font-serif text-xl font-bold">
+            <h2 className="font-serif text-lg sm:text-xl font-bold">
               {editingBook ? 'Editar Libro' : 'Añadir Libro a NEXUS LIBRARY'}
             </h2>
           </div>
@@ -354,7 +354,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 max-h-[84vh] overflow-y-auto space-y-6">
+        <div className="p-4 sm:p-6 max-h-[calc(92dvh-56px)] sm:max-h-[84vh] overflow-y-auto overscroll-contain space-y-5 sm:space-y-6">
           <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
             <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold mb-2">
               1. Búsqueda Bibliográfica Instantánea (Open Library + Google Books)

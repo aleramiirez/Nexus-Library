@@ -146,7 +146,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
       <div className="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-amber-600/15 dark:bg-amber-500/10 blur-[130px]" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full bg-[#8b2433]/15 dark:bg-[#6E1E2A]/20 blur-[140px]" />
 
-      <div className="w-full max-w-6xl mx-auto my-auto p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl mx-auto my-auto p-4 sm:p-6 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10">
         {/* Columna Izquierda: Presentación Editorial */}
         <div className="lg:col-span-7 space-y-6 pr-0 lg:pr-6">
           <div className="inline-flex items-center gap-3">
@@ -182,7 +182,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
             <div className="rounded-2xl border border-amber-900/20 dark:border-[#232C3F] bg-[#fbf6ea]/85 dark:bg-[#121723]/80 backdrop-blur p-4 space-y-1.5 shadow-sm">
               <div className="w-8 h-8 rounded-lg bg-amber-600/15 dark:bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
                 <Library className="w-4 h-4" />
@@ -232,7 +232,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
 
         {/* Columna Derecha: Tarjeta de Acceso estilo Libro / Pergamino */}
         <div className="lg:col-span-5">
-          <div className="rounded-3xl border border-amber-900/25 dark:border-[#28334A] bg-gradient-to-b from-[#fbf6ea] to-[#f0e5cc] dark:from-[#161D2B] dark:to-[#101520] p-6 sm:p-8 shadow-2xl shadow-amber-950/15 dark:shadow-black/80 relative overflow-hidden">
+          <div className="rounded-3xl border border-amber-900/25 dark:border-[#28334A] bg-gradient-to-b from-[#fbf6ea] to-[#f0e5cc] dark:from-[#161D2B] dark:to-[#101520] p-5 sm:p-8 shadow-2xl shadow-amber-950/15 dark:shadow-black/80 relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-amber-600 dark:via-amber-400 to-transparent opacity-80" />
 
             <div className="text-center mb-6">

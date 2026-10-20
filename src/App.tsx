@@ -27,6 +27,7 @@ import {
   ArrowUpDown,
   AlertTriangle,
   LogIn,
+  Menu,
   X
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -94,6 +95,15 @@ export const App: React.FC = () => {
 
   const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
   const [darkMode, setDarkMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Bloquea el scroll del fondo mientras el menú móvil está abierto
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
   const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -354,7 +364,7 @@ export const App: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
           <div>
-            <h1 className="font-serif text-3xl font-bold">{title}</h1>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold">{title}</h1>
             <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
               {subtitle} · <strong>{shelfBooks.length}</strong>{' '}
               {shelfBooks.length === 1 ? 'libro' : 'libros'}
@@ -380,7 +390,7 @@ export const App: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
             {shelfBooks.map((book) => (
               <BookCard
                 key={book.id}
@@ -439,18 +449,30 @@ export const App: React.FC = () => {
         userEmail={currentUser?.email}
         userInitial={userInitial}
         isSyncing={isSyncing}
+        mobileOpen={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-stone-300 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur px-4 py-3">
-        <div className="flex items-center gap-2">
+      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-stone-300 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Abrir menú"
+            className="p-2 -ml-1 rounded-lg text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <img
             src="/logo.jpg"
             alt="Nexus Library Logo"
-            className="w-8 h-8 rounded-lg object-cover border border-amber-500/30"
+            className="w-8 h-8 rounded-lg object-cover border border-amber-500/30 shrink-0"
           />
-          <span className="font-serif text-lg font-bold">NEXUS LIBRARY</span>
+          <span className="font-serif text-base sm:text-lg font-bold tracking-wide truncate">
+            <span className="text-amber-700 dark:text-amber-400">N</span>EXUS
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setIsAuthModalOpen(true)}
@@ -467,7 +489,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsImportOpen(true)}
-            className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400"
+            className="hidden sm:inline-flex p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400"
             title="Copias de Seguridad"
           >
             <HardDrive className="w-4 h-4" />
@@ -482,8 +504,8 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 lg:pl-64 pb-24 lg:pb-12">
-        <div key={activeSection} className="book-turn max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="relative z-10 flex-1 min-w-0 lg:pl-64 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
+        <div key={activeSection} className="book-turn max-w-7xl mx-auto px-3 py-4 sm:p-6 lg:p-8">
           {globalError && (
             <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
               <span className="flex items-center gap-2">
@@ -501,7 +523,7 @@ export const App: React.FC = () => {
           )}
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-2xl border border-amber-800/35 dark:border-amber-500/30 bg-[#2a1d12] dark:bg-[#080C15] p-6 sm:p-8 lg:px-10 lg:py-12 shadow-xl dark:shadow-2xl min-h-[210px] sm:min-h-[245px] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors duration-700">
+              <div className="relative overflow-hidden rounded-2xl border border-amber-800/35 dark:border-amber-500/30 bg-[#2a1d12] dark:bg-[#080C15] p-5 sm:p-8 lg:px-10 lg:py-12 shadow-xl dark:shadow-2xl min-h-[190px] sm:min-h-[245px] flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 transition-colors duration-700">
                 <img
                   src="/banner-library.png"
                   alt=""
@@ -529,7 +551,7 @@ export const App: React.FC = () => {
                   <h1 className="font-serif text-2xl sm:text-4xl font-bold text-[#fffcf5] dark:text-white mt-1 drop-shadow-md">
                     Panel de Lectura NEXUS
                   </h1>
-                  <p className="text-xs sm:text-sm text-amber-50/95 dark:text-slate-200/95 mt-2 leading-relaxed drop-shadow">
+                  <p className="hidden sm:block text-xs sm:text-sm text-amber-50/95 dark:text-slate-200/95 mt-2 leading-relaxed drop-shadow">
                     Explora tu colección visual de libros, organiza tus lecturas por estanterías y
                     sagas, y añade nuevas ediciones buscando por título, autor o ISBN con portada
                     automática.
@@ -553,14 +575,14 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
                 <button
                   type="button"
                   onClick={() => setActiveSection('library')}
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
                   <span className="text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
-                  <p className="font-serif text-3xl font-bold mt-1">{metrics.total}</p>
+                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.total}</p>
                 </button>
                 <button
                   type="button"
@@ -568,7 +590,7 @@ export const App: React.FC = () => {
                   className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
                 >
                   <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
-                  <p className="font-serif text-3xl font-bold text-amber-900 dark:text-amber-200 mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-900 dark:text-amber-200 mt-1">
                     {metrics.reading}
                   </p>
                 </button>
@@ -578,7 +600,7 @@ export const App: React.FC = () => {
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
                   <span className="text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
-                  <p className="font-serif text-3xl font-bold mt-1">{metrics.unread}</p>
+                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.unread}</p>
                 </button>
                 <button
                   type="button"
@@ -586,7 +608,7 @@ export const App: React.FC = () => {
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
                 >
                   <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
-                  <p className="font-serif text-3xl font-bold mt-1">{metrics.paused}</p>
+                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.paused}</p>
                 </button>
                 <button
                   type="button"
@@ -594,7 +616,7 @@ export const App: React.FC = () => {
                   className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
                 >
                   <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
-                  <p className="font-serif text-3xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">
                     {metrics.read}
                   </p>
                 </button>
@@ -743,7 +765,7 @@ export const App: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                     {[...books]
                       .filter((b) => b.puntuacion !== null)
                       .sort((a, b) => {
@@ -772,7 +794,7 @@ export const App: React.FC = () => {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="font-serif text-3xl font-bold">Mi Biblioteca</h1>
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold">Mi Biblioteca</h1>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
                     Mostrando <strong>{filteredBooks.length}</strong> de{' '}
                     <strong>{books.length}</strong> libros almacenados
@@ -850,7 +872,7 @@ export const App: React.FC = () => {
                       }
                       title="Vista de estantería visual"
                     >
-                      <Rows3 className="w-3.5 h-3.5" /> Estantería
+                      <Rows3 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Estantería</span>
                     </button>
                     <button
                       type="button"
@@ -863,7 +885,7 @@ export const App: React.FC = () => {
                       }
                       title="Vista de cuadrícula de portadas"
                     >
-                      <Grid className="w-3.5 h-3.5" /> Cuadrícula
+                      <Grid className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Cuadrícula</span>
                     </button>
                     <button
                       type="button"
@@ -876,7 +898,7 @@ export const App: React.FC = () => {
                       }
                       title="Vista de lista compacta"
                     >
-                      <List className="w-3.5 h-3.5" /> Lista
+                      <List className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Lista</span>
                     </button>
                   </div>
 
@@ -1049,7 +1071,7 @@ export const App: React.FC = () => {
                   </button>
                 </div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
                   {filteredBooks.map((book) => (
                     <BookCard
                       key={book.id}
@@ -1063,7 +1085,42 @@ export const App: React.FC = () => {
                 </div>
               ) : viewMode === 'list' ? (
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
+                  <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
+                    {filteredBooks.map((book) => (
+                      <li
+                        key={book.id}
+                        onClick={() => setDetailBookId(book.id)}
+                        className="flex items-center gap-3 p-3 active:bg-[#f4ead4] dark:active:bg-[#192131] cursor-pointer"
+                      >
+                        <div className="w-11 shrink-0">
+                          <BookCover
+                            nombre={book.nombre}
+                            autor={book.autor}
+                            portadaUrl={book.portadaUrl}
+                            portadaFallbackUrl={book.portadaFallbackUrl}
+                            portadaDataUrl={book.portadaDataUrl}
+                            size="sm"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-serif font-bold text-sm leading-snug line-clamp-2">{book.nombre}</p>
+                          <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate">
+                            {book.autor || '—'}
+                            {book.sagaNombre ? ' · ' + book.sagaNombre + (book.volumen ? ' #' + String(book.volumen) : '') : ''}
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="inline-flex items-center whitespace-nowrap rounded-full border border-amber-900/25 dark:border-slate-700 bg-[#efe3c8] dark:bg-slate-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-800 dark:text-slate-200">
+                              {book.progreso}
+                            </span>
+                            {book.puntuacion && (
+                              <span className="text-[10px] tracking-tighter whitespace-nowrap">{formatStars(book.puntuacion)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-[#f0e5cc] dark:bg-[#101520] text-stone-700 dark:text-slate-400 border-b border-amber-900/20 dark:border-[#242E42]">
                         <tr>
@@ -1167,7 +1224,7 @@ export const App: React.FC = () => {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
                 <div>
-                  <h1 className="font-serif text-3xl font-bold">Colección de Sagas</h1>
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold">Colección de Sagas</h1>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                     Volúmenes alineados por orden de lectura y progreso calculado sobre los
                     volúmenes registrados.
@@ -1261,8 +1318,8 @@ export const App: React.FC = () => {
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-3.5">
                         <div>
-                          <div className="flex items-center gap-2.5">
-                            <h2 className="font-serif text-2xl font-bold text-amber-800 dark:text-amber-400">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                            <h2 className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-400">
                               {item.saga.nombre}
                             </h2>
                             <span className="rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-900 dark:text-amber-200 font-semibold">
@@ -1457,7 +1514,7 @@ export const App: React.FC = () => {
                           No hay volúmenes asignados todavía a esta saga.
                         </p>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4 pt-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pt-1">
                           {item.books.map((book) => (
                             <div
                               key={book.id}
@@ -1499,7 +1556,7 @@ export const App: React.FC = () => {
           {activeSection === 'stats' && (
             <div className="space-y-6">
               <div>
-                <h1 className="font-serif text-3xl font-bold">Estadísticas de la Colección</h1>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold">Estadísticas de la Colección</h1>
                 <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                   Calculadas exclusivamente a partir de los registros reales almacenados en tu
                   biblioteca.
@@ -1509,13 +1566,13 @@ export const App: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                   <span className="text-xs text-stone-600 dark:text-slate-400">Libros Leídos</span>
-                  <p className="font-serif text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
                     {metrics.read}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                   <span className="text-xs text-stone-600 dark:text-slate-400">Libros Pendientes</span>
-                  <p className="font-serif text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
                     {metrics.pendingTotal}
                   </p>
                 </div>
@@ -1523,13 +1580,13 @@ export const App: React.FC = () => {
                   <span className="text-xs text-stone-600 dark:text-slate-400">
                     Valoración Media ({metrics.ratedCount} puntuados)
                   </span>
-                  <p className="font-serif text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1">
                     {metrics.avgRating !== null ? metrics.avgRating.toFixed(2) + ' ⭐' : '—'}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                   <span className="text-xs text-stone-600 dark:text-slate-400">Páginas Totales Registradas</span>
-                  <p className="font-serif text-3xl font-bold mt-1">
+                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">
                     {books.reduce((acc, b) => acc + (b.paginas || 0), 0).toLocaleString('es-ES')}
                   </p>
                 </div>
@@ -1641,7 +1698,7 @@ export const App: React.FC = () => {
                         key={item.saga.id}
                         className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3.5 space-y-1.5"
                       >
-                        <div className="flex justify-between text-xs font-semibold">
+                        <div className="flex flex-wrap justify-between gap-x-2 gap-y-0.5 text-xs font-semibold">
                           <span>{item.saga.nombre}</span>
                           <span className="text-amber-800 dark:text-amber-400">
                             {item.readCount} / {item.registeredCount} volúmenes registrados leídos (
@@ -1664,7 +1721,7 @@ export const App: React.FC = () => {
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-5 py-2 text-[10px]">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
         <button
           type="button"
           onClick={() => setActiveSection('dashboard')}

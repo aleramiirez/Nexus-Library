@@ -168,12 +168,12 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
-        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
+      <div className="relative w-full max-w-md rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-6">
+        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-4 bg-[#f0e5cc] dark:bg-[#101520]">
           <div className="flex items-center gap-2.5">
             <Cloud className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             <h2 className="font-serif text-xl font-bold">Mi Cuenta</h2>
@@ -187,7 +187,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-5 max-h-[calc(92dvh-56px)] sm:max-h-[82vh] overflow-y-auto overscroll-contain">
           {feedback && (
             <div
               className={

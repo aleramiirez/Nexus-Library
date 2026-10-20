@@ -277,6 +277,45 @@ html.dark .bookcase {
     inset 0 2px 0 rgba(255, 255, 255, 0.12);
 }
 
+/* Adaptación móvil para pantallas estrechas */
+@media (max-width: 640px) {
+  .bookcase {
+    --shelf-pad: 10px;
+    --shelf-gap: 12px;
+    padding: 0 2px;
+  }
+  .bookcase-cornice {
+    height: 16px;
+    margin: 0 -2px;
+  }
+  .bookcase-body {
+    padding: 0 11px;
+  }
+  .bookcase-body::before,
+  .bookcase-body::after {
+    width: 11px;
+  }
+  .shelf-books {
+    padding: 20px var(--shelf-pad) 0;
+  }
+  .shelf-plank-top {
+    height: 11px;
+  }
+  .shelf-plank-front {
+    padding: 5px 0 7px;
+  }
+  .shelf-plate {
+    padding: 2px 9px;
+    font-size: 11px;
+  }
+  .shelf-plate::before { left: 3.5px; }
+  .shelf-plate::after  { right: 3.5px; }
+  .bookcase-plinth {
+    height: 18px;
+    margin: 0 -2px;
+  }
+}
+
 /* Los libros caen sobre la balda al aparecer.
    Se usa "backwards": al terminar no queda ningún transform residual. */
 @keyframes shelf-drop {
