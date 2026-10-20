@@ -1,0 +1,290 @@
+/* ===== Vista Estantería: librería de madera (BookShelf) ===== */
+
+.bookcase {
+  /* Medidas compartidas con BookShelf.tsx (SHELF_PAD / SHELF_GAP) */
+  --shelf-pad: 14px;
+  --shelf-gap: 20px;
+
+  /* Tema claro: roble miel */
+  --wood-light: #dbb67f;
+  --wood-mid: #c4965c;
+  --wood-dark: #a47843;
+  --lip: #efd5a6;
+  --back-1: #cdaa73;
+  --back-2: #b48d56;
+  --shade: rgba(70, 40, 10, 0.4);
+  --glow: rgba(255, 244, 210, 0.4);
+
+  /* Veta procedural (SVG con feTurbulence): horizontal para baldas, vertical para laterales y fondo */
+  --grain-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='90'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.26' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.11 0 0 0 0 0.04 0 0 0 1.15 -0.32'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='420'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.26 0.004' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.11 0 0 0 0 0.04 0 0 0 1.15 -0.32'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  position: relative;
+  padding: 0 6px;
+}
+
+/* Tema oscuro: nogal */
+html.dark .bookcase {
+  --wood-light: #62412b;
+  --wood-mid: #4a2f1e;
+  --wood-dark: #33200f;
+  --lip: #8a6040;
+  --back-1: #1d1410;
+  --back-2: #110b08;
+  --shade: rgba(0, 0, 0, 0.65);
+  --glow: rgba(255, 190, 100, 0.13);
+}
+
+/* Moldura superior */
+.bookcase-cornice {
+  position: relative;
+  z-index: 3;
+  height: 22px;
+  margin: 0 -6px;
+  border-radius: 8px 8px 0 0;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--lip), var(--wood-light) 40%, var(--wood-mid));
+  box-shadow:
+    0 6px 10px -4px var(--shade),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Cuerpo: laterales de madera + fondo */
+.bookcase-body {
+  position: relative;
+  padding: 0 18px;
+}
+.bookcase-body::before,
+.bookcase-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: 3;
+  background:
+    var(--grain-v),
+    linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 45%, var(--wood-light));
+}
+.bookcase-body::before {
+  left: 0;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35), 3px 0 8px -2px var(--shade);
+}
+.bookcase-body::after {
+  right: 0;
+  transform: scaleX(-1);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35), 3px 0 8px -2px var(--shade);
+}
+
+.bookcase-back {
+  position: relative;
+  background:
+    radial-gradient(ellipse 65% 45% at 50% 0%, var(--glow), transparent 72%),
+    var(--grain-v),
+    linear-gradient(180deg, var(--back-1), var(--back-2));
+  box-shadow:
+    inset 12px 0 16px -8px rgba(0, 0, 0, 0.55),
+    inset -12px 0 16px -8px rgba(0, 0, 0, 0.55),
+    inset 0 16px 18px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* Fila: libros + balda */
+.shelf-row {
+  position: relative;
+}
+
+.shelf-books {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-items: end;
+  gap: var(--shelf-gap);
+  padding: 30px var(--shelf-pad) 0;
+}
+
+/* Libro apoyado sobre la balda */
+.shelf-book {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transform-origin: bottom center;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: shelf-drop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.shelf-book:hover,
+.shelf-book:focus-visible {
+  transform: translateY(-12px) rotate(-1.2deg);
+  outline: none;
+}
+.shelf-book:focus-visible .shelf-cover {
+  box-shadow: 0 0 0 2px rgba(245, 180, 60, 0.9), 0 8px 14px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* Sombra de contacto sobre la balda (se queda en la balda cuando el libro sube) */
+.shelf-book::after {
+  content: '';
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -7px;
+  height: 14px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.6), transparent 72%);
+  filter: blur(2px);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s;
+}
+.shelf-book:hover::after,
+.shelf-book:focus-visible::after {
+  transform: translateY(12px) scaleX(0.88);
+  opacity: 0.55;
+}
+
+/* Portada con lomo y brillo */
+.shelf-cover {
+  position: relative;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 12px -5px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.35s;
+}
+.shelf-book:hover .shelf-cover {
+  box-shadow: 0 18px 22px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(245, 180, 60, 0.35);
+}
+.shelf-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 14%;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 0.5rem 0 0 0.5rem;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.45),
+    rgba(0, 0, 0, 0.12) 55%,
+    rgba(255, 255, 255, 0.14) 70%,
+    transparent
+  );
+}
+.shelf-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.17), transparent 34%);
+}
+
+/* Balda: superficie superior + canto frontal con placas */
+.shelf-plank {
+  position: relative;
+  z-index: 1;
+  margin-top: -10px;
+}
+.shelf-plank-top {
+  height: 14px;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--lip), var(--wood-light));
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+.shelf-plank-front {
+  padding: 7px 0 9px;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--wood-light), var(--wood-mid) 55%, var(--wood-dark));
+  box-shadow:
+    0 12px 16px -4px var(--shade),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28);
+}
+.shelf-plates {
+  display: grid;
+  gap: var(--shelf-gap);
+  padding: 0 var(--shelf-pad);
+}
+
+/* Placa de latón con el título */
+.shelf-plate {
+  position: relative;
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto;
+  padding: 3px 14px;
+  overflow: hidden;
+  border-radius: 3px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #3b2a10;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: linear-gradient(180deg, #f1de9f, #c9a24c 55%, #a8832f);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: filter 0.3s, box-shadow 0.3s;
+}
+.shelf-plate::before,
+.shelf-plate::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8a6c25, #5e4713);
+}
+.shelf-plate::before { left: 5px; }
+.shelf-plate::after  { right: 5px; }
+.shelf-plate.is-active {
+  filter: brightness(1.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(245, 180, 60, 0.6);
+}
+
+/* Zócalo */
+.bookcase-plinth {
+  position: relative;
+  z-index: 3;
+  height: 26px;
+  margin: 0 -6px;
+  border-radius: 0 0 5px 5px;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  box-shadow:
+    0 20px 28px -10px rgba(0, 0, 0, 0.55),
+    inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Los libros caen sobre la balda al aparecer.
+   Se usa "backwards": al terminar no queda ningún transform residual. */
+@keyframes shelf-drop {
+  from { opacity: 0; transform: translateY(-22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-book { animation: none; transition: none; }
+  .shelf-book::after { transition: none; }
+}

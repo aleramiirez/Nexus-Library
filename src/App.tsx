@@ -75,6 +75,7 @@ import { AuthSyncModal } from './components/AuthSyncModal';
 import { AuthScreen } from './components/AuthScreen';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
+import { BookShelf } from './components/BookShelf';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -1132,42 +1133,7 @@ export const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-8">
-                  {Array.from(
-                    { length: Math.ceil(filteredBooks.length / 6) },
-                    (_, shelfIdx) => filteredBooks.slice(shelfIdx * 6, shelfIdx * 6 + 6)
-                  ).map((rowBooks, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-2xl border border-amber-900/30 dark:border-[#32261F] bg-gradient-to-b from-[#efe3c8] via-[#e6d5b4] to-[#d8c198] dark:from-[#161B26] dark:via-[#131722] dark:to-[#1E1612] pt-6 px-6 pb-3 shadow-xl dark:shadow-2xl"
-                    >
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-end">
-                        {rowBooks.map((book) => (
-                          <div
-                            key={book.id}
-                            onClick={() => setDetailBookId(book.id)}
-                            className="group cursor-pointer flex flex-col items-center"
-                          >
-                            <div className="w-full max-w-[145px] transition-transform duration-300 group-hover:-translate-y-2">
-                              <BookCover
-                                nombre={book.nombre}
-                                autor={book.autor}
-                                portadaUrl={book.portadaUrl}
-                                portadaFallbackUrl={book.portadaFallbackUrl}
-                                portadaDataUrl={book.portadaDataUrl}
-                                size="sm"
-                              />
-                            </div>
-                            <p className="mt-2 text-xs font-serif font-bold text-center text-stone-900 dark:text-slate-100 line-clamp-1 group-hover:text-amber-800 dark:group-hover:text-amber-300">
-                              {book.nombre}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-2 h-4 rounded-md bg-gradient-to-r from-[#6b4226] via-[#8c5835] to-[#6b4226] dark:from-[#3A2319] dark:via-[#543424] dark:to-[#3A2319] border-t border-amber-500/40 dark:border-amber-500/30 shadow-inner" />
-                    </div>
-                  ))}
-                </div>
+                <BookShelf books={filteredBooks} onOpenDetail={(id) => setDetailBookId(id)} />
               )}
             </div>
           )}
