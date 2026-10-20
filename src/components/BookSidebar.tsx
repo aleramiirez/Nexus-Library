@@ -151,9 +151,9 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
           <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <img
-                src="/logo.jpg"
+                src="/logo.svg"
                 alt="Nexus Library Logo"
-                className="w-10 h-10 rounded-xl object-cover shadow-md border border-amber-500/30 shrink-0"
+                className="w-10 h-10 shrink-0 drop-shadow-sm"
               />
               <div className="min-w-0">
                 <span className="font-serif font-bold leading-none block tracking-[0.1em] text-stone-900 dark:text-slate-100">

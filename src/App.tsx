@@ -411,9 +411,9 @@ export const App: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#f7f0df] dark:bg-[#0B0E14] text-stone-900 dark:text-slate-100 gap-3">
         <img
-          src="/logo.jpg"
+          src="/logo.svg"
           alt="Nexus Library Logo"
-          className="w-16 h-16 rounded-2xl object-cover shadow-xl border border-amber-600/30 dark:border-amber-500/30 animate-pulse"
+          className="w-20 h-20 shrink-0 drop-shadow-md animate-pulse"
         />
         <p className="font-serif text-lg text-amber-800 dark:text-amber-300 tracking-wide">
           Cargando NEXUS LIBRARY...
@@ -464,9 +464,9 @@ export const App: React.FC = () => {
             <Menu className="w-5 h-5" />
           </button>
           <img
-            src="/logo.jpg"
+            src="/logo.svg"
             alt="Nexus Library Logo"
-            className="w-8 h-8 rounded-lg object-cover border border-amber-500/30 shrink-0"
+            className="w-8 h-8 shrink-0 drop-shadow-sm"
           />
           <span className="font-serif text-base sm:text-lg font-bold tracking-wide truncate">
             <span className="text-amber-700 dark:text-amber-400">N</span>EXUS

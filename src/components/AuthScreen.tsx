@@ -151,9 +151,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
         <div className="lg:col-span-7 space-y-6 pr-0 lg:pr-6">
           <div className="inline-flex items-center gap-3">
             <img
-              src="/logo.jpg"
+              src="/logo.svg"
               alt="Nexus Library Logo"
-              className="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-amber-900/20 dark:shadow-amber-950/40 ring-1 ring-amber-600/40 dark:ring-amber-400/30"
+              className="w-12 h-12 shrink-0 drop-shadow-md"
             />
             <div>
               <span className="font-serif font-bold tracking-wider block leading-none text-stone-900 dark:text-white">
