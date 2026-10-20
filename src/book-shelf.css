@@ -284,6 +284,10 @@ html.dark .bookcase {
     --shelf-gap: 12px;
     padding: 0 2px;
   }
+  .shelf-books,
+  .shelf-plates {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
   .bookcase-cornice {
     height: 16px;
     margin: 0 -2px;
@@ -298,6 +302,10 @@ html.dark .bookcase {
   .shelf-books {
     padding: 20px var(--shelf-pad) 0;
   }
+  .shelf-book,
+  .shelf-plate {
+    max-width: 140px;
+  }
   .shelf-plank-top {
     height: 11px;
   }
@@ -305,8 +313,8 @@ html.dark .bookcase {
     padding: 5px 0 7px;
   }
   .shelf-plate {
-    padding: 2px 9px;
-    font-size: 11px;
+    padding: 2px 8px;
+    font-size: 10.5px;
   }
   .shelf-plate::before { left: 3.5px; }
   .shelf-plate::after  { right: 3.5px; }

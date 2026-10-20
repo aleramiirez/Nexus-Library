@@ -10,6 +10,15 @@ interface BookShelfProps {
 
 const MAX_COLS = 6;
 
+function getInitialCols(): number {
+  if (typeof window === 'undefined') return 3;
+  const w = window.innerWidth;
+  if (w < 640) return 3;
+  if (w < 768) return 4;
+  if (w < 1024) return 5;
+  return 6;
+}
+
 /**
  * Vista de estantería: una librería de madera con baldas.
  * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo.
@@ -18,7 +27,7 @@ const MAX_COLS = 6;
  */
 export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
   const backRef = useRef<HTMLDivElement>(null);
-  const [cols, setCols] = useState(MAX_COLS);
+  const [cols, setCols] = useState<number>(getInitialCols);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,13 +35,15 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
+      if (w <= 0) return;
       const isCompact = w < 520;
       const pad = isCompact ? 10 : 14;
       const gap = isCompact ? 12 : 20;
       const minBookWidth = isCompact ? 86 : 128;
       const available = w - pad * 2;
       const fit = Math.floor((available + gap) / (minBookWidth + gap));
-      setCols(Math.min(MAX_COLS, Math.max(2, fit)));
+      const targetCols = Math.min(MAX_COLS, Math.max(2, fit));
+      setCols((prev) => (prev !== targetCols ? targetCols : prev));
     };
     update();
     const observer = new ResizeObserver(update);
@@ -45,7 +56,9 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     rows.push(books.slice(i, i + cols));
   }
 
-  const gridStyle = { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
+  const gridStyle: React.CSSProperties = {
+    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
+  };
 
   return (
     <div className="bookcase">
@@ -54,7 +67,7 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
       <div className="bookcase-body">
         <div className="bookcase-back" ref={backRef}>
           {rows.map((row, rowIdx) => (
-            <div className="shelf-row" key={rowIdx}>
+            <div className="shelf-row" key={`shelf-row-${cols}-${rowIdx}`}>
               <div className="shelf-books" style={gridStyle}>
                 {row.map((book, i) => (
                   <button
