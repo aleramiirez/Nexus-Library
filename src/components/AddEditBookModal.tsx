@@ -337,10 +337,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-5xl rounded-2xl border border-[#283246] bg-white dark:bg-[#141A26] text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#242E42] px-6 py-4 bg-slate-50 dark:bg-[#101520]">
+      <div className="relative w-full max-w-5xl rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
+        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
           <div className="flex items-center gap-2.5">
-            <BookPlus className="w-5 h-5 text-amber-400" />
+            <BookPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             <h2 className="font-serif text-xl font-bold">
               {editingBook ? 'Editar Libro' : 'Añadir Libro a NEXUS LIBRARY'}
             </h2>
@@ -348,49 +348,49 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 max-h-[84vh] overflow-y-auto space-y-6">
-          <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-[#161E2E] to-[#101520] p-4">
-            <label className="block text-xs uppercase tracking-wider text-amber-300 font-semibold mb-2">
+          <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
+            <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold mb-2">
               1. Búsqueda Bibliográfica Instantánea (Open Library + Google Books)
             </label>
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Escribe un título, autor o pega un ISBN (ej. El nombre del viento, Brandon Sanderson, 9788401352836)..."
-                className="w-full rounded-xl border border-[#2E3B52] bg-[#0D1017]/90 pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-400 focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-amber-900/25 dark:border-[#2E3B52] bg-[#fffcf5] dark:bg-[#0D1017]/90 pl-10 pr-10 py-2.5 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
                 autoFocus={!editingBook}
               />
               {isSearching && (
-                <Loader2 className="w-4 h-4 text-amber-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />
+                <Loader2 className="w-4 h-4 text-amber-700 dark:text-amber-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />
               )}
             </div>
 
             {searchError && (
-              <p className="mt-2 text-xs text-rose-400 flex items-center gap-1.5">
+              <p className="mt-2 text-xs text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {searchError}
               </p>
             )}
 
             {!isSearching && searchQuery.trim().length >= 2 && candidates.length === 0 && !searchError && (
-              <p className="mt-2.5 text-xs text-slate-400">
+              <p className="mt-2.5 text-xs text-stone-600 dark:text-slate-400">
                 No se encontraron ediciones para "{searchQuery}". Puedes probar con otro término o completar los campos debajo.
               </p>
             )}
 
             {candidates.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs text-slate-300 mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <p className="text-xs text-stone-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                   Selecciona la edición deseada con un clic para autocompletar portada y metadatos:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
@@ -404,8 +404,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                         className={
                           'flex items-start gap-3 p-2.5 rounded-xl border text-left transition ' +
                           (isSelected
-                            ? 'border-amber-400 bg-amber-500/15 shadow-md'
-                            : 'border-[#283246] bg-[#121824]/90 hover:border-amber-500/40')
+                            ? 'border-amber-600 dark:border-amber-400 bg-amber-500/20 dark:bg-amber-500/15 shadow-md'
+                            : 'border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121824]/90 hover:border-amber-600/50 dark:hover:border-amber-500/40')
                         }
                       >
                         <div className="w-12 shrink-0">
@@ -419,29 +419,29 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-1">
-                            <p className="font-serif font-bold text-sm text-white line-clamp-2 leading-tight">
+                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-white line-clamp-2 leading-tight">
                               {cand.nombre}
                             </p>
                             {isSelected && (
-                              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
                             )}
                           </div>
-                          <p className="text-xs text-slate-300 truncate mt-0.5">
+                          <p className="text-xs text-stone-600 dark:text-slate-300 truncate mt-0.5">
                             {cand.autor || 'Autor no indicado'}
                           </p>
-                          <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-slate-400">
+                          <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-stone-600 dark:text-slate-400">
                             {cand.fechaPublicacion && (
-                              <span className="rounded bg-slate-800 px-1.5 py-0.5">
+                              <span className="rounded bg-[#efe3c8] dark:bg-slate-800 px-1.5 py-0.5">
                                 {cand.fechaPublicacion}
                               </span>
                             )}
                             {cand.paginas && (
-                              <span className="rounded bg-slate-800 px-1.5 py-0.5">
+                              <span className="rounded bg-[#efe3c8] dark:bg-slate-800 px-1.5 py-0.5">
                                 {cand.paginas} págs.
                               </span>
                             )}
                             {cand.idioma && (
-                              <span className="rounded bg-amber-500/20 text-amber-200 px-1.5 py-0.5">
+                              <span className="rounded bg-amber-500/20 text-amber-900 dark:text-amber-200 px-1.5 py-0.5">
                                 {cand.idioma}
                               </span>
                             )}
@@ -457,7 +457,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {formError && (
-              <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
+              <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{formError}</span>
               </div>
@@ -474,7 +474,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   />
                 </div>
                 <div className="w-full mt-3">
-                  <label className="block text-[11px] text-slate-400 mb-1">
+                  <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
                     URL de portada (autocompletada o personalizada)
                   </label>
                   <input
@@ -482,7 +482,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                     value={portadaUrl}
                     onChange={(e) => setPortadaUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-2.5 py-1.5 text-xs"
+                    className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs"
                   />
                 </div>
               </div>
@@ -498,7 +498,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       required
                       value={nombre}
                       onChange={(e) => setNombre(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-sm"
                     />
                   </div>
                   <div>
@@ -507,7 +507,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="text"
                       value={autor}
                       onChange={(e) => setAutor(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -520,7 +520,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                     <select
                       value={genero}
                       onChange={(e) => setGenero(e.target.value as Genre | '')}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-sm"
                     >
                       <option value="">— Sin seleccionar —</option>
                       {GENRES.map((g) => (
@@ -552,8 +552,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                           className={
                             'py-2 px-2 rounded-lg text-xs font-medium border transition ' +
                             (progreso === st
-                              ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                              : 'border-slate-300 dark:border-[#283246] bg-slate-100 dark:bg-[#0D1017] text-slate-400')
+                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-semibold'
+                              : 'border-amber-900/25 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#0D1017] text-stone-700 dark:text-slate-400')
                           }
                         >
                           {st}
@@ -572,13 +572,13 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setSubgeneros([])}
-                        className="text-[11px] text-amber-400 hover:underline"
+                        className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
                       >
                         Limpiar subgéneros
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] p-2.5">
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5">
                     {SUBGENRES.map((sub) => {
                       const active = subgeneros.includes(sub);
                       return (
@@ -589,8 +589,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                           className={
                             'px-2.5 py-1 rounded-full text-xs border transition ' +
                             (active
-                              ? 'bg-amber-500/25 border-amber-400 text-amber-200 font-medium'
-                              : 'border-slate-300 dark:border-[#253044] text-slate-500 dark:text-slate-400 hover:border-slate-500')
+                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-medium'
+                              : 'border-amber-900/20 dark:border-[#253044] text-stone-600 dark:text-slate-400 hover:border-amber-600/50 dark:hover:border-slate-500')
                           }
                         >
                           {sub}
@@ -600,7 +600,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] p-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3.5">
                   <div className="sm:col-span-4">
                     <label className="block text-xs font-semibold mb-1">Asociación a Saga</label>
                     <select
@@ -616,7 +616,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                           setNewSagaName('');
                         }
                       }}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-2 text-xs"
                     >
                       <option value="none">Libro independiente (Sin saga)</option>
                       <option value="existing">Saga existente ({sagas.length})</option>
@@ -636,7 +636,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                             const found = sagas.find((s) => s.id === id);
                             setNewSagaName(found ? found.nombre : '');
                           }}
-                          className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
+                          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-2 text-xs"
                         >
                           <option value="">— Elige una saga —</option>
                           {sagas.map((s) => (
@@ -648,7 +648,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       </div>
                       {selectedSagaId && (
                         <div>
-                          <label className="block text-[11px] font-semibold text-amber-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-amber-800 dark:text-amber-400 mb-1">
                             Editar nombre de la saga
                           </label>
                           <input
@@ -656,7 +656,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                             value={newSagaName}
                             onChange={(e) => setNewSagaName(e.target.value)}
                             placeholder="Nombre de la saga..."
-                            className="w-full rounded-lg border border-amber-500/40 bg-white dark:bg-[#0D1017] px-2.5 py-1.5 text-xs focus:border-amber-400 focus:outline-none"
+                            className="w-full rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
                           />
                         </div>
                       )}
@@ -673,7 +673,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                         value={newSagaName}
                         onChange={(e) => setNewSagaName(e.target.value)}
                         placeholder="Ej. El Archivo de las Tormentas"
-                        className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
+                        className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-2 text-xs"
                       />
                     </div>
                   )}
@@ -688,7 +688,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                         value={volumen}
                         onChange={(e) => setVolumen(e.target.value)}
                         placeholder="Ej. 1"
-                        className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-2.5 py-2 text-xs"
+                        className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-2 text-xs"
                       />
                     </div>
                   )}
@@ -702,7 +702,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       value={fechaPublicacion}
                       onChange={(e) => setFechaPublicacion(e.target.value)}
                       placeholder="Ej. 2007"
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                   <div>
@@ -713,7 +713,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       value={paginas}
                       onChange={(e) => setPaginas(e.target.value)}
                       placeholder="Ej. 880"
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                   <div>
@@ -725,7 +725,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                           e.target.value ? (Number(e.target.value) as StarRating) : null
                         )
                       }
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     >
                       <option value="">Sin puntuar</option>
                       {STAR_OPTIONS.map((opt) => (
@@ -742,7 +742,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       value={isbn}
                       onChange={(e) => setIsbn(e.target.value)}
                       placeholder="ISBN-13 / ISBN-10"
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                 </div>
@@ -754,7 +754,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="date"
                       value={fechaInicio}
                       onChange={(e) => setFechaInicio(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                   <div>
@@ -763,7 +763,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="date"
                       value={fechaFin}
                       onChange={(e) => setFechaFin(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                   <div>
@@ -775,7 +775,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       value={lecturaVirtual}
                       onChange={(e) => setLecturaVirtual(e.target.value)}
                       placeholder="https://... o Kindle / Kobo"
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                     />
                   </div>
                 </div>
@@ -787,7 +787,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="text"
                       value={editorial}
                       onChange={(e) => setEditorial(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-1.5 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-1.5 text-xs"
                     />
                   </div>
                   <div>
@@ -796,7 +796,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="text"
                       value={idioma}
                       onChange={(e) => setIdioma(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-1.5 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-1.5 text-xs"
                     />
                   </div>
                   <div>
@@ -805,7 +805,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       type="text"
                       value={edicion}
                       onChange={(e) => setEdicion(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-1.5 text-xs"
+                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-1.5 text-xs"
                     />
                   </div>
                 </div>
@@ -816,17 +816,17 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                     rows={3}
                     value={sinopsis}
                     onChange={(e) => setSinopsis(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] p-2.5 text-xs"
+                    className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5 text-xs"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 dark:border-[#242E42] pt-4">
+            <div className="flex items-center justify-end gap-3 border-t border-amber-900/20 dark:border-[#242E42] pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition"
+                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
               >
                 Cancelar
               </button>

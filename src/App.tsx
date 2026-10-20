@@ -92,7 +92,7 @@ export const App: React.FC = () => {
   const sagas = useLiveQuery(() => db.sagas.toArray(), [], [] as Saga[]);
 
   const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -351,10 +351,10 @@ export const App: React.FC = () => {
     const shelfBooks = books.filter((b) => b.progreso === status);
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#242E42] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
           <div>
             <h1 className="font-serif text-3xl font-bold">{title}</h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
               {subtitle} · <strong>{shelfBooks.length}</strong>{' '}
               {shelfBooks.length === 1 ? 'libro' : 'libros'}
             </p>
@@ -369,11 +369,11 @@ export const App: React.FC = () => {
         </div>
 
         {shelfBooks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-[#283246] p-12 text-center">
-            <p className="font-serif text-xl text-slate-400">
+          <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-12 text-center">
+            <p className="font-serif text-xl text-stone-700 dark:text-slate-400">
               No hay libros en la estantería "{status}" actualmente.
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-stone-500 dark:text-slate-500 mt-1">
               Cambia el estado desde cualquier tarjeta de tu biblioteca y aparecerá aquí al
               instante.
             </p>
@@ -398,13 +398,13 @@ export const App: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B0E14] text-slate-100 gap-3">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f7f0df] dark:bg-[#0B0E14] text-stone-900 dark:text-slate-100 gap-3">
         <img
           src="/logo.jpg"
           alt="Nexus Library Logo"
-          className="w-16 h-16 rounded-2xl object-cover shadow-xl border border-amber-500/30 animate-pulse"
+          className="w-16 h-16 rounded-2xl object-cover shadow-xl border border-amber-600/30 dark:border-amber-500/30 animate-pulse"
         />
-        <p className="font-serif text-lg text-amber-300 tracking-wide">
+        <p className="font-serif text-lg text-amber-800 dark:text-amber-300 tracking-wide">
           Cargando NEXUS LIBRARY...
         </p>
       </div>
@@ -544,66 +544,66 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveSection('library')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
-                  <span className="text-xs text-slate-400">Total de Libros</span>
+                  <span className="text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.total}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-reading')}
-                  className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
+                  className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
                 >
-                  <span className="text-xs text-amber-300">⏳ Leyendo</span>
-                  <p className="font-serif text-3xl font-bold text-amber-200 mt-1">
+                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
+                  <p className="font-serif text-3xl font-bold text-amber-900 dark:text-amber-200 mt-1">
                     {metrics.reading}
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-unread')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
-                  <span className="text-xs text-slate-400">❌ Por leer</span>
+                  <span className="text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.unread}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-paused')}
-                  className="rounded-xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
                 >
-                  <span className="text-xs text-rose-300">⏸️ Pausados</span>
+                  <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
                   <p className="font-serif text-3xl font-bold mt-1">{metrics.paused}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveSection('shelf-read')}
-                  className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
+                  className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
                 >
-                  <span className="text-xs text-emerald-300">✅ Leídos</span>
-                  <p className="font-serif text-3xl font-bold text-emerald-200 mt-1">
+                  <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
+                  <p className="font-serif text-3xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">
                     {metrics.read}
                   </p>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
+                <div className="lg:col-span-8 rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-amber-400" /> Leyendo Actualmente
+                      <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Leyendo Actualmente
                     </h2>
                     <button
                       type="button"
                       onClick={() => setActiveSection('shelf-reading')}
-                      className="text-xs text-amber-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
                     >
                       Ver estantería <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
                   {books.filter((b) => b.progreso === '⏳ Leyendo').length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-300 dark:border-[#283246] p-6 text-center text-xs text-slate-400">
+                    <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-6 text-center text-xs text-stone-600 dark:text-slate-400">
                       No tienes ningún libro marcado como "⏳ Leyendo" en este momento.
                     </div>
                   ) : (
@@ -615,7 +615,7 @@ export const App: React.FC = () => {
                           <div
                             key={book.id}
                             onClick={() => setDetailBookId(book.id)}
-                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.18)] cursor-pointer transition-all duration-300"
+                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300"
                           >
                             <div className="w-16 shrink-0">
                               <BookCover
@@ -628,12 +628,12 @@ export const App: React.FC = () => {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-serif font-bold text-base group-hover:text-amber-300 truncate transition">
+                              <h3 className="font-serif font-bold text-base group-hover:text-amber-700 dark:group-hover:text-amber-300 truncate transition">
                                 {book.nombre}
                               </h3>
-                              <p className="text-xs text-slate-400 truncate">{book.autor}</p>
+                              <p className="text-xs text-stone-600 dark:text-slate-400 truncate">{book.autor}</p>
                               {book.sagaNombre && (
-                                <span className="inline-block mt-1.5 text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded">
+                                <span className="inline-block mt-1.5 text-[10px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-500/20 dark:bg-amber-500/15 px-2 py-0.5 rounded">
                                   {book.sagaNombre}{' '}
                                   {book.volumen ? '#' + String(book.volumen) : ''}
                                 </span>
@@ -645,23 +645,23 @@ export const App: React.FC = () => {
                   )}
                 </div>
 
-                <div className="lg:col-span-4 rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 flex flex-col justify-between">
+                <div className="lg:col-span-4 rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 flex flex-col justify-between shadow-sm">
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                        <Layers className="w-5 h-5 text-amber-400" /> Mis Sagas
+                        <Layers className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Mis Sagas
                       </h2>
                       <button
                         type="button"
                         onClick={() => setActiveSection('sagas')}
-                        className="text-xs text-amber-400 hover:underline"
+                        className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
                       >
                         Gestionar ({sagas.length})
                       </button>
                     </div>
 
                     {sagasWithBooks.length === 0 ? (
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-stone-600 dark:text-slate-400">
                         Aún no has creado ninguna saga. Puedes crearlas al añadir un libro o desde
                         la sección Sagas.
                       </p>
@@ -671,19 +671,19 @@ export const App: React.FC = () => {
                           <div
                             key={item.saga.id}
                             onClick={() => setActiveSection('sagas')}
-                            className="group p-3 rounded-xl border border-slate-200 dark:border-[#253044] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(245,158,11,0.16)] transition-all duration-300"
+                            className="group p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(180,115,30,0.16)] transition-all duration-300"
                           >
                             <div className="flex items-center justify-between text-xs font-semibold">
-                              <span className="truncate group-hover:text-amber-300 transition">
+                              <span className="truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition">
                                 {item.saga.nombre}
                               </span>
-                              <span className="text-amber-400 shrink-0">
+                              <span className="text-amber-800 dark:text-amber-400 shrink-0">
                                 {item.readCount}/{item.registeredCount} leídos
                               </span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-slate-800 mt-2 overflow-hidden">
+                            <div className="w-full h-1.5 rounded-full bg-amber-900/15 dark:bg-slate-800 mt-2 overflow-hidden">
                               <div
-                                className="h-full bg-amber-400"
+                                className="h-full bg-amber-600 dark:bg-amber-400"
                                 style={{ width: String(item.progressPercent) + '%' }}
                               />
                             </div>
@@ -695,36 +695,36 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
+              <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                    <span className="text-amber-400">★</span> Favoritos
+                    <span className="text-amber-600 dark:text-amber-400">★</span> Favoritos
                   </h2>
                   <button
                     type="button"
                     onClick={() => setActiveSection('library')}
-                    className="text-xs text-amber-400 hover:underline flex items-center gap-1"
+                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
                   >
                     Ver biblioteca completa <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {books.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-[#283246] p-8 text-center">
-                    <p className="font-serif text-lg text-slate-300">
+                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center">
+                    <p className="font-serif text-lg text-stone-700 dark:text-slate-300">
                       Tu biblioteca está lista para recibir tus libros
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
                       Pulsa «Añadir libro» para buscar cualquier edición por título, autor o ISBN
                       con portada automática.
                     </p>
                   </div>
                 ) : books.filter((b) => b.puntuacion !== null).length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-[#283246] p-8 text-center">
-                    <p className="font-serif text-lg text-slate-300">
+                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center">
+                    <p className="font-serif text-lg text-stone-700 dark:text-slate-300">
                       Aún no tienes libros valorados en Favoritos
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
                       Pulsa sobre cualquier libro de tu biblioteca y asígnale una puntuación con
                       estrellas (⭐) para destacar aquí tus mejores lecturas.
                     </p>
@@ -760,7 +760,7 @@ export const App: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="font-serif text-3xl font-bold">Mi Biblioteca</h1>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
                     Mostrando <strong>{filteredBooks.length}</strong> de{' '}
                     <strong>{books.length}</strong> libros almacenados
                   </p>
@@ -768,20 +768,20 @@ export const App: React.FC = () => {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative w-full sm:w-64 md:w-72">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       value={filters.search}
                       onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
                       placeholder="Buscar título, autor, ISBN..."
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs focus:border-amber-400 focus:outline-none transition"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
                     />
                     {filters.search && (
                       <button
                         type="button"
                         onClick={() => setFilters((f) => ({ ...f, search: '' }))}
                         aria-label="Limpiar búsqueda"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -802,10 +802,10 @@ export const App: React.FC = () => {
                         type="button"
                         onClick={() => setShowFilters((s) => !s)}
                         className={
-                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ' +
+                          'inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition shadow-sm ' +
                           (showFilters || activeFilterCount > 0
-                            ? 'border-amber-400/60 bg-amber-500/15 text-amber-300'
-                            : 'border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] text-slate-600 dark:text-slate-300 hover:border-amber-400/50')
+                            ? 'border-amber-600/60 dark:border-amber-400/60 bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                            : 'border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50')
                         }
                       >
                         <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -825,15 +825,15 @@ export const App: React.FC = () => {
                     );
                   })()}
 
-                  <div className="inline-flex rounded-xl border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#141A26] p-1">
+                  <div className="inline-flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-1 shadow-sm">
                     <button
                       type="button"
                       onClick={() => setViewMode('shelf')}
                       className={
                         'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                         (viewMode === 'shelf'
-                          ? 'bg-amber-500 text-slate-950 font-semibold'
-                          : 'text-slate-400 hover:text-white')
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
                       }
                       title="Vista de estantería visual"
                     >
@@ -845,8 +845,8 @@ export const App: React.FC = () => {
                       className={
                         'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                         (viewMode === 'grid'
-                          ? 'bg-amber-500 text-slate-950 font-semibold'
-                          : 'text-slate-400 hover:text-white')
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
                       }
                       title="Vista de cuadrícula de portadas"
                     >
@@ -858,8 +858,8 @@ export const App: React.FC = () => {
                       className={
                         'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                         (viewMode === 'list'
-                          ? 'bg-amber-500 text-slate-950 font-semibold'
-                          : 'text-slate-400 hover:text-white')
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
                       }
                       title="Vista de lista compacta"
                     >
@@ -878,7 +878,7 @@ export const App: React.FC = () => {
               </div>
 
               {showFilters && (
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-4 space-y-3">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-4 space-y-3 shadow-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
                     <div className="md:col-span-4">
                       <select
@@ -886,7 +886,7 @@ export const App: React.FC = () => {
                         onChange={(e) =>
                           setFilters((f) => ({ ...f, genero: e.target.value as Genre | '' }))
                         }
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Todos los géneros</option>
                         {GENRES.map((g) => (
@@ -903,7 +903,7 @@ export const App: React.FC = () => {
                         onChange={(e) =>
                           setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
                         }
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Todos los subgéneros</option>
                         {SUBGENRES.map((sub) => (
@@ -923,7 +923,7 @@ export const App: React.FC = () => {
                             progreso: e.target.value as ReadingStatus | ''
                           }))
                         }
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Todos los estados</option>
                         {READING_STATUSES.map((st) => (
@@ -951,7 +951,7 @@ export const App: React.FC = () => {
                                 : (Number(val) as StarRating)
                           }));
                         }}
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Cualquier puntuación</option>
                         {STAR_OPTIONS.map((opt) => (
@@ -967,7 +967,7 @@ export const App: React.FC = () => {
                       <select
                         value={filters.sagaId}
                         onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Todas las sagas</option>
                         <option value="__none__">Libros independientes (Sin saga)</option>
@@ -985,7 +985,7 @@ export const App: React.FC = () => {
                         onChange={(e) =>
                           setFilters((f) => ({ ...f, sortBy: e.target.value as SortField }))
                         }
-                        className="flex-1 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="flex-1 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="createdAt">Ordenar: Fecha incorporación</option>
                         <option value="nombre">Ordenar: Título</option>
@@ -1003,7 +1003,7 @@ export const App: React.FC = () => {
                           }))
                         }
                         title="Invertir orden ascendente/descendente"
-                        className="p-2 rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] hover:border-amber-400"
+                        className="p-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] text-stone-700 dark:text-slate-200 hover:border-amber-500"
                       >
                         <ArrowUpDown className="w-4 h-4" />
                       </button>
@@ -1013,7 +1013,7 @@ export const App: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setFilters(initialFilters)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-[#283246] hover:border-amber-400 px-3 py-2 text-xs text-slate-300 transition"
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-900/25 dark:border-[#283246] hover:border-amber-500 px-3 py-2 text-xs text-stone-700 dark:text-slate-300 transition"
                       >
                         <RotateCcw className="w-3.5 h-3.5" /> Limpiar filtros
                       </button>
@@ -1023,14 +1023,14 @@ export const App: React.FC = () => {
               )}
 
               {filteredBooks.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-[#283246] p-12 text-center">
-                  <p className="font-serif text-xl text-slate-300">
+                <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-12 text-center">
+                  <p className="font-serif text-xl text-stone-600 dark:text-slate-300">
                     No se encontraron libros con los filtros actuales.
                   </p>
                   <button
                     type="button"
                     onClick={() => setFilters(initialFilters)}
-                    className="mt-3 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 px-4 py-2 text-xs font-semibold"
+                    className="mt-3 rounded-xl bg-amber-500/20 border border-amber-600/40 dark:border-amber-400/40 text-amber-800 dark:text-amber-300 px-4 py-2 text-xs font-semibold"
                   >
                     Restablecer filtros
                   </button>
@@ -1049,10 +1049,10 @@ export const App: React.FC = () => {
                   ))}
                 </div>
               ) : viewMode === 'list' ? (
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] overflow-hidden">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] overflow-hidden shadow-sm">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 dark:bg-[#101520] text-slate-400 border-b border-slate-200 dark:border-[#242E42]">
+                      <thead className="bg-[#f0e5cc] dark:bg-[#101520] text-stone-700 dark:text-slate-400 border-b border-amber-900/20 dark:border-[#242E42]">
                         <tr>
                           <th className="p-3">Portada</th>
                           <th className="p-3">Título y Autor</th>
@@ -1063,12 +1063,12 @@ export const App: React.FC = () => {
                           <th className="p-3">Estado</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-[#20293A]">
+                      <tbody className="divide-y divide-amber-900/10 dark:divide-[#20293A]">
                         {filteredBooks.map((book) => (
                           <tr
                             key={book.id}
                             onClick={() => setDetailBookId(book.id)}
-                            className="group hover:bg-slate-50 dark:hover:bg-[#192131] cursor-pointer transition"
+                            className="group hover:bg-[#f4ead4] dark:hover:bg-[#192131] cursor-pointer transition"
                           >
                             <td className="p-3 w-14">
                               <div className="w-11">
@@ -1083,15 +1083,15 @@ export const App: React.FC = () => {
                               </div>
                             </td>
                             <td className="p-3">
-                              <span className="font-serif font-bold text-base text-left group-hover:text-amber-400 block transition">
+                              <span className="font-serif font-bold text-base text-left group-hover:text-amber-700 dark:group-hover:text-amber-400 block transition">
                                 {book.nombre}
                               </span>
-                              <span className="text-slate-400">{book.autor || '—'}</span>
+                              <span className="text-stone-600 dark:text-slate-400">{book.autor || '—'}</span>
                             </td>
                             <td className="p-3">{book.genero || '—'}</td>
                             <td className="p-3">
                               {book.sagaNombre ? (
-                                <span className="rounded bg-amber-500/15 text-amber-300 px-2 py-0.5">
+                                <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2 py-0.5 font-medium">
                                   {book.sagaNombre}{' '}
                                   {book.volumen ? '#' + String(book.volumen) : ''}
                                 </span>
@@ -1099,7 +1099,7 @@ export const App: React.FC = () => {
                                 '—'
                               )}
                             </td>
-                            <td className="p-3 text-slate-400">
+                            <td className="p-3 text-stone-600 dark:text-slate-400">
                               {[
                                 book.fechaPublicacion,
                                 book.paginas ? String(book.paginas) + ' p.' : null
@@ -1109,7 +1109,7 @@ export const App: React.FC = () => {
                             </td>
                             <td className="p-3 whitespace-nowrap">{formatStars(book.puntuacion) || '—'}</td>
                             <td className="p-3 whitespace-nowrap">
-                              <span className="inline-flex items-center whitespace-nowrap rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-200">
+                              <span className="inline-flex items-center whitespace-nowrap rounded-full border border-amber-900/25 dark:border-slate-700 bg-[#efe3c8] dark:bg-slate-800/80 px-2.5 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200">
                                 {book.progreso}
                               </span>
                             </td>
@@ -1127,7 +1127,7 @@ export const App: React.FC = () => {
                   ).map((rowBooks, idx) => (
                     <div
                       key={idx}
-                      className="rounded-2xl border border-[#32261F] bg-gradient-to-b from-[#161B26] via-[#131722] to-[#1E1612] pt-6 px-6 pb-3 shadow-2xl"
+                      className="rounded-2xl border border-amber-900/30 dark:border-[#32261F] bg-gradient-to-b from-[#efe3c8] via-[#e6d5b4] to-[#d8c198] dark:from-[#161B26] dark:via-[#131722] dark:to-[#1E1612] pt-6 px-6 pb-3 shadow-xl dark:shadow-2xl"
                     >
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-end">
                         {rowBooks.map((book) => (
@@ -1146,13 +1146,13 @@ export const App: React.FC = () => {
                                 size="sm"
                               />
                             </div>
-                            <p className="mt-2 text-xs font-serif font-bold text-center line-clamp-1 group-hover:text-amber-300">
+                            <p className="mt-2 text-xs font-serif font-bold text-center text-stone-900 dark:text-slate-100 line-clamp-1 group-hover:text-amber-800 dark:group-hover:text-amber-300">
                               {book.nombre}
                             </p>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-2 h-4 rounded-md bg-gradient-to-r from-[#3A2319] via-[#543424] to-[#3A2319] border-t border-amber-500/30 shadow-inner" />
+                      <div className="mt-2 h-4 rounded-md bg-gradient-to-r from-[#6b4226] via-[#8c5835] to-[#6b4226] dark:from-[#3A2319] dark:via-[#543424] dark:to-[#3A2319] border-t border-amber-500/40 dark:border-amber-500/30 shadow-inner" />
                     </div>
                   ))}
                 </div>
@@ -1187,10 +1187,10 @@ export const App: React.FC = () => {
 
           {activeSection === 'sagas' && (
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#242E42] pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
                 <div>
                   <h1 className="font-serif text-3xl font-bold">Colección de Sagas</h1>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                     Volúmenes alineados por orden de lectura y progreso calculado sobre los
                     volúmenes registrados.
                   </p>
@@ -1213,12 +1213,12 @@ export const App: React.FC = () => {
               {sagaFormOpen && !editingSaga && (
                 <form
                   onSubmit={handleSaveSagaForm}
-                  className="rounded-2xl border border-amber-500/40 bg-white dark:bg-[#141A26] p-5 space-y-4"
+                  className="rounded-2xl border border-amber-600/40 dark:border-amber-500/40 bg-[#fbf6ea] dark:bg-[#141A26] p-5 space-y-4 shadow-md"
                 >
-                  <h2 className="font-serif text-lg font-bold text-amber-300">
+                  <h2 className="font-serif text-lg font-bold text-amber-800 dark:text-amber-300">
                     Crear Nueva Saga
                   </h2>
-                  {sagaError && <p className="text-xs text-rose-400">{sagaError}</p>}
+                  {sagaError && <p className="text-xs text-rose-600 dark:text-rose-400">{sagaError}</p>}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold mb-1">
@@ -1231,7 +1231,7 @@ export const App: React.FC = () => {
                         value={sagaNameInput}
                         onChange={(e) => setSagaNameInput(e.target.value)}
                         placeholder="Ej. Nacidos de la Bruma (Mistborn)"
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                       />
                     </div>
                     <div>
@@ -1243,7 +1243,7 @@ export const App: React.FC = () => {
                         value={sagaDescInput}
                         onChange={(e) => setSagaDescInput(e.target.value)}
                         placeholder="Ej. Era 1 y Era 2 del Cosmere"
-                        className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3 py-2 text-xs"
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                       />
                     </div>
                   </div>
@@ -1251,7 +1251,7 @@ export const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSagaFormOpen(false)}
-                      className="rounded-xl border border-slate-700 px-4 py-2 text-xs"
+                      className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300"
                     >
                       Cancelar
                     </button>
@@ -1266,11 +1266,11 @@ export const App: React.FC = () => {
               )}
 
               {sagasWithBooks.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-[#283246] p-12 text-center">
-                  <p className="font-serif text-xl text-slate-300">
+                <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-12 text-center">
+                  <p className="font-serif text-xl text-stone-600 dark:text-slate-300">
                     Todavía no tienes sagas registradas.
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
                     Crea una saga con el botón superior o asígnala directamente al añadir un libro.
                   </p>
                 </div>
@@ -1279,15 +1279,15 @@ export const App: React.FC = () => {
                   {sagasWithBooks.map((item) => (
                     <section
                       key={item.saga.id}
-                      className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 space-y-4 shadow-md"
+                      className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-4 shadow-md"
                     >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 dark:border-[#222B3C] pb-3.5">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-3.5">
                         <div>
                           <div className="flex items-center gap-2.5">
-                            <h2 className="font-serif text-2xl font-bold text-amber-400">
+                            <h2 className="font-serif text-2xl font-bold text-amber-800 dark:text-amber-400">
                               {item.saga.nombre}
                             </h2>
-                            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-200 font-semibold">
+                            <span className="rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-900 dark:text-amber-200 font-semibold">
                               {item.registeredCount}{' '}
                               {item.registeredCount === 1
                                 ? 'volumen registrado'
@@ -1295,16 +1295,16 @@ export const App: React.FC = () => {
                             </span>
                           </div>
                           {item.saga.descripcion && (
-                            <p className="text-xs text-slate-400 mt-0.5">{item.saga.descripcion}</p>
+                            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">{item.saga.descripcion}</p>
                           )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="text-right">
-                            <span className="text-xs text-slate-300 block font-medium">
+                            <span className="text-xs text-stone-700 dark:text-slate-300 block font-medium">
                               {item.readCount} leídos · {item.pendingCount} pendientes
                             </span>
-                            <span className="text-[11px] text-amber-400">
+                            <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
                               {item.progressPercent}% sobre volúmenes registrados
                             </span>
                           </div>
@@ -1316,7 +1316,7 @@ export const App: React.FC = () => {
                                 activeSagaIdForAssign === item.saga.id ? null : item.saga.id
                               )
                             }
-                            className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-300 hover:bg-amber-500/20"
+                            className="rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20"
                           >
                             + Asignar libro existente
                           </button>
@@ -1334,7 +1334,7 @@ export const App: React.FC = () => {
                                 setSagaFormOpen(true);
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs text-slate-300 hover:border-amber-400 hover:text-amber-300 transition"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 text-xs text-stone-700 dark:text-slate-300 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
                             title="Editar nombre o descripción de la saga"
                           >
                             <Edit3 className="w-3.5 h-3.5" /> Editar
@@ -1360,7 +1360,7 @@ export const App: React.FC = () => {
                                 }
                               }
                             }}
-                            className="p-1.5 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/15"
+                            className="p-1.5 rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15"
                             title="Eliminar saga"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1371,12 +1371,12 @@ export const App: React.FC = () => {
                       {sagaFormOpen && editingSaga?.id === item.saga.id && (
                         <form
                           onSubmit={handleSaveSagaForm}
-                          className="rounded-xl border border-amber-500/40 bg-slate-50 dark:bg-[#101520] p-4 space-y-3"
+                          className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-[#f4ead4] dark:bg-[#101520] p-4 space-y-3"
                         >
-                          <h3 className="font-serif text-base font-bold text-amber-300">
+                          <h3 className="font-serif text-base font-bold text-amber-800 dark:text-amber-300">
                             Editar Saga
                           </h3>
-                          {sagaError && <p className="text-xs text-rose-400">{sagaError}</p>}
+                          {sagaError && <p className="text-xs text-rose-600 dark:text-rose-400">{sagaError}</p>}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-semibold mb-1">
@@ -1388,7 +1388,7 @@ export const App: React.FC = () => {
                                 autoFocus
                                 value={sagaNameInput}
                                 onChange={(e) => setSagaNameInput(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-3 py-2 text-xs"
+                                className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                               />
                             </div>
                             <div>
@@ -1399,7 +1399,7 @@ export const App: React.FC = () => {
                                 type="text"
                                 value={sagaDescInput}
                                 onChange={(e) => setSagaDescInput(e.target.value)}
-                                className="w-full rounded-lg border border-slate-300 dark:border-[#283246] bg-white dark:bg-[#0D1017] px-3 py-2 text-xs"
+                                className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs"
                               />
                             </div>
                           </div>
@@ -1410,7 +1410,7 @@ export const App: React.FC = () => {
                                 setSagaFormOpen(false);
                                 setEditingSaga(null);
                               }}
-                              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs"
+                              className="rounded-lg border border-amber-900/25 dark:border-slate-700 px-3 py-1.5 text-xs text-stone-700 dark:text-slate-300"
                             >
                               Cancelar
                             </button>
@@ -1424,23 +1424,23 @@ export const App: React.FC = () => {
                         </form>
                       )}
 
-                      <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                      <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all"
+                          className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 dark:to-emerald-400 transition-all"
                           style={{ width: String(item.progressPercent) + '%' }}
                         />
                       </div>
 
                       {activeSagaIdForAssign === item.saga.id && (
-                        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-amber-500/30 bg-[#101520] p-3">
+                        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-[#f4ead4] dark:bg-[#101520] p-3">
                           <div className="flex-1 min-w-[200px]">
-                            <label className="block text-[11px] text-slate-400 mb-1">
+                            <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
                               Libro de tu biblioteca
                             </label>
                             <select
                               value={assignBookId}
                               onChange={(e) => setAssignBookId(e.target.value)}
-                              className="w-full rounded-lg border border-[#283246] bg-[#0D1017] px-2.5 py-1.5 text-xs"
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100"
                             >
                               <option value="">— Selecciona un libro —</option>
                               {books
@@ -1453,7 +1453,7 @@ export const App: React.FC = () => {
                             </select>
                           </div>
                           <div className="w-28">
-                            <label className="block text-[11px] text-slate-400 mb-1">
+                            <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
                               Volumen #
                             </label>
                             <input
@@ -1461,7 +1461,7 @@ export const App: React.FC = () => {
                               min="1"
                               value={assignVolume}
                               onChange={(e) => setAssignVolume(e.target.value)}
-                              className="w-full rounded-lg border border-[#283246] bg-[#0D1017] px-2.5 py-1.5 text-xs"
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100"
                             />
                           </div>
                           <button
@@ -1475,7 +1475,7 @@ export const App: React.FC = () => {
                       )}
 
                       {item.books.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic">
+                        <p className="text-xs text-stone-500 dark:text-slate-400 italic">
                           No hay volúmenes asignados todavía a esta saga.
                         </p>
                       ) : (
@@ -1484,10 +1484,10 @@ export const App: React.FC = () => {
                             <div
                               key={book.id}
                               onClick={() => setDetailBookId(book.id)}
-                              className="group cursor-pointer rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] hover:bg-white dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-400/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
+                              className="group cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-500/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >
                               <div>
-                                <div className="text-[11px] font-bold text-amber-300 mb-1.5">
+                                <div className="text-[11px] font-bold text-amber-800 dark:text-amber-300 mb-1.5">
                                   <span>
                                     {book.volumen
                                       ? 'Volumen ' + String(book.volumen)
@@ -1502,11 +1502,11 @@ export const App: React.FC = () => {
                                   portadaDataUrl={book.portadaDataUrl}
                                   size="sm"
                                 />
-                                <p className="font-serif font-bold text-sm mt-2 line-clamp-2 group-hover:text-amber-300">
+                                <p className="font-serif font-bold text-sm mt-2 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300">
                                   {book.nombre}
                                 </p>
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-1">{book.progreso}</p>
+                              <p className="text-[11px] text-stone-600 dark:text-slate-400 mt-1">{book.progreso}</p>
                             </div>
                           ))}
                         </div>
@@ -1522,35 +1522,35 @@ export const App: React.FC = () => {
             <div className="space-y-6">
               <div>
                 <h1 className="font-serif text-3xl font-bold">Estadísticas de la Colección</h1>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                   Calculadas exclusivamente a partir de los registros reales almacenados en tu
                   biblioteca.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
-                  <span className="text-xs text-slate-400">Libros Leídos</span>
-                  <p className="font-serif text-3xl font-bold text-emerald-400 mt-1">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+                  <span className="text-xs text-stone-600 dark:text-slate-400">Libros Leídos</span>
+                  <p className="font-serif text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
                     {metrics.read}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
-                  <span className="text-xs text-slate-400">Libros Pendientes</span>
-                  <p className="font-serif text-3xl font-bold text-amber-400 mt-1">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+                  <span className="text-xs text-stone-600 dark:text-slate-400">Libros Pendientes</span>
+                  <p className="font-serif text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
                     {metrics.pendingTotal}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
-                  <span className="text-xs text-slate-400">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+                  <span className="text-xs text-stone-600 dark:text-slate-400">
                     Valoración Media ({metrics.ratedCount} puntuados)
                   </span>
-                  <p className="font-serif text-3xl font-bold text-amber-300 mt-1">
+                  <p className="font-serif text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1">
                     {metrics.avgRating !== null ? metrics.avgRating.toFixed(2) + ' ⭐' : '—'}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5">
-                  <span className="text-xs text-slate-400">Páginas Totales Registradas</span>
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+                  <span className="text-xs text-stone-600 dark:text-slate-400">Páginas Totales Registradas</span>
                   <p className="font-serif text-3xl font-bold mt-1">
                     {books.reduce((acc, b) => acc + (b.paginas || 0), 0).toLocaleString('es-ES')}
                   </p>
@@ -1558,7 +1558,7 @@ export const App: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 space-y-3">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
                   <h2 className="font-serif text-xl font-bold">Distribución por Géneros</h2>
                   {GENRES.map((g) => {
                     const count = books.filter((b) => b.genero === g).length;
@@ -1567,13 +1567,13 @@ export const App: React.FC = () => {
                       <div key={g} className="space-y-1">
                         <div className="flex justify-between text-xs">
                           <span>{g}</span>
-                          <span className="text-slate-400">
+                          <span className="text-stone-600 dark:text-slate-400">
                             {count} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full bg-amber-400"
+                            className="h-full bg-amber-500 dark:bg-amber-400"
                             style={{ width: String(pct) + '%' }}
                           />
                         </div>
@@ -1583,7 +1583,7 @@ export const App: React.FC = () => {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 space-y-3">
+                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
                     <h2 className="font-serif text-xl font-bold">Distribución por Estados</h2>
                     {READING_STATUSES.map((st) => {
                       const count = books.filter((b) => b.progreso === st).length;
@@ -1592,13 +1592,13 @@ export const App: React.FC = () => {
                         <div key={st} className="space-y-1">
                           <div className="flex justify-between text-xs">
                             <span>{st}</span>
-                            <span className="text-slate-400">
+                            <span className="text-stone-600 dark:text-slate-400">
                               {count} ({pct}%)
                             </span>
                           </div>
-                          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                          <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
                             <div
-                              className="h-full bg-emerald-400"
+                              className="h-full bg-emerald-600 dark:bg-emerald-400"
                               style={{ width: String(pct) + '%' }}
                             />
                           </div>
@@ -1607,7 +1607,7 @@ export const App: React.FC = () => {
                     })}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 space-y-3">
+                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
                     <h2 className="font-serif text-xl font-bold">
                       Autores con Más Libros en tu Colección
                     </h2>
@@ -1624,21 +1624,21 @@ export const App: React.FC = () => {
 
                       if (topAuthors.length === 0) {
                         return (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-stone-500 dark:text-slate-400">
                             No hay autores registrados todavía.
                           </p>
                         );
                       }
 
                       return (
-                        <div className="divide-y divide-slate-200 dark:divide-[#222B3C] text-xs">
+                        <div className="divide-y divide-amber-900/15 dark:divide-[#222B3C] text-xs">
                           {topAuthors.map(([authorName, count]) => (
                             <div
                               key={authorName}
                               className="py-2 flex items-center justify-between"
                             >
                               <span className="font-medium">{authorName}</span>
-                              <span className="rounded-full bg-amber-500/15 text-amber-300 px-2.5 py-0.5 font-semibold">
+                              <span className="rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 font-semibold">
                                 {count} {count === 1 ? 'libro' : 'libros'}
                               </span>
                             </div>
@@ -1650,29 +1650,29 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-[#253044] bg-white dark:bg-[#141A26] p-5 space-y-3">
+              <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
                 <h2 className="font-serif text-xl font-bold">
                   Progreso de Lectura de las Sagas (Sobre Volúmenes Registrados)
                 </h2>
                 {sagasWithBooks.length === 0 ? (
-                  <p className="text-xs text-slate-400">No hay sagas registradas.</p>
+                  <p className="text-xs text-stone-500 dark:text-slate-400">No hay sagas registradas.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {sagasWithBooks.map((item) => (
                       <div
                         key={item.saga.id}
-                        className="rounded-xl border border-slate-200 dark:border-[#242E42] p-3.5 space-y-1.5"
+                        className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3.5 space-y-1.5"
                       >
                         <div className="flex justify-between text-xs font-semibold">
                           <span>{item.saga.nombre}</span>
-                          <span className="text-amber-400">
+                          <span className="text-amber-800 dark:text-amber-400">
                             {item.readCount} / {item.registeredCount} volúmenes registrados leídos (
                             {item.progressPercent}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full bg-amber-400"
+                            className="h-full bg-amber-500 dark:bg-amber-400"
                             style={{ width: String(item.progressPercent) + '%' }}
                           />
                         </div>
@@ -1686,13 +1686,15 @@ export const App: React.FC = () => {
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 dark:border-[#222B3C] bg-white/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-5 py-2 text-[10px]">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-5 py-2 text-[10px]">
         <button
           type="button"
           onClick={() => setActiveSection('dashboard')}
           className={
             'flex flex-col items-center gap-1 ' +
-            (activeSection === 'dashboard' ? 'text-amber-400 font-bold' : 'text-slate-400')
+            (activeSection === 'dashboard'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
           }
         >
           <LayoutDashboard className="w-4 h-4" />
@@ -1703,7 +1705,9 @@ export const App: React.FC = () => {
           onClick={() => setActiveSection('library')}
           className={
             'flex flex-col items-center gap-1 ' +
-            (activeSection === 'library' ? 'text-amber-400 font-bold' : 'text-slate-400')
+            (activeSection === 'library'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
           }
         >
           <Library className="w-4 h-4" />
@@ -1714,7 +1718,9 @@ export const App: React.FC = () => {
           onClick={() => setActiveSection('shelf-reading')}
           className={
             'flex flex-col items-center gap-1 ' +
-            (activeSection.startsWith('shelf-') ? 'text-amber-400 font-bold' : 'text-slate-400')
+            (activeSection.startsWith('shelf-')
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
           }
         >
           <Clock className="w-4 h-4" />
@@ -1725,7 +1731,9 @@ export const App: React.FC = () => {
           onClick={() => setActiveSection('sagas')}
           className={
             'flex flex-col items-center gap-1 ' +
-            (activeSection === 'sagas' ? 'text-amber-400 font-bold' : 'text-slate-400')
+            (activeSection === 'sagas'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
           }
         >
           <Layers className="w-4 h-4" />
@@ -1736,7 +1744,9 @@ export const App: React.FC = () => {
           onClick={() => setActiveSection('stats')}
           className={
             'flex flex-col items-center gap-1 ' +
-            (activeSection === 'stats' ? 'text-amber-400 font-bold' : 'text-slate-400')
+            (activeSection === 'stats'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
           }
         >
           <BarChart3 className="w-4 h-4" />
@@ -1787,11 +1797,11 @@ export const App: React.FC = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md rounded-2xl border border-[#283246] bg-white dark:bg-[#141A26] p-6 space-y-4 shadow-2xl">
-            <h3 className="font-serif text-xl font-bold text-rose-400">
+          <div className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl">
+            <h3 className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
               Confirmar eliminación
             </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
               ¿Seguro que deseas eliminar <strong>"{bookToDelete.nombre}"</strong> de tu biblioteca?
               Esta acción no se puede deshacer.
             </p>
@@ -1799,7 +1809,7 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBookToDelete(null)}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-xs"
+                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300"
               >
                 Cancelar
               </button>

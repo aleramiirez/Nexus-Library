@@ -2,10 +2,9 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * Fondo animado para Nexus Library.
- * Motas de polvo dorado flotando en una biblioteca, con haces de luz suaves
- * y "nexos" (líneas tenues) entre las motas cercanas. Reacciona suavemente al ratón.
- *
- * Los haces de luz usan la clase .nexus-rays (ver CSS en index.css).
+ * Motas de polvo dorado / bronce y "nexos" (constelaciones tenues) entre las motas cercanas.
+ * Se adapta dinámicamente tanto al modo claro (papel crema con tonos bronce, ámbar tostado y burdeos)
+ * como al modo oscuro (oro brillante, ámbar y carmesí).
  */
 
 type Mote = {
@@ -15,12 +14,14 @@ type Mote = {
   vx: number;
   vy: number;
   phase: number; // desfase del parpadeo y del vaivén
-  color: string; // "r, g, b"
+  colorIdx: number;
 };
 
-// oro, ámbar, ámbar, burdeos claro (de tu paleta nexus)
-const COLORS = ['229, 193, 88', '212, 155, 75', '212, 155, 75', '176, 64, 82'];
-const LINK_DIST = 120;
+// Paleta modo oscuro: oro, ámbar, ámbar, burdeos claro
+const DARK_COLORS = ['229, 193, 88', '212, 155, 75', '212, 155, 75', '176, 64, 82'];
+// Paleta modo claro (papel crema): bronce antiguo, ámbar sepia, oro viejo, burdeos tinta
+const LIGHT_COLORS = ['162, 102, 24', '138, 82, 18', '180, 116, 30', '138, 32, 46'];
+const LINK_DIST = 125;
 
 export const AnimatedBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -42,11 +43,11 @@ export const AnimatedBackground: React.FC = () => {
     const spawn = (anywhere: boolean): Mote => ({
       x: Math.random() * w,
       y: anywhere ? Math.random() * h : h + 10,
-      r: Math.random() * 1.8 + 0.6,
+      r: Math.random() * 1.8 + 0.65,
       vx: (Math.random() - 0.5) * 0.15,
-      vy: -(Math.random() * 0.25 + 0.05), // suben despacio
+      vy: -(Math.random() * 0.25 + 0.05),
       phase: Math.random() * Math.PI * 2,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      colorIdx: Math.floor(Math.random() * DARK_COLORS.length)
     });
 
     const resize = () => {
@@ -56,7 +57,6 @@ export const AnimatedBackground: React.FC = () => {
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      // menos motas en pantallas pequeñas para cuidar la batería
       const count = Math.min(80, Math.floor((w * h) / 18000));
       motes = Array.from({ length: count }, () => spawn(true));
     };
@@ -64,11 +64,14 @@ export const AnimatedBackground: React.FC = () => {
     const frame = (t: number) => {
       ctx.clearRect(0, 0, w, h);
 
-      // suaviza el seguimiento del ratón
+      const isDark = document.documentElement.classList.contains('dark');
+      const palette = isDark ? DARK_COLORS : LIGHT_COLORS;
+      const linkRgb = isDark ? '212, 155, 75' : '150, 94, 24';
+      const linkMaxAlpha = isDark ? 0.22 : 0.28;
+
       mouse.x += (mouse.tx - mouse.x) * 0.04;
       mouse.y += (mouse.ty - mouse.y) * 0.04;
 
-      // posiciones calculadas (con parallax según el tamaño de la mota)
       const pos = motes.map((m) => {
         const sway = Math.sin(t / 2500 + m.phase) * 12;
         const depth = m.r * 10;
@@ -78,15 +81,15 @@ export const AnimatedBackground: React.FC = () => {
         };
       });
 
-      // nexos entre motas cercanas
-      ctx.lineWidth = 0.6;
+      // Nexos (constelaciones) entre motas cercanas
+      ctx.lineWidth = isDark ? 0.6 : 0.7;
       for (let i = 0; i < motes.length; i++) {
         for (let j = i + 1; j < motes.length; j++) {
           const dx = pos[i].x - pos[j].x;
           const dy = pos[i].y - pos[j].y;
           const d = Math.hypot(dx, dy);
           if (d < LINK_DIST) {
-            ctx.strokeStyle = `rgba(212, 155, 75, ${(1 - d / LINK_DIST) * 0.22})`;
+            ctx.strokeStyle = `rgba(${linkRgb}, ${(1 - d / LINK_DIST) * linkMaxAlpha})`;
             ctx.beginPath();
             ctx.moveTo(pos[i].x, pos[i].y);
             ctx.lineTo(pos[j].x, pos[j].y);
@@ -95,15 +98,19 @@ export const AnimatedBackground: React.FC = () => {
         }
       }
 
-      // motas con brillo suave y parpadeo
+      // Motas con brillo suave y parpadeo
       motes.forEach((m, i) => {
         const twinkle = 0.45 + 0.55 * Math.sin(t / 1400 + m.phase) ** 2;
         const { x, y } = pos[i];
-        const glow = m.r * 6;
+        const color = palette[m.colorIdx];
+        const glow = m.r * (isDark ? 6 : 5.5);
+        const coreAlpha = (isDark ? 0.9 : 0.85) * twinkle;
+        const midAlpha = (isDark ? 0.25 : 0.28) * twinkle;
+
         const g = ctx.createRadialGradient(x, y, 0, x, y, glow);
-        g.addColorStop(0, `rgba(${m.color}, ${0.9 * twinkle})`);
-        g.addColorStop(0.25, `rgba(${m.color}, ${0.25 * twinkle})`);
-        g.addColorStop(1, `rgba(${m.color}, 0)`);
+        g.addColorStop(0, `rgba(${color}, ${coreAlpha})`);
+        g.addColorStop(0.28, `rgba(${color}, ${midAlpha})`);
+        g.addColorStop(1, `rgba(${color}, 0)`);
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(x, y, glow, 0, Math.PI * 2);
@@ -124,7 +131,6 @@ export const AnimatedBackground: React.FC = () => {
       mouse.ty = e.clientY / h;
     };
 
-    // pausa cuando la pestaña no está visible
     const onVisibility = () => {
       cancelAnimationFrame(raf);
       if (!document.hidden && !reduceMotion) raf = requestAnimationFrame(frame);
@@ -136,7 +142,7 @@ export const AnimatedBackground: React.FC = () => {
     document.addEventListener('visibilitychange', onVisibility);
 
     if (reduceMotion) {
-      frame(0); // un solo fotograma estático
+      frame(0);
       cancelAnimationFrame(raf);
     } else {
       raf = requestAnimationFrame(frame);
@@ -153,7 +159,7 @@ export const AnimatedBackground: React.FC = () => {
   return (
     <div
       aria-hidden="true"
-      className="hidden dark:block pointer-events-none select-none fixed inset-0 z-0 overflow-hidden"
+      className="block pointer-events-none select-none fixed inset-0 z-0 overflow-hidden"
     >
       <div className="nexus-rays" />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />

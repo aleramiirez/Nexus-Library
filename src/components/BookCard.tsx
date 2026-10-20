@@ -12,10 +12,14 @@ interface BookCardProps {
 }
 
 const statusBadgeStyles: Record<ReadingStatus, string> = {
-  '❌ No Leído': 'bg-slate-800/90 text-slate-300 border-slate-600/50',
-  '⏳ Leyendo': 'bg-amber-950/90 text-amber-300 border-amber-500/40',
-  '⏸️ Pausado': 'bg-rose-950/90 text-rose-300 border-rose-500/40',
-  '✅ Leído': 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'
+  '❌ No Leído':
+    'bg-stone-200/90 text-stone-700 border-stone-400/50 dark:bg-slate-800/90 dark:text-slate-300 dark:border-slate-600/50',
+  '⏳ Leyendo':
+    'bg-amber-500/15 text-amber-900 border-amber-600/40 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-500/40',
+  '⏸️ Pausado':
+    'bg-rose-500/15 text-rose-900 border-rose-500/40 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-500/40',
+  '✅ Leído':
+    'bg-emerald-500/15 text-emerald-900 border-emerald-600/40 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/40'
 };
 
 export const BookCard: React.FC<BookCardProps> = ({
@@ -33,7 +37,7 @@ export const BookCard: React.FC<BookCardProps> = ({
           onOpenDetail(book);
         }
       }}
-      className="group relative flex flex-col cursor-pointer rounded-xl border border-slate-800/90 dark:border-[#283246] bg-white dark:bg-[#161C28]/95 hover:bg-slate-50 dark:hover:bg-[#1B2333] p-3.5 shadow-sm hover:-translate-y-1.5 hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
+      className="group relative flex flex-col cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-3.5 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(180,115,30,0.22)] dark:hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
     >
       <div className="relative mb-3">
         <BookCover
@@ -73,18 +77,18 @@ export const BookCard: React.FC<BookCardProps> = ({
           </div>
 
           <h3
-            className="font-serif text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-amber-500 dark:group-hover:text-amber-300 line-clamp-2 leading-snug"
+            className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-300 line-clamp-2 leading-snug"
             title={book.nombre}
           >
             {book.nombre}
           </h3>
 
-          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1 mt-0.5">
+          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-1 mt-0.5">
             {book.autor || 'Autor sin especificar'}
           </p>
 
           {book.genero && (
-            <p className="mt-1.5 inline-block rounded bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 text-[11px] text-slate-700 dark:text-slate-300">
+            <p className="mt-1.5 inline-block rounded bg-amber-900/10 dark:bg-slate-800/80 px-2 py-0.5 text-[11px] text-stone-700 dark:text-slate-300">
               {book.genero}
             </p>
           )}

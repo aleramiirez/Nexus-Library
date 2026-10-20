@@ -172,16 +172,16 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-[#283246] bg-white dark:bg-[#141A26] text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#242E42] px-6 py-4 bg-slate-50 dark:bg-[#101520]">
+      <div className="relative w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
+        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
           <div className="flex items-center gap-2.5">
-            <Cloud className="w-5 h-5 text-amber-400" />
+            <Cloud className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             <h2 className="font-serif text-xl font-bold">Mi Cuenta</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -193,10 +193,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
               className={
                 'rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
                 (feedback.type === 'success'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                   : feedback.type === 'error'
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-                  : 'border-amber-500/40 bg-amber-500/10 text-amber-200')
+                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-300'
+                  : 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200')
               }
             >
               {feedback.type === 'success' ? (
@@ -215,31 +215,31 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                   {(user.email || 'L').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                     <ShieldCheck className="w-3.5 h-3.5" /> Sesión activa
                   </span>
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-stone-900 dark:text-white truncate">
                     {user.email || 'Lector Invitado'}
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] p-4 flex items-center justify-between gap-3">
+              <div className="rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#101520] p-4 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
                     Colección en la nube
                   </h3>
                   {syncResult?.synced ? (
-                    <p className="text-xs text-slate-300 mt-1">
+                    <p className="text-xs text-stone-700 dark:text-slate-300 mt-1">
                       <strong>{syncResult.totalRemoteBooks}</strong>{' '}
                       {syncResult.totalRemoteBooks === 1 ? 'libro' : 'libros'} y{' '}
                       <strong>{syncResult.totalRemoteSagas}</strong>{' '}
                       {syncResult.totalRemoteSagas === 1 ? 'saga' : 'sagas'} guardados.
                     </p>
                   ) : syncResult?.error ? (
-                    <p className="text-xs text-rose-400 mt-1">{syncResult.error}</p>
+                    <p className="text-xs text-rose-700 dark:text-rose-400 mt-1">{syncResult.error}</p>
                   ) : (
-                    <p className="text-xs text-slate-400 mt-1">Sincronizado con tu cuenta.</p>
+                    <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">Sincronizado con tu cuenta.</p>
                   )}
                 </div>
                 <button
@@ -256,13 +256,13 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
               {user.is_anonymous && (
                 <form
                   onSubmit={handleEmailAuth}
-                  className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3"
+                  className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5 p-4 space-y-3"
                 >
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5" />
                     Vincular sesión anónima a cuenta permanente
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-stone-600 dark:text-slate-400">
                     Convierte tu usuario anónimo actual en una cuenta con correo y contraseña sin
                     perder ninguno de los libros o sagas ya asociados a tu <code>user_id</code>.
                   </p>
@@ -273,7 +273,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="tu@email.com"
-                      className="rounded-lg border border-[#283246] bg-[#0D1017] px-3 py-2 text-xs text-white"
+                      className="rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-900 dark:text-white"
                     />
                     <input
                       type="password"
@@ -282,7 +282,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Contraseña (mín. 6 caracteres)"
-                      className="rounded-lg border border-[#283246] bg-[#0D1017] px-3 py-2 text-xs text-white"
+                      className="rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-900 dark:text-white"
                     />
                   </div>
                   <button
@@ -296,12 +296,12 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                 </form>
               )}
 
-              <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-[#242E42]">
+              <div className="flex justify-end pt-2 border-t border-amber-900/20 dark:border-[#242E42]">
                 <button
                   type="button"
                   disabled={isLoading}
                   onClick={handleSignOut}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 px-4 py-2 text-xs font-semibold transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 px-4 py-2 text-xs font-semibold transition"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Cerrar sesión
@@ -310,14 +310,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
                 Inicia sesión o crea una cuenta para activar la persistencia en la nube con{' '}
                 <strong>Supabase</strong>. Al autenticarte, los libros y sagas que tengas en
                 IndexedDB local se migrarán automáticamente a tu cuenta sin duplicados y sin borrar
                 tu copia local.
               </p>
 
-              <div className="flex rounded-xl border border-slate-200 dark:border-[#283246] bg-slate-100 dark:bg-[#101520] p-1">
+              <div className="flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#f0e5cc] dark:bg-[#101520] p-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -328,7 +328,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
                     (mode === 'login'
                       ? 'bg-amber-500 text-slate-950'
-                      : 'text-slate-400 hover:text-white')
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
                   }
                 >
                   <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión
@@ -343,7 +343,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
                     (mode === 'signup'
                       ? 'bg-amber-500 text-slate-950'
-                      : 'text-slate-400 hover:text-white')
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
                   }
                 >
                   <UserPlus className="w-3.5 h-3.5" /> Crear Cuenta
@@ -359,7 +359,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="lector@ejemplo.com"
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
+                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
                   />
                 </div>
                 <div>
@@ -371,7 +371,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#283246] bg-slate-50 dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
+                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
                   />
                 </div>
                 <button
@@ -385,18 +385,18 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
               </form>
 
               {authSettings?.anonymousEnabled ? (
-                <div className="pt-3 border-t border-slate-200 dark:border-[#242E42]">
+                <div className="pt-3 border-t border-amber-900/20 dark:border-[#242E42]">
                   <button
                     type="button"
                     disabled={isLoading}
                     onClick={handleAnonymousSignIn}
-                    className="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 py-2 px-3 text-xs font-semibold transition"
+                    className="w-full rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
                   >
                     Continuar con sesión anónima en la nube
                   </button>
                 </div>
               ) : (
-                <div className="rounded-xl border border-slate-200 dark:border-[#242E42] bg-slate-50 dark:bg-[#101520] p-3 text-[11px] text-slate-400 leading-relaxed">
+                <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3 text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
                   <strong>Nota sobre autenticación:</strong> Las sesiones anónimas están
                   deshabilitadas actualmente en la configuración de este proyecto Supabase (
                   <code>anonymous_users: false</code>). Inicia sesión con correo y contraseña para

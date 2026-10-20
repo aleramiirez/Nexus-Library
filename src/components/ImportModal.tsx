@@ -187,15 +187,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative w-full max-w-3xl rounded-2xl border border-[#283246] bg-white dark:bg-[#141A26] text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#242E42] px-6 py-4 bg-slate-50 dark:bg-[#101520]">
+      <div className="relative w-full max-w-3xl rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden my-6">
+        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-6 py-4 bg-[#f0e5cc] dark:bg-[#101520]">
           <h2 className="font-serif text-xl font-bold">
             Copias de Seguridad y Datos de la Biblioteca
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -207,10 +207,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               className={
                 'rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
                 (statusMessage.type === 'success'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                   : statusMessage.type === 'error'
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-                  : 'border-amber-500/40 bg-amber-500/10 text-amber-200')
+                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-300'
+                  : 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200')
               }
             >
               {statusMessage.type === 'success' ? (
@@ -223,12 +223,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-slate-200 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#101520] p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-serif text-lg font-bold text-amber-500 dark:text-amber-300 flex items-center gap-2">
+                <h3 className="font-serif text-lg font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
                   <Download className="w-4 h-4" /> Exportar Biblioteca
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                   Descarga una copia completa en JSON (incluyendo libros, sagas y portadas) para
                   respaldar tu colección o llevarla a otro dispositivo, o expórtala en CSV.
                 </p>
@@ -244,24 +244,24 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDownloadCsvExport}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:border-amber-400 px-3.5 py-2 text-xs font-semibold"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-900/25 dark:border-slate-600 bg-[#fffcf5] dark:bg-transparent hover:border-amber-600 dark:hover:border-amber-400 px-3.5 py-2 text-xs font-semibold text-stone-800 dark:text-slate-200"
                 >
                   <FileSpreadsheet className="w-4 h-4" /> Exportar CSV
                 </button>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#101520] p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-serif text-lg font-bold text-amber-500 dark:text-amber-300 flex items-center gap-2">
+                <h3 className="font-serif text-lg font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
                   <Upload className="w-4 h-4" /> Restaurar Copia JSON
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                   Restaura un archivo de respaldo JSON generado por NEXUS LIBRARY. Los libros ya
                   existentes se conservarán sin duplicarse.
                 </p>
               </div>
-              <label className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-200 font-semibold px-4 py-2 text-xs cursor-pointer transition">
+              <label className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/15 dark:bg-amber-500/10 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold px-4 py-2 text-xs cursor-pointer transition">
                 <Upload className="w-4 h-4" /> Seleccionar archivo .JSON
                 <input
                   type="file"
@@ -273,18 +273,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 dark:border-[#283246] bg-slate-50 dark:bg-[#101520] p-4">
-            <h3 className="font-serif text-lg font-bold text-amber-500 dark:text-amber-300">
+          <div className="rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#101520] p-4">
+            <h3 className="font-serif text-lg font-bold text-amber-800 dark:text-amber-300">
               Autocompletar portadas y metadatos faltantes
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+            <p className="text-xs text-stone-700 dark:text-slate-300 mt-1 leading-relaxed">
               Si tienes libros registrados manualmente sin imagen de cubierta, puedes buscarlos
               automáticamente en Open Library y Google Books para recuperar su portada oficial,
               año, páginas e ISBN, manteniendo intactos tus estados de lectura y puntuaciones.
             </p>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-stone-600 dark:text-slate-400">
                 Libros sin portada actualmente: <strong>{booksMissingCovers.length}</strong>
               </span>
               <button
@@ -304,15 +304,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
             {enrichProgress && (
               <div className="mt-3">
-                <div className="flex justify-between text-xs text-amber-400 mb-1">
+                <div className="flex justify-between text-xs text-amber-800 dark:text-amber-400 mb-1">
                   <span>Consultando catálogos bibliográficos...</span>
                   <span>
                     {enrichProgress.current} / {enrichProgress.total}
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full bg-amber-400 transition-all"
+                    className="h-full bg-amber-500 dark:bg-amber-400 transition-all"
                     style={{ width: progressPct }}
                   />
                 </div>

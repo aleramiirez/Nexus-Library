@@ -18,15 +18,27 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0d1017;
+  background: #efe4cb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #263147;
+  background: #c7b28b;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #b08538;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0d1017;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #263147;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
   background: #d49b4b;
 }
 
@@ -47,6 +59,22 @@ iframe[src*="netlify"],
   position: absolute;
   inset: -20%;
   background:
+    radial-gradient(ellipse 55% 45% at 18% 12%, rgba(180, 120, 40, 0.16), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 20%, rgba(138, 38, 52, 0.11), transparent 70%),
+    conic-gradient(
+      from 205deg at 50% -15%,
+      transparent 0deg,
+      rgba(195, 138, 45, 0.1) 18deg,
+      transparent 38deg,
+      rgba(165, 105, 30, 0.08) 56deg,
+      transparent 80deg
+    );
+  filter: blur(42px);
+  animation: nexusRaysSway 18s ease-in-out infinite alternate;
+}
+
+html.dark .nexus-rays {
+  background:
     radial-gradient(ellipse 55% 45% at 18% 12%, rgba(212, 155, 75, 0.12), transparent 70%),
     radial-gradient(ellipse 50% 40% at 85% 20%, rgba(176, 64, 82, 0.1), transparent 70%),
     conic-gradient(
@@ -57,8 +85,6 @@ iframe[src*="netlify"],
       rgba(212, 155, 75, 0.05) 56deg,
       transparent 80deg
     );
-  filter: blur(42px);
-  animation: nexusRaysSway 18s ease-in-out infinite alternate;
 }
 
 @keyframes nexusRaysSway {
