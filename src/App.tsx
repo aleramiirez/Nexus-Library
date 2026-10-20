@@ -500,23 +500,35 @@ export const App: React.FC = () => {
           )}
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-[#080C15] p-6 sm:p-8 lg:px-10 lg:py-12 shadow-2xl min-h-[210px] sm:min-h-[245px] flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="relative overflow-hidden rounded-2xl border border-amber-800/35 dark:border-amber-500/30 bg-[#2a1d12] dark:bg-[#080C15] p-6 sm:p-8 lg:px-10 lg:py-12 shadow-xl dark:shadow-2xl min-h-[210px] sm:min-h-[245px] flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors duration-700">
                 <img
                   src="/banner-library.png"
                   alt=""
                   aria-hidden="true"
-                  className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center"
+                  className={
+                    'pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out ' +
+                    (darkMode ? 'opacity-100' : 'opacity-0')
+                  }
                 />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#080C15]/90 via-[#080C15]/60 to-[#080C15]/25" />
+                <img
+                  src="/banner-library-light.png"
+                  alt=""
+                  aria-hidden="true"
+                  className={
+                    'pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out ' +
+                    (darkMode ? 'opacity-0' : 'opacity-100')
+                  }
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#24160b]/85 via-[#24160b]/55 to-[#24160b]/15 dark:from-[#080C15]/90 dark:via-[#080C15]/60 dark:to-[#080C15]/25 transition-colors duration-700" />
 
                 <div className="relative z-10 max-w-xl">
-                  <span className="text-[11px] uppercase tracking-[0.22em] text-amber-400 font-semibold drop-shadow">
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-amber-300 dark:text-amber-400 font-semibold drop-shadow">
                     Biblioteca Digital Personal
                   </span>
-                  <h1 className="font-serif text-2xl sm:text-4xl font-bold text-white mt-1 drop-shadow-md">
+                  <h1 className="font-serif text-2xl sm:text-4xl font-bold text-[#fffcf5] dark:text-white mt-1 drop-shadow-md">
                     Panel de Lectura NEXUS
                   </h1>
-                  <p className="text-xs sm:text-sm text-slate-200/95 mt-2 leading-relaxed drop-shadow">
+                  <p className="text-xs sm:text-sm text-amber-50/95 dark:text-slate-200/95 mt-2 leading-relaxed drop-shadow">
                     Explora tu colección visual de libros, organiza tus lecturas por estanterías y
                     sagas, y añade nuevas ediciones buscando por título, autor o ISBN con portada
                     automática.
@@ -533,7 +545,7 @@ export const App: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveSection('library')}
-                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-[#0B0E14]/75 hover:bg-amber-500/20 backdrop-blur-sm text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
                   >
                     <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>
