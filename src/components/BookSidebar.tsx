@@ -16,6 +16,7 @@ import {
   HardDrive,
   type LucideIcon
 } from 'lucide-react';
+import { BookmarkMarker } from './BookmarkMarker';
 
 export type NavigationSection =
   | 'dashboard'
@@ -81,13 +82,13 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
         onClick={() => onNavigate(id)}
         aria-current={active ? 'page' : undefined}
         className={
-          'book-item relative w-full flex items-center gap-2.5 pl-3 pr-3 py-2 rounded-md transition ' +
+          'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
           (active
-            ? 'book-item-active text-amber-700 dark:text-amber-300'
+            ? 'book-item-active text-amber-800 dark:text-amber-300'
             : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5')
         }
       >
-        {active && <span className="book-ribbon" aria-hidden="true" />}
+        {active && <BookmarkMarker />}
         <Icon className={'w-4 h-4 shrink-0 ' + iconClass} />
         <span className="font-serif text-[15px] font-semibold tracking-wide whitespace-nowrap">
           {label}
@@ -168,7 +169,7 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
           </div>
 
           {/* Índice */}
-          <nav className="flex-1 px-3 overflow-y-auto" aria-label="Índice">
+          <nav className="flex-1 pl-3 pr-3 overflow-y-auto overflow-x-hidden" aria-label="Índice">
             <p className="px-3 pt-2 font-serif italic text-[11px] tracking-[0.3em] uppercase text-stone-400 dark:text-slate-500">
               Índice
             </p>
