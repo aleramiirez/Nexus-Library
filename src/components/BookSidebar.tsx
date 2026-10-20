@@ -158,7 +158,7 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
             <span className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-600/50" />
           </div>
 
-          <div className="p-4 pb-1">
+          <div className="px-4 pt-3 pb-2">
             <button
               type="button"
               onClick={onAddBook}
@@ -170,7 +170,7 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
 
           {/* Índice */}
           <nav className="flex-1 pl-3 pr-3 overflow-y-auto overflow-x-hidden" aria-label="Índice">
-            <p className="px-3 pt-0.5 pb-2.5 font-serif italic text-[11px] tracking-[0.3em] uppercase text-stone-400 dark:text-slate-500">
+            <p className="px-3 pt-2 pb-1.5 font-serif italic text-[11px] tracking-[0.3em] uppercase text-stone-400 dark:text-slate-500">
               Índice
             </p>
 
