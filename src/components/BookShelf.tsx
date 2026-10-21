@@ -8,42 +8,37 @@ interface BookShelfProps {
   onOpenDetail: (bookId: string) => void;
 }
 
+// Debe coincidir con --shelf-pad y --shelf-gap de book-shelf.css
+const SHELF_PAD = 14;
+const SHELF_GAP = 20;
+const MIN_BOOK_WIDTH = 128;
 const MAX_COLS = 6;
 
-function getInitialCols(): number {
-  if (typeof window === 'undefined') return 3;
-  const w = window.innerWidth;
-  if (w < 640) return 3;
-  if (w < 768) return 4;
-  if (w < 1024) return 5;
-  return 6;
-}
+// Anchura estable (88-100 %) según el id: los libros no son todos idénticos, como en una estantería real
+const bookWidth = (id: string) => {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return 88 + (h % 13);
+};
 
 /**
  * Vista de estantería: una librería de madera con baldas.
  * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo.
  * - Título de cada libro en una placa de latón en el canto de la balda.
- * - El número de libros por balda se adapta al ancho disponible (3 en móvil estándar, hasta 6 en escritorio).
+ * - El número de libros por balda se adapta al ancho disponible.
  */
 export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
   const backRef = useRef<HTMLDivElement>(null);
-  const [cols, setCols] = useState<number>(getInitialCols);
+  const [cols, setCols] = useState(MAX_COLS);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     const el = backRef.current;
     if (!el) return;
     const update = () => {
-      const w = el.clientWidth;
-      if (w <= 0) return;
-      const isCompact = w < 520;
-      const pad = isCompact ? 10 : 14;
-      const gap = isCompact ? 12 : 20;
-      const minBookWidth = isCompact ? 86 : 128;
-      const available = w - pad * 2;
-      const fit = Math.floor((available + gap) / (minBookWidth + gap));
-      const targetCols = Math.min(MAX_COLS, Math.max(2, fit));
-      setCols((prev) => (prev !== targetCols ? targetCols : prev));
+      const available = el.clientWidth - SHELF_PAD * 2;
+      const fit = Math.floor((available + SHELF_GAP) / (MIN_BOOK_WIDTH + SHELF_GAP));
+      setCols(Math.min(MAX_COLS, Math.max(2, fit)));
     };
     update();
     const observer = new ResizeObserver(update);
@@ -56,9 +51,7 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     rows.push(books.slice(i, i + cols));
   }
 
-  const gridStyle: React.CSSProperties = {
-    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
-  };
+  const gridStyle = { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
 
   return (
     <div className="bookcase">
@@ -67,14 +60,14 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
       <div className="bookcase-body">
         <div className="bookcase-back" ref={backRef}>
           {rows.map((row, rowIdx) => (
-            <div className="shelf-row" key={`shelf-row-${cols}-${rowIdx}`}>
+            <div className="shelf-row" key={rowIdx}>
               <div className="shelf-books" style={gridStyle}>
                 {row.map((book, i) => (
                   <button
                     key={book.id}
                     type="button"
                     className="shelf-book"
-                    style={{ '--i': i } as React.CSSProperties}
+                    style={{ '--i': i, '--w': `${bookWidth(book.id)}%` } as React.CSSProperties}
                     onClick={() => onOpenDetail(book.id)}
                     onMouseEnter={() => setActiveId(book.id)}
                     onMouseLeave={() => setActiveId(null)}
@@ -83,16 +76,15 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
                     aria-label={book.nombre}
                     title={book.nombre}
                   >
-                    <div className="shelf-cover group">
-                      <BookCover
-                        nombre={book.nombre}
-                        autor={book.autor}
-                        portadaUrl={book.portadaUrl}
-                        portadaFallbackUrl={book.portadaFallbackUrl}
-                        portadaDataUrl={book.portadaDataUrl}
-                        size="sm"
-                      />
-                    </div>
+                    <BookCover
+                      nombre={book.nombre}
+                      autor={book.autor}
+                      portadaUrl={book.portadaUrl}
+                      portadaFallbackUrl={book.portadaFallbackUrl}
+                      portadaDataUrl={book.portadaDataUrl}
+                      size="sm"
+                      variant="book"
+                    />
                   </button>
                 ))}
               </div>

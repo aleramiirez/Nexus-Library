@@ -9,7 +9,25 @@ interface BookCoverProps {
   portadaDataUrl?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  /** 'card' (por defecto): tarjeta con marco. 'book': libro de tapa dura sin marco (vista Estantería). */
+  variant?: 'card' | 'book';
 }
+
+// Telas de encuadernación para libros sin portada (color estable según título/autor)
+const CLOTH_PALETTE: Array<[string, string]> = [
+  ['#7a2231', '#4a1320'], // burdeos
+  ['#24523b', '#12301f'], // verde bosque
+  ['#23406e', '#122241'], // azul marino
+  ['#8a5a22', '#553413'], // ocre
+  ['#3b4252', '#1e222c'], // pizarra
+  ['#5b2f5e', '#321a35'] // ciruela
+];
+
+const hashString = (value: string) => {
+  let h = 0;
+  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0;
+  return h;
+};
 
 export const BookCover: React.FC<BookCoverProps> = ({
   nombre,
@@ -18,7 +36,8 @@ export const BookCover: React.FC<BookCoverProps> = ({
   portadaFallbackUrl,
   portadaDataUrl,
   className = '',
-  size = 'md'
+  size = 'md',
+  variant = 'card'
 }) => {
   const candidates = [portadaDataUrl, portadaUrl, portadaFallbackUrl].filter(
     (u): u is string => Boolean(u && u.trim())
@@ -51,6 +70,34 @@ export const BookCover: React.FC<BookCoverProps> = ({
 
   const initials = getAuthorInitials(autor);
   const titleSizeClass = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-xl' : 'text-sm';
+
+  if (variant === 'book') {
+    const [cloth1, cloth2] = CLOTH_PALETTE[hashString(nombre + autor) % CLOTH_PALETTE.length];
+    return (
+      <div className={'book-cover ' + className}>
+        {currentSrc ? (
+          <img
+            src={currentSrc}
+            alt={'Portada de ' + nombre}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            loading="lazy"
+            className="book-cover-img"
+          />
+        ) : (
+          <div
+            className="book-cover-cloth"
+            style={{ '--cloth-1': cloth1, '--cloth-2': cloth2 } as React.CSSProperties}
+            aria-label={'Cubierta de tela para ' + nombre}
+          >
+            <span className="book-cover-initials">{initials}</span>
+            <p className="book-cover-title">{nombre || 'Sin título'}</p>
+            <p className="book-cover-author">{autor || 'Autor desconocido'}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
