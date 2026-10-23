@@ -800,8 +800,8 @@ export const App: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative w-full sm:w-56 md:w-64 lg:w-72">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                  <div className="relative w-full sm:w-44 md:w-52 lg:w-60">
                     <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
@@ -821,6 +821,16 @@ export const App: React.FC = () => {
                       </button>
                     )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateBook}
+                    title="Añadir libro"
+                    aria-label="Añadir libro"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
 
                   {(() => {
                     const activeFilterCount = [
@@ -871,7 +881,7 @@ export const App: React.FC = () => {
                       }
                       title="Vista de estantería visual"
                     >
-                      <Rows3 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Estantería</span>
+                      <Rows3 className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Estantería</span>
                     </button>
                     <button
                       type="button"
@@ -884,7 +894,7 @@ export const App: React.FC = () => {
                       }
                       title="Vista de cuadrícula de portadas"
                     >
-                      <Grid className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Cuadrícula</span>
+                      <Grid className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Cuadrícula</span>
                     </button>
                     <button
                       type="button"
@@ -897,19 +907,9 @@ export const App: React.FC = () => {
                       }
                       title="Vista de lista compacta"
                     >
-                      <List className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Lista</span>
+                      <List className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Lista</span>
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenCreateBook}
-                    title="Añadir libro"
-                    aria-label="Añadir libro"
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
 
