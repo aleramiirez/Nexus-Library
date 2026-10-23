@@ -439,7 +439,6 @@ export const App: React.FC = () => {
         onNavigate={setActiveSection}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode((d) => !d)}
-        onAddBook={handleOpenCreateBook}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenImport={() => setIsImportOpen(true)}
         onLeaveGuestMode={() => setOfflineGuestMode(false)}

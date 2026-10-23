@@ -5,7 +5,6 @@ import {
   Library,
   Layers,
   BarChart3,
-  Plus,
   Sun,
   Moon,
   BookMarked,
@@ -34,7 +33,6 @@ interface BookSidebarProps {
   onNavigate: (section: NavigationSection) => void;
   darkMode: boolean;
   onToggleTheme: () => void;
-  onAddBook: () => void;
   onOpenAuth: () => void;
   onOpenImport: () => void;
   onLeaveGuestMode: () => void;
@@ -66,7 +64,6 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
   onNavigate,
   darkMode,
   onToggleTheme,
-  onAddBook,
   onOpenAuth,
   onOpenImport,
   onLeaveGuestMode,
@@ -188,23 +185,10 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
           </div>
 
           {/* Adorno */}
-          <div className="mx-6 flex items-center gap-2 text-amber-600/70" aria-hidden="true">
+          <div className="mx-6 mb-2 flex items-center gap-2 text-amber-600/70" aria-hidden="true">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-600/50" />
             <span className="text-[9px]">◆</span>
             <span className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-600/50" />
-          </div>
-
-          <div className="px-4 pt-3 pb-2">
-            <button
-              type="button"
-              onClick={() => {
-                onCloseMobile?.();
-                onAddBook();
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2.5 px-4 text-xs shadow-lg transition"
-            >
-              <Plus className="w-4 h-4" /> Añadir libro
-            </button>
           </div>
 
           {/* Índice */}
