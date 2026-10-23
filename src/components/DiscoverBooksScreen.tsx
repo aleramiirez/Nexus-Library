@@ -246,64 +246,64 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
         </div>
       )}
 
-      {/* ─── Hero Banner & Buscador ─── */}
-      <div className="relative overflow-hidden rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-gradient-to-br from-[#f6eee0] via-[#f9f4ea] to-[#ebdcc2] dark:from-[#151C2B] dark:via-[#111722] dark:to-[#090D14] p-5 sm:p-8 lg:p-9 shadow-md transition-colors">
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-700/30 dark:border-amber-400/30 bg-amber-500/10 dark:bg-amber-500/15 px-3 py-1 text-[11px] font-semibold text-amber-900 dark:text-amber-300 uppercase tracking-widest mb-3">
-            <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            Salón de Descubrimientos
+      {/* ─── Cabecera Compacta & Buscador ─── */}
+      <div className="space-y-3 pb-3 border-b border-amber-900/15 dark:border-[#242E42]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Compass className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight">
+                Descubrir Libros
+              </h1>
+            </div>
+            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
+              Explora catálogos abiertos y recomendaciones según tus preferencias
+            </p>
           </div>
-          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-stone-900 dark:text-white leading-tight">
-            Descubrir Nuevas Lecturas
-          </h1>
-          <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-300 mt-2 leading-relaxed">
-            Busca obras en los catálogos universales de Open Library y Google Books, explora
-            recomendaciones basadas en lo que lees y añade cualquier volumen a tus estanterías con un solo clic.
-          </p>
 
           {/* Barra de búsqueda interactiva */}
-          <div className="mt-5 relative">
-            <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative w-full sm:w-80 md:w-96">
+            <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Buscar título, autor, saga o ISBN (ej. Dan Simmons, 1984, Stephen King)..."
-              className="w-full rounded-2xl border border-amber-900/30 dark:border-[#2E3B52] bg-[#fffcf5] dark:bg-[#0D1017] pl-11 pr-11 py-3 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none shadow-sm transition"
+              placeholder="Buscar título, autor, saga o ISBN..."
+              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-10 pr-9 py-2 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
             />
             {isSearching ? (
-              <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-4 top-1/2 -translate-y-1/2" />
+              <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
             ) : searchInput ? (
               <button
                 type="button"
                 onClick={() => setSearchInput('')}
-                className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-3.5 top-1/2 -translate-y-1/2"
+                className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
                 title="Limpiar búsqueda"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             ) : null}
           </div>
+        </div>
 
-          {/* Chips de sugerencias rápidas */}
-          <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400 mr-1">
-              Sugerencias:
-            </span>
-            {QUICK_CHIPS.map((chip) => {
-              const cleanText = chip.replace(/^[^\s]+\s/, '');
-              return (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => setSearchInput(cleanText)}
-                  className="rounded-full border border-amber-900/20 dark:border-[#283246] bg-white/70 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
-                >
-                  {chip}
-                </button>
-              );
-            })}
-          </div>
+        {/* Chips de sugerencias rápidas en tira horizontal deslizable */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-xs">
+          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400 shrink-0">
+            Sugerencias:
+          </span>
+          {QUICK_CHIPS.map((chip) => {
+            const cleanText = chip.replace(/^[^\s]+\s/, '');
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => setSearchInput(cleanText)}
+                className="shrink-0 rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
+              >
+                {chip}
+              </button>
+            );
+          })}
         </div>
       </div>
 

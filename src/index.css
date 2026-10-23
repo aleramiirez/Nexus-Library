@@ -42,6 +42,15 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #d49b4b;
 }
 
+/* Ocultar barras de scroll manteniendo la interactividad de deslizamiento */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Ocultar cualquier badge flotante externo inyectado por el proveedor de hosting (ej. Powered by Netlify) */
 body > a[href*="netlify"],
 body > div:not(#root) a[href*="netlify"],
