@@ -1,4 +1,4 @@
-import { BibliographicCandidate } from '../types/models';
+import { BibliographicCandidate, Book } from '../types/models';
 import { inferCatalogFromCategories, normalizeText } from '../constants/catalogs';
 import {
   buildOpenLibraryIdCover,
@@ -354,5 +354,253 @@ export const bookMetadataService = {
     });
 
     return verified || candidates[0];
+  },
+
+  async fetchSubjectBooks(
+    subjectKey: string,
+    limit = 14,
+    signal?: AbortSignal
+  ): Promise<BibliographicCandidate[]> {
+    const cacheKey = `${subjectKey}:${limit}`;
+    if (subjectCache.has(cacheKey)) {
+      return subjectCache.get(cacheKey)!;
+    }
+
+    const url = `https://openlibrary.org/subjects/${encodeURIComponent(subjectKey)}.json?limit=${limit}`;
+    try {
+      const res = await fetch(url, { signal });
+      if (!res.ok) return [];
+      const data = (await res.json()) as OpenLibrarySubjectResponse;
+      if (!Array.isArray(data.works)) return [];
+
+      const candidates = data.works
+        .filter((w) => Boolean(w.title))
+        .map((w, idx): BibliographicCandidate => {
+          const primaryCover = buildOpenLibraryIdCover(w.cover_id);
+          const rawCategories = Array.isArray(w.subject) ? w.subject.slice(0, 8) : [];
+          const inferred = inferCatalogFromCategories(rawCategories);
+
+          return {
+            id: 'ol-subj-' + String(w.key || idx),
+            source: 'openlibrary',
+            nombre: (w.title || '').trim(),
+            autor: Array.isArray(w.authors) && w.authors[0]?.name ? w.authors[0].name.trim() : '',
+            fechaPublicacion: parseYear(w.first_publish_year),
+            paginas: null,
+            isbn: '',
+            editorial: '',
+            idioma: 'Español',
+            edicion: w.edition_count ? `${w.edition_count} ediciones` : '',
+            sinopsis: '',
+            portadaUrl: primaryCover,
+            portadaFallbackUrl: '',
+            rawCategories,
+            suggestedGenre: inferred.genre,
+            suggestedSubgenres: inferred.subgenres
+          };
+        });
+
+      subjectCache.set(cacheKey, candidates);
+      return candidates;
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      return [];
+    }
+  },
+
+  async fetchRecommendations(
+    userBooks: Book[],
+    signal?: AbortSignal
+  ): Promise<{ reason: string; books: BibliographicCandidate[] }> {
+    const existingTitles = new Set(userBooks.map((b) => normalizeText(b.nombre)));
+
+    if (!userBooks || userBooks.length === 0) {
+      const classics = await this.fetchSubjectBooks('classic_literature', 12, signal);
+      const filtered = classics.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
+      return {
+        reason: 'Obras maestras universales para inaugurar tu biblioteca',
+        books: (filtered.length > 0 ? filtered : classics).slice(0, 8)
+      };
+    }
+
+    const authorWeights = new Map<string, number>();
+    const genreCounts = new Map<string, number>();
+
+    for (const b of userBooks) {
+      const author = (b.autor || '').trim();
+      if (author && author !== 'Desconocido' && author !== 'Autor' && author !== '—') {
+        const weight = (b.puntuacion && b.puntuacion >= 4) ? 3 : (b.progreso === '✅ Leído' ? 2 : 1);
+        authorWeights.set(author, (authorWeights.get(author) || 0) + weight);
+      }
+      if (b.genero) {
+        genreCounts.set(b.genero, (genreCounts.get(b.genero) || 0) + 1);
+      }
+    }
+
+    let topAuthor = '';
+    let maxAuthorWeight = 0;
+    for (const [author, weight] of authorWeights.entries()) {
+      if (weight > maxAuthorWeight) {
+        maxAuthorWeight = weight;
+        topAuthor = author;
+      }
+    }
+
+    let topGenre = '';
+    let maxGenreCount = 0;
+    for (const [genre, count] of genreCounts.entries()) {
+      if (count > maxGenreCount) {
+        maxGenreCount = count;
+        topGenre = genre;
+      }
+    }
+
+    if (topAuthor && maxAuthorWeight >= 2) {
+      try {
+        const authorResults = await this.searchBooks(topAuthor, signal);
+        const filtered = authorResults.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
+        if (filtered.length >= 2) {
+          return {
+            reason: `Porque has disfrutado de obras de ${topAuthor}`,
+            books: filtered.slice(0, 8)
+          };
+        }
+      } catch {
+        // Fallback to genre
+      }
+    }
+
+    const genreToSubjectMap: Record<string, string> = {
+      '✨ Fantasía': 'fantasy',
+      '🔭 Ciencia Ficción & Distopía': 'science_fiction',
+      '🔪 Terror & Suspense': 'horror',
+      '🏛️ Clásicos': 'classic_literature',
+      '🏇 Aventuras': 'adventure',
+      '❤️ Romance & Drama': 'romance',
+      '📚 No Ficción': 'history'
+    };
+
+    const subject = (topGenre && genreToSubjectMap[topGenre]) || 'fantasy';
+    const genreResults = await this.fetchSubjectBooks(subject, 16, signal);
+    const filtered = genreResults.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
+
+    return {
+      reason: topGenre
+        ? `Recomendaciones seleccionadas para tu gusto por ${topGenre}`
+        : 'Obras destacadas recomendadas para ti',
+      books: (filtered.length > 0 ? filtered : genreResults).slice(0, 8)
+    };
   }
 };
+
+interface OpenLibrarySubjectResponse {
+  name?: string;
+  work_count?: number;
+  works?: Array<{
+    key?: string;
+    title?: string;
+    authors?: Array<{ key?: string; name?: string }>;
+    cover_id?: number;
+    first_publish_year?: number;
+    edition_count?: number;
+    subject?: string[];
+  }>;
+}
+
+const subjectCache = new Map<string, BibliographicCandidate[]>();
+
+export interface DiscoverCategory {
+  id: string;
+  name: string;
+  icon: string;
+  subjectKey: string;
+  description: string;
+}
+
+export const DISCOVER_CATEGORIES: DiscoverCategory[] = [
+  {
+    id: 'fantasy',
+    name: 'Fantasía & Épica',
+    icon: '✨',
+    subjectKey: 'fantasy',
+    description: 'Mundos imaginarios, magia ancestral, reinos caídos y grandes gestas heroicas.'
+  },
+  {
+    id: 'scifi',
+    name: 'Ciencia Ficción & Distopía',
+    icon: '🔭',
+    subjectKey: 'science_fiction',
+    description: 'Exploración espacial, futuros distópicos, tecnología y el destino de la humanidad.'
+  },
+  {
+    id: 'horror',
+    name: 'Terror & Suspense',
+    icon: '🔪',
+    subjectKey: 'horror',
+    description: 'Misterios oscuros, horror gótico, casas encantadas y suspense psicológico.'
+  },
+  {
+    id: 'action',
+    name: 'Acción & Aventuras',
+    icon: '⚔️',
+    subjectKey: 'adventure',
+    description: 'Expediciones lejanas, duelos de honor, supervivencia y travesías épicas.'
+  },
+  {
+    id: 'classics',
+    name: 'Clásicos Universales',
+    icon: '🏛️',
+    subjectKey: 'classic_literature',
+    description: 'Las obras maestras fundamentales que han definido la historia de la literatura.'
+  },
+  {
+    id: 'mystery',
+    name: 'Misterio & Detectives',
+    icon: '🕵️',
+    subjectKey: 'mystery_and_detective_stories',
+    description: 'Casos sin resolver, detectives sagaces, acertijos y crímenes intrigantes.'
+  },
+  {
+    id: 'romance',
+    name: 'Romance & Drama',
+    icon: '❤️',
+    subjectKey: 'romance',
+    description: 'Historias de amor apasionadas, lazos profundos y destinos entrelazados.'
+  },
+  {
+    id: 'history',
+    name: 'Historia & No Ficción',
+    icon: '📚',
+    subjectKey: 'history',
+    description: 'Crónicas de civilizaciones, biografías de grandes personajes y divulgación.'
+  }
+];
+
+export function candidateToBookInput(
+  cand: BibliographicCandidate
+): Omit<Book, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    nombre: cand.nombre.trim(),
+    autor: cand.autor.trim(),
+    genero: cand.suggestedGenre || '',
+    subgeneros: cand.suggestedSubgenres || [],
+    fechaPublicacion: cand.fechaPublicacion,
+    paginas: cand.paginas,
+    puntuacion: null,
+    progreso: '❌ No Leído',
+    sagaId: null,
+    sagaNombre: '',
+    volumen: null,
+    fechaInicio: '',
+    fechaFin: '',
+    lecturaVirtual: '',
+    tiempoLectura: '',
+    isbn: cand.isbn || '',
+    editorial: cand.editorial || '',
+    idioma: cand.idioma || 'Español',
+    edicion: cand.edicion || '',
+    sinopsis: cand.sinopsis || '',
+    portadaUrl: cand.portadaUrl || '',
+    portadaFallbackUrl: cand.portadaFallbackUrl || ''
+  };
+}

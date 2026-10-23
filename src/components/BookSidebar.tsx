@@ -3,6 +3,7 @@ import '../book-sidebar.css';
 import {
   LayoutDashboard,
   Library,
+  Compass,
   Layers,
   BarChart3,
   Sun,
@@ -21,6 +22,7 @@ import { BookmarkMarker } from './BookmarkMarker';
 export type NavigationSection =
   | 'dashboard'
   | 'library'
+  | 'discover'
   | 'shelf-unread'
   | 'shelf-reading'
   | 'shelf-paused'
@@ -199,6 +201,7 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
 
             <NavItem id="dashboard" label="Inicio" icon={LayoutDashboard} />
             <NavItem id="library" label="Mi Biblioteca" icon={Library} count={metrics.total} />
+            <NavItem id="discover" label="Descubrir Libros" icon={Compass} />
 
             <Chapter>Estanterías de lectura</Chapter>
             <NavItem

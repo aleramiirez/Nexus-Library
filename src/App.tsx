@@ -5,6 +5,7 @@ import {
   Library,
   Layers,
   BarChart3,
+  Compass,
   Plus,
   Search,
   Grid,
@@ -50,6 +51,7 @@ import {
   supabase
 } from './services/supabaseClient';
 import {
+  BibliographicCandidate,
   Book,
   LibraryFilters,
   LibraryViewMode,
@@ -77,6 +79,8 @@ import { AuthScreen } from './components/AuthScreen';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
+import { DiscoverBooksScreen } from './components/DiscoverBooksScreen';
+import { candidateToBookInput } from './services/bookMetadataService';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -111,6 +115,7 @@ export const App: React.FC = () => {
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
@@ -306,13 +311,26 @@ export const App: React.FC = () => {
   }, [sagas, books]);
 
   const handleOpenCreateBook = () => {
+    setSelectedInitialCandidate(null);
     setEditingBook(null);
     setIsAddEditOpen(true);
   };
 
   const handleOpenEditBook = (book: Book) => {
+    setSelectedInitialCandidate(null);
     setDetailBookId(null);
     setEditingBook(book);
+    setIsAddEditOpen(true);
+  };
+
+  const handleQuickAddFromDiscover = async (candidate: BibliographicCandidate) => {
+    const bookInput = candidateToBookInput(candidate);
+    await saveBookRecord(bookInput);
+  };
+
+  const handleCustomizeFromDiscover = (candidate: BibliographicCandidate) => {
+    setEditingBook(null);
+    setSelectedInitialCandidate(candidate);
     setIsAddEditOpen(true);
   };
 
@@ -474,6 +492,19 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
+            onClick={() => setActiveSection('discover')}
+            className={
+              'p-2 rounded-lg border transition ' +
+              (activeSection === 'discover'
+                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400')
+            }
+            title="Explorar y Descubrir Libros"
+          >
+            <Compass className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => setIsAuthModalOpen(true)}
             className={
               'p-2 rounded-lg border ' +
@@ -563,6 +594,13 @@ export const App: React.FC = () => {
                     className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-black/50 transition"
                   >
                     <Plus className="w-4 h-4" /> Añadir libro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection('discover')}
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
+                  >
+                    <Compass className="w-4 h-4" /> Explorar y Descubrir
                   </button>
                   <button
                     type="button"
@@ -1196,6 +1234,14 @@ export const App: React.FC = () => {
             </div>
           )}
 
+          {activeSection === 'discover' && (
+            <DiscoverBooksScreen
+              books={books}
+              onQuickAddBook={handleQuickAddFromDiscover}
+              onCustomizeBook={handleCustomizeFromDiscover}
+            />
+          )}
+
           {activeSection === 'shelf-unread' &&
             renderShelfSection(
               '❌ No Leído',
@@ -1722,7 +1768,7 @@ export const App: React.FC = () => {
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-6 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
         <button
           type="button"
           onClick={() => setActiveSection('dashboard')}
@@ -1748,6 +1794,19 @@ export const App: React.FC = () => {
         >
           <Library className="w-4 h-4" />
           Biblioteca
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('discover')}
+          className={
+            'flex flex-col items-center gap-1 ' +
+            (activeSection === 'discover'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
+          }
+        >
+          <Compass className="w-4 h-4" />
+          Descubrir
         </button>
         <button
           type="button"
@@ -1803,9 +1862,13 @@ export const App: React.FC = () => {
       <AddEditBookModal
         isOpen={isAddEditOpen}
         editingBook={editingBook}
+        initialCandidate={selectedInitialCandidate}
         sagas={sagas}
         existingBooks={books}
-        onClose={() => setIsAddEditOpen(false)}
+        onClose={() => {
+          setIsAddEditOpen(false);
+          setSelectedInitialCandidate(null);
+        }}
         onSave={async (data, id) => {
           await saveBookRecord(data, id);
         }}

@@ -36,6 +36,7 @@ import { tryCacheCoverDataUrl } from '../services/coverService';
 interface AddEditBookModalProps {
   isOpen: boolean;
   editingBook: Book | null;
+  initialCandidate?: BibliographicCandidate | null;
   sagas: Saga[];
   existingBooks: Book[];
   onClose: () => void;
@@ -63,6 +64,7 @@ const TABS: TabDef[] = [
 export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   isOpen,
   editingBook,
+  initialCandidate,
   sagas,
   existingBooks,
   onClose,
@@ -180,6 +182,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setSinopsis(editingBook.sinopsis);
       setPortadaUrl(editingBook.portadaUrl);
       setPortadaFallbackUrl(editingBook.portadaFallbackUrl);
+    } else if (initialCandidate) {
+      applyCandidate(initialCandidate);
     } else {
       setNombre('');
       setAutor('');
@@ -205,7 +209,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setPortadaUrl('');
       setPortadaFallbackUrl('');
     }
-  }, [isOpen, editingBook]);
+  }, [isOpen, editingBook, initialCandidate]);
 
   useEffect(() => {
     if (!isOpen) return;
