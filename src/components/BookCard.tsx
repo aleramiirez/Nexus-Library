@@ -49,7 +49,7 @@ export const BookCard: React.FC<BookCardProps> = ({
         />
 
         {book.sagaNombre && (
-          <span className="absolute top-2 left-2 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
+          <span className="absolute top-2 left-2 z-10 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
             {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
           </span>
         )}

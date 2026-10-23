@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAuthorInitials } from '../services/coverService';
+import '../book-shelf.css';
 
 interface BookCoverProps {
   nombre: string;
@@ -9,8 +10,8 @@ interface BookCoverProps {
   portadaDataUrl?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-  /** 'card' (por defecto): tarjeta con marco. 'book': libro de tapa dura sin marco (vista Estantería). */
-  variant?: 'card' | 'book';
+  /** 'book' (por defecto): libro de tapa dura con textura realista. 'card': tarjeta tradicional. */
+  variant?: 'book' | 'card';
 }
 
 // Telas de encuadernación para libros sin portada (color estable según título/autor)
@@ -37,7 +38,7 @@ export const BookCover: React.FC<BookCoverProps> = ({
   portadaDataUrl,
   className = '',
   size = 'md',
-  variant = 'card'
+  variant = 'book'
 }) => {
   const candidates = [portadaDataUrl, portadaUrl, portadaFallbackUrl].filter(
     (u): u is string => Boolean(u && u.trim())
@@ -70,11 +71,12 @@ export const BookCover: React.FC<BookCoverProps> = ({
 
   const initials = getAuthorInitials(autor);
   const titleSizeClass = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-xl' : 'text-sm';
+  const sizeClass = size === 'sm' ? 'book-cover-sm' : size === 'lg' ? 'book-cover-lg' : '';
 
   if (variant === 'book') {
     const [cloth1, cloth2] = CLOTH_PALETTE[hashString(nombre + autor) % CLOTH_PALETTE.length];
     return (
-      <div className={'book-cover ' + className}>
+      <div className={`book-cover ${sizeClass} ${className}`.trim()}>
         {currentSrc ? (
           <img
             src={currentSrc}
