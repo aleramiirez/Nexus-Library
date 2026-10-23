@@ -801,7 +801,7 @@ export const App: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative w-full sm:w-64 md:w-72">
+                  <div className="relative w-full sm:w-56 md:w-64 lg:w-72">
                     <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
@@ -904,9 +904,11 @@ export const App: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleOpenCreateBook}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition"
+                    title="Añadir libro"
+                    aria-label="Añadir libro"
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
                   >
-                    <Plus className="w-4 h-4" /> Añadir libro
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
