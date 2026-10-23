@@ -286,9 +286,9 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           </div>
         </div>
 
-        {/* Chips de sugerencias rápidas en tira horizontal deslizable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-xs">
-          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400 shrink-0">
+        {/* Chips de sugerencias rápidas sin scroll horizontal */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs">
+          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400">
             Sugerencias:
           </span>
           {QUICK_CHIPS.map((chip) => {
@@ -298,7 +298,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                 key={chip}
                 type="button"
                 onClick={() => setSearchInput(cleanText)}
-                className="shrink-0 rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
+                className="rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
               >
                 {chip}
               </button>
@@ -550,8 +550,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
               </p>
             </div>
 
-            {/* Píldoras selectoras de categoría */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {/* Píldoras selectoras de categoría sin scroll horizontal */}
+            <div className="flex flex-wrap items-center gap-2">
               {DISCOVER_CATEGORIES.map((cat) => {
                 const active = cat.id === activeCategoryId;
                 return (
@@ -560,10 +560,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                     type="button"
                     onClick={() => setActiveCategoryId(cat.id)}
                     className={
-                      'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition shadow-sm ' +
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition shadow-sm ' +
                       (active
                         ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                        : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50')
+                        : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-[#fffcf5] dark:hover:bg-[#182030]')
                     }
                   >
                     <span>{cat.icon}</span>
