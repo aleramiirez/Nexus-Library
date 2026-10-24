@@ -116,7 +116,13 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const searchAbortRef = useRef<AbortController | null>(null);
+  const recsAbortRef = useRef<AbortController | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+
+  const booksHash = useMemo(
+    () => books.map((b) => b.id).sort().join(','),
+    [books]
+  );
 
   // Debounce search input
   useEffect(() => {
@@ -164,32 +170,57 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     };
   }, [debouncedQuery]);
 
-  // Carga inteligente de recomendaciones personalizadas
+  // Carga inteligente de recomendaciones personalizadas con AbortController y temporizador de seguridad
   const loadRecommendations = (options?: {
     forceRefresh?: boolean;
     subFilter?: 'mix' | 'authors' | 'classics';
   }) => {
+    if (recsAbortRef.current) {
+      recsAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    recsAbortRef.current = controller;
+
     setIsLoadingRecs(true);
     const activeSub = options?.subFilter || recSubFilter;
+
+    // Temporizador de seguridad: si la red o API externa tarda más de 4.5s, no bloqueamos la interfaz
+    const safetyTimer = window.setTimeout(() => {
+      if (!controller.signal.aborted) {
+        setIsLoadingRecs(false);
+      }
+    }, 4500);
+
     bookMetadataService
       .fetchRecommendations(books, {
         subFilter: activeSub,
-        forceRefresh: options?.forceRefresh
+        forceRefresh: options?.forceRefresh,
+        signal: controller.signal
       })
       .then((recs) => {
-        setRecommendations(recs);
+        if (!controller.signal.aborted) {
+          setRecommendations(recs);
+        }
       })
-      .catch(() => {
-        // Ignorado
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
       })
       .finally(() => {
-        setIsLoadingRecs(false);
+        window.clearTimeout(safetyTimer);
+        if (!controller.signal.aborted) {
+          setIsLoadingRecs(false);
+        }
       });
   };
 
   useEffect(() => {
     loadRecommendations({ subFilter: recSubFilter });
-  }, [books, recSubFilter]);
+    return () => {
+      if (recsAbortRef.current) {
+        recsAbortRef.current.abort();
+      }
+    };
+  }, [booksHash, recSubFilter]);
 
   const handleRefreshRecs = () => {
     startTransition(() => {

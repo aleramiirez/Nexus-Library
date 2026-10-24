@@ -7,6 +7,38 @@ import {
 } from './coverService';
 
 const searchCache = new Map<string, BibliographicCandidate[]>();
+const subjectCache = new Map<string, BibliographicCandidate[]>();
+
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = 4000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (options.signal) {
+    if (options.signal.aborted) {
+      clearTimeout(timer);
+      controller.abort();
+    } else {
+      options.signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        controller.abort();
+      });
+    }
+  }
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export function extractCleanIsbn(query: string): string | null {
   const cleaned = query.replace(/[^0-9X]/gi, '').toUpperCase();
@@ -72,7 +104,7 @@ async function searchOpenLibrary(
   params.set('limit', '10');
 
   const url = 'https://openlibrary.org/search.json?' + params.toString();
-  const response = await fetch(url, { signal });
+  const response = await fetchWithTimeout(url, { signal }, 4000);
   if (!response.ok) return [];
 
   const data = (await response.json()) as { docs?: OpenLibraryDoc[] };
@@ -164,7 +196,7 @@ async function searchGoogleBooks(
   });
 
   const url = 'https://www.googleapis.com/books/v1/volumes?' + params.toString();
-  const response = await fetch(url, { signal });
+  const response = await fetchWithTimeout(url, { signal }, 3500);
   if (!response.ok) return [];
 
   const data = (await response.json()) as { items?: GoogleBooksItem[] };
@@ -612,6 +644,199 @@ export interface RecommendOptions {
   signal?: AbortSignal;
 }
 
+export const CURATED_FALLBACK_RECOMMENDATIONS: BibliographicCandidate[] = [
+  {
+    id: 'curated-pullman',
+    source: 'openlibrary',
+    nombre: 'La brújula dorada',
+    autor: 'Philip Pullman',
+    fechaPublicacion: 1995,
+    paginas: 399,
+    isbn: '9788466662451',
+    editorial: 'Ediciones B',
+    idioma: 'Español',
+    edicion: 'La materia oscura I',
+    sinopsis: 'Lyra Belacqua emprende un viaje épico al gélido Norte para salvar a su mejor amigo y desentrañar el misterio del Polvo.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8314115-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['fantasy'],
+    suggestedGenre: '✨ Fantasía',
+    suggestedSubgenres: ['🧙 Fantasía Épica'],
+    recommendationReason: 'Afín a tu lectura de J.K. Rowling'
+  },
+  {
+    id: 'curated-gaiman',
+    source: 'openlibrary',
+    nombre: 'El libro del cementerio',
+    autor: 'Neil Gaiman',
+    fechaPublicacion: 2008,
+    paginas: 320,
+    isbn: '9788416035045',
+    editorial: 'Roca Editorial',
+    idioma: 'Español',
+    edicion: '',
+    sinopsis: 'Nadie Owens es un niño normal criado por los fantasmas y habitantes de un antiguo cementerio.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['fantasy'],
+    suggestedGenre: '✨ Fantasía',
+    suggestedSubgenres: ['🪄 Fantasía Juvenil'],
+    recommendationReason: 'Afín a tu lectura de J.K. Rowling'
+  },
+  {
+    id: 'curated-riordan',
+    source: 'openlibrary',
+    nombre: 'El ladrón del rayo',
+    autor: 'Rick Riordan',
+    fechaPublicacion: 2005,
+    paginas: 288,
+    isbn: '9788498386264',
+    editorial: 'Salamandra',
+    idioma: 'Español',
+    edicion: 'Percy Jackson I',
+    sinopsis: 'Un joven descubre que su verdadero padre es Poseidón y se ve envuelto en una guerra de dioses en el mundo actual.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/11181163-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['fantasy'],
+    suggestedGenre: '✨ Fantasía',
+    suggestedSubgenres: ['🏺 Mitología & Epopeya'],
+    recommendationReason: 'Afín a tu lectura de J.K. Rowling'
+  },
+  {
+    id: 'curated-rothfuss',
+    source: 'openlibrary',
+    nombre: 'El nombre del viento',
+    autor: 'Patrick Rothfuss',
+    fechaPublicacion: 2007,
+    paginas: 872,
+    isbn: '9788401352836',
+    editorial: 'Plaza & Janés',
+    idioma: 'Español',
+    edicion: 'Crónica del Asesino de Reyes I',
+    sinopsis: 'Kvothe relata su extraordinaria historia: desde sus días en una troupe de artistas hasta convertirse en leyenda viviente.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8235123-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['fantasy'],
+    suggestedGenre: '✨ Fantasía',
+    suggestedSubgenres: ['🧙 Fantasía Épica'],
+    recommendationReason: 'Imprescindible de Fantasía'
+  },
+  {
+    id: 'curated-dune',
+    source: 'openlibrary',
+    nombre: 'Dune',
+    autor: 'Frank Herbert',
+    fechaPublicacion: 1965,
+    paginas: 704,
+    isbn: '9788466353779',
+    editorial: 'Debolsillo',
+    idioma: 'Español',
+    edicion: 'Crónicas de Dune I',
+    sinopsis: 'En el inhóspito planeta desértico Arrakis, el joven Paul Atreides debe vengar a su familia y cumplir un destino místico.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/10524458-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['science_fiction'],
+    suggestedGenre: '🔭 Ciencia Ficción & Distopía',
+    suggestedSubgenres: ['⏳ Viajes en el Tiempo'],
+    recommendationReason: 'Obra cumbre de Ciencia Ficción'
+  },
+  {
+    id: 'curated-asimov-fundacion',
+    source: 'openlibrary',
+    nombre: 'Fundación',
+    autor: 'Isaac Asimov',
+    fechaPublicacion: 1951,
+    paginas: 256,
+    isbn: '9788499899534',
+    editorial: 'Debolsillo',
+    idioma: 'Español',
+    edicion: 'Ciclo de la Fundación I',
+    sinopsis: 'Hari Seldon prevé la caída del Imperio Galáctico y crea la Fundación para preservar el saber de la humanidad.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8226191-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['science_fiction'],
+    suggestedGenre: '🔭 Ciencia Ficción & Distopía',
+    suggestedSubgenres: ['⏳ Viajes en el Tiempo'],
+    recommendationReason: 'Obra cumbre de Ciencia Ficción'
+  },
+  {
+    id: 'curated-1984',
+    source: 'openlibrary',
+    nombre: '1984',
+    autor: 'George Orwell',
+    fechaPublicacion: 1949,
+    paginas: 326,
+    isbn: '9788499890944',
+    editorial: 'Debolsillo',
+    idioma: 'Español',
+    edicion: '',
+    sinopsis: 'Winston Smith vive en una sociedad totalitaria gobernada por el Gran Hermano donde el pensamiento disidente es castigado.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/7222246-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['classic_literature'],
+    suggestedGenre: '🏛️ Clásicos',
+    suggestedSubgenres: ['🏚️ Post-Apocalíptico'],
+    recommendationReason: 'Clásico universal imprescindible'
+  },
+  {
+    id: 'curated-borges',
+    source: 'openlibrary',
+    nombre: 'Ficciones',
+    autor: 'Jorge Luis Borges',
+    fechaPublicacion: 1944,
+    paginas: 224,
+    isbn: '9788420633114',
+    editorial: 'Alianza',
+    idioma: 'Español',
+    edicion: '',
+    sinopsis: 'Colección de relatos laberínticos sobre espejos, bibliotecas infinitas, enigmas y la naturaleza del tiempo.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8315123-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['classic_literature'],
+    suggestedGenre: '🏛️ Clásicos',
+    suggestedSubgenres: ['🧙 Fantasía Épica'],
+    recommendationReason: 'Joya literaria aclamada'
+  },
+  {
+    id: 'curated-garcia-marquez',
+    source: 'openlibrary',
+    nombre: 'Cien años de soledad',
+    autor: 'Gabriel García Márquez',
+    fechaPublicacion: 1967,
+    paginas: 471,
+    isbn: '9788439720775',
+    editorial: 'Random House',
+    idioma: 'Español',
+    edicion: '',
+    sinopsis: 'La saga de la familia Buendía a lo largo de siete generaciones en el mítico pueblo de Macondo.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/11142512-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['classic_literature'],
+    suggestedGenre: '🏛️ Clásicos',
+    suggestedSubgenres: ['💔 Drama'],
+    recommendationReason: 'Obra cumbre de la literatura'
+  },
+  {
+    id: 'curated-hill-house',
+    source: 'openlibrary',
+    nombre: 'La maldición de Hill House',
+    autor: 'Shirley Jackson',
+    fechaPublicacion: 1959,
+    paginas: 240,
+    isbn: '9788494029868',
+    editorial: 'Valdemar',
+    idioma: 'Español',
+    edicion: '',
+    sinopsis: 'Cuatro investigadores se alojan en Hill House, una mansión siniestra con un historial de sucesos inexplicables.',
+    portadaUrl: 'https://covers.openlibrary.org/b/id/8228190-M.jpg',
+    portadaFallbackUrl: '',
+    rawCategories: ['horror'],
+    suggestedGenre: '🔪 Terror & Suspense',
+    suggestedSubgenres: ['👻 Terror Sobrenatural'],
+    recommendationReason: 'Joya del terror gótico'
+  }
+];
+
 export const bookMetadataService = {
   async searchBooks(query: string, signal?: AbortSignal): Promise<BibliographicCandidate[]> {
     const trimmed = query.trim();
@@ -688,7 +913,7 @@ export const bookMetadataService = {
 
     const url = `https://openlibrary.org/subjects/${encodeURIComponent(subjectKey)}.json?limit=${limit}`;
     try {
-      const res = await fetch(url, { signal });
+      const res = await fetchWithTimeout(url, { signal }, 4000);
       if (!res.ok) return [];
       const data = (await res.json()) as OpenLibrarySubjectResponse;
       if (!Array.isArray(data.works)) return [];
@@ -744,9 +969,15 @@ export const bookMetadataService = {
     };
 
     if (!userBooks || userBooks.length === 0) {
-      const classics = await this.fetchSubjectBooks('classic_literature', 20, signal);
+      let classics: BibliographicCandidate[] = [];
+      try {
+        classics = await this.fetchSubjectBooks('classic_literature', 16, signal);
+      } catch {
+        classics = [];
+      }
       const available = classics.filter(isAvailable);
-      const booksWithReason = (available.length > 0 ? available : classics).slice(0, 8).map((b) => ({
+      const pool = available.length >= 4 ? available : CURATED_FALLBACK_RECOMMENDATIONS.filter(isAvailable);
+      const booksWithReason = pool.slice(0, 8).map((b) => ({
         ...b,
         recommendationReason: b.recommendationReason || 'Clásico imprescindible'
       }));
@@ -791,72 +1022,86 @@ export const bookMetadataService = {
     const genreCandidates: BibliographicCandidate[] = [];
     const classicCandidates: BibliographicCandidate[] = [];
 
-    // 2. Recomendaciones por afinidad de autor (no buscar el mismo autor si ya lo tiene todo, sino afines)
+    // 2. Ejecutar tareas de red en PARALELO para garantizar respuesta en < 2 segundos
+    const tasks: Promise<BibliographicCandidate[]>[] = [];
+
+    // Tarea A: Afinidad de autor (1 autor afín por búsqueda)
     if (topAuthor) {
       const topAuthorNorm = normalizeText(topAuthor);
       const affinity = AUTHOR_AFFINITY_MAP[topAuthorNorm];
+      const authorToQuery = affinity
+        ? (forceRefresh ? affinity.similarAuthors[1] || affinity.similarAuthors[0] : affinity.similarAuthors[0])
+        : topAuthor;
 
-      if (affinity) {
-        const authorsToQuery = forceRefresh
-          ? [...affinity.similarAuthors].reverse().slice(0, 2)
-          : affinity.similarAuthors.slice(0, 2);
-
-        for (const simAuthor of authorsToQuery) {
-          try {
-            const results = await this.searchBooks(simAuthor, signal);
-            for (const cand of results) {
-              if (isAvailable(cand)) {
-                cand.recommendationReason = `Afín a tu lectura de ${topAuthor}`;
-                affinityCandidates.push(cand);
-              }
-            }
-          } catch {
-            // Ignorado
-          }
-        }
-      } else {
-        try {
-          const results = await this.searchBooks(topAuthor, signal);
-          for (const cand of results) {
-            if (isAvailable(cand)) {
-              cand.recommendationReason = `Por disfrutar de ${topAuthor}`;
-              affinityCandidates.push(cand);
-            }
-          }
-        } catch {
-          // Ignorado
-        }
+      if (authorToQuery) {
+        tasks.push(
+          this.searchBooks(authorToQuery, signal)
+            .then((results) => {
+              return results.filter(isAvailable).map((c) => ({
+                ...c,
+                recommendationReason: affinity
+                  ? `Afín a tu lectura de ${topAuthor}`
+                  : `Por tu interés en ${topAuthor}`
+              }));
+            })
+            .catch(() => [])
+        );
       }
     }
 
-    // 3. Recomendaciones por género predilecto
+    // Tarea B: Género predilecto
     const subject = (topGenre && genreToSubjectMap[topGenre]) || 'fantasy';
-    try {
-      const genreLimit = forceRefresh ? 24 : 16;
-      const genreResults = await this.fetchSubjectBooks(subject, genreLimit, signal);
-      for (const cand of genreResults) {
-        if (isAvailable(cand)) {
-          cand.recommendationReason = topGenre
-            ? `Imprescindible en ${topGenre.replace(/^[^\s]+\s/, '')}`
-            : 'Destacado del catálogo';
-          genreCandidates.push(cand);
+    const genreLimit = forceRefresh ? 20 : 14;
+    tasks.push(
+      this.fetchSubjectBooks(subject, genreLimit, signal)
+        .then((results) => {
+          return results.filter(isAvailable).map((c) => ({
+            ...c,
+            recommendationReason: topGenre
+              ? `Imprescindible en ${topGenre.replace(/^[^\s]+\s/, '')}`
+              : 'Destacado del catálogo'
+          }));
+        })
+        .catch(() => [])
+    );
+
+    // Tarea C: Clásicos universales
+    tasks.push(
+      this.fetchSubjectBooks('classic_literature', 14, signal)
+        .then((results) => {
+          return results.filter(isAvailable).map((c) => ({
+            ...c,
+            recommendationReason: 'Joya literaria aclamada'
+          }));
+        })
+        .catch(() => [])
+    );
+
+    // Esperar a que terminen en paralelo (máximo ~2-3s con timeout)
+    const settled = await Promise.allSettled(tasks);
+    for (const item of settled) {
+      if (item.status === 'fulfilled' && Array.isArray(item.value)) {
+        for (const cand of item.value) {
+          if (cand.recommendationReason?.startsWith('Afín') || cand.recommendationReason?.startsWith('Por tu')) {
+            affinityCandidates.push(cand);
+          } else if (cand.recommendationReason?.startsWith('Imprescindible') || cand.recommendationReason?.startsWith('Destacado')) {
+            genreCandidates.push(cand);
+          } else {
+            classicCandidates.push(cand);
+          }
         }
       }
-    } catch {
-      // Ignorado
     }
 
-    // 4. Clásicos universales y joyas atemporales
-    try {
-      const classicResults = await this.fetchSubjectBooks('classic_literature', 16, signal);
-      for (const cand of classicResults) {
-        if (isAvailable(cand)) {
-          cand.recommendationReason = 'Joya literaria aclamada';
-          classicCandidates.push(cand);
+    // Si la red devolvió pocos resultados por lentitud o error, completar de inmediato con la colección curada
+    for (const fallback of CURATED_FALLBACK_RECOMMENDATIONS) {
+      if (isAvailable(fallback)) {
+        if (fallback.suggestedGenre === topGenre) {
+          genreCandidates.push({ ...fallback });
+        } else {
+          classicCandidates.push({ ...fallback });
         }
       }
-    } catch {
-      // Ignorado
     }
 
     // Deduplicar colecciones por clave única
@@ -955,7 +1200,7 @@ interface OpenLibrarySubjectResponse {
   }>;
 }
 
-const subjectCache = new Map<string, BibliographicCandidate[]>();
+
 
 export interface DiscoverCategory {
   id: string;
