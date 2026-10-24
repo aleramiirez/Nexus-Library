@@ -13,7 +13,8 @@ import {
   Calendar,
   FileText,
   Sliders,
-  ExternalLink
+  ExternalLink,
+  Users
 } from 'lucide-react';
 import { BibliographicCandidate, Book } from '../types/models';
 import {
@@ -23,11 +24,15 @@ import {
 } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
 import { normalizeText } from '../constants/catalogs';
+import { CommunityReadersView } from './CommunityReadersView';
 
 interface DiscoverBooksScreenProps {
   books: Book[];
   onQuickAddBook: (candidate: BibliographicCandidate) => Promise<void>;
   onCustomizeBook: (candidate: BibliographicCandidate) => void;
+  currentUserId?: string;
+  onAddBookFromCommunity?: (book: Book) => Promise<void>;
+  onOpenBookDetail?: (book: Book) => void;
 }
 
 const QUICK_CHIPS = [
@@ -45,8 +50,12 @@ const QUICK_CHIPS = [
 export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   books,
   onQuickAddBook,
-  onCustomizeBook
+  onCustomizeBook,
+  currentUserId,
+  onAddBookFromCommunity,
+  onOpenBookDetail
 }) => {
+  const [discoverTab, setDiscoverTab] = useState<'books' | 'community'>('books');
   const [searchInput, setSearchInput] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchResults, setSearchResults] = useState<BibliographicCandidate[]>([]);
@@ -246,8 +255,46 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
         </div>
       )}
 
-      {/* ─── Cabecera Compacta & Buscador ─── */}
-      <div className="space-y-3 pb-3 border-b border-amber-900/15 dark:border-[#242E42]">
+      {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Comunidad de Lectores) ─── */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+        <button
+          type="button"
+          onClick={() => setDiscoverTab('books')}
+          className={
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+            (discoverTab === 'books'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+          }
+        >
+          <Compass className="w-4 h-4" /> Catálogo de Libros
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setDiscoverTab('community')}
+          className={
+            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+            (discoverTab === 'community'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+          }
+        >
+          <Users className="w-4 h-4" /> Comunidad de Lectores
+        </button>
+      </div>
+
+      {discoverTab === 'community' ? (
+        <CommunityReadersView
+          currentUserId={currentUserId}
+          existingBooks={books}
+          onAddBookToMyLibrary={onAddBookFromCommunity || (async () => {})}
+          onOpenBookDetail={onOpenBookDetail}
+        />
+      ) : (
+        <>
+          {/* ─── Cabecera Compacta & Buscador ─── */}
+          <div className="space-y-3 pb-3 border-b border-amber-900/15 dark:border-[#242E42]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -824,6 +871,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

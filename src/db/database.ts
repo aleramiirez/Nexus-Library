@@ -73,7 +73,7 @@ export function ensureValidUuid(id?: string | null): string {
   );
 }
 
-interface SupabaseBookRow {
+export interface SupabaseBookRow {
   id: string;
   user_id: string;
   data: Partial<Book>;

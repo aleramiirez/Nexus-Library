@@ -462,6 +462,33 @@ export const App: React.FC = () => {
     setIsAddEditOpen(true);
   };
 
+  const handleAddBookFromCommunity = async (book: Book) => {
+    await saveBookRecord({
+      nombre: book.nombre,
+      autor: book.autor,
+      genero: book.genero,
+      subgeneros: book.subgeneros || [],
+      fechaPublicacion: book.fechaPublicacion,
+      paginas: book.paginas,
+      puntuacion: null,
+      progreso: '❌ No Leído',
+      sagaId: null,
+      sagaNombre: '',
+      volumen: null,
+      fechaInicio: '',
+      fechaFin: '',
+      lecturaVirtual: '',
+      tiempoLectura: '',
+      isbn: book.isbn,
+      editorial: book.editorial,
+      idioma: book.idioma,
+      edicion: book.edicion,
+      sinopsis: book.sinopsis,
+      portadaUrl: book.portadaUrl,
+      portadaFallbackUrl: book.portadaFallbackUrl
+    });
+  };
+
   const confirmDeleteBook = async () => {
     if (!bookToDelete) return;
     try {
@@ -1374,6 +1401,9 @@ export const App: React.FC = () => {
                 books={books}
                 onQuickAddBook={handleQuickAddFromDiscover}
                 onCustomizeBook={handleCustomizeFromDiscover}
+                currentUserId={currentUser?.id}
+                onAddBookFromCommunity={handleAddBookFromCommunity}
+                onOpenBookDetail={(b) => setDetailBookId(b.id)}
               />
             </React.Suspense>
           )}
