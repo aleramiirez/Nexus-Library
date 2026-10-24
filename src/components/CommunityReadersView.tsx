@@ -12,11 +12,27 @@ import {
   ArrowLeft,
   Loader2,
   Sparkles,
-  X
+  X,
+  Grid,
+  Rows3,
+  Layers
 } from 'lucide-react';
 import { Book, UserProfile } from '../types/models';
 import { communityService } from '../services/communityService';
 import { BookCover } from './BookCover';
+import { BookShelf } from './BookShelf';
+import { formatStars, ReadingStatus } from '../constants/catalogs';
+
+const statusBadgeStyles: Record<ReadingStatus, string> = {
+  '❌ No Leído':
+    'bg-stone-200/90 text-stone-700 border-stone-400/50 dark:bg-slate-800/90 dark:text-slate-300 dark:border-slate-600/50',
+  '⏳ Leyendo':
+    'bg-amber-500/15 text-amber-900 border-amber-600/40 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-500/40',
+  '⏸️ Pausado':
+    'bg-rose-500/15 text-rose-900 border-rose-500/40 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-500/40',
+  '✅ Leído':
+    'bg-emerald-500/15 text-emerald-900 border-emerald-600/40 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/40'
+};
 
 interface CommunityReadersViewProps {
   currentUserId?: string;
@@ -41,6 +57,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('grid');
+  const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
 
   // Estado de libros agregados en esta sesión
   const [addingBookId, setAddingBookId] = useState<string | null>(null);
@@ -202,56 +220,90 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
           </div>
 
-          {/* Filtros de estantería */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
-            <button
-              type="button"
-              onClick={() => setShelfFilter('all')}
-              className={
-                'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                (shelfFilter === 'all'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-              }
-            >
-              Todos ({readerMetrics.total})
-            </button>
-            <button
-              type="button"
-              onClick={() => setShelfFilter('reading')}
-              className={
-                'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                (shelfFilter === 'reading'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-              }
-            >
-              ⏳ Leyendo ({readerMetrics.reading})
-            </button>
-            <button
-              type="button"
-              onClick={() => setShelfFilter('read')}
-              className={
-                'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                (shelfFilter === 'read'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-              }
-            >
-              ✅ Leídos ({readerMetrics.read})
-            </button>
-            <button
-              type="button"
-              onClick={() => setShelfFilter('unread')}
-              className={
-                'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                (shelfFilter === 'unread'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-              }
-            >
-              🔖 Por leer ({readerMetrics.unread})
-            </button>
+          {/* Filtros de estantería y selector de vista */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShelfFilter('all')}
+                className={
+                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                  (shelfFilter === 'all'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                }
+              >
+                Todos ({readerMetrics.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setShelfFilter('reading')}
+                className={
+                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                  (shelfFilter === 'reading'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                }
+              >
+                ⏳ Leyendo ({readerMetrics.reading})
+              </button>
+              <button
+                type="button"
+                onClick={() => setShelfFilter('read')}
+                className={
+                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                  (shelfFilter === 'read'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                }
+              >
+                ✅ Leídos ({readerMetrics.read})
+              </button>
+              <button
+                type="button"
+                onClick={() => setShelfFilter('unread')}
+                className={
+                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                  (shelfFilter === 'unread'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                }
+              >
+                🔖 Por leer ({readerMetrics.unread})
+              </button>
+            </div>
+
+            {/* Selector de vista: Cuadrícula vs Estantería de madera */}
+            <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
+                  (viewMode === 'grid'
+                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                }
+                title="Vista en tarjetas"
+              >
+                <Grid className="w-3.5 h-3.5" />
+                <span>Cuadrícula</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('shelf')}
+                className={
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
+                  (viewMode === 'shelf'
+                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                }
+                title="Vista en estantería de madera"
+              >
+                <Rows3 className="w-3.5 h-3.5" />
+                <span>Estantería</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -269,6 +321,20 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </p>
             <p className="text-xs">Este lector aún no ha clasificado títulos en esta estantería.</p>
           </div>
+        ) : viewMode === 'shelf' ? (
+          <div className="space-y-3">
+            <div className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 px-1 font-serif italic">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Haz clic sobre cualquier libro en la balda para consultar su ficha bibliográfica y añadirlo.</span>
+            </div>
+            <BookShelf
+              books={filteredReaderBooks}
+              onOpenDetail={(bookId) => {
+                const book = filteredReaderBooks.find((b) => b.id === bookId);
+                if (book) setSelectedCommunityBook(book);
+              }}
+            />
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {filteredReaderBooks.map((book) => {
@@ -276,46 +342,72 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               const isAdding = addingBookId === book.id;
 
               return (
-                <div
+                <article
                   key={book.id}
-                  className="group relative rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fffcf5] dark:bg-[#121824] p-3 flex flex-col justify-between hover:border-amber-500/60 transition shadow-sm hover:shadow-md"
+                  className="group relative flex flex-col justify-between cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(180,115,30,0.22)] dark:hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
                 >
                   <div
-                    onClick={() => onOpenBookDetail?.(book)}
-                    className="cursor-pointer space-y-2.5"
+                    onClick={() => setSelectedCommunityBook(book)}
+                    className="flex-1 flex flex-col"
                   >
-                    <div className="aspect-[2/3] w-full rounded-lg overflow-hidden bg-amber-900/10 dark:bg-slate-800 shadow-sm relative">
+                    {/* Portada con textura 3D realista sin máscara de corte */}
+                    <div className="relative mb-2 sm:mb-2.5">
                       <BookCover
                         portadaUrl={book.portadaUrl}
                         portadaFallbackUrl={book.portadaFallbackUrl}
                         portadaDataUrl={book.portadaDataUrl}
                         nombre={book.nombre}
                         autor={book.autor}
-                        className="w-full h-full object-cover"
                       />
-                      {book.progreso && (
-                        <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/75 backdrop-blur-sm text-[10px] text-white px-1.5 py-0.5 font-semibold">
-                          {book.progreso.split(' ')[0]} {book.progreso.split(' ')[1]}
+
+                      {book.sagaNombre && (
+                        <span className="absolute top-2 left-2 z-10 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] font-medium text-amber-200 shadow">
+                          {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
                         </span>
                       )}
                     </div>
 
-                    <div>
-                      <h4 className="font-serif text-xs font-bold line-clamp-2 text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
-                        {book.nombre}
-                      </h4>
-                      <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5">
-                        {book.autor}
-                      </p>
-                      {book.puntuacion && (
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold block mt-0.5">
-                          {'★'.repeat(book.puntuacion)}
-                        </span>
-                      )}
+                    {/* Metadatos y valoración */}
+                    <div className="flex-1 flex flex-col justify-between gap-1">
+                      <div>
+                        <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
+                          <span
+                            className={
+                              'inline-flex items-center whitespace-nowrap shrink-0 rounded-full border px-1.5 sm:px-2 py-0.5 text-[10px] font-medium ' +
+                              statusBadgeStyles[book.progreso]
+                            }
+                          >
+                            {book.progreso}
+                          </span>
+                          {book.puntuacion && (
+                            <span
+                              className="text-[10px] tracking-tighter whitespace-nowrap text-amber-600 dark:text-amber-400 font-bold"
+                              title={`${book.puntuacion} de 5 estrellas`}
+                            >
+                              {formatStars(book.puntuacion)}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3
+                          className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 line-clamp-2 leading-snug"
+                          title={book.nombre}
+                        >
+                          {book.nombre}
+                        </h3>
+
+                        <p
+                          className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5"
+                          title={book.autor}
+                        >
+                          {book.autor || 'Autor desconocido'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="pt-2 mt-2 border-t border-amber-900/10 dark:border-[#1F2738]">
+                  {/* Botón de acción inferior */}
+                  <div className="pt-2 mt-2.5 border-t border-amber-900/10 dark:border-[#1F2738]">
                     {alreadySaved ? (
                       <span className="inline-flex items-center justify-center gap-1 w-full rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 py-1.5 text-[10px] font-bold">
                         <Check className="w-3 h-3" /> En tu biblioteca
@@ -324,7 +416,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       <button
                         type="button"
                         disabled={isAdding}
-                        onClick={() => handleAddBook(book)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddBook(book);
+                        }}
                         className="inline-flex items-center justify-center gap-1 w-full rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 py-1.5 text-[10px] font-bold shadow-sm transition"
                       >
                         {isAdding ? (
@@ -336,9 +431,163 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       </button>
                     )}
                   </div>
-                </div>
+                </article>
               );
             })}
+          </div>
+        )}
+
+        {/* Modal de detalle de libro del lector amigo */}
+        {selectedCommunityBook && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setSelectedCommunityBook(null)}
+          >
+            <div
+              className="relative w-full max-w-2xl rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Cabecera */}
+              <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-5 py-3.5 bg-[#f0e5cc] dark:bg-[#101520] shrink-0">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold min-w-0">
+                  <BookOpen className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Ficha bibliográfica · Biblioteca de {selectedReader.displayName}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCommunityBook(null)}
+                  className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Contenido */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-start">
+                  <div className="sm:col-span-5 flex flex-col items-center">
+                    <div className="w-36 sm:w-44">
+                      <BookCover
+                        nombre={selectedCommunityBook.nombre}
+                        autor={selectedCommunityBook.autor}
+                        portadaUrl={selectedCommunityBook.portadaUrl}
+                        portadaFallbackUrl={selectedCommunityBook.portadaFallbackUrl}
+                        portadaDataUrl={selectedCommunityBook.portadaDataUrl}
+                        size="lg"
+                      />
+                    </div>
+
+                    <div className="mt-3 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3 text-center space-y-1">
+                      <p className="text-[11px] font-medium text-stone-600 dark:text-slate-400">
+                        Valoración de {selectedReader.displayName}
+                      </p>
+                      <div className="text-base text-amber-600 dark:text-amber-400 font-bold">
+                        {selectedCommunityBook.puntuacion
+                          ? `${formatStars(selectedCommunityBook.puntuacion)} (${selectedCommunityBook.puntuacion}/5)`
+                          : 'Sin valorar'}
+                      </div>
+                      <span
+                        className={
+                          'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ' +
+                          statusBadgeStyles[selectedCommunityBook.progreso]
+                        }
+                      >
+                        {selectedCommunityBook.progreso}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-7 space-y-3">
+                    <div>
+                      <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100 leading-tight">
+                        {selectedCommunityBook.nombre}
+                      </h3>
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-400 mt-1">
+                        {selectedCommunityBook.autor || 'Autor desconocido'}
+                      </p>
+                    </div>
+
+                    {selectedCommunityBook.sagaNombre && (
+                      <div className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-300 px-2.5 py-1 text-xs font-semibold">
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>
+                          Saga: {selectedCommunityBook.sagaNombre}{' '}
+                          {selectedCommunityBook.volumen ? `#${selectedCommunityBook.volumen}` : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-stone-600 dark:text-slate-400">
+                      {selectedCommunityBook.genero && (
+                        <div>
+                          <span className="font-bold block text-stone-800 dark:text-slate-300">Género:</span>
+                          <span>{selectedCommunityBook.genero}</span>
+                        </div>
+                      )}
+                      {selectedCommunityBook.paginas ? (
+                        <div>
+                          <span className="font-bold block text-stone-800 dark:text-slate-300">Páginas:</span>
+                          <span>{selectedCommunityBook.paginas} págs.</span>
+                        </div>
+                      ) : null}
+                      {selectedCommunityBook.fechaPublicacion && (
+                        <div>
+                          <span className="font-bold block text-stone-800 dark:text-slate-300">Publicado:</span>
+                          <span>{selectedCommunityBook.fechaPublicacion}</span>
+                        </div>
+                      )}
+                      {selectedCommunityBook.editorial && (
+                        <div>
+                          <span className="font-bold block text-stone-800 dark:text-slate-300">Editorial:</span>
+                          <span>{selectedCommunityBook.editorial}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedCommunityBook.sinopsis && (
+                      <div className="pt-2 border-t border-amber-900/15 dark:border-[#242E42]">
+                        <p className="text-xs font-bold text-stone-800 dark:text-slate-300 mb-1">Sinopsis / Notas:</p>
+                        <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed bg-[#f4ead4]/60 dark:bg-[#101520] p-3 rounded-xl border border-amber-900/10 dark:border-[#222B3A] italic">
+                          "{selectedCommunityBook.sinopsis}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pie de modal */}
+              <div className="border-t border-amber-900/20 dark:border-[#242E42] px-5 py-3.5 bg-[#f0e5cc] dark:bg-[#101520] flex items-center justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCommunityBook(null)}
+                  className="rounded-xl px-4 py-2 text-xs font-medium text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+                >
+                  Cerrar
+                </button>
+                {isAlreadyInMyLibrary(selectedCommunityBook) ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-4 py-2 text-xs font-bold">
+                    <Check className="w-4 h-4" /> Ya en tu biblioteca
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={addingBookId === selectedCommunityBook.id}
+                    onClick={() => handleAddBook(selectedCommunityBook)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 text-xs shadow-md transition"
+                  >
+                    {addingBookId === selectedCommunityBook.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    {addingBookId === selectedCommunityBook.id ? 'Guardando...' : 'Añadir a mi lista de lectura'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
