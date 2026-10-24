@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LayoutDashboard,
@@ -80,6 +80,7 @@ import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
 import { SagaProgressBar } from './components/SagaProgressBar';
 import { candidateToBookInput } from './services/bookMetadataService';
+import { formatFriendlyErrorMessage } from './utils/errorUtils';
 
 const BookDetailModal = React.lazy(() =>
   import('./components/BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
@@ -125,6 +126,7 @@ export const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
+  const deferredSearch = useDeferredValue(filters.search);
   const [showFilters, setShowFilters] = useState(false);
 
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
@@ -213,7 +215,12 @@ export const App: React.FC = () => {
       const res = await syncAndMigrateWithSupabase();
       setSyncResult(res);
       if (res.error) {
-        setGlobalError(res.error);
+        setGlobalError(
+          formatFriendlyErrorMessage(
+            res.error,
+            'No se pudo sincronizar la colección con la nube en este momento. Revisa tu conexión a internet.'
+          )
+        );
       }
     } finally {
       setIsSyncing(false);
@@ -355,7 +362,7 @@ export const App: React.FC = () => {
   }, [books]);
 
   const filteredBooks = useMemo(() => {
-    const q = filters.search.trim().toLowerCase();
+    const q = deferredSearch.trim().toLowerCase();
 
     const matches = books.filter((book) => {
       if (q) {
@@ -398,7 +405,7 @@ export const App: React.FC = () => {
           return a.createdAt.localeCompare(b.createdAt) * dir;
       }
     });
-  }, [books, filters]);
+  }, [books, deferredSearch, filters]);
 
   const sagasWithBooks = useMemo(() => {
     const booksBySaga = new Map<string, Book[]>();
@@ -497,7 +504,7 @@ export const App: React.FC = () => {
       setBookToDelete(null);
     } catch (err: unknown) {
       setGlobalError(
-        err instanceof Error ? err.message : 'No se pudo eliminar el libro.'
+        formatFriendlyErrorMessage(err, 'No se pudo eliminar el libro de tu biblioteca.')
       );
     }
   };
@@ -512,7 +519,9 @@ export const App: React.FC = () => {
       setSagaNameInput('');
       setSagaDescInput('');
     } catch (err: unknown) {
-      setSagaError(err instanceof Error ? err.message : 'Error al guardar la saga.');
+      setSagaError(
+        formatFriendlyErrorMessage(err, 'No se pudo guardar la saga en este momento.')
+      );
     }
   };
 
@@ -526,7 +535,7 @@ export const App: React.FC = () => {
       setActiveSagaIdForAssign(null);
     } catch (err: unknown) {
       setGlobalError(
-        err instanceof Error ? err.message : 'Error al vincular el libro a la saga.'
+        formatFriendlyErrorMessage(err, 'No se pudo vincular el libro a la saga.')
       );
     }
   };
@@ -703,7 +712,7 @@ export const App: React.FC = () => {
       <main className="relative z-10 flex-1 min-w-0 lg:pl-64 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
         <div key={activeSection} className="book-turn max-w-7xl mx-auto px-3 py-4 sm:p-6 lg:p-8">
           {globalError && (
-            <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
+            <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-900 dark:text-rose-200 flex items-center justify-between gap-3 shadow-sm">
               <span className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 {globalError}
@@ -1622,9 +1631,7 @@ export const App: React.FC = () => {
                                     await deleteSagaAndUnlinkBooks(item.saga.id);
                                   } catch (err: unknown) {
                                     setGlobalError(
-                                      err instanceof Error
-                                        ? err.message
-                                        : 'Error al eliminar la saga.'
+                                      formatFriendlyErrorMessage(err, 'No pudimos eliminar la saga en este momento.')
                                     );
                                   }
                                 }

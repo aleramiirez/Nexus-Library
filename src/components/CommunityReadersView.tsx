@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue } from 'react';
 import {
   Search,
   Users,
@@ -15,13 +15,15 @@ import {
   X,
   Grid,
   Rows3,
-  Layers
+  Layers,
+  AlertCircle
 } from 'lucide-react';
 import { Book, UserProfile } from '../types/models';
 import { communityService } from '../services/communityService';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { formatStars, ReadingStatus } from '../constants/catalogs';
+import { formatFriendlyErrorMessage } from '../utils/errorUtils';
 
 const statusBadgeStyles: Record<ReadingStatus, string> = {
   '❌ No Leído':
@@ -48,6 +50,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   onOpenBookDetail
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [readers, setReaders] = useState<UserProfile[]>([]);
   const [isLoadingReaders, setIsLoadingReaders] = useState(false);
@@ -63,7 +66,17 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   // Estado de libros agregados en esta sesión
   const [addingBookId, setAddingBookId] = useState<string | null>(null);
   const [addedBookKeys, setAddedBookKeys] = useState<Set<string>>(new Set());
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // Set de títulos / ISBNs ya existentes en mi propia biblioteca para marcarlos
   const myExistingBookKeys = useMemo(() => {
@@ -81,13 +94,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     return myExistingBookKeys.has(key) || addedBookKeys.has(key);
   };
 
-  // Debounce búsqueda
+  // Debounce búsqueda con valor diferido
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery.trim());
+      setDebouncedQuery(deferredSearchQuery.trim());
     }, 350);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [deferredSearchQuery]);
 
   // Cargar lectores (por búsqueda o sugeridos iniciales)
   useEffect(() => {
@@ -142,13 +155,65 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     try {
       await onAddBookToMyLibrary(book);
       setAddedBookKeys((prev) => new Set(prev).add(key));
-      setToastMessage(`"¡${book.nombre}" añadido a tus lecturas pendientes!`);
-      setTimeout(() => setToastMessage(null), 3500);
+      setToast({
+        type: 'success',
+        title: '¡Libro guardado!',
+        message: `"${book.nombre}" ya está en tus lecturas pendientes de tu biblioteca personal.`
+      });
     } catch (err) {
-      console.error('Error al guardar libro de amigo:', err);
+      console.warn('Error al guardar libro de amigo:', err);
+      setToast({
+        type: 'error',
+        title: 'No se pudo guardar el libro',
+        message: formatFriendlyErrorMessage(
+          err,
+          'No hemos podido añadir este libro en este momento. Revisa tu conexión a internet e inténtalo de nuevo.'
+        )
+      });
     } finally {
       setAddingBookId(null);
     }
+  };
+
+  // Renderizado del Toast accesible y amigable
+  const renderToastNotification = () => {
+    if (!toast) return null;
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className={
+          'fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-md max-w-sm transition-all duration-300 animate-slide-up ' +
+          (toast.type === 'success'
+            ? 'border-emerald-500/40 bg-[#101824]/95 text-emerald-100 shadow-emerald-950/40'
+            : toast.type === 'error'
+            ? 'border-rose-500/40 bg-[#1e1014]/95 text-rose-100 shadow-rose-950/40'
+            : 'border-amber-500/40 bg-[#1a1610]/95 text-amber-100 shadow-amber-950/40')
+        }
+      >
+        {toast.type === 'success' ? (
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+            <Check className="w-4 h-4" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+            <AlertCircle className="w-4 h-4" />
+          </div>
+        )}
+        <div className="flex-1 space-y-0.5 text-xs">
+          <p className="font-bold font-serif text-sm text-stone-100">{toast.title}</p>
+          <p className="text-stone-300 leading-relaxed font-normal">{toast.message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setToast(null)}
+          aria-label="Cerrar aviso"
+          className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
   };
 
   // Métricas de la biblioteca del lector seleccionado
@@ -172,13 +237,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   if (selectedReader) {
     return (
       <div className="space-y-6 animate-fade-in">
-        {/* Toast */}
-        {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl border border-emerald-500/40 bg-[#101520] text-emerald-200 px-4 py-3 shadow-2xl backdrop-blur-md text-xs font-semibold">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+        {/* Toast amigable */}
+        {renderToastNotification()}
 
         {/* Botón volver */}
         <button
@@ -691,6 +751,9 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           ))}
         </div>
       )}
+
+      {/* Toast amigable */}
+      {renderToastNotification()}
     </div>
   );
 };
