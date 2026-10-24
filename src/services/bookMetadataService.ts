@@ -1,5 +1,5 @@
 import { BibliographicCandidate, Book } from '../types/models';
-import { inferCatalogFromCategories, normalizeText } from '../constants/catalogs';
+import { inferCatalogFromCategories, normalizeText, Genre } from '../constants/catalogs';
 import {
   buildOpenLibraryIdCover,
   buildOpenLibraryIsbnCover,
@@ -292,6 +292,326 @@ function mergeAndRankCandidates(
   });
 }
 
+export const KNOWN_SAGA_PATTERNS: Array<{
+  key: string;
+  patterns: RegExp[];
+}> = [
+  {
+    key: 'harry_potter_1',
+    patterns: [
+      /harry potter.*(piedra filosofal|sorcerer|philosopher)/i,
+      /^(harry potter y la piedra filosofal|harry potter and the sorcerer's stone|harry potter and the philosopher's stone)/i
+    ]
+  },
+  {
+    key: 'harry_potter_2',
+    patterns: [
+      /harry potter.*(camara secreta|c[aá]mara secreta|chamber of secrets)/i
+    ]
+  },
+  {
+    key: 'harry_potter_3',
+    patterns: [
+      /harry potter.*(prisionero de azkaban|prisoner of azkaban)/i
+    ]
+  },
+  {
+    key: 'harry_potter_4',
+    patterns: [
+      /harry potter.*(caliz de fuego|c[aá]liz de fuego|goblet of fire)/i
+    ]
+  },
+  {
+    key: 'harry_potter_5',
+    patterns: [
+      /harry potter.*(orden del fenix|orden del f[eé]nix|order of the phoenix)/i
+    ]
+  },
+  {
+    key: 'harry_potter_6',
+    patterns: [
+      /harry potter.*(misterio del principe|misterio del pr[ií]ncipe|half blood prince|half-blood prince)/i
+    ]
+  },
+  {
+    key: 'harry_potter_7',
+    patterns: [
+      /harry potter.*(reliquias de la muerte|deathly hallows)/i
+    ]
+  },
+  {
+    key: 'harry_potter_general',
+    patterns: [
+      /harry potter/i
+    ]
+  },
+  {
+    key: 'lotr_1',
+    patterns: [
+      /(senor de los anillos|se[nñ]or de los anillos|lord of the rings).*(comunidad del anillo|fellowship of the ring)/i,
+      /comunidad del anillo/i,
+      /fellowship of the ring/i
+    ]
+  },
+  {
+    key: 'lotr_2',
+    patterns: [
+      /(senor de los anillos|se[nñ]or de los anillos|lord of the rings).*(dos torres|two towers)/i,
+      /las dos torres/i,
+      /the two towers/i
+    ]
+  },
+  {
+    key: 'lotr_3',
+    patterns: [
+      /(senor de los anillos|se[nñ]or de los anillos|lord of the rings).*(retorno del rey|return of the king)/i,
+      /el retorno del rey/i,
+      /the return of the king/i
+    ]
+  },
+  {
+    key: 'hobbit',
+    patterns: [/^(el )?hobbit/i, /^the hobbit/i]
+  },
+  {
+    key: 'dune',
+    patterns: [/^(duna|dune)(\b|:|\()/i]
+  },
+  {
+    key: 'game_of_thrones_1',
+    patterns: [
+      /(cancion de hielo y fuego|song of ice and fire).*(juego de tronos|game of thrones)/i,
+      /^(a )?game of thrones$/i,
+      /^(un )?juego de tronos$/i
+    ]
+  },
+  {
+    key: 'percy_jackson_1',
+    patterns: [
+      /percy jackson.*(ladron del rayo|ladr[oó]n del rayo|lightning thief)/i
+    ]
+  },
+  {
+    key: 'hunger_games_1',
+    patterns: [
+      /(los )?juegos del hambre/i,
+      /(the )?hunger games/i
+    ]
+  },
+  {
+    key: 'narnia_1',
+    patterns: [
+      /narnia.*(leon.*bruja.*armario|le[oó]n.*bruja.*armario|lion.*witch.*wardrobe)/i
+    ]
+  }
+];
+
+export function isBookAlreadyInLibrary(
+  candidate: { nombre: string; autor?: string; isbn?: string; id?: string },
+  userBooks: Book[]
+): boolean {
+  if (!userBooks || userBooks.length === 0) return false;
+
+  const candCleanIsbn = candidate.isbn ? candidate.isbn.replace(/[^0-9X]/gi, '').toUpperCase() : '';
+  const candNormTitle = normalizeText(candidate.nombre || '');
+  const candNormAuthor = normalizeText(candidate.autor || '');
+
+  // 1. Coincidencia por ISBN
+  if (candCleanIsbn) {
+    for (const b of userBooks) {
+      if (b.isbn) {
+        const bookCleanIsbn = b.isbn.replace(/[^0-9X]/gi, '').toUpperCase();
+        if (bookCleanIsbn && bookCleanIsbn === candCleanIsbn) return true;
+      }
+    }
+  }
+
+  // 2. Coincidencia por título normalizado exacto
+  for (const b of userBooks) {
+    const bookNormTitle = normalizeText(b.nombre || '');
+    if (bookNormTitle && bookNormTitle === candNormTitle) return true;
+  }
+
+  // 3. Patrones de libros y sagas bilingües conocidas
+  for (const saga of KNOWN_SAGA_PATTERNS) {
+    const candMatches = saga.patterns.some((re) => re.test(candidate.nombre));
+    if (candMatches) {
+      const userHasMatch = userBooks.some((b) => saga.patterns.some((re) => re.test(b.nombre)));
+      if (userHasMatch) {
+        if (saga.key !== 'harry_potter_general') return true;
+        // Si el usuario ya tiene 2 o más libros de la saga, descartar tomos de la misma
+        const hpCount = userBooks.filter((b) => /harry potter/i.test(b.nombre)).length;
+        if (hpCount >= 2) return true;
+      }
+    }
+  }
+
+  // 4. Mismo autor + coincidencia de palabras clave distintivas
+  const stopWords = new Set([
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'de', 'del', 'en', 'y', 'a',
+    'the', 'an', 'of', 'in', 'and', 'to', 'with', 'by', 'for', 'on', 'edition', 'edicion',
+    'libro', 'book', 'vol', 'volumen', 'volume', 'tomo', 'part', 'parte', 'serie', 'series'
+  ]);
+
+  const candTokens = candNormTitle
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !stopWords.has(w));
+
+  for (const b of userBooks) {
+    const bookNormAuthor = normalizeText(b.autor || '');
+    const isSameAuthor =
+      candNormAuthor &&
+      bookNormAuthor &&
+      (candNormAuthor.includes(bookNormAuthor) || bookNormAuthor.includes(candNormAuthor));
+
+    if (isSameAuthor) {
+      const bookNormTitle = normalizeText(b.nombre || '');
+      if (
+        candNormTitle.includes(bookNormTitle) ||
+        bookNormTitle.includes(candNormTitle)
+      ) {
+        return true;
+      }
+
+      const bookTokens = new Set(
+        bookNormTitle
+          .split(/\s+/)
+          .filter((w) => w.length > 2 && !stopWords.has(w))
+      );
+
+      const commonTokens = candTokens.filter((t) => bookTokens.has(t));
+      if (commonTokens.length >= 2) return true;
+      if (candTokens.length === 1 && bookTokens.has(candTokens[0])) return true;
+    }
+  }
+
+  return false;
+}
+
+const DISMISSED_STORAGE_KEY = 'nexus_dismissed_recommendations';
+
+export const dismissedRecommendationsService = {
+  getDismissedIds(): Set<string> {
+    try {
+      if (typeof window === 'undefined') return new Set();
+      const stored = localStorage.getItem(DISMISSED_STORAGE_KEY);
+      if (!stored) return new Set();
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? new Set(parsed) : new Set();
+    } catch {
+      return new Set();
+    }
+  },
+
+  dismiss(id: string): void {
+    try {
+      if (typeof window === 'undefined') return;
+      const current = this.getDismissedIds();
+      current.add(id);
+      localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify([...current]));
+    } catch {
+      // Ignored
+    }
+  },
+
+  undismiss(id: string): void {
+    try {
+      if (typeof window === 'undefined') return;
+      const current = this.getDismissedIds();
+      current.delete(id);
+      localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify([...current]));
+    } catch {
+      // Ignored
+    }
+  }
+};
+
+export const AUTHOR_AFFINITY_MAP: Record<
+  string,
+  {
+    similarAuthors: string[];
+    suggestedQueries: string[];
+    genre: Genre;
+  }
+> = {
+  'j k rowling': {
+    similarAuthors: ['Philip Pullman', 'Neil Gaiman', 'Rick Riordan', 'Jonathan Stroud', 'C.S. Lewis', 'Patrick Rothfuss'],
+    suggestedQueries: ['La materia oscura', 'El libro del cementerio', 'El ladrón del rayo', 'El amuleto de Samarcanda', 'El león la bruja y el armario'],
+    genre: '✨ Fantasía'
+  },
+  'jk rowling': {
+    similarAuthors: ['Philip Pullman', 'Neil Gaiman', 'Rick Riordan', 'Jonathan Stroud', 'C.S. Lewis', 'Patrick Rothfuss'],
+    suggestedQueries: ['La materia oscura', 'El libro del cementerio', 'El ladrón del rayo', 'El amuleto de Samarcanda', 'El león la bruja y el armario'],
+    genre: '✨ Fantasía'
+  },
+  'brandon sanderson': {
+    similarAuthors: ['Patrick Rothfuss', 'Robert Jordan', 'Joe Abercrombie', 'Steven Erikson', 'Brian McClellan', 'Robin Hobb'],
+    suggestedQueries: ['El nombre del viento', 'El ojo del mundo', 'La voz de las espadas', 'Los jardines de la luna', 'Aprendiz de asesino'],
+    genre: '✨ Fantasía'
+  },
+  'patrick rothfuss': {
+    similarAuthors: ['Brandon Sanderson', 'Scott Lynch', 'Robin Hobb', 'Joe Abercrombie', 'Ursula K. Le Guin'],
+    suggestedQueries: ['El camino de los reyes', 'Las mentiras de Locke Lamora', 'El temor de un hombre sabio', 'Un mago de Terramar'],
+    genre: '✨ Fantasía'
+  },
+  'stephen king': {
+    similarAuthors: ['Joe Hill', 'Shirley Jackson', 'Dan Simmons', 'Clive Barker', 'Mariana Enriquez', 'H.P. Lovecraft'],
+    suggestedQueries: ['Fantasmas del pasado', 'La maldición de Hill House', 'El terror', 'Nuestra parte de noche', 'Libros de sangre'],
+    genre: '🔪 Terror & Suspense'
+  },
+  'isaac asimov': {
+    similarAuthors: ['Arthur C. Clarke', 'Philip K. Dick', 'Frank Herbert', 'Ray Bradbury', 'Stanislaw Lem', 'Liu Cixin'],
+    suggestedQueries: ['2001 una odisea espacial', 'Sueñan los androides con ovejas electricas', 'Dune', 'Crónicas marcianas', 'Solaris', 'El problema de los tres cuerpos'],
+    genre: '🔭 Ciencia Ficción & Distopía'
+  },
+  'frank herbert': {
+    similarAuthors: ['Isaac Asimov', 'Dan Simmons', 'Arthur C. Clarke', 'Ursula K. Le Guin', 'Alastair Reynolds'],
+    suggestedQueries: ['Fundación', 'Hyperion', 'La mano izquierda de la oscuridad', 'Cántico por Leibowitz'],
+    genre: '🔭 Ciencia Ficción & Distopía'
+  },
+  'gabriel garcia marquez': {
+    similarAuthors: ['Isabel Allende', 'Jorge Luis Borges', 'Julio Cortázar', 'Juan Rulfo', 'Laura Esquivel', 'Mario Vargas Llosa'],
+    suggestedQueries: ['La casa de los espíritus', 'Ficciones', 'Rayuela', 'Pedro Páramo', 'Como agua para chocolate', 'La ciudad y los perros'],
+    genre: '🏛️ Clásicos'
+  },
+  'j r r tolkien': {
+    similarAuthors: ['George R.R. Martin', 'Ursula K. Le Guin', 'Tad Williams', 'Guy Gavriel Kay', 'C.S. Lewis'],
+    suggestedQueries: ['Juego de tronos', 'Un mago de Terramar', 'Añoranzas y pesares', 'Tigana'],
+    genre: '✨ Fantasía'
+  },
+  'jrr tolkien': {
+    similarAuthors: ['George R.R. Martin', 'Ursula K. Le Guin', 'Tad Williams', 'Guy Gavriel Kay', 'C.S. Lewis'],
+    suggestedQueries: ['Juego de tronos', 'Un mago de Terramar', 'Añoranzas y pesares', 'Tigana'],
+    genre: '✨ Fantasía'
+  },
+  'george r r martin': {
+    similarAuthors: ['Joe Abercrombie', 'Bernard Cornwell', 'Robin Hobb', 'Scott Lynch', 'Patrick Rothfuss'],
+    suggestedQueries: ['La voz de las espadas', 'El último reino', 'El asesino real', 'Las mentiras de Locke Lamora'],
+    genre: '✨ Fantasía'
+  },
+  'agatha christie': {
+    similarAuthors: ['Arthur Conan Doyle', 'John Dickson Carr', 'Georges Simenon', 'Dorothy L. Sayers', 'Gillian Flynn'],
+    suggestedQueries: ['Estudio en escarlata', 'El sabueso de los Baskerville', 'El hombre del revés', 'Perdida'],
+    genre: '🔪 Terror & Suspense'
+  },
+  'arthur conan doyle': {
+    similarAuthors: ['Agatha Christie', 'Edgar Allan Poe', 'G.K. Chesterton', 'Wilkie Collins'],
+    suggestedQueries: ['Diez negritos', 'Asesinato en el Orient Express', 'Los crímenes de la calle Morgue', 'La piedra lunar'],
+    genre: '🔪 Terror & Suspense'
+  },
+  'jane austen': {
+    similarAuthors: ['Charlotte Brontë', 'Emily Brontë', 'Louisa May Alcott', 'Virginia Woolf', 'Elizabeth Gaskell'],
+    suggestedQueries: ['Jane Eyre', 'Cumbres borrascosas', 'Mujercitas', 'Norte y sur', 'Al faro'],
+    genre: '❤️ Romance & Drama'
+  }
+};
+
+export interface RecommendOptions {
+  subFilter?: 'mix' | 'authors' | 'classics';
+  forceRefresh?: boolean;
+  signal?: AbortSignal;
+}
+
 export const bookMetadataService = {
   async searchBooks(query: string, signal?: AbortSignal): Promise<BibliographicCandidate[]> {
     const trimmed = query.trim();
@@ -410,19 +730,33 @@ export const bookMetadataService = {
 
   async fetchRecommendations(
     userBooks: Book[],
-    signal?: AbortSignal
+    options?: RecommendOptions
   ): Promise<{ reason: string; books: BibliographicCandidate[] }> {
-    const existingTitles = new Set(userBooks.map((b) => normalizeText(b.nombre)));
+    const subFilter = options?.subFilter || 'mix';
+    const signal = options?.signal;
+    const forceRefresh = Boolean(options?.forceRefresh);
+    const dismissedIds = dismissedRecommendationsService.getDismissedIds();
+
+    const isAvailable = (cand: BibliographicCandidate): boolean => {
+      if (!cand || !cand.nombre) return false;
+      if (dismissedIds.has(cand.id)) return false;
+      return !isBookAlreadyInLibrary(cand, userBooks);
+    };
 
     if (!userBooks || userBooks.length === 0) {
-      const classics = await this.fetchSubjectBooks('classic_literature', 12, signal);
-      const filtered = classics.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
+      const classics = await this.fetchSubjectBooks('classic_literature', 20, signal);
+      const available = classics.filter(isAvailable);
+      const booksWithReason = (available.length > 0 ? available : classics).slice(0, 8).map((b) => ({
+        ...b,
+        recommendationReason: b.recommendationReason || 'Clásico imprescindible'
+      }));
       return {
-        reason: 'Obras maestras universales para inaugurar tu biblioteca',
-        books: (filtered.length > 0 ? filtered : classics).slice(0, 8)
+        reason: 'Obras maestras universales para inaugurar tu biblioteca personal',
+        books: booksWithReason
       };
     }
 
+    // 1. Perfil del lector
     const authorWeights = new Map<string, number>();
     const genreCounts = new Map<string, number>();
 
@@ -437,38 +771,11 @@ export const bookMetadataService = {
       }
     }
 
-    let topAuthor = '';
-    let maxAuthorWeight = 0;
-    for (const [author, weight] of authorWeights.entries()) {
-      if (weight > maxAuthorWeight) {
-        maxAuthorWeight = weight;
-        topAuthor = author;
-      }
-    }
+    const sortedAuthors = [...authorWeights.entries()].sort((a, b) => b[1] - a[1]);
+    const sortedGenres = [...genreCounts.entries()].sort((a, b) => b[1] - a[1]);
 
-    let topGenre = '';
-    let maxGenreCount = 0;
-    for (const [genre, count] of genreCounts.entries()) {
-      if (count > maxGenreCount) {
-        maxGenreCount = count;
-        topGenre = genre;
-      }
-    }
-
-    if (topAuthor && maxAuthorWeight >= 2) {
-      try {
-        const authorResults = await this.searchBooks(topAuthor, signal);
-        const filtered = authorResults.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
-        if (filtered.length >= 2) {
-          return {
-            reason: `Porque has disfrutado de obras de ${topAuthor}`,
-            books: filtered.slice(0, 8)
-          };
-        }
-      } catch {
-        // Fallback to genre
-      }
-    }
+    const topAuthor = sortedAuthors[0]?.[0] || '';
+    const topGenre = sortedGenres[0]?.[0] || '';
 
     const genreToSubjectMap: Record<string, string> = {
       '✨ Fantasía': 'fantasy',
@@ -480,15 +787,156 @@ export const bookMetadataService = {
       '📚 No Ficción': 'history'
     };
 
+    const affinityCandidates: BibliographicCandidate[] = [];
+    const genreCandidates: BibliographicCandidate[] = [];
+    const classicCandidates: BibliographicCandidate[] = [];
+
+    // 2. Recomendaciones por afinidad de autor (no buscar el mismo autor si ya lo tiene todo, sino afines)
+    if (topAuthor) {
+      const topAuthorNorm = normalizeText(topAuthor);
+      const affinity = AUTHOR_AFFINITY_MAP[topAuthorNorm];
+
+      if (affinity) {
+        const authorsToQuery = forceRefresh
+          ? [...affinity.similarAuthors].reverse().slice(0, 2)
+          : affinity.similarAuthors.slice(0, 2);
+
+        for (const simAuthor of authorsToQuery) {
+          try {
+            const results = await this.searchBooks(simAuthor, signal);
+            for (const cand of results) {
+              if (isAvailable(cand)) {
+                cand.recommendationReason = `Afín a tu lectura de ${topAuthor}`;
+                affinityCandidates.push(cand);
+              }
+            }
+          } catch {
+            // Ignorado
+          }
+        }
+      } else {
+        try {
+          const results = await this.searchBooks(topAuthor, signal);
+          for (const cand of results) {
+            if (isAvailable(cand)) {
+              cand.recommendationReason = `Por disfrutar de ${topAuthor}`;
+              affinityCandidates.push(cand);
+            }
+          }
+        } catch {
+          // Ignorado
+        }
+      }
+    }
+
+    // 3. Recomendaciones por género predilecto
     const subject = (topGenre && genreToSubjectMap[topGenre]) || 'fantasy';
-    const genreResults = await this.fetchSubjectBooks(subject, 16, signal);
-    const filtered = genreResults.filter((c) => !existingTitles.has(normalizeText(c.nombre)));
+    try {
+      const genreLimit = forceRefresh ? 24 : 16;
+      const genreResults = await this.fetchSubjectBooks(subject, genreLimit, signal);
+      for (const cand of genreResults) {
+        if (isAvailable(cand)) {
+          cand.recommendationReason = topGenre
+            ? `Imprescindible en ${topGenre.replace(/^[^\s]+\s/, '')}`
+            : 'Destacado del catálogo';
+          genreCandidates.push(cand);
+        }
+      }
+    } catch {
+      // Ignorado
+    }
+
+    // 4. Clásicos universales y joyas atemporales
+    try {
+      const classicResults = await this.fetchSubjectBooks('classic_literature', 16, signal);
+      for (const cand of classicResults) {
+        if (isAvailable(cand)) {
+          cand.recommendationReason = 'Joya literaria aclamada';
+          classicCandidates.push(cand);
+        }
+      }
+    } catch {
+      // Ignorado
+    }
+
+    // Deduplicar colecciones por clave única
+    const dedupeCandidates = (list: BibliographicCandidate[]): BibliographicCandidate[] => {
+      const seen = new Set<string>();
+      const out: BibliographicCandidate[] = [];
+      for (const item of list) {
+        const key = `${normalizeText(item.nombre)}::${normalizeText(item.autor)}`;
+        if (!seen.has(key) && isAvailable(item)) {
+          seen.add(key);
+          out.push(item);
+        }
+      }
+      return out;
+    };
+
+    const cleanAffinity = dedupeCandidates(affinityCandidates);
+    const cleanGenre = dedupeCandidates(genreCandidates);
+    const cleanClassics = dedupeCandidates(classicCandidates);
+
+    const shuffleArray = <T>(arr: T[]): T[] => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
+
+    let selected: BibliographicCandidate[] = [];
+    let mainReason = 'Recomendaciones personalizadas para tus gustos';
+
+    if (subFilter === 'authors') {
+      selected = dedupeCandidates([...(forceRefresh ? shuffleArray(cleanAffinity) : cleanAffinity), ...cleanGenre, ...cleanClassics]);
+      mainReason = topAuthor
+        ? `Nuevos autores afines al estilo de ${topAuthor}`
+        : 'Autores seleccionados para tu perfil';
+    } else if (subFilter === 'classics') {
+      selected = dedupeCandidates([...(forceRefresh ? shuffleArray(cleanClassics) : cleanClassics), ...cleanGenre, ...cleanAffinity]);
+      mainReason = 'Obras maestras y joyas universales que deberías leer';
+    } else {
+      // 'mix': 3 afines, 3 género, 2 clásicos
+      const poolAffinity = forceRefresh ? shuffleArray(cleanAffinity) : cleanAffinity;
+      const poolGenre = forceRefresh ? shuffleArray(cleanGenre) : cleanGenre;
+      const poolClassics = forceRefresh ? shuffleArray(cleanClassics) : cleanClassics;
+
+      const mix = [
+        ...poolAffinity.slice(0, 3),
+        ...poolGenre.slice(0, 3),
+        ...poolClassics.slice(0, 2),
+        ...poolAffinity.slice(3),
+        ...poolGenre.slice(3),
+        ...poolClassics.slice(2)
+      ];
+      selected = dedupeCandidates(mix);
+      mainReason = topAuthor && topGenre
+        ? `Sugerencias basadas en tu afinidad por ${topAuthor} y la ${topGenre.replace(/^[^\s]+\s/, '')}`
+        : topGenre
+        ? `Selección especial para tu pasión por la ${topGenre.replace(/^[^\s]+\s/, '')}`
+        : 'Selección personalizada basada en tus lecturas';
+    }
+
+    // Fallback de seguridad si quedan pocos libros
+    if (selected.length < 4) {
+      try {
+        const fallbackBooks = await this.fetchSubjectBooks('adventure', 16, signal);
+        for (const fb of fallbackBooks) {
+          if (isAvailable(fb)) {
+            fb.recommendationReason = 'Aventura épica recomendada';
+            selected.push(fb);
+          }
+        }
+      } catch {
+        // Ignorado
+      }
+    }
 
     return {
-      reason: topGenre
-        ? `Recomendaciones seleccionadas para tu gusto por ${topGenre}`
-        : 'Obras destacadas recomendadas para ti',
-      books: (filtered.length > 0 ? filtered : genreResults).slice(0, 8)
+      reason: mainReason,
+      books: dedupeCandidates(selected).slice(0, 8)
     };
   }
 };

@@ -56,6 +56,7 @@ export interface BibliographicCandidate {
   rawCategories: string[];
   suggestedGenre: Genre | '';
   suggestedSubgenres: Subgenre[];
+  recommendationReason?: string;
 }
 
 export type SortField =

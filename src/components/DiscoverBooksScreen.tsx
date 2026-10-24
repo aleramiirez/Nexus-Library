@@ -14,13 +14,17 @@ import {
   FileText,
   Sliders,
   ExternalLink,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react';
 import { BibliographicCandidate, Book } from '../types/models';
 import {
   bookMetadataService,
   DISCOVER_CATEGORIES,
-  DiscoverCategory
+  DiscoverCategory,
+  isBookAlreadyInLibrary,
+  dismissedRecommendationsService,
+  RecommendOptions
 } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
 import { normalizeText } from '../constants/catalogs';
@@ -97,6 +101,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     books: BibliographicCandidate[];
   } | null>(null);
   const [isLoadingRecs, setIsLoadingRecs] = useState(true);
+  const [recSubFilter, setRecSubFilter] = useState<'mix' | 'authors' | 'classics'>('mix');
+  const [dismissedCandidateIds, setDismissedCandidateIds] = useState<Set<string>>(() =>
+    dismissedRecommendationsService.getDismissedIds()
+  );
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>('fantasy');
   const [categoryBooks, setCategoryBooks] = useState<Record<string, BibliographicCandidate[]>>({});
@@ -156,29 +164,51 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     };
   }, [debouncedQuery]);
 
-  // Load personalized recommendations on mount or when books change
-  useEffect(() => {
-    let mounted = true;
+  // Carga inteligente de recomendaciones personalizadas
+  const loadRecommendations = (options?: {
+    forceRefresh?: boolean;
+    subFilter?: 'mix' | 'authors' | 'classics';
+  }) => {
     setIsLoadingRecs(true);
-
+    const activeSub = options?.subFilter || recSubFilter;
     bookMetadataService
-      .fetchRecommendations(books)
+      .fetchRecommendations(books, {
+        subFilter: activeSub,
+        forceRefresh: options?.forceRefresh
+      })
       .then((recs) => {
-        if (mounted) {
-          setRecommendations(recs);
-        }
+        setRecommendations(recs);
       })
       .catch(() => {
-        // Ignored
+        // Ignorado
       })
       .finally(() => {
-        if (mounted) setIsLoadingRecs(false);
+        setIsLoadingRecs(false);
       });
+  };
 
-    return () => {
-      mounted = false;
-    };
-  }, [books]);
+  useEffect(() => {
+    loadRecommendations({ subFilter: recSubFilter });
+  }, [books, recSubFilter]);
+
+  const handleRefreshRecs = () => {
+    startTransition(() => {
+      loadRecommendations({ forceRefresh: true, subFilter: recSubFilter });
+    });
+  };
+
+  const handleRecSubFilterChange = (filter: 'mix' | 'authors' | 'classics') => {
+    startTransition(() => {
+      setRecSubFilter(filter);
+    });
+  };
+
+  const handleDismissRec = (candidate: BibliographicCandidate, e: React.MouseEvent) => {
+    e.stopPropagation();
+    dismissedRecommendationsService.dismiss(candidate.id);
+    setDismissedCandidateIds((prev) => new Set(prev).add(candidate.id));
+    showToast(`Recomendación de «${candidate.nombre}» descartada.`);
+  };
 
   // Load category books on activeCategory change
   useEffect(() => {
@@ -211,26 +241,21 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     };
   }, [activeCategoryId, categoryBooks]);
 
-  // Check if candidate is already in the library
+  // Comprobación inteligente de existencia en biblioteca (ISBN, bilingüe, sagas y autor+tokens)
   const isCandidateInLibrary = useMemo(() => {
-    const normalizedTitles = new Set(books.map((b) => normalizeText(b.nombre)));
-    const isbns = new Set(
-      books
-        .map((b) => (b.isbn ? b.isbn.replace(/[^0-9X]/gi, '') : ''))
-        .filter(Boolean)
-    );
-
     return (candidate: BibliographicCandidate): boolean => {
       if (justAddedIds.has(candidate.id)) return true;
-      const cleanIsbn = candidate.isbn ? candidate.isbn.replace(/[^0-9X]/gi, '') : '';
-      if (cleanIsbn && isbns.has(cleanIsbn)) return true;
-
-      const normTitle = normalizeText(candidate.nombre);
-      if (normalizedTitles.has(normTitle)) return true;
-
-      return false;
+      return isBookAlreadyInLibrary(candidate, books);
     };
   }, [books, justAddedIds]);
+
+  // Libros visibles para la sección de recomendaciones (excluye cualquier obra en biblioteca o descartada)
+  const visibleRecommendations = useMemo(() => {
+    if (!recommendations?.books) return [];
+    return recommendations.books.filter(
+      (b) => !isCandidateInLibrary(b) && !dismissedCandidateIds.has(b.id)
+    );
+  }, [recommendations, isCandidateInLibrary, dismissedCandidateIds]);
 
   const showToast = (msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -505,7 +530,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
         <div className="space-y-10">
           {/* SECCIÓN: Recomendaciones Personalizadas */}
           <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-900/20 dark:border-[#242E42] pb-3">
               <div>
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -519,6 +544,63 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                     : recommendations?.reason || 'Basado en tus preferencias de lectura'}
                 </p>
               </div>
+
+              {/* Controles de recomendación: Sub-filtros y Refrescar */}
+              <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                <div className="inline-flex items-center p-1 rounded-xl bg-amber-900/10 dark:bg-[#121824] border border-amber-900/15 dark:border-[#283246] text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleRecSubFilterChange('mix')}
+                    className={
+                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      (recSubFilter === 'mix'
+                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                    }
+                  >
+                    🎯 Mix
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRecSubFilterChange('authors')}
+                    className={
+                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      (recSubFilter === 'authors'
+                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                    }
+                  >
+                    👥 Nuevos autores
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRecSubFilterChange('classics')}
+                    className={
+                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      (recSubFilter === 'classics'
+                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                    }
+                  >
+                    🏆 Grandes joyas
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isLoadingRecs}
+                  onClick={handleRefreshRecs}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-amber-500/10 transition shadow-sm disabled:opacity-50"
+                  title="Explorar nuevas sugerencias"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 text-amber-600 dark:text-amber-400 ${
+                      isLoadingRecs ? 'animate-spin' : ''
+                    }`}
+                  />
+                  <span className="hidden sm:inline">Nuevas sugerencias</span>
+                </button>
+              </div>
             </div>
 
             {isLoadingRecs ? (
@@ -526,10 +608,9 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                 <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
                 Cargando recomendaciones personalizadas...
               </div>
-            ) : recommendations && recommendations.books.length > 0 ? (
+            ) : visibleRecommendations.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4.5">
-                {recommendations.books.map((cand) => {
-                  const inLibrary = isCandidateInLibrary(cand);
+                {visibleRecommendations.map((cand) => {
                   const isAdding = addingId === cand.id;
 
                   return (
@@ -540,7 +621,28 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       tabIndex={0}
                       className="group relative flex flex-col justify-between rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-lg transition-all duration-300 cursor-pointer"
                     >
+                      {/* Botón discreto para descartar recomendación */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDismissRec(cand, e)}
+                        className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full bg-stone-900/70 hover:bg-rose-600 text-stone-200 hover:text-white flex items-center justify-center transition shadow opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        title="No me interesa esta sugerencia"
+                        aria-label={`Descartar recomendación de ${cand.nombre}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+
                       <div>
+                        {/* Insignia del motivo de la recomendación */}
+                        {cand.recommendationReason && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-500/20 px-2 py-0.5 rounded-md truncate max-w-full">
+                              <Sparkles className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                              <span className="truncate">{cand.recommendationReason}</span>
+                            </span>
+                          </div>
+                        )}
+
                         <div className="relative mb-2">
                           <BookCover
                             nombre={cand.nombre}
@@ -575,31 +677,42 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       </div>
 
                       <div className="mt-3 pt-2 border-t border-amber-900/15 dark:border-[#253044]">
-                        {inLibrary ? (
-                          <div className="w-full flex items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 text-[11px] font-semibold">
-                            <Check className="w-3.5 h-3.5" /> En tu biblioteca
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={isAdding}
-                            onClick={(e) => handleQuickAdd(cand, e)}
-                            className="w-full flex items-center justify-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition disabled:opacity-50"
-                          >
-                            {isAdding ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Plus className="w-3 h-3" />
-                            )}
-                            Añadir libro
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          disabled={isAdding}
+                          onClick={(e) => handleQuickAdd(cand, e)}
+                          className="w-full flex items-center justify-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition disabled:opacity-50"
+                        >
+                          {isAdding ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Plus className="w-3 h-3" />
+                          )}
+                          Añadir libro
+                        </button>
                       </div>
                     </article>
                   );
                 })}
               </div>
-            ) : null}
+            ) : (
+              <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center bg-[#fbf6ea]/40 dark:bg-transparent">
+                <Sparkles className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                <p className="font-serif text-sm font-semibold text-stone-800 dark:text-slate-200">
+                  ¡Has explorado todas las sugerencias actuales!
+                </p>
+                <p className="text-xs text-stone-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                  Pulsa en nuevas sugerencias para descubrir más joyas literarias de autores afines.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRefreshRecs}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Explorar nuevas sugerencias
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Adorno divisor clásico */}
