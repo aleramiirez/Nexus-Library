@@ -117,6 +117,14 @@ export const App: React.FC = () => {
   const sagas = useLiveQuery(() => db.sagas.toArray(), [], [] as Saga[]);
 
   const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
+  const [, startTransition] = React.useTransition();
+
+  const handleNavigate = (section: NavigationSection) => {
+    startTransition(() => {
+      setActiveSection(section);
+    });
+    setMobileMenuOpen(false);
+  };
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('nexus_library_theme');
@@ -635,7 +643,7 @@ export const App: React.FC = () => {
 
       <BookSidebar
         activeSection={activeSection}
-        onNavigate={setActiveSection}
+        onNavigate={handleNavigate}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode((d) => !d)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -675,7 +683,7 @@ export const App: React.FC = () => {
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={() => setActiveSection('discover')}
+            onClick={() => handleNavigate('discover')}
             className={
               'p-2 rounded-lg border transition ' +
               (activeSection === 'discover'
@@ -688,7 +696,7 @@ export const App: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setActiveSection('settings')}
+            onClick={() => handleNavigate('settings')}
             className={
               'p-2 rounded-lg border transition ' +
               (activeSection === 'settings'
@@ -765,14 +773,14 @@ export const App: React.FC = () => {
                 <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setActiveSection('library')}
+                    onClick={() => handleNavigate('library')}
                     className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-black/50 transition"
                   >
                     <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveSection('discover')}
+                    onClick={() => handleNavigate('discover')}
                     className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
                   >
                     <Compass className="w-4 h-4" /> Explorar y Descubrir
@@ -783,7 +791,7 @@ export const App: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
                 <button
                   type="button"
-                  onClick={() => setActiveSection('library')}
+                  onClick={() => handleNavigate('library')}
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
                   <span className="text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
@@ -791,7 +799,7 @@ export const App: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('shelf-reading')}
+                  onClick={() => handleNavigate('shelf-reading')}
                   className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
                 >
                   <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
@@ -801,7 +809,7 @@ export const App: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('shelf-unread')}
+                  onClick={() => handleNavigate('shelf-unread')}
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
                   <span className="text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
@@ -809,7 +817,7 @@ export const App: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('shelf-paused')}
+                  onClick={() => handleNavigate('shelf-paused')}
                   className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
                 >
                   <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
@@ -817,7 +825,7 @@ export const App: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('shelf-read')}
+                  onClick={() => handleNavigate('shelf-read')}
                   className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
                 >
                   <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
@@ -835,7 +843,7 @@ export const App: React.FC = () => {
                     </h2>
                     <button
                       type="button"
-                      onClick={() => setActiveSection('shelf-reading')}
+                      onClick={() => handleNavigate('shelf-reading')}
                       className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
                     >
                       Ver estantería <ChevronRight className="w-3.5 h-3.5" />
@@ -893,7 +901,7 @@ export const App: React.FC = () => {
                       </h2>
                       <button
                         type="button"
-                        onClick={() => setActiveSection('sagas')}
+                        onClick={() => handleNavigate('sagas')}
                         className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
                       >
                         Gestionar ({sagas.length})
@@ -910,7 +918,7 @@ export const App: React.FC = () => {
                         {sagasWithBooks.slice(0, 4).map((item) => (
                           <div
                             key={item.saga.id}
-                            onClick={() => setActiveSection('sagas')}
+                            onClick={() => handleNavigate('sagas')}
                             className="group p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(180,115,30,0.16)] transition-all duration-300"
                           >
                             <div className="flex items-center justify-between text-xs font-semibold">
@@ -937,7 +945,7 @@ export const App: React.FC = () => {
                   </h2>
                   <button
                     type="button"
-                    onClick={() => setActiveSection('library')}
+                    onClick={() => handleNavigate('library')}
                     className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
                   >
                     Ver biblioteca completa <ChevronRight className="w-3.5 h-3.5" />
@@ -1992,7 +2000,7 @@ export const App: React.FC = () => {
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-7 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
         <button
           type="button"
-          onClick={() => setActiveSection('dashboard')}
+          onClick={() => handleNavigate('dashboard')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'dashboard'
@@ -2005,7 +2013,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('library')}
+          onClick={() => handleNavigate('library')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'library'
@@ -2018,7 +2026,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('discover')}
+          onClick={() => handleNavigate('discover')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'discover'
@@ -2031,7 +2039,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('shelf-reading')}
+          onClick={() => handleNavigate('shelf-reading')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection.startsWith('shelf-')
@@ -2044,7 +2052,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('sagas')}
+          onClick={() => handleNavigate('sagas')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'sagas'
@@ -2057,7 +2065,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('stats')}
+          onClick={() => handleNavigate('stats')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'stats'
@@ -2070,7 +2078,7 @@ export const App: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setActiveSection('settings')}
+          onClick={() => handleNavigate('settings')}
           className={
             'flex flex-col items-center gap-1 ' +
             (activeSection === 'settings'

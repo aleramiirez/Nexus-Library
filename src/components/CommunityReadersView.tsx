@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useDeferredValue } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Search,
@@ -58,7 +58,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [readers, setReaders] = useState<UserProfile[]>([]);
-  const [isLoadingReaders, setIsLoadingReaders] = useState(false);
+  const [isLoadingReaders, setIsLoadingReaders] = useState(true);
+  const [, startTransition] = useTransition();
 
   // Lector seleccionado para ver su estantería
   const [selectedReader, setSelectedReader] = useState<UserProfile | null>(null);
@@ -67,6 +68,25 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
+
+  const handleShelfFilterChange = (filter: 'all' | 'reading' | 'read' | 'unread') => {
+    startTransition(() => {
+      setShelfFilter(filter);
+    });
+  };
+
+  const handleViewModeChange = (mode: 'shelf' | 'grid') => {
+    startTransition(() => {
+      setViewMode(mode);
+    });
+  };
+
+  const handleBackToReaders = () => {
+    startTransition(() => {
+      setSelectedReader(null);
+      setReaderBooks([]);
+    });
+  };
 
   // Estado de libros agregados en esta sesión
   const [addingBookId, setAddingBookId] = useState<string | null>(null);
@@ -132,10 +152,12 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   // Cargar biblioteca cuando se selecciona un lector
   const handleSelectReader = async (reader: UserProfile) => {
-    setSelectedReader(reader);
+    startTransition(() => {
+      setSelectedReader(reader);
+      setShelfFilter('all');
+      setViewMode('shelf');
+    });
     setIsLoadingLibrary(true);
-    setShelfFilter('all');
-    setViewMode('shelf');
 
     try {
       const data = await communityService.fetchUserPublicLibrary(reader.id);
@@ -462,7 +484,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         {/* Botón volver */}
         <button
           type="button"
-          onClick={() => setSelectedReader(null)}
+          onClick={handleBackToReaders}
           className="inline-flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition"
         >
           <ArrowLeft className="w-4 h-4" /> Volver a buscar lectores
@@ -505,7 +527,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShelfFilter('all')}
+                onClick={() => handleShelfFilterChange('all')}
                 className={
                   'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
                   (shelfFilter === 'all'
@@ -517,7 +539,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setShelfFilter('reading')}
+                onClick={() => handleShelfFilterChange('reading')}
                 className={
                   'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
                   (shelfFilter === 'reading'
@@ -529,7 +551,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setShelfFilter('read')}
+                onClick={() => handleShelfFilterChange('read')}
                 className={
                   'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
                   (shelfFilter === 'read'
@@ -541,7 +563,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setShelfFilter('unread')}
+                onClick={() => handleShelfFilterChange('unread')}
                 className={
                   'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
                   (shelfFilter === 'unread'
@@ -557,7 +579,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
               <button
                 type="button"
-                onClick={() => setViewMode('shelf')}
+                onClick={() => handleViewModeChange('shelf')}
                 className={
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
                   (viewMode === 'shelf'
@@ -571,7 +593,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('grid')}
+                onClick={() => handleViewModeChange('grid')}
                 className={
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
                   (viewMode === 'grid'

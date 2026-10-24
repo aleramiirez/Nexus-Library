@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import {
   Search,
   Sparkles,
@@ -56,6 +56,36 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   onOpenBookDetail
 }) => {
   const [discoverTab, setDiscoverTab] = useState<'books' | 'community'>('books');
+  const [hasVisitedCommunity, setHasVisitedCommunity] = useState(false);
+  const [, startTransition] = useTransition();
+
+  const handleTabChange = (tab: 'books' | 'community') => {
+    if (tab === 'community' && !hasVisitedCommunity) {
+      setHasVisitedCommunity(true);
+    }
+    startTransition(() => {
+      setDiscoverTab(tab);
+    });
+  };
+
+  const handleCategoryChange = (catId: string) => {
+    startTransition(() => {
+      setActiveCategoryId(catId);
+    });
+  };
+
+  const handleQuickChip = (chipText: string) => {
+    startTransition(() => {
+      setSearchInput(chipText);
+    });
+  };
+
+  const handleClearSearch = () => {
+    startTransition(() => {
+      setSearchInput('');
+    });
+  };
+
   const [searchInput, setSearchInput] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchResults, setSearchResults] = useState<BibliographicCandidate[]>([]);
@@ -259,7 +289,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       <div className="flex flex-wrap items-center gap-2 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
         <button
           type="button"
-          onClick={() => setDiscoverTab('books')}
+          onClick={() => handleTabChange('books')}
           className={
             'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
             (discoverTab === 'books'
@@ -272,7 +302,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
 
         <button
           type="button"
-          onClick={() => setDiscoverTab('community')}
+          onClick={() => handleTabChange('community')}
           className={
             'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
             (discoverTab === 'community'
@@ -284,15 +314,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
         </button>
       </div>
 
-      {discoverTab === 'community' ? (
-        <CommunityReadersView
-          currentUserId={currentUserId}
-          existingBooks={books}
-          onAddBookToMyLibrary={onAddBookFromCommunity || (async () => {})}
-          onOpenBookDetail={onOpenBookDetail}
-        />
-      ) : (
-        <>
+      {/* ─── Contenedor Catálogo de Libros: se oculta con CSS para no perder estado ni remontar ─── */}
+      <div className={discoverTab === 'books' ? 'space-y-8' : 'hidden'}>
           {/* ─── Cabecera Compacta & Buscador ─── */}
           <div className="space-y-3 pb-3 border-b border-amber-900/15 dark:border-[#242E42]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -323,7 +346,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
             ) : searchInput ? (
               <button
                 type="button"
-                onClick={() => setSearchInput('')}
+                onClick={handleClearSearch}
                 className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
                 title="Limpiar búsqueda"
               >
@@ -344,7 +367,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
               <button
                 key={chip}
                 type="button"
-                onClick={() => setSearchInput(cleanText)}
+                onClick={() => handleQuickChip(cleanText)}
                 className="rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
               >
                 {chip}
@@ -375,7 +398,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
             </div>
             <button
               type="button"
-              onClick={() => setSearchInput('')}
+              onClick={handleClearSearch}
               className="text-xs text-amber-700 dark:text-amber-400 hover:underline font-semibold"
             >
               Volver a recomendaciones
@@ -605,7 +628,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setActiveCategoryId(cat.id)}
+                    onClick={() => handleCategoryChange(cat.id)}
                     className={
                       'inline-flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition shadow-sm ' +
                       (active
@@ -872,7 +895,18 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           </div>
         </div>
       )}
-        </>
+      </div>
+
+      {/* ─── Contenedor Comunidad de Lectores: montaje perezoso y preservado ─── */}
+      {hasVisitedCommunity && (
+        <div className={discoverTab === 'community' ? 'block' : 'hidden'}>
+          <CommunityReadersView
+            currentUserId={currentUserId}
+            existingBooks={books}
+            onAddBookToMyLibrary={onAddBookFromCommunity || (async () => {})}
+            onOpenBookDetail={onOpenBookDetail}
+          />
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import {
   Settings,
   Palette,
@@ -78,6 +78,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   initialTab = 'appearance'
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const [, startTransition] = useTransition();
+
+  const handleTabChange = (tab: SettingsTab) => {
+    startTransition(() => {
+      setActiveTab(tab);
+    });
+    setFeedback(null);
+  };
 
   // Estados de enriquecimiento de portadas
   const [isEnriching, setIsEnriching] = useState(false);
@@ -381,10 +389,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <div className="mt-6 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('appearance');
-              setFeedback(null);
-            }}
+            onClick={() => handleTabChange('appearance')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'appearance'
@@ -397,10 +402,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('account');
-              setFeedback(null);
-            }}
+            onClick={() => handleTabChange('account')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'account'
@@ -416,10 +418,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('metadata');
-              setFeedback(null);
-            }}
+            onClick={() => handleTabChange('metadata')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'metadata'
@@ -437,10 +436,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('backup');
-              setFeedback(null);
-            }}
+            onClick={() => handleTabChange('backup')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'backup'
