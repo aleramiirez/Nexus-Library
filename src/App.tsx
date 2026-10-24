@@ -1421,7 +1421,7 @@ export const App: React.FC = () => {
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="w-3.5 h-3.5" /> Asignar libro existente
+                                  <Plus className="w-3.5 h-3.5" /> Asignar libro
                                 </>
                               )}
                             </button>
@@ -1609,22 +1609,20 @@ export const App: React.FC = () => {
                               className="group cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-500/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >
                               <div>
-                                <div className="text-[11px] font-bold text-amber-800 dark:text-amber-300 mb-1.5">
-                                  <span>
-                                    {book.volumen
-                                      ? 'Volumen ' + String(book.volumen)
-                                      : 'Sin núm.'}
+                                <div className="relative mb-2">
+                                  <BookCover
+                                    nombre={book.nombre}
+                                    autor={book.autor}
+                                    portadaUrl={book.portadaUrl}
+                                    portadaFallbackUrl={book.portadaFallbackUrl}
+                                    portadaDataUrl={book.portadaDataUrl}
+                                    size="sm"
+                                  />
+                                  <span className="absolute top-2 left-2 z-10 truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
+                                    {book.volumen ? '#' + String(book.volumen) : 'Sin núm.'}
                                   </span>
                                 </div>
-                                <BookCover
-                                  nombre={book.nombre}
-                                  autor={book.autor}
-                                  portadaUrl={book.portadaUrl}
-                                  portadaFallbackUrl={book.portadaFallbackUrl}
-                                  portadaDataUrl={book.portadaDataUrl}
-                                  size="sm"
-                                />
-                                <p className="font-serif font-bold text-sm mt-2 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300">
+                                <p className="font-serif font-bold text-sm mt-1 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300">
                                   {book.nombre}
                                 </p>
                               </div>
