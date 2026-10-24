@@ -80,6 +80,7 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
 import { DiscoverBooksScreen } from './components/DiscoverBooksScreen';
+import { SagaProgressBar } from './components/SagaProgressBar';
 import { candidateToBookInput } from './services/bookMetadataService';
 
 const initialFilters: LibraryFilters = {
@@ -753,12 +754,7 @@ export const App: React.FC = () => {
                                 {item.readCount}/{item.registeredCount} leídos
                               </span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-amber-900/15 dark:bg-slate-800 mt-2 overflow-hidden">
-                              <div
-                                className="h-full bg-amber-600 dark:bg-amber-400"
-                                style={{ width: String(item.progressPercent) + '%' }}
-                              />
-                            </div>
+                            <SagaProgressBar size="sm" className="mt-2" books={item.books} percent={item.progressPercent} />
                           </div>
                         ))}
                       </div>
@@ -1530,12 +1526,7 @@ export const App: React.FC = () => {
                       )}
 
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 dark:to-emerald-400 transition-all duration-500"
-                            style={{ width: String(item.progressPercent) + '%' }}
-                          />
-                        </div>
+                        <SagaProgressBar className="flex-1" books={item.books} percent={item.progressPercent} />
                         <span
                           className={
                             'text-xs font-bold font-mono shrink-0 min-w-[36px] text-right ' +
@@ -1799,12 +1790,7 @@ export const App: React.FC = () => {
                             {item.progressPercent}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full bg-amber-500 dark:bg-amber-400"
-                            style={{ width: String(item.progressPercent) + '%' }}
-                          />
-                        </div>
+                        <SagaProgressBar books={item.books} percent={item.progressPercent} />
                       </div>
                     ))}
                   </div>

@@ -1,0 +1,103 @@
+/* ===== Barra de progreso de sagas (SagaProgressBar) ===== */
+
+.saga-bar {
+  --gold-1: #f7de93;
+  --gold-2: #e2ab3b;
+  --gold-3: #b57a1b;
+  --groove: rgba(120, 70, 20, 0.14);
+  --groove-shadow: inset 0 1px 2px rgba(80, 45, 10, 0.35), 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+}
+html.dark .saga-bar {
+  --groove: rgba(255, 255, 255, 0.06);
+  --groove-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.saga-bar-md { height: 10px; }
+.saga-bar-sm { height: 6px; gap: 3px; }
+
+/* Celda de un volumen (ranura vacía) */
+.saga-seg {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--groove);
+  box-shadow: var(--groove-shadow);
+}
+
+/* Volumen leído: oro con relieve */
+.saga-seg.is-read {
+  background: linear-gradient(180deg, var(--gold-1) 0%, var(--gold-2) 48%, var(--gold-3) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(90, 50, 5, 0.35),
+    0 1px 3px rgba(150, 95, 15, 0.4);
+  transform-origin: left center;
+  animation: saga-fill 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+html.dark .saga-seg.is-read {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(90, 50, 5, 0.4),
+    0 0 10px rgba(245, 180, 60, 0.3);
+}
+
+/* Brillo que recorre las celdas leídas en oleada */
+.saga-seg.is-read::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.6) 50%, transparent 70%);
+  transform: translateX(-130%);
+  animation: saga-shine 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 110ms + 1.4s);
+}
+
+/* Saga terminada: un punto más de brillo */
+.saga-bar.is-complete .saga-seg.is-read {
+  --gold-1: #fbe8a6;
+  --gold-2: #ebb747;
+  --gold-3: #c58a22;
+}
+
+/* Variante continua (sagas con muchísimos volúmenes) */
+.saga-bar-continuous {
+  gap: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--groove);
+  box-shadow: var(--groove-shadow);
+}
+.saga-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--gold-1) 0%, var(--gold-2) 48%, var(--gold-3) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(90, 50, 5, 0.35);
+  transform-origin: left center;
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: saga-fill 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* "backwards": al terminar no queda ningún transform residual */
+@keyframes saga-fill {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+@keyframes saga-shine {
+  0%, 55% { transform: translateX(-130%); }
+  100%    { transform: translateX(130%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saga-seg.is-read,
+  .saga-fill { animation: none; transition: none; }
+  .saga-seg.is-read::after { animation: none; display: none; }
+}
