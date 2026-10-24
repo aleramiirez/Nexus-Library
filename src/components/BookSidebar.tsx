@@ -6,6 +6,7 @@ import {
   Compass,
   Layers,
   BarChart3,
+  Settings,
   Sun,
   Moon,
   BookMarked,
@@ -13,7 +14,6 @@ import {
   Clock,
   PauseCircle,
   LogIn,
-  HardDrive,
   X,
   type LucideIcon
 } from 'lucide-react';
@@ -28,7 +28,8 @@ export type NavigationSection =
   | 'shelf-paused'
   | 'shelf-read'
   | 'sagas'
-  | 'stats';
+  | 'stats'
+  | 'settings';
 
 interface BookSidebarProps {
   activeSection: NavigationSection;
@@ -36,7 +37,7 @@ interface BookSidebarProps {
   darkMode: boolean;
   onToggleTheme: () => void;
   onOpenAuth: () => void;
-  onOpenImport: () => void;
+  onOpenImport?: () => void;
   onLeaveGuestMode: () => void;
   metrics: { total: number; reading: number; unread: number; paused: number; read: number };
   sagasCount: number;
@@ -74,7 +75,7 @@ const NavItem: React.FC<NavItemProps> = ({
     className={
       'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
       (active
-        ? 'book-item-active text-amber-800 dark:text-amber-300'
+        ? 'book-item-active text-amber-800 dark:text-amber-300 font-semibold'
         : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5')
     }
   >
@@ -115,7 +116,6 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   darkMode,
   onToggleTheme,
   onOpenAuth,
-  onOpenImport,
   onLeaveGuestMode,
   metrics,
   sagasCount,
@@ -283,27 +283,34 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               active={activeSection === 'stats'}
               onSelect={handleSelectSection}
             />
+
+            <Chapter>Sistema</Chapter>
+            <NavItem
+              id="settings"
+              label="Ajustes"
+              icon={Settings}
+              active={activeSection === 'settings'}
+              onSelect={handleSelectSection}
+            />
           </nav>
 
-          {/* Pie de página */}
-          <div className="p-4 pr-6 border-t border-amber-600/20 space-y-2.5">
+          {/* Pie de página unificado */}
+          <div className="p-4 pr-6 border-t border-amber-600/20 space-y-2">
             {hasUser ? (
               <button
                 type="button"
-                onClick={() => {
-                  onCloseMobile?.();
-                  onOpenAuth();
-                }}
-                className="w-full flex items-center gap-2.5 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/40 p-2.5 text-left transition"
+                onClick={() => handleSelectSection('settings')}
+                className="w-full flex items-center gap-2.5 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5 p-2.5 text-left transition"
+                title="Ver Ajustes y Cuenta"
               >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
                   {userInitial}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
-                    {userEmail || 'Lector Invitado'}
+                    {userEmail || 'Mi Cuenta'}
                   </p>
-                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     {isSyncing ? 'Sincronizando...' : 'Nube sincronizada'}
                   </span>
@@ -312,10 +319,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             ) : (
               <button
                 type="button"
-                onClick={() => {
-                  onCloseMobile?.();
-                  onLeaveGuestMode();
-                }}
+                onClick={() => handleSelectSection('settings')}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
               >
                 <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión / Cuenta
@@ -324,13 +328,15 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
 
             <button
               type="button"
-              onClick={() => {
-                onCloseMobile?.();
-                onOpenImport();
-              }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] hover:border-amber-500/40 text-stone-600 dark:text-slate-300 py-2 px-3 text-xs font-semibold transition"
+              onClick={() => handleSelectSection('settings')}
+              className={
+                'w-full flex items-center justify-center gap-2 rounded-xl border py-2 px-3 text-xs font-semibold transition ' +
+                (activeSection === 'settings'
+                  ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
+                  : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] hover:border-amber-500/40 text-stone-600 dark:text-slate-300')
+              }
             >
-              <HardDrive className="w-3.5 h-3.5" /> Copias de Seguridad
+              <Settings className="w-3.5 h-3.5" /> Ajustes de la Biblioteca
             </button>
           </div>
         </div>

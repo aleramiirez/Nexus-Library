@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   LogIn,
   Menu,
+  Settings,
   X
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -92,6 +93,9 @@ const AuthSyncModal = React.lazy(() =>
 );
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
+);
+const SettingsScreen = React.lazy(() =>
+  import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen }))
 );
 
 const initialFilters: LibraryFilters = {
@@ -604,7 +608,7 @@ export const App: React.FC = () => {
             className={
               'p-2 rounded-lg border transition ' +
               (activeSection === 'discover'
-                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold'
                 : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400')
             }
             title="Explorar y Descubrir Libros"
@@ -613,29 +617,21 @@ export const App: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setIsAuthModalOpen(true)}
+            onClick={() => setActiveSection('settings')}
             className={
-              'p-2 rounded-lg border ' +
-              (currentUser
-                ? 'border-emerald-500/40 text-emerald-400'
-                : 'border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400')
+              'p-2 rounded-lg border transition ' +
+              (activeSection === 'settings'
+                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold'
+                : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400')
             }
-            title="Nube Supabase y Cuenta"
+            title="Ajustes y Configuración"
           >
-            <Cloud className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsImportOpen(true)}
-            className="hidden sm:inline-flex p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-amber-500 dark:text-amber-400"
-            title="Copias de Seguridad"
-          >
-            <HardDrive className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={handleOpenCreateBook}
-            className="inline-flex items-center gap-1 rounded-lg bg-amber-500 text-slate-950 font-bold px-3 py-1.5 text-xs"
+            className="inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs shadow-sm transition"
           >
             <Plus className="w-3.5 h-3.5" /> Añadir
           </button>
@@ -1898,10 +1894,33 @@ export const App: React.FC = () => {
               </div>
             </div>
           )}
+
+          {activeSection === 'settings' && (
+            <React.Suspense
+              fallback={
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                  <span className="font-serif text-sm">Cargando ajustes de la biblioteca...</span>
+                </div>
+              }
+            >
+              <SettingsScreen
+                darkMode={darkMode}
+                onToggleTheme={() => setDarkMode((d) => !d)}
+                currentUser={currentUser}
+                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                onTriggerSync={runCloudSync}
+                isSyncing={isSyncing}
+                syncResult={syncResult}
+                books={books}
+                sagas={sagas}
+              />
+            </React.Suspense>
+          )}
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-6 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-7 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
         <button
           type="button"
           onClick={() => setActiveSection('dashboard')}
@@ -1979,6 +1998,19 @@ export const App: React.FC = () => {
         >
           <BarChart3 className="w-4 h-4" />
           Stats
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSection('settings')}
+          className={
+            'flex flex-col items-center gap-1 ' +
+            (activeSection === 'settings'
+              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+              : 'text-stone-500 dark:text-slate-400')
+          }
+        >
+          <Settings className="w-4 h-4" />
+          Ajustes
         </button>
       </nav>
 
