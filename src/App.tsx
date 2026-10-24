@@ -1383,11 +1383,8 @@ export const App: React.FC = () => {
 
                         <div className="flex flex-wrap sm:flex-nowrap items-center md:justify-end gap-3 shrink-0">
                           <div className="text-left md:text-right shrink-0">
-                            <span className="text-xs text-stone-700 dark:text-slate-300 block font-medium">
+                            <span className="text-xs text-stone-700 dark:text-slate-300 font-medium">
                               {item.readCount} leídos · {item.pendingCount} pendientes
-                            </span>
-                            <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                              {item.progressPercent}% sobre volúmenes registrados
                             </span>
                           </div>
 
@@ -1532,11 +1529,23 @@ export const App: React.FC = () => {
                         </form>
                       )}
 
-                      <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 dark:to-emerald-400 transition-all"
-                          style={{ width: String(item.progressPercent) + '%' }}
-                        />
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 dark:to-emerald-400 transition-all duration-500"
+                            style={{ width: String(item.progressPercent) + '%' }}
+                          />
+                        </div>
+                        <span
+                          className={
+                            'text-xs font-bold font-mono shrink-0 min-w-[36px] text-right ' +
+                            (item.progressPercent === 100
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-amber-800 dark:text-amber-300')
+                          }
+                        >
+                          {item.progressPercent}%
+                        </span>
                       </div>
 
                       {activeSagaIdForAssign === item.saga.id && (
