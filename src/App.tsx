@@ -694,10 +694,10 @@ export const App: React.FC = () => {
                 <div className="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
                   <button
                     type="button"
-                    onClick={handleOpenCreateBook}
+                    onClick={() => setActiveSection('library')}
                     className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-black/50 transition"
                   >
-                    <Plus className="w-4 h-4" /> Añadir libro
+                    <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>
                   <button
                     type="button"
@@ -705,13 +705,6 @@ export const App: React.FC = () => {
                     className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
                   >
                     <Compass className="w-4 h-4" /> Explorar y Descubrir
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveSection('library')}
-                    className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
-                  >
-                    <Library className="w-4 h-4" /> Ver Mi Biblioteca
                   </button>
                 </div>
               </div>
