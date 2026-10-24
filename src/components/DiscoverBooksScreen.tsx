@@ -22,6 +22,7 @@ import {
   bookMetadataService,
   DISCOVER_CATEGORIES,
   DiscoverCategory,
+  CURATED_CATEGORY_BOOKS,
   isBookAlreadyInLibrary,
   dismissedRecommendationsService,
   RecommendOptions
@@ -107,7 +108,9 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   );
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>('fantasy');
-  const [categoryBooks, setCategoryBooks] = useState<Record<string, BibliographicCandidate[]>>({});
+  const [categoryBooks, setCategoryBooks] = useState<Record<string, BibliographicCandidate[]>>(() => ({
+    ...CURATED_CATEGORY_BOOKS
+  }));
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
 
   const [selectedCandidate, setSelectedCandidate] = useState<BibliographicCandidate | null>(null);
@@ -241,12 +244,13 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     showToast(`Recomendación de «${candidate.nombre}» descartada.`);
   };
 
-  // Load category books on activeCategory change
+  // Carga complementaria de obras temáticas desde Open Library
   useEffect(() => {
     const category = DISCOVER_CATEGORIES.find((c) => c.id === activeCategoryId);
     if (!category) return;
 
-    if (categoryBooks[category.id]) {
+    // Si ya se ha enriquecido previamente con más de 6 obras, no repetimos la petición de red
+    if (categoryBooks[category.id] && categoryBooks[category.id].length > 6) {
       return;
     }
 
@@ -256,12 +260,20 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     bookMetadataService
       .fetchSubjectBooks(category.subjectKey, 14)
       .then((items) => {
-        if (mounted) {
-          setCategoryBooks((prev) => ({ ...prev, [category.id]: items }));
+        if (mounted && items.length > 0) {
+          setCategoryBooks((prev) => {
+            const existing = prev[category.id] || [];
+            const existingTitles = new Set(existing.map((b) => normalizeText(b.nombre)));
+            const fresh = items.filter((b) => !existingTitles.has(normalizeText(b.nombre)));
+            return {
+              ...prev,
+              [category.id]: [...existing, ...fresh]
+            };
+          });
         }
       })
       .catch(() => {
-        // Ignored
+        // Ignorado: las obras curadas ya están visibles
       })
       .finally(() => {
         if (mounted) setIsLoadingCategory(false);
@@ -270,7 +282,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     return () => {
       mounted = false;
     };
-  }, [activeCategoryId, categoryBooks]);
+  }, [activeCategoryId]);
 
   // Comprobación inteligente de existencia en biblioteca (ISBN, bilingüe, sagas y autor+tokens)
   const isCandidateInLibrary = useMemo(() => {
@@ -794,19 +806,22 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                   <span className="text-base">{currentCategory.icon}</span>
                   <span>{currentCategory.description}</span>
                 </div>
-                <span className="hidden sm:inline font-mono text-[10px] text-stone-500 dark:text-slate-400">
-                  {currentCategoryBooks.length} volúmenes
-                </span>
+                <div className="flex items-center gap-2.5">
+                  {isLoadingCategory && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span className="hidden md:inline">Ampliando catálogo...</span>
+                    </span>
+                  )}
+                  <span className="font-mono text-[10px] text-stone-500 dark:text-slate-400">
+                    {currentCategoryBooks.length} volúmenes
+                  </span>
+                </div>
               </div>
             )}
 
             {/* Cuadrícula de libros de la categoría */}
-            {isLoadingCategory ? (
-              <div className="flex items-center justify-center py-12 text-xs text-stone-500 dark:text-slate-400 gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
-                Recuperando obras de Open Library...
-              </div>
-            ) : currentCategoryBooks.length > 0 ? (
+            {currentCategoryBooks.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4.5">
                 {currentCategoryBooks.map((cand) => {
                   const inLibrary = isCandidateInLibrary(cand);
@@ -879,7 +894,37 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                   );
                 })}
               </div>
-            ) : null}
+            ) : isLoadingCategory ? (
+              <div className="flex items-center justify-center py-12 text-xs text-stone-500 dark:text-slate-400 gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
+                Cargando obras del catálogo...
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center bg-[#fbf6ea]/40 dark:bg-transparent">
+                <BookOpen className="w-8 h-8 text-stone-400 dark:text-slate-500 mx-auto mb-2" />
+                <p className="font-serif text-sm font-semibold text-stone-800 dark:text-slate-200">
+                  No se pudieron cargar obras para esta estantería
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const category = DISCOVER_CATEGORIES.find((c) => c.id === activeCategoryId);
+                    if (category) {
+                      setIsLoadingCategory(true);
+                      bookMetadataService
+                        .fetchSubjectBooks(category.subjectKey, 14)
+                        .then((items) => {
+                          setCategoryBooks((prev) => ({ ...prev, [category.id]: items }));
+                        })
+                        .finally(() => setIsLoadingCategory(false));
+                    }
+                  }}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
@@ -931,6 +976,21 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       {selectedCandidate.autor || 'Autor no especificado'}
                     </p>
                   </div>
+
+                  {/* Motivo completo de la sugerencia (visible al detalle sin cortes) */}
+                  {selectedCandidate.recommendationReason && (
+                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-600/35 bg-amber-500/10 dark:bg-amber-500/15 p-3 text-xs shadow-sm">
+                      <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400">
+                          ¿Por qué te lo sugerimos?
+                        </span>
+                        <p className="font-serif text-xs sm:text-sm font-semibold text-stone-900 dark:text-amber-100 mt-0.5 leading-snug">
+                          {selectedCandidate.recommendationReason}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {selectedCandidate.fechaPublicacion && (
