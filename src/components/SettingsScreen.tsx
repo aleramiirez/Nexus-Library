@@ -400,33 +400,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               {/* Opción Tema Claro */}
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   if (darkMode) onToggleTheme();
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (darkMode) onToggleTheme();
+                  }
+                }}
                 className={
-                  'group relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-300 ' +
+                  'group relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 ' +
                   (!darkMode
-                    ? 'border-amber-600 bg-[#fffcf5] shadow-lg shadow-amber-900/10 ring-1 ring-amber-600/30'
-                    : 'border-amber-900/20 dark:border-[#283246] bg-[#f4ebd6]/60 dark:bg-[#101520] hover:border-amber-500/50')
+                    ? 'border-amber-600 bg-[#fffcf5] dark:bg-[#151D2A] shadow-md shadow-amber-900/10 ring-1 ring-amber-600/30'
+                    : 'border-amber-900/20 dark:border-[#283246] bg-[#f4ebd6]/60 dark:bg-[#101520] hover:border-amber-500/50 hover:bg-[#fffcf5]/70 dark:hover:bg-[#141A26]')
                 }
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-800 dark:text-amber-300">
                       <Sun className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-serif text-base font-bold text-stone-900">
+                      <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
                         Papel Crema Clásico
                       </h3>
-                      <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider block">
                         Recomendado / Diseño Principal
                       </span>
                     </div>
                   </div>
-                  {!darkMode && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] px-2.5 py-0.5">
+                  {!darkMode ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] px-2.5 py-0.5 shadow-sm">
                       <Check className="w-3 h-3" /> Activo
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] text-stone-500 dark:text-slate-400 text-[10px] font-semibold px-2.5 py-0.5 group-hover:border-amber-500/50 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                      Seleccionar
                     </span>
                   )}
                 </div>
@@ -434,7 +446,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="rounded-xl border border-amber-900/15 bg-[#f7f0df] p-3 text-xs text-stone-800 space-y-1.5 shadow-inner">
                   <div className="flex items-center justify-between text-[11px] font-serif font-bold text-amber-900">
                     <span>Estantería de Lectura</span>
-                    <span>★★★★★</span>
+                    <span className="text-amber-700">★★★★★</span>
                   </div>
                   <p className="text-[11px] text-stone-600 leading-snug">
                     Fondo cálido en papel de lectura, tipografía serif editorial y estanterías de
@@ -445,33 +457,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
               {/* Opción Tema Oscuro */}
               <div
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   if (!darkMode) onToggleTheme();
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!darkMode) onToggleTheme();
+                  }
+                }}
                 className={
-                  'group relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-300 ' +
+                  'group relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 ' +
                   (darkMode
                     ? 'border-amber-400 bg-[#0E131E] shadow-xl shadow-black/40 ring-1 ring-amber-400/30'
-                    : 'border-amber-900/20 dark:border-[#283246] bg-[#f4ebd6]/60 dark:bg-[#101520] hover:border-amber-500/50')
+                    : 'border-amber-900/20 dark:border-[#283246] bg-[#f4ebd6]/60 dark:bg-[#101520] hover:border-amber-500/50 hover:bg-[#fffcf5]/70 dark:hover:bg-[#141A26]')
                 }
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-300">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-800 dark:text-amber-300">
                       <Moon className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-serif text-base font-bold text-slate-100">
+                      <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
                         Biblioteca Nocturna
                       </h3>
-                      <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider block">
                         Lectura en penumbra
                       </span>
                     </div>
                   </div>
-                  {darkMode && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px] px-2.5 py-0.5">
+                  {darkMode ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px] px-2.5 py-0.5 shadow-sm">
                       <Check className="w-3 h-3" /> Activo
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] text-stone-500 dark:text-slate-400 text-[10px] font-semibold px-2.5 py-0.5 group-hover:border-amber-500/50 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                      Seleccionar
                     </span>
                   )}
                 </div>
@@ -479,7 +503,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="rounded-xl border border-slate-700/60 bg-[#080C15] p-3 text-xs text-slate-200 space-y-1.5 shadow-inner">
                   <div className="flex items-center justify-between text-[11px] font-serif font-bold text-amber-300">
                     <span>Estantería de Lectura</span>
-                    <span>★★★★★</span>
+                    <span className="text-amber-400">★★★★★</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
                     Fondo pizarra oscuro con acentos dorados y carmesí. Ideal si prefieres leer de
