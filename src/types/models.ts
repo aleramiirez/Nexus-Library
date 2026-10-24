@@ -89,3 +89,15 @@ export interface BackupPayload {
   sagas: Saga[];
 }
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  isPublic: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+

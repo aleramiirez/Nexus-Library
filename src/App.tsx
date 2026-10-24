@@ -58,8 +58,10 @@ import {
   LibraryViewMode,
   Saga,
   SortField,
-  StarRating
+  StarRating,
+  UserProfile
 } from './types/models';
+import { profileService } from './services/profileService';
 import {
   formatStars,
   GENRES,
@@ -134,6 +136,8 @@ export const App: React.FC = () => {
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
+  const [guestAlias, setGuestAlias] = useState<string>(() => profileService.getGuestAlias());
   const [authLoading, setAuthLoading] = useState(true);
   const [offlineGuestMode, setOfflineGuestMode] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncMigrationResult | null>(null);
@@ -226,8 +230,14 @@ export const App: React.FC = () => {
         if (!mounted) return;
 
         if (data.session?.user) {
-          setCurrentUser(data.session.user);
+          const user = data.session.user;
+          setCurrentUser(user);
+          const cached = profileService.getCachedProfile(user.id);
+          if (cached) setCurrentUserProfile(cached);
           setAuthLoading(false);
+          profileService.fetchUserProfile(user.id, user.email).then((prof) => {
+            if (mounted && prof) setCurrentUserProfile(prof);
+          });
           await runCloudSync();
         } else {
           const settings = await fetchSupabaseAuthSettings();
@@ -251,15 +261,21 @@ export const App: React.FC = () => {
 
     initAuthAndSync();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       const nextUser = session?.user ?? null;
       setCurrentUser(nextUser);
       setIsAuthModalOpen(false);
       if (nextUser) {
         setOfflineGuestMode(false);
+        const cached = profileService.getCachedProfile(nextUser.id);
+        if (cached) setCurrentUserProfile(cached);
+        profileService.fetchUserProfile(nextUser.id, nextUser.email).then((prof) => {
+          if (mounted && prof) setCurrentUserProfile(prof);
+        });
         runCloudSync();
       } else {
+        setCurrentUserProfile(null);
         setSyncResult(null);
       }
     });
@@ -556,9 +572,26 @@ export const App: React.FC = () => {
     return <AuthScreen onContinueOffline={() => setOfflineGuestMode(true)} />;
   }
 
-  const userInitial = currentUser?.email
-    ? currentUser.email.charAt(0).toUpperCase()
-    : 'L';
+  const handleUpdateProfile = async (updates: Partial<UserProfile>) => {
+    if (!currentUser) return;
+    const updated = await profileService.updateUserProfile(currentUser.id, updates);
+    setCurrentUserProfile(updated);
+  };
+
+  const handleUpdateGuestAlias = (alias: string) => {
+    profileService.setGuestAlias(alias);
+    setGuestAlias(alias);
+  };
+
+  const userInitial = (
+    currentUserProfile?.displayName ||
+    currentUser?.email ||
+    guestAlias ||
+    'L'
+  )
+    .trim()
+    .charAt(0)
+    .toUpperCase();
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f7f0df] dark:bg-[#080C15] text-stone-900 dark:text-slate-100 relative">
@@ -576,6 +609,8 @@ export const App: React.FC = () => {
         sagasCount={sagas.length}
         hasUser={Boolean(currentUser)}
         userEmail={currentUser?.email}
+        userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
+        username={currentUserProfile?.username}
         userInitial={userInitial}
         isSyncing={isSyncing}
         mobileOpen={mobileMenuOpen}
@@ -1901,6 +1936,10 @@ export const App: React.FC = () => {
                 darkMode={darkMode}
                 onToggleTheme={() => setDarkMode((d) => !d)}
                 currentUser={currentUser}
+                userProfile={currentUserProfile}
+                onUpdateProfile={handleUpdateProfile}
+                guestAlias={guestAlias}
+                onUpdateGuestAlias={handleUpdateGuestAlias}
                 onOpenAuthModal={() => setIsAuthModalOpen(true)}
                 onTriggerSync={runCloudSync}
                 isSyncing={isSyncing}

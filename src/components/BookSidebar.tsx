@@ -43,6 +43,8 @@ interface BookSidebarProps {
   sagasCount: number;
   hasUser: boolean;
   userEmail?: string | null;
+  userDisplayName?: string | null;
+  username?: string | null;
   userInitial: string;
   isSyncing: boolean;
   mobileOpen?: boolean;
@@ -121,6 +123,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   sagasCount,
   hasUser,
   userEmail,
+  userDisplayName,
+  username,
   userInitial,
   isSyncing,
   mobileOpen = false,
@@ -300,7 +304,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             >
               {hasUser ? (
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
-                  {userInitial}
+                  {userDisplayName ? userDisplayName.charAt(0).toUpperCase() : userInitial}
                 </div>
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -310,7 +314,9 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
 
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
-                  {hasUser ? userEmail : 'Modo Local'}
+                  {hasUser
+                    ? (userDisplayName || userEmail || 'Mi Cuenta')
+                    : (userDisplayName || 'Modo Local')}
                 </p>
                 <div className="flex items-center gap-1.5 text-[10px]">
                   {hasUser ? (
@@ -322,7 +328,9 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                     ) : (
                       <>
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">Nube al día</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
+                          {username ? `@${username}` : 'Nube al día'}
+                        </span>
                       </>
                     )
                   ) : (

@@ -21,10 +21,12 @@ import {
   Check,
   Info,
   User as UserIcon,
-  BookOpen
+  BookOpen,
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
-import { Book, Saga } from '../types/models';
+import { Book, Saga, UserProfile } from '../types/models';
 import {
   clearLocalCacheOnSignOut,
   requestPersistentStorage,
@@ -39,6 +41,7 @@ import {
   parseBackupJson
 } from '../services/importExportService';
 import { bookMetadataService } from '../services/bookMetadataService';
+import { profileService } from '../services/profileService';
 
 export type SettingsTab = 'appearance' | 'account' | 'metadata' | 'backup';
 
@@ -46,10 +49,14 @@ interface SettingsScreenProps {
   darkMode: boolean;
   onToggleTheme: () => void;
   currentUser: User | null;
+  userProfile?: UserProfile | null;
+  onUpdateProfile?: (updates: Partial<UserProfile>) => Promise<void>;
+  guestAlias?: string;
+  onUpdateGuestAlias?: (alias: string) => void;
   onOpenAuthModal: () => void;
   onTriggerSync: () => Promise<void>;
   isSyncing: boolean;
-  syncResult: SyncMigrationResult | null;
+  syncResult?: SyncMigrationResult | null;
   books: Book[];
   sagas: Saga[];
   initialTab?: SettingsTab;
@@ -59,6 +66,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   darkMode,
   onToggleTheme,
   currentUser,
+  userProfile,
+  onUpdateProfile,
+  guestAlias = '',
+  onUpdateGuestAlias,
   onOpenAuthModal,
   onTriggerSync,
   isSyncing,
@@ -76,6 +87,99 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Estados de almacenamiento persistente
   const [isPersisted, setIsPersisted] = useState<boolean | null>(null);
+
+  // Estados de perfil de lector (Alias y Usuario)
+  const [profileDisplayName, setProfileDisplayName] = useState(
+    currentUser ? (userProfile?.displayName || '') : guestAlias
+  );
+  const [profileUsername, setProfileUsername] = useState(userProfile?.username || '');
+  const [profileBio, setProfileBio] = useState(userProfile?.bio || '');
+  const [profileIsPublic, setProfileIsPublic] = useState(userProfile?.isPublic ?? true);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [usernameCheck, setUsernameCheck] = useState<{
+    status: 'idle' | 'checking' | 'available' | 'unavailable';
+    message?: string;
+  }>({ status: 'idle' });
+
+  useEffect(() => {
+    if (currentUser && userProfile) {
+      setProfileDisplayName(userProfile.displayName || '');
+      setProfileUsername(userProfile.username || '');
+      setProfileBio(userProfile.bio || '');
+      setProfileIsPublic(userProfile.isPublic ?? true);
+    } else if (!currentUser) {
+      setProfileDisplayName(guestAlias);
+    }
+  }, [currentUser, userProfile, guestAlias]);
+
+  const handleUsernameBlur = async () => {
+    if (!currentUser || !profileUsername.trim()) return;
+    const clean = profileUsername.trim().toLowerCase();
+    if (clean === userProfile?.username) {
+      setUsernameCheck({ status: 'available', message: 'Tu nombre de usuario actual' });
+      return;
+    }
+    setUsernameCheck({ status: 'checking' });
+    const res = await profileService.checkUsernameAvailable(clean, currentUser.id);
+    if (res.available) {
+      setUsernameCheck({ status: 'available', message: '¡Disponible!' });
+    } else {
+      setUsernameCheck({ status: 'unavailable', message: res.reason || 'Nombre no disponible' });
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      onUpdateGuestAlias?.(profileDisplayName);
+      setFeedback({ type: 'success', text: 'Alias guardado localmente en este dispositivo.' });
+      return;
+    }
+
+    if (!profileDisplayName.trim()) {
+      setFeedback({ type: 'error', text: 'Por favor, introduce un nombre visible o alias.' });
+      return;
+    }
+
+    if (!profileUsername.trim()) {
+      setFeedback({ type: 'error', text: 'Por favor, introduce un nombre de usuario.' });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const cleanUsername = profileUsername.trim().toLowerCase();
+      if (cleanUsername !== userProfile?.username) {
+        const check = await profileService.checkUsernameAvailable(cleanUsername, currentUser.id);
+        if (!check.available) {
+          setFeedback({ type: 'error', text: check.reason || 'El nombre de usuario no está disponible.' });
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
+      if (onUpdateProfile) {
+        await onUpdateProfile({
+          displayName: profileDisplayName.trim(),
+          username: cleanUsername,
+          bio: profileBio.trim(),
+          isPublic: profileIsPublic
+        });
+      }
+
+      setFeedback({
+        type: 'success',
+        text: '¡Perfil actualizado! Tu alias y nombre de usuario ya están activos.'
+      });
+    } catch (err: unknown) {
+      setFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Error al guardar el perfil.'
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Mensajes de estado / feedback
   const [feedback, setFeedback] = useState<{
@@ -556,22 +660,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="flex items-center gap-3.5">
                 {currentUser ? (
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-md shrink-0">
-                    {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'L'}
+                    {userProfile?.displayName
+                      ? userProfile.displayName.charAt(0).toUpperCase()
+                      : currentUser.email
+                      ? currentUser.email.charAt(0).toUpperCase()
+                      : 'L'}
                   </div>
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-center justify-center shadow-sm shrink-0">
-                    <UserIcon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-center justify-center shadow-sm shrink-0 font-serif font-bold text-xl">
+                    {guestAlias ? guestAlias.charAt(0).toUpperCase() : <UserIcon className="w-6 h-6" />}
                   </div>
                 )}
 
                 <div>
-                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
-                    {currentUser?.email || 'Lector en Modo Local'}
+                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                    {currentUser
+                      ? (userProfile?.displayName || currentUser.email)
+                      : (guestAlias ? `${guestAlias} (Modo Local)` : 'Lector en Modo Local')}
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-                    {currentUser
-                      ? 'Tu biblioteca se sincroniza de forma automática y privada con tu cuenta.'
-                      : 'Actualmente tus libros se guardan solo en la memoria de este navegador.'}
+                    {currentUser ? (
+                      userProfile?.username ? (
+                        <span className="font-mono text-amber-700 dark:text-amber-400 font-semibold">
+                          @{userProfile.username} · {currentUser.email}
+                        </span>
+                      ) : (
+                        currentUser.email
+                      )
+                    ) : (
+                      'Tus libros se guardan solo en la memoria de este navegador.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -607,6 +725,157 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* ─── Formulario de Identidad / Perfil de Lector ─── */}
+            <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 space-y-4">
+              <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Identidad y Alias de Lector
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
+                    Define cómo quieres que te conozcan en Nexus Library para cuando busques amigos o compartas recomendaciones.
+                  </p>
+                </div>
+                {currentUser && userProfile?.isPublic && (
+                  <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold px-2.5 py-0.5 border border-emerald-500/30">
+                    Perfil público
+                  </span>
+                )}
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Alias o Nombre visible */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="input-alias" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+                      Alias o Nombre Visible
+                    </label>
+                    <input
+                      id="input-alias"
+                      type="text"
+                      value={profileDisplayName}
+                      onChange={(e) => setProfileDisplayName(e.target.value)}
+                      placeholder="Ej: Alejandro Ramírez"
+                      maxLength={50}
+                      className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] px-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                    />
+                    <p className="text-[11px] text-stone-500 dark:text-slate-500 leading-tight">
+                      Tu nombre personal. Puede incluir espacios, tildes y mayúsculas.
+                    </p>
+                  </div>
+
+                  {/* Nombre de usuario (@handle) */}
+                  {currentUser ? (
+                    <div className="space-y-1.5">
+                      <label htmlFor="input-username" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+                        Nombre de Usuario (@handle)
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-xs font-bold text-amber-700 dark:text-amber-400 select-none">@</span>
+                        <input
+                          id="input-username"
+                          type="text"
+                          value={profileUsername}
+                          onChange={(e) => {
+                            setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                            setUsernameCheck({ status: 'idle' });
+                          }}
+                          onBlur={handleUsernameBlur}
+                          placeholder="aleramirez"
+                          maxLength={25}
+                          className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] pl-7 pr-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-mono"
+                        />
+                      </div>
+                      {usernameCheck.status === 'checking' && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Comprobando si está libre...
+                        </p>
+                      )}
+                      {usernameCheck.status === 'available' && (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
+                          <Check className="w-3 h-3" /> {usernameCheck.message || '¡Disponible!'}
+                        </p>
+                      )}
+                      {usernameCheck.status === 'unavailable' && (
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1 font-semibold">
+                          <AlertCircle className="w-3 h-3" /> {usernameCheck.message}
+                        </p>
+                      )}
+                      {usernameCheck.status === 'idle' && (
+                        <p className="text-[11px] text-stone-500 dark:text-slate-500 leading-tight">
+                          Identificador único para que otros lectores puedan encontrarte.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#141A26] p-3 text-xs text-stone-600 dark:text-slate-400 flex flex-col justify-center">
+                      <span className="font-semibold text-stone-800 dark:text-slate-200">¿Quieres tu @usuario único?</span>
+                      <p className="text-[11px] mt-0.5">
+                        Inicia sesión con tu cuenta para reservar tu nombre de usuario y compartir lecturas con amigos.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Biografía / Gustos de lectura */}
+                {currentUser && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="input-bio" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+                      Biografía o Gustos Literarios (opcional)
+                    </label>
+                    <textarea
+                      id="input-bio"
+                      rows={2}
+                      value={profileBio}
+                      onChange={(e) => setProfileBio(e.target.value)}
+                      placeholder="Ej: Lector empedernido de fantasía épica, ciencia ficción, novelas de misterio y no ficción..."
+                      maxLength={200}
+                      className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] p-3 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                    />
+                    <div className="flex justify-between text-[11px] text-stone-500 dark:text-slate-500">
+                      <span>Visible para otros lectores en tu perfil público.</span>
+                      <span>{profileBio.length} / 200</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Switch de Privacidad */}
+                {currentUser && (
+                  <label className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/60 dark:bg-[#141A26] cursor-pointer hover:border-amber-500/40 transition">
+                    <input
+                      type="checkbox"
+                      checked={profileIsPublic}
+                      onChange={(e) => setProfileIsPublic(e.target.checked)}
+                      className="rounded border-amber-600 text-amber-600 focus:ring-amber-500 mt-0.5"
+                    />
+                    <div className="text-xs">
+                      <span className="font-semibold text-stone-800 dark:text-slate-200 block">
+                        Estantería y perfil público
+                      </span>
+                      <span className="text-stone-600 dark:text-slate-400 text-[11px]">
+                        Permite que amigos puedan buscarte, ver qué estás leyendo y recomendarte libros.
+                      </span>
+                    </div>
+                  </label>
+                )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 text-xs shadow-md transition"
+                  >
+                    {isSavingProfile ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    {isSavingProfile ? 'Guardando...' : 'Guardar Perfil de Lector'}
+                  </button>
+                </div>
+              </form>
             </div>
 
             {/* Información amigable de sincronización */}
