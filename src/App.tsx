@@ -1393,14 +1393,36 @@ export const App: React.FC = () => {
 
                           <button
                             type="button"
-                            onClick={() =>
-                              setActiveSagaIdForAssign(
-                                activeSagaIdForAssign === item.saga.id ? null : item.saga.id
-                              )
+                            onClick={() => {
+                              if (activeSagaIdForAssign === item.saga.id) {
+                                setActiveSagaIdForAssign(null);
+                                setAssignBookId('');
+                                setAssignVolume('1');
+                              } else {
+                                setActiveSagaIdForAssign(item.saga.id);
+                                setAssignBookId('');
+                                const maxVol = item.books.reduce(
+                                  (max, b) => (b.volumen && b.volumen > max ? b.volumen : max),
+                                  0
+                                );
+                                setAssignVolume(String(maxVol + 1));
+                              }
+                            }}
+                            className={
+                              activeSagaIdForAssign === item.saga.id
+                                ? 'inline-flex items-center gap-1 rounded-lg border border-rose-500/30 dark:border-rose-400/30 bg-rose-500/10 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300 font-medium hover:bg-rose-500/20 transition'
+                                : 'inline-flex items-center gap-1 rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20 transition'
                             }
-                            className="rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20"
                           >
-                            + Asignar libro existente
+                            {activeSagaIdForAssign === item.saga.id ? (
+                              <>
+                                <X className="w-3.5 h-3.5" /> Cancelar
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-3.5 h-3.5" /> Asignar libro existente
+                              </>
+                            )}
                           </button>
                           <button
                             type="button"
@@ -1514,15 +1536,15 @@ export const App: React.FC = () => {
                       </div>
 
                       {activeSagaIdForAssign === item.saga.id && (
-                        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-[#f4ead4] dark:bg-[#101520] p-3">
+                        <div className="flex flex-wrap items-end gap-2.5 rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-[#f4ead4] dark:bg-[#101520] p-3.5">
                           <div className="flex-1 min-w-[200px]">
-                            <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
+                            <label className="block text-[11px] font-semibold text-stone-700 dark:text-slate-300 mb-1">
                               Libro de tu biblioteca
                             </label>
                             <select
                               value={assignBookId}
                               onChange={(e) => setAssignBookId(e.target.value)}
-                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100"
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400"
                             >
                               <option value="">— Selecciona un libro —</option>
                               {books
@@ -1534,8 +1556,8 @@ export const App: React.FC = () => {
                                 ))}
                             </select>
                           </div>
-                          <div className="w-28">
-                            <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
+                          <div className="w-24 sm:w-28">
+                            <label className="block text-[11px] font-semibold text-stone-700 dark:text-slate-300 mb-1">
                               Volumen #
                             </label>
                             <input
@@ -1543,16 +1565,30 @@ export const App: React.FC = () => {
                               min="1"
                               value={assignVolume}
                               onChange={(e) => setAssignVolume(e.target.value)}
-                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100"
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400"
                             />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleAssignBookToSaga(item.saga)}
-                            className="rounded-lg bg-amber-500 text-slate-950 font-bold px-3.5 py-1.5 text-xs"
-                          >
-                            Vincular
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveSagaIdForAssign(null);
+                                setAssignBookId('');
+                                setAssignVolume('1');
+                              }}
+                              className="rounded-lg border border-amber-900/25 dark:border-slate-700 bg-transparent px-3 py-1.5 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!assignBookId}
+                              onClick={() => handleAssignBookToSaga(item.saga)}
+                              className="rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold px-3.5 py-1.5 text-xs transition shadow-sm"
+                            >
+                              Vincular
+                            </button>
+                          </div>
                         </div>
                       )}
 
