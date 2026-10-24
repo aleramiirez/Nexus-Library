@@ -57,7 +57,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
 
   // Estado de libros agregados en esta sesión
@@ -117,6 +117,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     setSelectedReader(reader);
     setIsLoadingLibrary(true);
     setShelfFilter('all');
+    setViewMode('shelf');
 
     try {
       const data = await communityService.fetchUserPublicLibrary(reader.id);
@@ -273,22 +274,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </button>
             </div>
 
-            {/* Selector de vista: Cuadrícula vs Estantería de madera */}
+            {/* Selector de vista: Estantería de madera vs Cuadrícula */}
             <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                  (viewMode === 'grid'
-                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
-                }
-                title="Vista en tarjetas"
-              >
-                <Grid className="w-3.5 h-3.5" />
-                <span>Cuadrícula</span>
-              </button>
               <button
                 type="button"
                 onClick={() => setViewMode('shelf')}
@@ -302,6 +289,20 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               >
                 <Rows3 className="w-3.5 h-3.5" />
                 <span>Estantería</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
+                  (viewMode === 'grid'
+                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
+                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                }
+                title="Vista en tarjetas"
+              >
+                <Grid className="w-3.5 h-3.5" />
+                <span>Cuadrícula</span>
               </button>
             </div>
           </div>
