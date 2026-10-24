@@ -108,7 +108,7 @@ html.dark .bookcase {
   position: relative;
   isolation: isolate;
   display: block;
-  width: var(--w, 100%);
+  width: 100%;
   max-width: 150px;
   margin: 0 auto;
   padding: 0;

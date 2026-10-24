@@ -14,16 +14,9 @@ const SHELF_GAP = 20;
 const MIN_BOOK_WIDTH = 128;
 const MAX_COLS = 6;
 
-// Anchura estable (88-100 %) según el id: los libros no son todos idénticos, como en una estantería real
-const bookWidth = (id: string) => {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return 88 + (h % 13);
-};
-
 /**
  * Vista de estantería: una librería de madera con baldas.
- * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo.
+ * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo uniforme.
  * - Título de cada libro en una placa de latón en el canto de la balda.
  * - El número de libros por balda se adapta al ancho disponible.
  */
@@ -73,7 +66,7 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({ books, onOpenDetail }) =
                     key={book.id}
                     type="button"
                     className="shelf-book"
-                    style={{ '--i': i, '--w': `${bookWidth(book.id)}%` } as React.CSSProperties}
+                    style={{ '--i': i } as React.CSSProperties}
                     onClick={() => onOpenDetail(book.id)}
                     onMouseEnter={() => setActiveId(book.id)}
                     onMouseLeave={() => setActiveId(null)}
