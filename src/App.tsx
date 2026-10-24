@@ -1364,12 +1364,12 @@ export const App: React.FC = () => {
                       className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-4 shadow-md"
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-3.5">
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                            <h2 className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-400">
+                            <h2 className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-400 break-words">
                               {item.saga.nombre}
                             </h2>
-                            <span className="rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-900 dark:text-amber-200 font-semibold">
+                            <span className="rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-900 dark:text-amber-200 font-semibold shrink-0">
                               {item.registeredCount}{' '}
                               {item.registeredCount === 1
                                 ? 'volumen registrado'
@@ -1381,8 +1381,8 @@ export const App: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="text-right">
+                        <div className="flex flex-wrap sm:flex-nowrap items-center md:justify-end gap-3 shrink-0">
+                          <div className="text-left md:text-right shrink-0">
                             <span className="text-xs text-stone-700 dark:text-slate-300 block font-medium">
                               {item.readCount} leídos · {item.pendingCount} pendientes
                             </span>
@@ -1391,84 +1391,88 @@ export const App: React.FC = () => {
                             </span>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (activeSagaIdForAssign === item.saga.id) {
-                                setActiveSagaIdForAssign(null);
-                                setAssignBookId('');
-                                setAssignVolume('1');
-                              } else {
-                                setActiveSagaIdForAssign(item.saga.id);
-                                setAssignBookId('');
-                                const maxVol = item.books.reduce(
-                                  (max, b) => (b.volumen && b.volumen > max ? b.volumen : max),
-                                  0
-                                );
-                                setAssignVolume(String(maxVol + 1));
-                              }
-                            }}
-                            className={
-                              activeSagaIdForAssign === item.saga.id
-                                ? 'inline-flex items-center gap-1 rounded-lg border border-rose-500/30 dark:border-rose-400/30 bg-rose-500/10 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300 font-medium hover:bg-rose-500/20 transition'
-                                : 'inline-flex items-center gap-1 rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20 transition'
-                            }
-                          >
-                            {activeSagaIdForAssign === item.saga.id ? (
-                              <>
-                                <X className="w-3.5 h-3.5" /> Cancelar
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5" /> Asignar libro existente
-                              </>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (sagaFormOpen && editingSaga?.id === item.saga.id) {
-                                setSagaFormOpen(false);
-                                setEditingSaga(null);
-                              } else {
-                                setEditingSaga(item.saga);
-                                setSagaNameInput(item.saga.nombre);
-                                setSagaDescInput(item.saga.descripcion);
-                                setSagaError('');
-                                setSagaFormOpen(true);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 text-xs text-stone-700 dark:text-slate-300 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
-                            title="Editar nombre o descripción de la saga"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" /> Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (
-                                window.confirm(
-                                  '¿Eliminar la saga "' +
-                                    item.saga.nombre +
-                                    '"? Los libros asociados se conservarán en tu biblioteca como libros independientes.'
-                                )
-                              ) {
-                                try {
-                                  await deleteSagaAndUnlinkBooks(item.saga.id);
-                                } catch (err: unknown) {
-                                  setGlobalError(
-                                    err instanceof Error
-                                      ? err.message
-                                      : 'Error al eliminar la saga.'
+                          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (activeSagaIdForAssign === item.saga.id) {
+                                  setActiveSagaIdForAssign(null);
+                                  setAssignBookId('');
+                                  setAssignVolume('1');
+                                } else {
+                                  setActiveSagaIdForAssign(item.saga.id);
+                                  setAssignBookId('');
+                                  const maxVol = item.books.reduce(
+                                    (max, b) => (b.volumen && b.volumen > max ? b.volumen : max),
+                                    0
                                   );
+                                  setAssignVolume(String(maxVol + 1));
                                 }
+                              }}
+                              className={
+                                activeSagaIdForAssign === item.saga.id
+                                  ? 'inline-flex items-center gap-1 rounded-lg border border-rose-500/30 dark:border-rose-400/30 bg-rose-500/10 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300 font-medium hover:bg-rose-500/20 transition whitespace-nowrap'
+                                  : 'inline-flex items-center gap-1 rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20 transition whitespace-nowrap'
                               }
-                            }}
-                            className="p-1.5 rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15"
-                            title="Eliminar saga"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            >
+                              {activeSagaIdForAssign === item.saga.id ? (
+                                <>
+                                  <X className="w-3.5 h-3.5" /> Cancelar
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3.5 h-3.5" /> Asignar libro existente
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sagaFormOpen && editingSaga?.id === item.saga.id) {
+                                  setSagaFormOpen(false);
+                                  setEditingSaga(null);
+                                } else {
+                                  setEditingSaga(item.saga);
+                                  setSagaNameInput(item.saga.nombre);
+                                  setSagaDescInput(item.saga.descripcion);
+                                  setSagaError('');
+                                  setSagaFormOpen(true);
+                                }
+                              }}
+                              className="p-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 text-stone-700 dark:text-slate-300 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                              title="Editar nombre o descripción de la saga"
+                              aria-label="Editar saga"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    '¿Eliminar la saga "' +
+                                      item.saga.nombre +
+                                      '"? Los libros asociados se conservarán en tu biblioteca como libros independientes.'
+                                  )
+                                ) {
+                                  try {
+                                    await deleteSagaAndUnlinkBooks(item.saga.id);
+                                  } catch (err: unknown) {
+                                    setGlobalError(
+                                      err instanceof Error
+                                        ? err.message
+                                        : 'Error al eliminar la saga.'
+                                    );
+                                  }
+                                }
+                              }}
+                              className="p-1.5 rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15 transition"
+                              title="Eliminar saga"
+                              aria-label="Eliminar saga"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
