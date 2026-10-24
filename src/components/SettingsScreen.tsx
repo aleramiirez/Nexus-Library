@@ -13,14 +13,15 @@ import {
   RefreshCw,
   LogOut,
   LogIn,
-  Database,
   Sun,
   Moon,
   FileSpreadsheet,
   FileCode,
   ShieldCheck,
   Check,
-  Info
+  Info,
+  User as UserIcon,
+  BookOpen
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga } from '../types/models';
@@ -61,7 +62,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onOpenAuthModal,
   onTriggerSync,
   isSyncing,
-  syncResult,
   books,
   sagas,
   initialTab = 'appearance'
@@ -96,7 +96,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const coverPercentage =
     books.length > 0 ? Math.round((booksWithCoversCount / books.length) * 100) : 100;
 
-  /* ─────────────────── Manejadores de Enriquecimiento ─────────────────── */
+  /* ─────────────────── Enriquecimiento de Portadas ─────────────────── */
   const handleEnrichMissingCovers = async () => {
     if (booksMissingCovers.length === 0 || isEnriching) return;
     setIsEnriching(true);
@@ -132,32 +132,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           updatedCount++;
         }
       } catch {
-        // Continuar con el siguiente
+        // Continuar con el siguiente libro
       }
-      await new Promise((r) => setTimeout(r, 320));
+      await new Promise((r) => setTimeout(r, 300));
     }
 
     setEnrichProgress(null);
     setIsEnriching(false);
     setFeedback({
       type: 'success',
-      text: `¡Catálogo actualizado! Se completaron portadas y datos bibliográficos en ${updatedCount} de ${batch.length} libros.`
+      text: `¡Catálogo completado! Se han actualizado portadas y datos bibliográficos en ${updatedCount} de ${batch.length} libros.`
     });
   };
 
-  /* ─────────────────── Almacenamiento Persistente ─────────────────── */
+  /* ─────────────────── Protección de almacenamiento en el equipo ─────────────────── */
   const handleRequestStorage = async () => {
     const granted = await requestPersistentStorage();
     setIsPersisted(granted);
     if (granted) {
       setFeedback({
         type: 'success',
-        text: 'Almacenamiento persistente concedido por el navegador. Tus libros no se borrarán aunque el dispositivo tenga poco espacio.'
+        text: 'Protección activada. Tu navegador conservará tu biblioteca de forma permanente sin peligro de borrado automático.'
       });
     } else {
       setFeedback({
         type: 'info',
-        text: 'El navegador gestiona el almacenamiento con la cuota estándar actual.'
+        text: 'El navegador gestiona el almacenamiento con la cuota estándar del sistema.'
       });
     }
   };
@@ -170,17 +170,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `nexus-library-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `nexus-library-copia-completa-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       setFeedback({
         type: 'success',
-        text: 'Copia de seguridad completa en formato JSON descargada correctamente.'
+        text: 'Copia de seguridad completa descargada correctamente en tu dispositivo.'
       });
     } catch {
       setFeedback({
         type: 'error',
-        text: 'Error al generar la copia de seguridad JSON.'
+        text: 'Hubo un inconveniente al generar la copia de seguridad. Por favor, inténtalo de nuevo.'
       });
     }
   };
@@ -192,17 +192,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `nexus-library-coleccion-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `nexus-library-libros-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       setFeedback({
         type: 'success',
-        text: 'Catálogo de libros exportado a formato CSV (Excel / Hojas de cálculo).'
+        text: 'Lista de libros exportada en formato compatible con Excel y Google Sheets.'
       });
     } catch {
       setFeedback({
         type: 'error',
-        text: 'Error al generar la exportación en formato CSV.'
+        text: 'Hubo un inconveniente al generar la exportación a hoja de cálculo.'
       });
     }
   };
@@ -218,12 +218,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       setFeedback({
         type: 'success',
-        text: `Restauración completada: ${addedBooks} libros añadidos (${skippedDuplicates} ya existentes conservados sin sobrescribir).`
+        text: `Restauración completada con éxito: se añadieron ${addedBooks} libros a tu biblioteca (${skippedDuplicates} ya existían y se mantuvieron intactos).`
       });
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text: err instanceof Error ? err.message : 'El archivo JSON de copia no es válido.'
+        text: err instanceof Error ? err.message : 'El archivo de copia seleccionado no es válido o está dañado.'
       });
     }
     e.target.value = '';
@@ -233,7 +233,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const handleSignOut = async () => {
     if (
       !window.confirm(
-        '¿Deseas cerrar sesión en esta cuenta? Los datos locales sincronizados se conservarán de forma segura en tu cuenta en la nube de Supabase.'
+        '¿Deseas cerrar sesión? Todos tus libros y notas sincronizados seguirán a salvo en la nube para cuando vuelvas a iniciar sesión.'
       )
     ) {
       return;
@@ -244,7 +244,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       await supabase.auth.signOut();
       setFeedback({
         type: 'info',
-        text: 'Has cerrado sesión. Puedes continuar usando la biblioteca en modo local o iniciar sesión con otra cuenta.'
+        text: 'Has cerrado sesión. Puedes seguir usando la biblioteca en este equipo o iniciar sesión con otra cuenta.'
       });
     } finally {
       setIsSigningOut(false);
@@ -256,8 +256,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     : '0%';
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* ─── Encabezado de Sección ─── */}
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      {/* ─── Encabezado de Ajustes ─── */}
       <div className="border-b border-amber-900/20 dark:border-[#242E42] pb-5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-600/30 dark:border-amber-400/30 text-amber-800 dark:text-amber-300">
@@ -265,16 +265,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
-              Ajustes y Configuración
+              Ajustes de la Biblioteca
             </h1>
             <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-              Personaliza la apariencia, gestiona tu cuenta en la nube, optimiza portadas y
-              asegura tus copias de seguridad.
+              Personaliza la apariencia, gestiona tu cuenta y asegura tus libros y lecturas.
             </p>
           </div>
         </div>
 
-        {/* ─── Selector de Pestañas ─── */}
+        {/* ─── Pestañas ─── */}
         <div className="mt-6 flex flex-wrap gap-2">
           <button
             type="button"
@@ -392,8 +391,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 Biblioteca
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-                Elige la estética en la que prefieres consultar tu colección. El tema claro es el
-                diseño principal de NEXUS LIBRARY, inspirado en el papel de lino crema y la encuadernación clásica.
+                Elige la estética en la que prefieres disfrutar de tu colección. Nexus Library está
+                diseñado especialmente para destacar en el tema claro de papel crema clásico, evocando
+                las páginas de un libro tradicional.
               </p>
             </div>
 
@@ -420,7 +420,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         Papel Crema Clásico
                       </h3>
                       <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">
-                        Recomendado / Por defecto
+                        Recomendado / Diseño Principal
                       </span>
                     </div>
                   </div>
@@ -437,8 +437,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     <span>★★★★★</span>
                   </div>
                   <p className="text-[11px] text-stone-600 leading-snug">
-                    Fondo cálido en papel de lectura, tipografía serif editorial y baldas de roble
-                    para una experiencia natural y sin fatiga visual.
+                    Fondo cálido en papel de lectura, tipografía serif editorial y estanterías de
+                    madera para una experiencia natural y sin fatiga visual.
                   </p>
                 </div>
               </div>
@@ -482,8 +482,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     <span>★★★★★</span>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    Fondo pizarra oscuro con acentos de oro brillante y carmesí. Ideal si prefieres
-                    leer de noche o reducir el brillo de la pantalla.
+                    Fondo pizarra oscuro con acentos dorados y carmesí. Ideal si prefieres leer de
+                    noche o reducir el brillo de la pantalla.
                   </p>
                 </div>
               </div>
@@ -492,8 +492,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/60 dark:bg-[#101520] p-4 flex items-start gap-3">
               <Info className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-                Nexus Library prioriza siempre el tema claro por diseño. Si activas el tema oscuro,
-                tu preferencia se recordará de forma persistente en este navegador para futuras visitas.
+                Nexus Library prioriza siempre el tema claro por diseño. Si eliges el tema oscuro,
+                tu preferencia se recordará en este navegador para tus próximas visitas.
               </p>
             </div>
           </div>
@@ -507,41 +507,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
               <div>
                 <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                  <Cloud className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Sincronización en la
-                  Nube
+                  <Cloud className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Tu Cuenta y la Nube
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-                  Respalda tu biblioteca en tiempo real en la nube segura de Supabase.
+                  Mantén tus libros, sagas y lecturas respaldados y accesibles desde cualquier lugar.
                 </p>
               </div>
 
               {currentUser ? (
                 <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  Conectado a Supabase
+                  Copia en la nube activa
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Modo Local Offline
+                  Biblioteca local (este equipo)
                 </div>
               )}
             </div>
 
             {/* Perfil actual */}
-            <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-md">
-                  {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'L'}
-                </div>
+                {currentUser ? (
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-md shrink-0">
+                    {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : 'L'}
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-center justify-center shadow-sm shrink-0">
+                    <UserIcon className="w-6 h-6" />
+                  </div>
+                )}
+
                 <div>
                   <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
-                    {currentUser?.email || 'Lector en Modo Local (Invitado)'}
+                    {currentUser?.email || 'Lector en Modo Local'}
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
                     {currentUser
-                      ? `ID de usuario: ${currentUser.id.slice(0, 18)}...`
-                      : 'Tus libros están guardados en el almacenamiento local de este navegador.'}
+                      ? 'Tu biblioteca se sincroniza de forma automática y privada con tu cuenta.'
+                      : 'Actualmente tus libros se guardan solo en la memoria de este navegador.'}
                   </p>
                 </div>
               </div>
@@ -556,7 +562,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 text-xs transition shadow-sm"
                     >
                       <RefreshCw className={'w-3.5 h-3.5 ' + (isSyncing ? 'animate-spin' : '')} />
-                      {isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
+                      {isSyncing ? 'Guardando en la nube...' : 'Sincronizar ahora'}
                     </button>
                     <button
                       type="button"
@@ -573,32 +579,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     onClick={onOpenAuthModal}
                     className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md"
                   >
-                    <LogIn className="w-4 h-4" /> Iniciar Sesión / Crear Cuenta en la Nube
+                    <LogIn className="w-4 h-4" /> Iniciar sesión o Crear cuenta
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Resumen de Sincronización */}
-            {syncResult && (
-              <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/70 dark:bg-[#101520] p-4 text-xs space-y-2">
-                <span className="font-semibold text-stone-800 dark:text-slate-200 block">
-                  Último informe de sincronización en la nube:
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-stone-600 dark:text-slate-400">
-                  <div>
-                    Libros remotos: <strong>{syncResult.totalRemoteBooks}</strong>
-                  </div>
-                  <div>
-                    Sagas remotas: <strong>{syncResult.totalRemoteSagas}</strong>
-                  </div>
-                  <div>
-                    Libros migrados: <strong>{syncResult.migratedBooks}</strong>
-                  </div>
-                  <div>
-                    Sagas migradas: <strong>{syncResult.migratedSagas}</strong>
-                  </div>
+            {/* Información amigable de sincronización */}
+            {currentUser ? (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs space-y-2">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Tu colección está al día en la nube</span>
                 </div>
+                <p className="text-stone-600 dark:text-slate-400 leading-relaxed pl-6">
+                  Tus <strong>{books.length} libros</strong> y <strong>{sagas.length} sagas</strong> están
+                  guardados de forma segura. Si abres Nexus Library en tu teléfono móvil o en otro
+                  ordenador e inicias sesión, encontrarás exactamente la misma biblioteca.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/60 dark:bg-[#101520] p-4 text-xs space-y-2">
+                <span className="font-semibold text-stone-800 dark:text-slate-200 block">
+                  ¿Por qué vincular una cuenta gratuita?
+                </span>
+                <ul className="space-y-1 text-stone-600 dark:text-slate-400 list-disc list-inside leading-relaxed">
+                  <li>Tus lecturas y notas estarán protegidas si limpias el navegador o cambias de equipo.</li>
+                  <li>Podrás consultar tu catálogo y añadir libros desde cualquier dispositivo (móvil, tablet o PC).</li>
+                  <li>Tus datos son completamente privados y solo tú puedes acceder a ellos.</li>
+                </ul>
               </div>
             )}
           </div>
@@ -611,14 +620,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-5">
             <div>
               <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Enriquecimiento de
-                Portadas y Datos Editoriales
+                <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Portadas y Datos de Libros
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-                Nexus Library puede consultar automáticamente las bases de datos de{' '}
-                <strong>Open Library</strong> y <strong>Google Books</strong> para buscar cubiertas en
-                alta resolución, sinopsis oficial, año de publicación e ISBN para los libros que
-                agregaste sin portada.
+                Completa automáticamente las portadas que falten y añade detalles como la sinopsis,
+                editorial, fecha de publicación e ISBN buscando en los catálogos bibliográficos oficiales.
               </p>
             </div>
 
@@ -654,7 +660,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     ? 'Buscando portadas...'
                     : booksMissingCovers.length === 0
                     ? 'Todas las portadas al día'
-                    : `Completar portadas (${booksMissingCovers.length})`}
+                    : `Completar portadas que faltan (${booksMissingCovers.length})`}
                 </button>
               </div>
 
@@ -674,10 +680,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <div className="flex justify-between text-xs text-amber-900 dark:text-amber-300 font-semibold">
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Consultando Open Library & Google Books...
+                      Consultando catálogos de libros...
                     </span>
                     <span>
-                      {enrichProgress.current} de {enrichProgress.total} libros
+                      {enrichProgress.current} de {enrichProgress.total} libros procesados
                     </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
@@ -690,7 +696,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
             </div>
 
-            {/* Almacenamiento persistente */}
+            {/* Blindaje de almacenamiento en el navegador */}
             <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/70 dark:bg-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -698,12 +704,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
                 <div>
                   <h3 className="font-serif text-sm font-bold text-stone-900 dark:text-slate-100">
-                    Almacenamiento Persistente en el Navegador
+                    Protección de datos en este equipo
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
                     {isPersisted
-                      ? 'Concedido: El navegador no eliminará los datos locales de tu biblioteca por falta de espacio.'
-                      : 'Solicita permiso al navegador para blindar la base de datos local contra limpiezas automáticas.'}
+                      ? 'Activado: Tu navegador no borrará tu biblioteca aunque quede poco espacio en disco.'
+                      : 'Protege tu biblioteca local contra limpiezas automáticas de archivos temporales del navegador.'}
                   </p>
                 </div>
               </div>
@@ -714,7 +720,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={handleRequestStorage}
                   className="rounded-xl border border-amber-900/25 dark:border-slate-700 hover:border-amber-500 bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2 text-xs font-semibold text-stone-800 dark:text-slate-200 transition shrink-0"
                 >
-                  Solicitar Persistencia
+                  Activar protección
                 </button>
               )}
             </div>
@@ -732,8 +738,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 Portabilidad
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-                Tus libros y lecturas te pertenecen. Puedes descargar una copia completa en JSON o
-                exportar en formato CSV para abrir tu biblioteca en Excel o Google Sheets.
+                Tus lecturas te pertenecen. Puedes guardar una copia completa de seguridad para conservarla
+                en tu ordenador o exportar tus libros para abrirlos en una hoja de cálculo.
               </p>
             </div>
 
@@ -743,11 +749,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold text-sm">
                     <FileCode className="w-4 h-4" />
-                    <span>Copia Completa JSON</span>
+                    <span>Copia Completa de Seguridad (JSON)</span>
                   </div>
                   <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-                    Incluye todos los libros, sagas, fechas de inicio y fin, notas y valoraciones.
-                    Es el archivo ideal para restaurar tu biblioteca en otro dispositivo.
+                    Guarda toda tu biblioteca con libros, sagas, fechas de lectura, valoraciones y
+                    notas personales. Es el formato ideal para restaurar tu colección en cualquier momento.
                   </p>
                 </div>
                 <button
@@ -755,7 +761,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={handleDownloadJson}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition shadow-sm w-full"
                 >
-                  <Download className="w-4 h-4" /> Descargar Copia JSON ({books.length} libros)
+                  <Download className="w-4 h-4" /> Descargar Copia ({books.length} libros)
                 </button>
               </div>
 
@@ -763,11 +769,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-semibold text-sm">
                     <FileSpreadsheet className="w-4 h-4" />
-                    <span>Hoja de Cálculo CSV</span>
+                    <span>Hoja de Cálculo (Excel / CSV)</span>
                   </div>
                   <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-                    Formato estándar tabular compatible con Microsoft Excel, Google Sheets,
-                    Numbers o Notion para analizar tus estadísticas de lectura.
+                    Genera una tabla con tus títulos, autores, fechas, géneros y estados de lectura.
+                    Compatible con Microsoft Excel, Google Sheets y Notion.
                   </p>
                 </div>
                 <button
@@ -775,7 +781,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={handleDownloadCsv}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-600/40 dark:border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-bold px-4 py-2 text-xs transition shadow-sm w-full"
                 >
-                  <Download className="w-4 h-4" /> Exportar a CSV
+                  <Download className="w-4 h-4" /> Exportar a Excel / CSV
                 </button>
               </div>
             </div>
@@ -785,16 +791,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Upload className="w-8 h-8 mx-auto text-amber-700 dark:text-amber-400" />
               <div>
                 <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
-                  Restaurar Copia de Seguridad JSON
+                  Restaurar desde archivo de copia
                 </h3>
                 <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 max-w-md mx-auto">
-                  Selecciona un archivo <code>.json</code> exportado previamente. Nexus Library
-                  incorporará los libros sin duplicar los que ya tengas registrados.
+                  Selecciona un archivo <code>.json</code> descargado previamente. Nexus Library añadirá
+                  los libros y sagas sin sobreescribir ni duplicar los que ya tengas guardados.
                 </p>
               </div>
 
               <label className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition cursor-pointer shadow-sm">
-                <Upload className="w-4 h-4" /> Seleccionar archivo JSON
+                <Upload className="w-4 h-4" /> Seleccionar archivo de copia (.json)
                 <input
                   type="file"
                   accept=".json,application/json"
@@ -804,38 +810,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </label>
             </div>
 
-            {/* Diagnóstico de Base de Datos */}
+            {/* Resumen amigable de almacenamiento en este dispositivo */}
             <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/70 dark:bg-[#101520] p-4 text-xs flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <Database className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                <BookOpen className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                 <span className="font-semibold text-stone-800 dark:text-slate-200">
-                  Base de Datos Local Dexie (IndexedDB):
+                  Almacenamiento en este equipo:
                 </span>
                 <span className="text-stone-600 dark:text-slate-400">
-                  {books.length} libros · {sagas.length} sagas registradas
+                  <strong>{books.length} libros</strong> y <strong>{sagas.length} sagas</strong> guardados
+                  para leer en cualquier momento, incluso sin conexión a internet.
                 </span>
               </div>
-              <span className="text-[11px] text-stone-500 dark:text-slate-500">
-                NexusLibraryDatabase v2
-              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── Acerca de Nexus Library ─── */}
+      {/* ─── Pie de Página Amigable ─── */}
       <div className="rounded-2xl border border-amber-900/15 dark:border-[#222B3C] bg-[#fbf6ea]/70 dark:bg-[#111622] p-5 text-xs text-stone-600 dark:text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="font-serif font-bold text-stone-800 dark:text-slate-200 text-sm block">
-            NEXUS LIBRARY · v1.0.0
+            NEXUS LIBRARY · Tu Biblioteca Personal
           </span>
           <span className="text-[11px] mt-0.5 block">
-            Gestión de biblioteca personal offline-first con sincronización en la nube, catálogos
-            bibliográficos y lectura visual.
+            Organización de libros, estanterías temáticas y lectura sin distracciones.
           </span>
         </div>
         <div className="text-[11px] text-stone-500 dark:text-slate-500 self-start sm:self-auto shrink-0">
-          Open Library & Google Books API
+          Versión 1.0.0
         </div>
       </div>
     </div>

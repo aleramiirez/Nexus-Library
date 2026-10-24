@@ -13,7 +13,7 @@ import {
   BookmarkCheck,
   Clock,
   PauseCircle,
-  LogIn,
+  User as UserIcon,
   X,
   type LucideIcon
 } from 'lucide-react';
@@ -283,60 +283,65 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               active={activeSection === 'stats'}
               onSelect={handleSelectSection}
             />
-
-            <Chapter>Sistema</Chapter>
-            <NavItem
-              id="settings"
-              label="Ajustes"
-              icon={Settings}
-              active={activeSection === 'settings'}
-              onSelect={handleSelectSection}
-            />
           </nav>
 
-          {/* Pie de página unificado */}
-          <div className="p-4 pr-6 border-t border-amber-600/20 space-y-2">
-            {hasUser ? (
-              <button
-                type="button"
-                onClick={() => handleSelectSection('settings')}
-                className="w-full flex items-center gap-2.5 rounded-xl border border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5 p-2.5 text-left transition"
-                title="Ver Ajustes y Cuenta"
-              >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
-                  {userInitial}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
-                    {userEmail || 'Mi Cuenta'}
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-500 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {isSyncing ? 'Sincronizando...' : 'Nube sincronizada'}
-                  </span>
-                </div>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSelectSection('settings')}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
-              >
-                <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión / Cuenta
-              </button>
-            )}
-
+          {/* Pie de página unificado: Perfil y Ajustes */}
+          <div className="p-3 pr-5 border-t border-amber-600/20">
             <button
               type="button"
               onClick={() => handleSelectSection('settings')}
+              aria-label="Ajustes de la biblioteca y cuenta"
               className={
-                'w-full flex items-center justify-center gap-2 rounded-xl border py-2 px-3 text-xs font-semibold transition ' +
+                'w-full flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition group ' +
                 (activeSection === 'settings'
-                  ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
-                  : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#161D2B] hover:border-amber-500/40 text-stone-600 dark:text-slate-300')
+                  ? 'border-amber-600/70 bg-amber-500/20 shadow-sm'
+                  : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5')
               }
             >
-              <Settings className="w-3.5 h-3.5" /> Ajustes de la Biblioteca
+              {hasUser ? (
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
+                  {userInitial}
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <UserIcon className="w-4 h-4" />
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
+                  {hasUser ? userEmail : 'Modo Local'}
+                </p>
+                <div className="flex items-center gap-1.5 text-[10px]">
+                  {hasUser ? (
+                    isSyncing ? (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-amber-700 dark:text-amber-400 font-medium">Sincronizando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">Nube al día</span>
+                      </>
+                    )
+                  ) : (
+                    <span className="text-stone-500 dark:text-slate-400">Sin cuenta · Ajustes</span>
+                  )}
+                </div>
+              </div>
+
+              <div
+                className={
+                  'p-1.5 rounded-lg transition shrink-0 ' +
+                  (activeSection === 'settings'
+                    ? 'text-amber-800 dark:text-amber-300 bg-amber-500/20'
+                    : 'text-stone-400 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400')
+                }
+                title="Ajustes de la Biblioteca"
+              >
+                <Settings className="w-4 h-4" />
+              </div>
             </button>
           </div>
         </div>
