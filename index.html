@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f0df" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#080C15" />
+    <meta name="theme-color" content="#f7f0df" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Nexus Library" />
@@ -12,9 +11,9 @@
     <script>
       (function() {
         try {
+          // El tema claro predomina por defecto; solo se activa el oscuro si el usuario lo guardó en la app
           var saved = localStorage.getItem('nexus_library_theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (saved === 'dark' || (!saved && prefersDark)) {
+          if (saved === 'dark') {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');

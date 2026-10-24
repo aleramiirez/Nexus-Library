@@ -113,8 +113,8 @@ export const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('nexus_library_theme');
-    if (stored !== null) return stored === 'dark';
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+    // Predomina el tema claro por defecto; solo se activa si el usuario lo configuró explícitamente en la app
+    return stored === 'dark';
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
