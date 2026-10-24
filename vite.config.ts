@@ -5,6 +5,17 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'esnext',
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-db': ['dexie', 'dexie-react-hooks'],
+          'vendor-icons': ['lucide-react']
+        }
+      }
+    }
   }
 });
+

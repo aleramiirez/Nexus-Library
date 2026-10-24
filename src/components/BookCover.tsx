@@ -30,7 +30,7 @@ const hashString = (value: string) => {
   return h;
 };
 
-export const BookCover: React.FC<BookCoverProps> = ({
+const BookCoverComponent: React.FC<BookCoverProps> = ({
   nombre,
   autor,
   portadaUrl,
@@ -156,3 +156,5 @@ export const BookCover: React.FC<BookCoverProps> = ({
     </div>
   );
 };
+
+export const BookCover = React.memo(BookCoverComponent);

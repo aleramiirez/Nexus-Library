@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import '../book-shelf.css';
 import { Book } from '../types/models';
 import { BookCover } from './BookCover';
@@ -27,7 +27,7 @@ const bookWidth = (id: string) => {
  * - Título de cada libro en una placa de latón en el canto de la balda.
  * - El número de libros por balda se adapta al ancho disponible.
  */
-export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
+const BookShelfComponent: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
   const backRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(MAX_COLS);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -46,12 +46,18 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     return () => observer.disconnect();
   }, []);
 
-  const rows: Book[][] = [];
-  for (let i = 0; i < books.length; i += cols) {
-    rows.push(books.slice(i, i + cols));
-  }
+  const rows = useMemo(() => {
+    const result: Book[][] = [];
+    for (let i = 0; i < books.length; i += cols) {
+      result.push(books.slice(i, i + cols));
+    }
+    return result;
+  }, [books, cols]);
 
-  const gridStyle = { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
+  const gridStyle = useMemo(
+    () => ({ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }),
+    [cols]
+  );
 
   return (
     <div className="bookcase">
@@ -113,3 +119,5 @@ export const BookShelf: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => 
     </div>
   );
 };
+
+export const BookShelf = React.memo(BookShelfComponent);

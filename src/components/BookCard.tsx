@@ -22,7 +22,7 @@ const statusBadgeStyles: Record<ReadingStatus, string> = {
     'bg-emerald-500/15 text-emerald-900 border-emerald-600/40 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/40'
 };
 
-export const BookCard: React.FC<BookCardProps> = ({
+const BookCardComponent: React.FC<BookCardProps> = ({
   book,
   onOpenDetail
 }) => {
@@ -97,3 +97,5 @@ export const BookCard: React.FC<BookCardProps> = ({
     </article>
   );
 };
+
+export const BookCard = React.memo(BookCardComponent);

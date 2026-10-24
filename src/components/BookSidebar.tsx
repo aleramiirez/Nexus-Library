@@ -54,14 +54,62 @@ interface NavItemProps {
   icon: LucideIcon;
   iconClass?: string;
   count?: number;
+  active: boolean;
+  onSelect: (id: NavigationSection) => void;
 }
+
+const NavItem: React.FC<NavItemProps> = ({
+  id,
+  label,
+  icon: Icon,
+  iconClass = '',
+  count,
+  active,
+  onSelect
+}) => (
+  <button
+    type="button"
+    onClick={() => onSelect(id)}
+    aria-current={active ? 'page' : undefined}
+    className={
+      'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
+      (active
+        ? 'book-item-active text-amber-800 dark:text-amber-300'
+        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5')
+    }
+  >
+    {active && <BookmarkMarker />}
+    <Icon className={'w-4 h-4 shrink-0 ' + iconClass} />
+    <span className="font-serif text-[15px] font-semibold tracking-wide whitespace-nowrap">
+      {label}
+    </span>
+    {count !== undefined && (
+      <>
+        <span
+          aria-hidden="true"
+          className="flex-1 min-w-[10px] mx-1 border-b border-dotted border-current opacity-30 translate-y-[3px]"
+        />
+        <span className="font-serif text-[15px] font-semibold tabular-nums">{count}</span>
+      </>
+    )}
+  </button>
+);
+
+const Chapter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex items-center gap-2 px-3 pt-5 pb-1.5">
+    <span className="font-serif italic text-[13px] text-amber-700 dark:text-amber-500/90 whitespace-nowrap">
+      {children}
+    </span>
+    <span className="h-px flex-1 bg-gradient-to-r from-amber-600/40 to-transparent" />
+  </div>
+);
 
 /**
  * Menú lateral con aspecto de página izquierda de un libro abierto:
  * canto de páginas, pliegue central, índice con puntos guía y marcapáginas.
  * En escritorio es fijo; en móvil se despliega como cajón lateral (drawer).
  */
-export const BookSidebar: React.FC<BookSidebarProps> = ({
+const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   activeSection,
   onNavigate,
   darkMode,
@@ -82,47 +130,6 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
     onNavigate(id);
     onCloseMobile?.();
   };
-
-  const NavItem: React.FC<NavItemProps> = ({ id, label, icon: Icon, iconClass = '', count }) => {
-    const active = activeSection === id;
-    return (
-      <button
-        type="button"
-        onClick={() => handleSelectSection(id)}
-        aria-current={active ? 'page' : undefined}
-        className={
-          'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
-          (active
-            ? 'book-item-active text-amber-800 dark:text-amber-300'
-            : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5')
-        }
-      >
-        {active && <BookmarkMarker />}
-        <Icon className={'w-4 h-4 shrink-0 ' + iconClass} />
-        <span className="font-serif text-[15px] font-semibold tracking-wide whitespace-nowrap">
-          {label}
-        </span>
-        {count !== undefined && (
-          <>
-            <span
-              aria-hidden="true"
-              className="flex-1 min-w-[10px] mx-1 border-b border-dotted border-current opacity-30 translate-y-[3px]"
-            />
-            <span className="font-serif text-[15px] font-semibold tabular-nums">{count}</span>
-          </>
-        )}
-      </button>
-    );
-  };
-
-  const Chapter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="flex items-center gap-2 px-3 pt-5 pb-1.5">
-      <span className="font-serif italic text-[13px] text-amber-700 dark:text-amber-500/90 whitespace-nowrap">
-        {children}
-      </span>
-      <span className="h-px flex-1 bg-gradient-to-r from-amber-600/40 to-transparent" />
-    </div>
-  );
 
   return (
     <>
@@ -199,9 +206,28 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
               Índice
             </p>
 
-            <NavItem id="dashboard" label="Inicio" icon={LayoutDashboard} />
-            <NavItem id="library" label="Mi Biblioteca" icon={Library} count={metrics.total} />
-            <NavItem id="discover" label="Descubrir Libros" icon={Compass} />
+            <NavItem
+              id="dashboard"
+              label="Inicio"
+              icon={LayoutDashboard}
+              active={activeSection === 'dashboard'}
+              onSelect={handleSelectSection}
+            />
+            <NavItem
+              id="library"
+              label="Mi Biblioteca"
+              icon={Library}
+              count={metrics.total}
+              active={activeSection === 'library'}
+              onSelect={handleSelectSection}
+            />
+            <NavItem
+              id="discover"
+              label="Descubrir Libros"
+              icon={Compass}
+              active={activeSection === 'discover'}
+              onSelect={handleSelectSection}
+            />
 
             <Chapter>Estanterías de lectura</Chapter>
             <NavItem
@@ -210,6 +236,8 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
               icon={Clock}
               iconClass="text-amber-500"
               count={metrics.reading}
+              active={activeSection === 'shelf-reading'}
+              onSelect={handleSelectSection}
             />
             <NavItem
               id="shelf-unread"
@@ -217,6 +245,8 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
               icon={BookMarked}
               iconClass="text-slate-400"
               count={metrics.unread}
+              active={activeSection === 'shelf-unread'}
+              onSelect={handleSelectSection}
             />
             <NavItem
               id="shelf-paused"
@@ -224,6 +254,8 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
               icon={PauseCircle}
               iconClass="text-rose-400"
               count={metrics.paused}
+              active={activeSection === 'shelf-paused'}
+              onSelect={handleSelectSection}
             />
             <NavItem
               id="shelf-read"
@@ -231,11 +263,26 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
               icon={BookmarkCheck}
               iconClass="text-emerald-500"
               count={metrics.read}
+              active={activeSection === 'shelf-read'}
+              onSelect={handleSelectSection}
             />
 
             <Chapter>Colección y Análisis</Chapter>
-            <NavItem id="sagas" label="Sagas" icon={Layers} count={sagasCount} />
-            <NavItem id="stats" label="Estadísticas" icon={BarChart3} />
+            <NavItem
+              id="sagas"
+              label="Sagas"
+              icon={Layers}
+              count={sagasCount}
+              active={activeSection === 'sagas'}
+              onSelect={handleSelectSection}
+            />
+            <NavItem
+              id="stats"
+              label="Estadísticas"
+              icon={BarChart3}
+              active={activeSection === 'stats'}
+              onSelect={handleSelectSection}
+            />
           </nav>
 
           {/* Pie de página */}
@@ -294,3 +341,5 @@ export const BookSidebar: React.FC<BookSidebarProps> = ({
     </>
   );
 };
+
+export const BookSidebar = React.memo(BookSidebarComponent);

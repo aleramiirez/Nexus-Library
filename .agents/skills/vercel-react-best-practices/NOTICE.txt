@@ -1,0 +1,3 @@
+Skill 'vercel-react-best-practices' by Vercel (vercel-labs/agent-skills), MIT License.
+Unica modificacion: el campo 'description' del SKILL.md se acorto a 200 caracteres
+para cumplir el limite de claude.ai. El resto del contenido es el original.

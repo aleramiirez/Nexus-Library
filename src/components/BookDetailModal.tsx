@@ -45,8 +45,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="detail-book-title"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-4xl rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-8 max-h-[92dvh] flex flex-col">
+      <div
+        className="relative w-full max-w-4xl rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-8 max-h-[92dvh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between gap-2 border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-4 bg-[#f0e5cc] dark:bg-[#101520] shrink-0">
           <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold min-w-0">
             <BookOpen className="w-4 h-4 shrink-0" />

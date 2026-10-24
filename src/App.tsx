@@ -71,17 +71,28 @@ import {
 } from './constants/catalogs';
 import { BookCard } from './components/BookCard';
 import { BookCover } from './components/BookCover';
-import { BookDetailModal } from './components/BookDetailModal';
-import { AddEditBookModal } from './components/AddEditBookModal';
-import { ImportModal } from './components/ImportModal';
-import { AuthSyncModal } from './components/AuthSyncModal';
 import { AuthScreen } from './components/AuthScreen';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
-import { DiscoverBooksScreen } from './components/DiscoverBooksScreen';
 import { SagaProgressBar } from './components/SagaProgressBar';
 import { candidateToBookInput } from './services/bookMetadataService';
+
+const BookDetailModal = React.lazy(() =>
+  import('./components/BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
+);
+const AddEditBookModal = React.lazy(() =>
+  import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
+);
+const ImportModal = React.lazy(() =>
+  import('./components/ImportModal').then((m) => ({ default: m.ImportModal }))
+);
+const AuthSyncModal = React.lazy(() =>
+  import('./components/AuthSyncModal').then((m) => ({ default: m.AuthSyncModal }))
+);
+const DiscoverBooksScreen = React.lazy(() =>
+  import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
+);
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -99,16 +110,13 @@ export const App: React.FC = () => {
   const sagas = useLiveQuery(() => db.sagas.toArray(), [], [] as Saga[]);
 
   const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('nexus_library_theme');
+    if (stored !== null) return stored === 'dark';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Bloquea el scroll del fondo mientras el menú móvil está abierto
-  useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [mobileMenuOpen]);
   const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -136,6 +144,60 @@ export const App: React.FC = () => {
   const [assignBookId, setAssignBookId] = useState<string>('');
   const [assignVolume, setAssignVolume] = useState<string>('1');
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
+
+  const isAnyModalOpen = Boolean(
+    mobileMenuOpen ||
+    isAddEditOpen ||
+    detailBookId ||
+    isImportOpen ||
+    isAuthModalOpen ||
+    bookToDelete ||
+    sagaFormOpen
+  );
+
+  // Bloquea el scroll del fondo mientras cualquier modal o menú móvil está abierto
+  useEffect(() => {
+    document.body.style.overflow = isAnyModalOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAnyModalOpen]);
+
+  // Soporte de tecla Escape para cerrar modales y paneles
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (bookToDelete) {
+          setBookToDelete(null);
+        } else if (isAddEditOpen) {
+          setIsAddEditOpen(false);
+          setSelectedInitialCandidate(null);
+        } else if (detailBookId) {
+          setDetailBookId(null);
+        } else if (isImportOpen) {
+          setIsImportOpen(false);
+        } else if (isAuthModalOpen) {
+          setIsAuthModalOpen(false);
+        } else if (sagaFormOpen) {
+          setSagaFormOpen(false);
+          setEditingSaga(null);
+        } else if (mobileMenuOpen) {
+          setMobileMenuOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    bookToDelete,
+    isAddEditOpen,
+    detailBookId,
+    isImportOpen,
+    isAuthModalOpen,
+    sagaFormOpen,
+    mobileMenuOpen
+  ]);
 
   const runCloudSync = async () => {
     setIsSyncing(true);
@@ -208,8 +270,14 @@ export const App: React.FC = () => {
     const root = document.documentElement;
     if (darkMode) {
       root.classList.add('dark');
+      try {
+        localStorage.setItem('nexus_library_theme', 'dark');
+      } catch {}
     } else {
       root.classList.remove('dark');
+      try {
+        localStorage.setItem('nexus_library_theme', 'light');
+      } catch {}
     }
   }, [darkMode]);
 
@@ -219,27 +287,51 @@ export const App: React.FC = () => {
   );
 
   const metrics = useMemo(() => {
-    const total = books.length;
-    const unread = books.filter((b) => b.progreso === '❌ No Leído').length;
-    const reading = books.filter((b) => b.progreso === '⏳ Leyendo').length;
-    const paused = books.filter((b) => b.progreso === '⏸️ Pausado').length;
-    const read = books.filter((b) => b.progreso === '✅ Leído').length;
-    const ratedBooks = books.filter((b) => b.puntuacion !== null);
-    const avgRating =
-      ratedBooks.length > 0
-        ? ratedBooks.reduce((acc, b) => acc + (b.puntuacion || 0), 0) / ratedBooks.length
-        : null;
+    let unread = 0;
+    let reading = 0;
+    let paused = 0;
+    let read = 0;
+    let totalPages = 0;
+    let totalScore = 0;
+    let ratedCount = 0;
+
+    for (const b of books) {
+      if (b.progreso === '❌ No Leído') unread++;
+      else if (b.progreso === '⏳ Leyendo') reading++;
+      else if (b.progreso === '⏸️ Pausado') paused++;
+      else if (b.progreso === '✅ Leído') read++;
+
+      if (b.paginas) totalPages += b.paginas;
+
+      if (b.puntuacion !== null && b.puntuacion !== undefined) {
+        ratedCount++;
+        totalScore += b.puntuacion;
+      }
+    }
 
     return {
-      total,
+      total: books.length,
       unread,
       reading,
       paused,
       read,
       pendingTotal: unread + reading + paused,
-      ratedCount: ratedBooks.length,
-      avgRating
+      totalPages,
+      ratedCount,
+      avgRating: ratedCount > 0 ? totalScore / ratedCount : null
     };
+  }, [books]);
+
+  const topAuthors = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const b of books) {
+      const a = b.autor.trim();
+      if (!a) continue;
+      counts.set(a, (counts.get(a) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
   }, [books]);
 
   const filteredBooks = useMemo(() => {
@@ -289,12 +381,27 @@ export const App: React.FC = () => {
   }, [books, filters]);
 
   const sagasWithBooks = useMemo(() => {
+    const booksBySaga = new Map<string, Book[]>();
+    for (const b of books) {
+      if (b.sagaId) {
+        let list = booksBySaga.get(b.sagaId);
+        if (!list) {
+          list = [];
+          booksBySaga.set(b.sagaId, list);
+        }
+        list.push(b);
+      }
+    }
+
     return sagas
       .map((saga) => {
-        const sagaBooks = books
-          .filter((b) => b.sagaId === saga.id)
+        const sagaBooks = (booksBySaga.get(saga.id) || [])
+          .slice()
           .sort((a, b) => (a.volumen ?? 999) - (b.volumen ?? 999));
-        const readCount = sagaBooks.filter((b) => b.progreso === '✅ Leído').length;
+        let readCount = 0;
+        for (const b of sagaBooks) {
+          if (b.progreso === '✅ Leído') readCount++;
+        }
         const pendingCount = sagaBooks.length - readCount;
         const progressPercent =
           sagaBooks.length > 0 ? Math.round((readCount / sagaBooks.length) * 100) : 0;
@@ -1231,11 +1338,20 @@ export const App: React.FC = () => {
           )}
 
           {activeSection === 'discover' && (
-            <DiscoverBooksScreen
-              books={books}
-              onQuickAddBook={handleQuickAddFromDiscover}
-              onCustomizeBook={handleCustomizeFromDiscover}
-            />
+            <React.Suspense
+              fallback={
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                  <span className="font-serif text-sm">Cargando catálogo para descubrir libros...</span>
+                </div>
+              }
+            >
+              <DiscoverBooksScreen
+                books={books}
+                onQuickAddBook={handleQuickAddFromDiscover}
+                onCustomizeBook={handleCustomizeFromDiscover}
+              />
+            </React.Suspense>
           )}
 
           {activeSection === 'shelf-unread' &&
@@ -1672,7 +1788,7 @@ export const App: React.FC = () => {
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
                   <span className="text-xs text-stone-600 dark:text-slate-400">Páginas Totales Registradas</span>
                   <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">
-                    {books.reduce((acc, b) => acc + (b.paginas || 0), 0).toLocaleString('es-ES')}
+                    {metrics.totalPages.toLocaleString('es-ES')}
                   </p>
                 </div>
               </div>
@@ -1731,41 +1847,25 @@ export const App: React.FC = () => {
                     <h2 className="font-serif text-xl font-bold">
                       Autores con Más Libros en tu Colección
                     </h2>
-                    {(() => {
-                      const counts = new Map<string, number>();
-                      for (const b of books) {
-                        const a = b.autor.trim();
-                        if (!a) continue;
-                        counts.set(a, (counts.get(a) || 0) + 1);
-                      }
-                      const topAuthors = Array.from(counts.entries())
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 6);
-
-                      if (topAuthors.length === 0) {
-                        return (
-                          <p className="text-xs text-stone-500 dark:text-slate-400">
-                            No hay autores registrados todavía.
-                          </p>
-                        );
-                      }
-
-                      return (
-                        <div className="divide-y divide-amber-900/15 dark:divide-[#222B3C] text-xs">
-                          {topAuthors.map(([authorName, count]) => (
-                            <div
-                              key={authorName}
-                              className="py-2 flex items-center justify-between"
-                            >
-                              <span className="font-medium">{authorName}</span>
-                              <span className="rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 font-semibold">
-                                {count} {count === 1 ? 'libro' : 'libros'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
+                    {topAuthors.length === 0 ? (
+                      <p className="text-xs text-stone-500 dark:text-slate-400">
+                        No hay autores registrados todavía.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-amber-900/15 dark:divide-[#222B3C] text-xs">
+                        {topAuthors.map(([authorName, count]) => (
+                          <div
+                            key={authorName}
+                            className="py-2 flex items-center justify-between"
+                          >
+                            <span className="font-medium">{authorName}</span>
+                            <span className="rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 font-semibold">
+                              {count} {count === 1 ? 'libro' : 'libros'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1882,55 +1982,70 @@ export const App: React.FC = () => {
         </button>
       </nav>
 
-      <BookDetailModal
-        book={activeDetailBook}
-        onClose={() => setDetailBookId(null)}
-        onEdit={handleOpenEditBook}
-        onDelete={(b) => setBookToDelete(b)}
-        onStatusChange={updateBookQuickStatus}
-        onRatingChange={updateBookQuickRating}
-        onDatesChange={updateBookQuickDates}
-      />
+      <React.Suspense fallback={null}>
+        {activeDetailBook && (
+          <BookDetailModal
+            book={activeDetailBook}
+            onClose={() => setDetailBookId(null)}
+            onEdit={handleOpenEditBook}
+            onDelete={(b) => setBookToDelete(b)}
+            onStatusChange={updateBookQuickStatus}
+            onRatingChange={updateBookQuickRating}
+            onDatesChange={updateBookQuickDates}
+          />
+        )}
 
-      <AddEditBookModal
-        isOpen={isAddEditOpen}
-        editingBook={editingBook}
-        initialCandidate={selectedInitialCandidate}
-        sagas={sagas}
-        existingBooks={books}
-        onClose={() => {
-          setIsAddEditOpen(false);
-          setSelectedInitialCandidate(null);
-        }}
-        onSave={async (data, id) => {
-          await saveBookRecord(data, id);
-        }}
-      />
+        {isAddEditOpen && (
+          <AddEditBookModal
+            isOpen={isAddEditOpen}
+            editingBook={editingBook}
+            initialCandidate={selectedInitialCandidate}
+            sagas={sagas}
+            existingBooks={books}
+            onClose={() => {
+              setIsAddEditOpen(false);
+              setSelectedInitialCandidate(null);
+            }}
+            onSave={async (data, id) => {
+              await saveBookRecord(data, id);
+            }}
+          />
+        )}
 
-      <ImportModal
-        isOpen={isImportOpen}
-        books={books}
-        sagas={sagas}
-        onClose={() => setIsImportOpen(false)}
-      />
+        {isImportOpen && (
+          <ImportModal
+            isOpen={isImportOpen}
+            books={books}
+            sagas={sagas}
+            onClose={() => setIsImportOpen(false)}
+          />
+        )}
 
-      <AuthSyncModal
-        isOpen={isAuthModalOpen}
-        user={currentUser}
-        syncResult={syncResult}
-        isSyncing={isSyncing}
-        onTriggerSync={runCloudSync}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
+        {isAuthModalOpen && (
+          <AuthSyncModal
+            isOpen={isAuthModalOpen}
+            user={currentUser}
+            syncResult={syncResult}
+            isSyncing={isSyncing}
+            onTriggerSync={runCloudSync}
+            onClose={() => setIsAuthModalOpen(false)}
+          />
+        )}
+      </React.Suspense>
 
       {bookToDelete && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          onClick={() => setBookToDelete(null)}
         >
-          <div className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl">
-            <h3 className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-dialog-title" className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
               Confirmar eliminación
             </h3>
             <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
@@ -1941,14 +2056,14 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBookToDelete(null)}
-                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300"
+                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={confirmDeleteBook}
-                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs"
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition"
               >
                 Eliminar definitivamente
               </button>

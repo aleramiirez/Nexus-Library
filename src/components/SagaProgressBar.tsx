@@ -19,7 +19,7 @@ const READ_STATUS = '✅ Leído';
  * Barra de progreso de una saga: una celda por volumen.
  * Las celdas de los volúmenes leídos se rellenan en oro; las pendientes quedan como ranura.
  */
-export const SagaProgressBar: React.FC<SagaProgressBarProps> = ({
+const SagaProgressBarComponent: React.FC<SagaProgressBarProps> = ({
   books,
   percent,
   size = 'md',
@@ -70,3 +70,5 @@ export const SagaProgressBar: React.FC<SagaProgressBarProps> = ({
     </div>
   );
 };
+
+export const SagaProgressBar = React.memo(SagaProgressBarComponent);

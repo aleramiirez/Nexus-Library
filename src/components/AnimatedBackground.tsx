@@ -23,7 +23,7 @@ const DARK_COLORS = ['229, 193, 88', '212, 155, 75', '212, 155, 75', '176, 64, 8
 const LIGHT_COLORS = ['162, 102, 24', '138, 82, 18', '180, 116, 30', '138, 32, 46'];
 const LINK_DIST = 125;
 
-export const AnimatedBackground: React.FC = () => {
+const AnimatedBackgroundComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -166,3 +166,5 @@ export const AnimatedBackground: React.FC = () => {
     </div>
   );
 };
+
+export const AnimatedBackground = React.memo(AnimatedBackgroundComponent);
