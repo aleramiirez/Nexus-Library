@@ -23,7 +23,8 @@ import {
   Building2,
   Globe,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Lock
 } from 'lucide-react';
 import { Book, UserProfile, Friendship, FriendshipStatus } from '../types/models';
 import { communityService } from '../services/communityService';
@@ -255,6 +256,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     try {
       const data = await communityService.fetchUserPublicLibrary(reader.id);
       if (data) {
+        setSelectedReader(data.profile);
         setReaderBooks(data.books);
       } else {
         setReaderBooks([]);
@@ -608,102 +610,132 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                Estantería Pública
-              </span>
+              {selectedReader.isPublic ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Estantería Pública
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-500/15 border border-stone-400/30 text-stone-700 dark:text-slate-300 text-xs font-semibold px-3 py-1">
+                  <Lock className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400" />
+                  Biblioteca Privada
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Filtros de estantería y selector de vista */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleShelfFilterChange('all')}
-                className={
-                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                  (shelfFilter === 'all'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                }
-              >
-                Todos ({readerMetrics.total})
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShelfFilterChange('reading')}
-                className={
-                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                  (shelfFilter === 'reading'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                }
-              >
-                ⏳ Leyendo ({readerMetrics.reading})
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShelfFilterChange('read')}
-                className={
-                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                  (shelfFilter === 'read'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                }
-              >
-                ✅ Leídos ({readerMetrics.read})
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShelfFilterChange('unread')}
-                className={
-                  'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                  (shelfFilter === 'unread'
-                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                }
-              >
-                🔖 Por leer ({readerMetrics.unread})
-              </button>
-            </div>
+          {/* Filtros de estantería y selector de vista (solo si la biblioteca es pública) */}
+          {selectedReader.isPublic && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleShelfFilterChange('all')}
+                  className={
+                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                    (shelfFilter === 'all'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                  }
+                >
+                  Todos ({readerMetrics.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShelfFilterChange('reading')}
+                  className={
+                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                    (shelfFilter === 'reading'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                  }
+                >
+                  ⏳ Leyendo ({readerMetrics.reading})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShelfFilterChange('read')}
+                  className={
+                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                    (shelfFilter === 'read'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                  }
+                >
+                  ✅ Leídos ({readerMetrics.read})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShelfFilterChange('unread')}
+                  className={
+                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
+                    (shelfFilter === 'unread'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
+                  }
+                >
+                  🔖 Por leer ({readerMetrics.unread})
+                </button>
+              </div>
 
-            {/* Selector de vista: Estantería de madera vs Cuadrícula */}
-            <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('shelf')}
-                className={
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                  (viewMode === 'shelf'
-                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
-                }
-                title="Vista en estantería de madera"
-              >
-                <Rows3 className="w-3.5 h-3.5" />
-                <span>Estantería</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('grid')}
-                className={
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                  (viewMode === 'grid'
-                    ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
-                }
-                title="Vista en tarjetas"
-              >
-                <Grid className="w-3.5 h-3.5" />
-                <span>Cuadrícula</span>
-              </button>
+              {/* Selector de vista: Estantería de madera vs Cuadrícula */}
+              <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange('shelf')}
+                  className={
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
+                    (viewMode === 'shelf'
+                      ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                  }
+                  title="Vista en estantería de madera"
+                >
+                  <Rows3 className="w-3.5 h-3.5" />
+                  <span>Estantería</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleViewModeChange('grid')}
+                  className={
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
+                    (viewMode === 'grid'
+                      ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                  }
+                  title="Vista en tarjetas"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>Cuadrícula</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Libros de la estantería del lector */}
-        {isLoadingLibrary ? (
+        {/* Libros de la estantería del lector o aviso de biblioteca privada */}
+        {!selectedReader.isPublic ? (
+          <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#111622] p-8 sm:p-12 text-center space-y-4 shadow-sm my-2">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400 shadow-sm">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
+                Esta biblioteca es privada
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
+                <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca en modo privado, por lo que su colección de libros y lecturas no son visibles para otros usuarios.
+              </p>
+            </div>
+            {friendshipMap[selectedReader.id]?.status === 'accepted' && (
+              <div className="pt-2 max-w-md mx-auto">
+                <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-2.5 leading-relaxed font-medium">
+                  🤝 Sois amigos: aunque no puedas explorar su estantería, puedes seguir recomendándole libros desde la ficha de cualquier obra.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : isLoadingLibrary ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
             <Loader2 className="w-7 h-7 text-amber-600 dark:text-amber-400 animate-spin" />
             <span className="font-serif text-sm">Cargando la estantería de {selectedReader.displayName}...</span>
@@ -944,6 +976,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {profile.displayName}
                           </h3>
+                          {!profile.isPublic && (
+                            <span title="Biblioteca privada" className="inline-flex items-center gap-1 text-[10px] text-stone-600 dark:text-slate-400 bg-stone-500/10 dark:bg-stone-500/20 px-1.5 py-0.5 rounded border border-stone-400/20 font-sans font-medium">
+                              <Lock className="w-2.5 h-2.5" /> Privada
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
                           @{profile.username}
@@ -960,7 +997,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg font-bold">
                         <Check className="w-3 h-3" /> Amigo
                       </span>
-                      <span>Ver estantería →</span>
+                      <span>{profile.isPublic ? 'Ver estantería →' : 'Biblioteca privada →'}</span>
                     </div>
                   </div>
                 );
@@ -1049,6 +1086,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {reader.displayName}
                           </h3>
+                          {!reader.isPublic && (
+                            <span title="Biblioteca privada" className="inline-flex items-center gap-1 text-[10px] text-stone-600 dark:text-slate-400 bg-stone-500/10 dark:bg-stone-500/20 px-1.5 py-0.5 rounded border border-stone-400/20 font-sans font-medium">
+                              <Lock className="w-2.5 h-2.5" /> Privada
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
                           @{reader.username}
@@ -1105,7 +1147,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       )}
 
                       <span className="text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform text-right">
-                        Estantería →
+                        {reader.isPublic ? 'Estantería →' : 'Ver perfil →'}
                       </span>
                     </div>
                   </div>
