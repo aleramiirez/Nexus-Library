@@ -8,15 +8,18 @@ import {
   Layers,
   Cloud,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Library
+  Library,
+  KeyRound
 } from 'lucide-react';
 import {
   fetchSupabaseAuthSettings,
   supabase,
-  SupabaseAuthSettings
+  SupabaseAuthSettings,
+  getAuthRedirectUrl
 } from '../services/supabaseClient';
 import { AnimatedBackground } from './AnimatedBackground';
 
@@ -25,7 +28,7 @@ interface AuthScreenProps {
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -50,6 +53,32 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
       setFeedback({ type: 'error', text: 'Por favor, introduce tu correo electrónico.' });
       return;
     }
+
+    if (mode === 'forgot') {
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: getAuthRedirectUrl()
+        });
+        if (error) throw error;
+        setFeedback({
+          type: 'success',
+          text: 'Te hemos enviado un correo con el enlace para restablecer tu contraseña. Revisa tu bandeja de entrada o la carpeta de spam.'
+        });
+      } catch (err: unknown) {
+        setFeedback({
+          type: 'error',
+          text:
+            err instanceof Error
+              ? err.message
+              : 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (password.length < 6) {
       setFeedback({
         type: 'error',
@@ -86,7 +115,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
-          password
+          password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl()
+          }
         });
         if (error) throw error;
 
@@ -237,48 +269,70 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
 
             <div className="text-center mb-6">
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
-                {mode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu biblioteca'}
+                {mode === 'login'
+                  ? 'Bienvenido de nuevo'
+                  : mode === 'signup'
+                  ? 'Crea tu biblioteca'
+                  : 'Recuperar contraseña'}
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
                 {mode === 'login'
                   ? 'Accede con tu cuenta para sincronizar tu colección'
-                  : 'Regístrate gratis para guardar tus libros en la nube'}
+                  : mode === 'signup'
+                  ? 'Regístrate gratis para guardar tus libros en la nube'
+                  : 'Introduce tu email y te enviaremos un enlace seguro'}
               </p>
             </div>
 
-            {/* Selector Iniciar Sesión / Crear Cuenta */}
-            <div className="grid grid-cols-2 rounded-xl bg-[#e6d8bc] dark:bg-[#0B0E14] p-1 border border-amber-900/20 dark:border-[#222B3C] mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setFeedback(null);
-                }}
-                className={
-                  'py-2.5 rounded-lg text-xs font-bold transition-all ' +
-                  (mode === 'login'
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
-                }
-              >
-                Iniciar Sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signup');
-                  setFeedback(null);
-                }}
-                className={
-                  'py-2.5 rounded-lg text-xs font-bold transition-all ' +
-                  (mode === 'signup'
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
-                    : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
-                }
-              >
-                Crear Cuenta
-              </button>
-            </div>
+            {/* Selector Iniciar Sesión / Crear Cuenta / Volver */}
+            {mode === 'forgot' ? (
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setFeedback(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-600 p-1.5 rounded-lg border border-amber-900/15 dark:border-[#283246] hover:bg-amber-500/10 transition"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Volver al inicio de sesión</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 rounded-xl bg-[#e6d8bc] dark:bg-[#0B0E14] p-1 border border-amber-900/20 dark:border-[#222B3C] mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setFeedback(null);
+                  }}
+                  className={
+                    'py-2.5 rounded-lg text-xs font-bold transition-all ' +
+                    (mode === 'login'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                  }
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup');
+                    setFeedback(null);
+                  }}
+                  className={
+                    'py-2.5 rounded-lg text-xs font-bold transition-all ' +
+                    (mode === 'signup'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
+                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                  }
+                >
+                  Crear Cuenta
+                </button>
+              </div>
+            )}
 
             {feedback && (
               <div
@@ -319,32 +373,48 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={6}
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-3 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 p-1"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {mode !== 'forgot' && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300">
+                      Contraseña
+                    </label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('forgot');
+                          setFeedback(null);
+                        }}
+                        className="text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-3 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 p-1"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {mode === 'signup' && (
                 <div>
@@ -377,7 +447,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 ) : (
                   <>
                     <span>
-                      {mode === 'login' ? 'Entrar a mi Biblioteca' : 'Crear mi Biblioteca'}
+                      {mode === 'login'
+                        ? 'Entrar a mi Biblioteca'
+                        : mode === 'signup'
+                        ? 'Crear mi Biblioteca'
+                        : 'Enviar enlace de recuperación'}
                     </span>
                     <ArrowRight className="w-4 h-4" />
                   </>

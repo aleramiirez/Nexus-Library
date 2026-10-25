@@ -79,6 +79,7 @@ import {
 import { BookCard } from './components/BookCard';
 import { BookCover } from './components/BookCover';
 import { AuthScreen } from './components/AuthScreen';
+import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
@@ -164,6 +165,7 @@ export const App: React.FC = () => {
   const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
 
@@ -339,11 +341,25 @@ export const App: React.FC = () => {
 
     initAuthAndSync();
 
+    // Comprobar si se accede mediante enlace de recuperación de contraseña en la URL
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (hash.includes('type=recovery') || search.includes('type=recovery')) {
+        setIsResetPasswordOpen(true);
+      }
+    }
+
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       const nextUser = session?.user ?? null;
       setCurrentUser(nextUser);
       setIsAuthModalOpen(false);
+
+      // Evento de recuperación de contraseña disparado por Supabase al hacer clic en el enlace del email
+      if (_event === 'PASSWORD_RECOVERY') {
+        setIsResetPasswordOpen(true);
+      }
 
       // Al iniciar sesión o cerrar sesión, restablecer la navegación a la pantalla de Inicio
       if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
@@ -2261,6 +2277,18 @@ export const App: React.FC = () => {
             isSyncing={isSyncing}
             onTriggerSync={runCloudSync}
             onClose={() => setIsAuthModalOpen(false)}
+          />
+        )}
+
+        {isResetPasswordOpen && (
+          <ResetPasswordModal
+            isOpen={isResetPasswordOpen}
+            onClose={() => setIsResetPasswordOpen(false)}
+            onSuccess={() => {
+              setIsResetPasswordOpen(false);
+              setActiveSection('dashboard');
+              showToast('Tu contraseña se ha actualizado correctamente.', 'success');
+            }}
           />
         )}
 

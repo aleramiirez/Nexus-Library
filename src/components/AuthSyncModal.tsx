@@ -10,13 +10,16 @@ import {
   RefreshCw,
   ShieldCheck,
   Link2,
-  X
+  X,
+  ArrowLeft,
+  KeyRound
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import {
   fetchSupabaseAuthSettings,
-   supabase,
-  SupabaseAuthSettings
+  supabase,
+  SupabaseAuthSettings,
+  getAuthRedirectUrl
 } from '../services/supabaseClient';
 import { clearLocalCacheOnSignOut, SyncMigrationResult } from '../db/database';
 
@@ -37,7 +40,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
   onTriggerSync,
   onClose
 }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'link'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'link' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,6 +67,36 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
     e.preventDefault();
     setFeedback(null);
     const cleanEmail = email.trim();
+
+    if (mode === 'forgot') {
+      if (!cleanEmail) {
+        setFeedback({
+          type: 'error',
+          text: 'Por favor, introduce tu correo electrónico.'
+        });
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: getAuthRedirectUrl()
+        });
+        if (error) throw error;
+        setFeedback({
+          type: 'success',
+          text: 'Te hemos enviado un correo con el enlace para restablecer tu contraseña. Revisa tu bandeja de entrada o spam.'
+        });
+      } catch (err: unknown) {
+        setFeedback({
+          type: 'error',
+          text: err instanceof Error ? err.message : 'No se pudo enviar el correo de recuperación.'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!cleanEmail || password.length < 6) {
       setFeedback({
         type: 'error',
@@ -90,7 +123,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       } else if (mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
-          password
+          password,
+          options: {
+            emailRedirectTo: getAuthRedirectUrl()
+          }
         });
         if (error) throw error;
         if (data.session) {
@@ -107,10 +143,15 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
           setMode('login');
         }
       } else if (mode === 'link') {
-        const { error } = await supabase.auth.updateUser({
-          email: cleanEmail,
-          password
-        });
+        const { error } = await supabase.auth.updateUser(
+          {
+            email: cleanEmail,
+            password
+          },
+          {
+            emailRedirectTo: getAuthRedirectUrl()
+          }
+        );
         if (error) throw error;
         setFeedback({
           type: 'success',
@@ -321,38 +362,57 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                 tu copia local.
               </p>
 
-              <div className="flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#f0e5cc] dark:bg-[#101520] p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('login');
-                    setFeedback(null);
-                  }}
-                  className={
-                    'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
-                    (mode === 'login'
-                      ? 'bg-amber-500 text-slate-950'
-                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
-                  }
-                >
-                  <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('signup');
-                    setFeedback(null);
-                  }}
-                  className={
-                    'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
-                    (mode === 'signup'
-                      ? 'bg-amber-500 text-slate-950'
-                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
-                  }
-                >
-                  <UserPlus className="w-3.5 h-3.5" /> Crear Cuenta
-                </button>
-              </div>
+              {mode === 'forgot' ? (
+                <div className="flex items-center justify-between pb-1">
+                  <span className="font-serif text-sm font-bold text-stone-900 dark:text-slate-100">
+                    Recuperar Contraseña
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('login');
+                      setFeedback(null);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:underline font-semibold"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Volver</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#f0e5cc] dark:bg-[#101520] p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('login');
+                      setFeedback(null);
+                    }}
+                    className={
+                      'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
+                      (mode === 'login'
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                    }
+                  >
+                    <LogIn className="w-3.5 h-3.5" /> Iniciar Sesión
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('signup');
+                      setFeedback(null);
+                    }}
+                    className={
+                      'flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ' +
+                      (mode === 'signup'
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                    }
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> Crear Cuenta
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 <div>
@@ -363,28 +423,48 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="lector@ejemplo.com"
-                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
+                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs text-stone-900 dark:text-white"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Contraseña</label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs"
-                  />
-                </div>
+                {mode !== 'forgot' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold">Contraseña</label>
+                      {mode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode('forgot');
+                            setFeedback(null);
+                          }}
+                          className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline"
+                        >
+                          ¿Olvidaste tu contraseña?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs text-stone-900 dark:text-white"
+                    />
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2.5 px-4 text-xs shadow-lg transition disabled:opacity-50"
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {mode === 'login' ? 'Entrar y sincronizar biblioteca' : 'Crear cuenta en Supabase'}
+                  {mode === 'login'
+                    ? 'Entrar y sincronizar biblioteca'
+                    : mode === 'signup'
+                    ? 'Crear cuenta en Supabase'
+                    : 'Enviar enlace de recuperación'}
                 </button>
               </form>
 

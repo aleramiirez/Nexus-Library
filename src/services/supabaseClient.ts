@@ -60,3 +60,13 @@ export async function getActiveSession(): Promise<Session | null> {
   if (error) return null;
   return data.session;
 }
+
+/**
+ * Retorna la URL base de redirección de autenticación (Vercel en producción o localhost en local)
+ */
+export function getAuthRedirectUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'http://localhost:5173';
+}
