@@ -1159,32 +1159,36 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                     onClick={() => handleSelectReader(profile)}
                     className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
                   >
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
-                        {profile.displayName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                          {profile.displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {profile.displayName}
                           </h3>
-                          {profile.isPublic ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
-                              <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
-                              <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
-                            </span>
+                          <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block truncate">
+                            @{profile.username}
+                          </span>
+                          {profile.bio && (
+                            <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                              "{profile.bio}"
+                            </p>
                           )}
                         </div>
-                        <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
-                          @{profile.username}
-                        </span>
-                        {profile.bio && (
-                          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                            "{profile.bio}"
-                          </p>
+                      </div>
+
+                      {/* Etiqueta de privacidad arriba a la derecha */}
+                      <div className="shrink-0 pt-0.5">
+                        {profile.isPublic ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
+                            <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
+                            <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1273,38 +1277,42 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                     onClick={() => handleSelectReader(reader)}
                     className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
                   >
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
-                        {reader.displayName
-                          ? reader.displayName.charAt(0).toUpperCase()
-                          : reader.username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                          {reader.displayName
+                            ? reader.displayName.charAt(0).toUpperCase()
+                            : reader.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {reader.displayName}
                           </h3>
-                          {reader.isPublic ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
-                              <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
-                            </span>
+                          <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block truncate">
+                            @{reader.username}
+                          </span>
+                          {reader.bio ? (
+                            <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                              "{reader.bio}"
+                            </p>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
-                              <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
-                            </span>
+                            <p className="text-xs italic text-stone-400 dark:text-slate-500 mt-1">
+                              Lector de Nexus Library
+                            </p>
                           )}
                         </div>
-                        <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
-                          @{reader.username}
-                        </span>
-                        {reader.bio ? (
-                          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                            "{reader.bio}"
-                          </p>
+                      </div>
+
+                      {/* Etiqueta de privacidad arriba a la derecha */}
+                      <div className="shrink-0 pt-0.5">
+                        {reader.isPublic ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
+                            <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                          </span>
                         ) : (
-                          <p className="text-xs italic text-stone-400 dark:text-slate-500 mt-1">
-                            Lector de Nexus Library
-                          </p>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
+                            <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
+                          </span>
                         )}
                       </div>
                     </div>
