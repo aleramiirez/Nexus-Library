@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Settings,
   Palette,
@@ -196,6 +197,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   } | null>(null);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persisted) {
@@ -342,22 +344,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   /* ─────────────────── Sesión de Usuario ─────────────────── */
-  const handleSignOut = async () => {
-    if (
-      !window.confirm(
-        '¿Deseas cerrar sesión? Todos tus libros y notas sincronizados seguirán a salvo en la nube para cuando vuelvas a iniciar sesión.'
-      )
-    ) {
-      return;
-    }
+  const handleSignOutClick = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const handleConfirmSignOut = async () => {
     setIsSigningOut(true);
     try {
       await clearLocalCacheOnSignOut();
       await supabase.auth.signOut();
+      setShowSignOutConfirm(false);
       setFeedback({
         type: 'info',
         text: 'Has cerrado sesión. Puedes seguir usando la biblioteca en este equipo o iniciar sesión con otra cuenta.'
       });
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
     } finally {
       setIsSigningOut(false);
     }
@@ -705,7 +707,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     <button
                       type="button"
                       disabled={isSigningOut}
-                      onClick={handleSignOut}
+                      onClick={handleSignOutClick}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold px-3.5 py-2 text-xs transition"
                     >
                       <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
@@ -1130,6 +1132,68 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           Versión 1.0.0
         </div>
       </div>
+
+      {/* Modal de confirmación de Cerrar Sesión (sin bloquear el hilo principal / 0ms INP) */}
+      {showSignOutConfirm &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[2px] p-4 animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signout-dialog-title"
+            onClick={() => !isSigningOut && setShowSignOutConfirm(false)}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+                  <LogOut className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="signout-dialog-title" className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
+                    ¿Cerrar sesión?
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-slate-400">
+                    Tu colección permanecerá sincronizada
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                Todos tus libros, estanterías y notas sincronizados seguirán a salvo en la nube para cuando vuelvas a iniciar sesión.
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isSigningOut}
+                  onClick={() => setShowSignOutConfirm(false)}
+                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isSigningOut}
+                  onClick={handleConfirmSignOut}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
+                >
+                  {isSigningOut ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cerrando sesión...
+                    </>
+                  ) : (
+                    'Cerrar sesión'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

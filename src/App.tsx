@@ -151,6 +151,7 @@ export const App: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
+  const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
@@ -208,6 +209,7 @@ export const App: React.FC = () => {
     isImportOpen ||
     isAuthModalOpen ||
     bookToDelete ||
+    sagaToDelete ||
     sagaFormOpen ||
     isInboxOpen
   );
@@ -229,6 +231,8 @@ export const App: React.FC = () => {
           refreshInboxCount();
         } else if (bookToDelete) {
           setBookToDelete(null);
+        } else if (sagaToDelete) {
+          setSagaToDelete(null);
         } else if (isAddEditOpen) {
           setIsAddEditOpen(false);
           setSelectedInitialCandidate(null);
@@ -252,6 +256,7 @@ export const App: React.FC = () => {
   }, [
     isInboxOpen,
     bookToDelete,
+    sagaToDelete,
     isAddEditOpen,
     detailBookId,
     isImportOpen,
@@ -585,6 +590,18 @@ export const App: React.FC = () => {
     } catch (err: unknown) {
       setGlobalError(
         formatFriendlyErrorMessage(err, 'No se pudo eliminar el libro de tu biblioteca.')
+      );
+    }
+  };
+
+  const confirmDeleteSaga = async () => {
+    if (!sagaToDelete) return;
+    try {
+      await deleteSagaAndUnlinkBooks(sagaToDelete.id);
+      setSagaToDelete(null);
+    } catch (err: unknown) {
+      setGlobalError(
+        formatFriendlyErrorMessage(err, 'No pudimos eliminar la saga en este momento.')
       );
     }
   };
@@ -1715,23 +1732,7 @@ export const App: React.FC = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (
-                                  window.confirm(
-                                    '¿Eliminar la saga "' +
-                                      item.saga.nombre +
-                                      '"? Los libros asociados se conservarán en tu biblioteca como libros independientes.'
-                                  )
-                                ) {
-                                  try {
-                                    await deleteSagaAndUnlinkBooks(item.saga.id);
-                                  } catch (err: unknown) {
-                                    setGlobalError(
-                                      formatFriendlyErrorMessage(err, 'No pudimos eliminar la saga en este momento.')
-                                    );
-                                  }
-                                }
-                              }}
+                              onClick={() => setSagaToDelete(item.saga)}
                               className="p-1.5 rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15 transition"
                               title="Eliminar saga"
                               aria-label="Eliminar saga"
@@ -2278,6 +2279,44 @@ export const App: React.FC = () => {
                 className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition"
               >
                 Eliminar definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sagaToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-saga-dialog-title"
+          onClick={() => setSagaToDelete(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-saga-dialog-title" className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
+              Confirmar eliminación de saga
+            </h3>
+            <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+              ¿Eliminar la saga <strong>"{sagaToDelete.nombre}"</strong>? Los libros asociados se conservarán en tu biblioteca como libros independientes.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSagaToDelete(null)}
+                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteSaga}
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition"
+              >
+                Eliminar saga
               </button>
             </div>
           </div>
