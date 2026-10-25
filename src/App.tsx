@@ -344,6 +344,17 @@ export const App: React.FC = () => {
       const nextUser = session?.user ?? null;
       setCurrentUser(nextUser);
       setIsAuthModalOpen(false);
+
+      // Al iniciar sesión o cerrar sesión, restablecer la navegación a la pantalla de Inicio
+      if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+        setActiveSection('dashboard');
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
+      }
+
       if (nextUser) {
         setOfflineGuestMode(false);
         const cached = profileService.getCachedProfile(nextUser.id);
@@ -716,7 +727,14 @@ export const App: React.FC = () => {
   }
 
   if (!currentUser && !offlineGuestMode) {
-    return <AuthScreen onContinueOffline={() => setOfflineGuestMode(true)} />;
+    return (
+      <AuthScreen
+        onContinueOffline={() => {
+          setOfflineGuestMode(true);
+          setActiveSection('dashboard');
+        }}
+      />
+    );
   }
 
   const handleUpdateProfile = async (updates: Partial<UserProfile>) => {
