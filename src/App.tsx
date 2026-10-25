@@ -165,7 +165,12 @@ export const App: React.FC = () => {
   const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    return hash.includes('type=recovery') || search.includes('type=recovery');
+  });
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
 
@@ -346,7 +351,7 @@ export const App: React.FC = () => {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
       if (hash.includes('type=recovery') || search.includes('type=recovery')) {
-        setIsResetPasswordOpen(true);
+        setIsRecoveryMode(true);
       }
     }
 
@@ -358,11 +363,14 @@ export const App: React.FC = () => {
 
       // Evento de recuperación de contraseña disparado por Supabase al hacer clic en el enlace del email
       if (_event === 'PASSWORD_RECOVERY') {
-        setIsResetPasswordOpen(true);
+        setIsRecoveryMode(true);
       }
 
       // Al iniciar sesión o cerrar sesión, restablecer la navegación a la pantalla de Inicio
       if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
+        if (_event === 'SIGNED_OUT') {
+          setIsRecoveryMode(false);
+        }
         setActiveSection('dashboard');
         if (typeof window !== 'undefined') {
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -738,6 +746,40 @@ export const App: React.FC = () => {
         <p className="font-serif text-lg text-amber-800 dark:text-amber-300 tracking-wide">
           Cargando NEXUS LIBRARY...
         </p>
+      </div>
+    );
+  }
+
+  const handleCancelRecovery = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setIsRecoveryMode(false);
+    setCurrentUser(null);
+    setCurrentUserProfile(null);
+  };
+
+  const handleSuccessRecovery = () => {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setIsRecoveryMode(false);
+    setActiveSection('dashboard');
+    showToast('Tu contraseña se ha actualizado correctamente.', 'success');
+  };
+
+  if (isRecoveryMode) {
+    return (
+      <div className="min-h-screen relative flex items-center justify-center bg-[#f7f0df] dark:bg-[#080C15] p-4 overflow-hidden">
+        <AnimatedBackground />
+        <ResetPasswordModal
+          isOpen={true}
+          onCancel={handleCancelRecovery}
+          onSuccess={handleSuccessRecovery}
+        />
       </div>
     );
   }
@@ -2280,17 +2322,6 @@ export const App: React.FC = () => {
           />
         )}
 
-        {isResetPasswordOpen && (
-          <ResetPasswordModal
-            isOpen={isResetPasswordOpen}
-            onClose={() => setIsResetPasswordOpen(false)}
-            onSuccess={() => {
-              setIsResetPasswordOpen(false);
-              setActiveSection('dashboard');
-              showToast('Tu contraseña se ha actualizado correctamente.', 'success');
-            }}
-          />
-        )}
 
         {isInboxOpen && (
           <BookInboxModal

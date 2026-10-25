@@ -1,29 +1,57 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, X, ArrowRight } from 'lucide-react';
+import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
+  onCancel: () => Promise<void> | void;
+  onSuccess: () => void;
 }
 
 export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   isOpen,
-  onClose,
+  onCancel,
   onSuccess
 }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isTokenError, setIsTokenError] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
     text: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    if (hash.includes('error=') || search.includes('error=')) {
+      const params = new URLSearchParams(hash.replace(/^#/, '?') || search);
+      const desc =
+        params.get('error_description') ||
+        'El enlace de recuperación es inválido o ha caducado. Por favor, solicita uno nuevo desde la pantalla de acceso.';
+      setIsTokenError(true);
+      setFeedback({
+        type: 'error',
+        text: desc.replace(/\+/g, ' ')
+      });
+    }
+  }, []);
+
   if (!isOpen || typeof document === 'undefined') return null;
+
+  const handleCancelClick = async () => {
+    setIsCancelling(true);
+    try {
+      await onCancel();
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +83,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
       setFeedback({
         type: 'success',
-        text: '¡Tu contraseña ha sido actualizada con éxito! Ya puedes acceder con tu nueva clave.'
+        text: '¡Tu contraseña ha sido actualizada con éxito! Entrando a tu biblioteca...'
       });
 
       // Limpiar el hash de recuperación de la URL para evitar recargas en modo recovery
@@ -64,19 +92,19 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
       }
 
       setTimeout(() => {
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          onClose();
-        }
-      }, 1500);
+        onSuccess();
+      }, 1200);
     } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'No se pudo actualizar la contraseña. El enlace puede haber caducado.';
+      if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+        setIsTokenError(true);
+      }
       setFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'No se pudo actualizar la contraseña. El enlace puede haber caducado.'
+        text: msg
       });
     } finally {
       setIsLoading(false);
@@ -85,13 +113,13 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="reset-password-dialog-title"
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md rounded-2xl border border-amber-900/30 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabecera del modal */}
@@ -105,24 +133,26 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 Restablecer Contraseña
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400">
-                Nexus Library
+                Nexus Library · Seguridad
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
-            aria-label="Cerrar modal"
+            disabled={isLoading || isCancelling}
+            onClick={handleCancelClick}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+            aria-label="Cerrar y salir"
+            title="Cancelar y volver al login"
           >
-            <X className="w-4 h-4" />
+            {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
           </button>
         </div>
 
         {/* Contenido del formulario */}
         <div className="p-6 space-y-4">
           <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-            Has accedido mediante el enlace de recuperación. Elige una nueva contraseña segura para tu cuenta.
+            Has accedido mediante un enlace de recuperación seguro. Por motivos de seguridad, debes establecer tu nueva contraseña para acceder a tu biblioteca.
           </p>
 
           {feedback && (
@@ -143,82 +173,102 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
-                Nueva contraseña
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  tabIndex={-1}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 p-1"
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
-                Confirmar nueva contraseña
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repite la nueva contraseña"
-                  className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-amber-900/15 dark:border-[#242E42]">
+          {isTokenError ? (
+            <div className="pt-2 text-center space-y-3">
               <button
                 type="button"
-                onClick={onClose}
-                disabled={isLoading}
-                className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2.5 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                onClick={handleCancelClick}
+                disabled={isCancelling}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition disabled:opacity-50"
               >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Guardando...</span>
-                  </>
+                {isCancelling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <span>Guardar nueva contraseña</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Volver a solicitar recuperación</span>
                   </>
                 )}
               </button>
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
+                  Nueva contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 p-1"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
+                  Confirmar nueva contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repite la nueva contraseña"
+                    className="w-full rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14]/90 pl-10 pr-10 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-amber-900/15 dark:border-[#242E42]">
+                <button
+                  type="button"
+                  onClick={handleCancelClick}
+                  disabled={isLoading || isCancelling}
+                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2.5 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                >
+                  {isCancelling ? 'Saliendo...' : 'Cancelar y salir'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || isCancelling}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Guardar y entrar</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>,
