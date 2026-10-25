@@ -1216,7 +1216,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 <Search className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Explorar Lectores
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-                Busca a otros lectores por su nombre o su identificador único (@handle) para consultar sus estanterías o conectaros como amigos.
+                Busca a otros lectores por su nombre o su nombre de usuario para consultar sus estanterías o conectaros como amigos.
               </p>
             </div>
 
@@ -1226,7 +1226,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por @usuario o nombre (ej: @aleramirez o Alejandro)..."
+                placeholder="Buscar por nombre o @usuario (ej: @lector o María)..."
                 className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-white dark:bg-[#101520] pl-10 pr-9 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
               {isLoadingReaders ? (
