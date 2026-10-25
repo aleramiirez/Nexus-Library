@@ -21,10 +21,13 @@ import {
   Calendar,
   Hash,
   Building2,
-  Globe
+  Globe,
+  UserPlus,
+  UserCheck
 } from 'lucide-react';
-import { Book, UserProfile } from '../types/models';
+import { Book, UserProfile, Friendship, FriendshipStatus } from '../types/models';
 import { communityService } from '../services/communityService';
+import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { formatStars, ReadingStatus, READING_STATUSES } from '../constants/catalogs';
@@ -61,6 +64,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [isLoadingReaders, setIsLoadingReaders] = useState(true);
   const [, startTransition] = useTransition();
 
+  // Subpestañas: Mis Amigos vs Explorar Lectores
+  const [communitySubTab, setCommunitySubTab] = useState<'friends' | 'explore'>('friends');
+  const [friends, setFriends] = useState<Friendship[]>([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const [friendshipMap, setFriendshipMap] = useState<
+    Record<string, { status: FriendshipStatus; friendshipId: string; isRequester: boolean }>
+  >({});
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
   // Lector seleccionado para ver su estantería
   const [selectedReader, setSelectedReader] = useState<UserProfile | null>(null);
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
@@ -68,6 +80,27 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
+
+  const loadFriendsData = async () => {
+    if (!currentUserId) return;
+    setIsLoadingFriends(true);
+    try {
+      const [friendsList, fMap] = await Promise.all([
+        friendshipService.getFriends(currentUserId),
+        friendshipService.getFriendshipMap(currentUserId)
+      ]);
+      setFriends(friendsList);
+      setFriendshipMap(fMap);
+    } catch {
+      // Ignorado
+    } finally {
+      setIsLoadingFriends(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFriendsData();
+  }, [currentUserId]);
 
   const handleShelfFilterChange = (filter: 'all' | 'reading' | 'read' | 'unread') => {
     startTransition(() => {
@@ -86,6 +119,66 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       setSelectedReader(null);
       setReaderBooks([]);
     });
+  };
+
+  const handleSendFriendRequest = async (targetUserId: string, targetName: string) => {
+    if (!currentUserId) {
+      setToast({
+        type: 'info',
+        title: 'Inicia sesión',
+        message: 'Debes iniciar sesión para conectar con amigos de lectura.'
+      });
+      return;
+    }
+    setActionLoadingId(targetUserId);
+    try {
+      const res = await friendshipService.sendFriendRequest(currentUserId, targetUserId);
+      if (res.success) {
+        setToast({
+          type: 'success',
+          title: 'Solicitud enviada',
+          message: `Solicitud de amistad enviada a ${targetName}.`
+        });
+        loadFriendsData();
+      } else {
+        setToast({
+          type: 'info',
+          title: 'Información',
+          message: res.message
+        });
+      }
+    } catch {
+      setToast({
+        type: 'error',
+        title: 'Error de red',
+        message: 'No se pudo enviar la solicitud. Inténtalo más tarde.'
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleAcceptFriendRequest = async (friendshipId: string, targetName: string) => {
+    setActionLoadingId(friendshipId);
+    try {
+      const res = await friendshipService.respondFriendRequest(friendshipId, 'accept');
+      setToast({
+        type: res.success ? 'success' : 'error',
+        title: res.success ? '¡Nuevo amigo!' : 'Error',
+        message: res.success ? `¡Ahora eres amigo de ${targetName}!` : res.message
+      });
+      if (res.success) {
+        loadFriendsData();
+      }
+    } catch {
+      setToast({
+        type: 'error',
+        title: 'Error de red',
+        message: 'No se pudo aceptar la solicitud.'
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   // Estado de libros agregados en esta sesión
@@ -745,100 +838,281 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     );
   }
 
-  /* ─────────────────── VISTA 1: BUSCADOR DE LECTORES ─────────────────── */
+  /* ─────────────────── VISTA 1: COMUNIDAD (MIS AMIGOS & EXPLORAR) ─────────────────── */
   return (
     <div className="space-y-6">
-      {/* Buscador de Lectores */}
-      <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-4">
-        <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Comunidad de Lectores
-          </h2>
-          <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-            Encuentra a tus amigos por su nombre o su identificador único (@handle) para consultar sus estanterías de libros recomendados.
-          </p>
-        </div>
+      {/* Selector de subpestañas */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCommunitySubTab('friends')}
+            className={
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+              (communitySubTab === 'friends'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+            }
+          >
+            <Users className="w-4 h-4" />
+            <span>Mis Amigos</span>
+            {friends.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-950 text-amber-200 dark:bg-amber-400 dark:text-slate-950">
+                {friends.length}
+              </span>
+            )}
+          </button>
 
-        <div className="relative max-w-xl">
-          <Search className="w-4 h-4 text-stone-400 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por @usuario o nombre (ej: @aleramirez o Alejandro)..."
-            className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-white dark:bg-[#101520] pl-10 pr-9 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-          />
-          {isLoadingReaders ? (
-            <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-          ) : searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="p-1 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 absolute right-2.5 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setCommunitySubTab('explore')}
+            className={
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+              (communitySubTab === 'explore'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+            }
+          >
+            <Search className="w-4 h-4" />
+            <span>Explorar Lectores</span>
+          </button>
         </div>
       </div>
 
-      {/* Lista de lectores */}
-      {isLoadingReaders && readers.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
-          <Loader2 className="w-7 h-7 text-amber-600 dark:text-amber-400 animate-spin" />
-          <span className="font-serif text-sm">Buscando lectores en Nexus Library...</span>
-        </div>
-      ) : readers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center text-stone-600 dark:text-slate-400 space-y-2">
-          <Users className="w-8 h-8 mx-auto text-amber-600/60 dark:text-amber-400/60" />
-          <p className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-            {searchQuery ? `No encontramos lectores con "${searchQuery}"` : 'Aún no hay otros lectores públicos'}
-          </p>
-          <p className="text-xs max-w-md mx-auto">
-            {searchQuery
-              ? 'Verifica que el nombre o el @usuario esté bien escrito, o invita a tus amigos a crear su perfil público.'
-              : 'Diles a tus amigos que se registren y configuren su perfil público en Ajustes para compartir estanterías.'}
-          </p>
+      {communitySubTab === 'friends' ? (
+        /* Subvista: Mis Amigos */
+        <div className="space-y-4">
+          <div className="border-b border-amber-900/15 dark:border-[#20293C] pb-2">
+            <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100 flex items-center gap-2">
+              <span>Tu Círculo Cercano de Lectores</span>
+            </h3>
+            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
+              Accede a las estanterías de tus amigos y comparte recomendaciones personalizadas.
+            </p>
+          </div>
+
+          {!currentUserId ? (
+            <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-10 text-center space-y-2">
+              <Users className="w-8 h-8 mx-auto text-amber-600/60" />
+              <p className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
+                Inicia sesión para conectar con amigos
+              </p>
+              <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
+                Con una cuenta puedes agregar amigos de confianza y enviarles recomendaciones con dedicatoria.
+              </p>
+            </div>
+          ) : isLoadingFriends ? (
+            <div className="py-16 flex items-center justify-center gap-2 text-xs text-stone-500 dark:text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+              <span>Cargando tus amigos lectores...</span>
+            </div>
+          ) : friends.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-10 text-center space-y-3 bg-[#fbf6ea]/40 dark:bg-transparent">
+              <Users className="w-8 h-8 mx-auto text-amber-600/70" />
+              <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
+                Aún no tienes amigos en tu círculo
+              </h4>
+              <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                Busca a otros lectores por su @usuario para enviarles una solicitud de amistad.
+              </p>
+              <button
+                type="button"
+                onClick={() => setCommunitySubTab('explore')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
+              >
+                <Search className="w-3.5 h-3.5" /> Explorar lectores
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {friends.map((f) => {
+                const profile = f.friendProfile;
+                if (!profile) return null;
+
+                return (
+                  <div
+                    key={f.id}
+                    onClick={() => handleSelectReader(profile)}
+                    className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                        {profile.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                            {profile.displayName}
+                          </h3>
+                        </div>
+                        <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
+                          @{profile.username}
+                        </span>
+                        {profile.bio && (
+                          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                            "{profile.bio}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg font-bold">
+                        <Check className="w-3 h-3" /> Amigo
+                      </span>
+                      <span>Ver estantería →</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {readers.map((reader) => (
-            <div
-              key={reader.id}
-              onClick={() => handleSelectReader(reader)}
-              className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
-            >
-              <div className="flex items-start gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
-                  {reader.displayName
-                    ? reader.displayName.charAt(0).toUpperCase()
-                    : reader.username.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
-                    {reader.displayName}
-                  </h3>
-                  <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
-                    @{reader.username}
-                  </span>
-                  {reader.bio ? (
-                    <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                      "{reader.bio}"
-                    </p>
-                  ) : (
-                    <p className="text-xs italic text-stone-400 dark:text-slate-500 mt-1">
-                      Lector de Nexus Library
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
-                <span>Explorar estantería</span>
-                <span>→</span>
-              </div>
+        /* Subvista: Explorar Lectores */
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-4">
+            <div>
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                <Search className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Explorar Lectores
+              </h2>
+              <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+                Busca a otros lectores por su nombre o su identificador único (@handle) para consultar sus estanterías o conectaros como amigos.
+              </p>
             </div>
-          ))}
+
+            <div className="relative max-w-xl">
+              <Search className="w-4 h-4 text-stone-400 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por @usuario o nombre (ej: @aleramirez o Alejandro)..."
+                className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-white dark:bg-[#101520] pl-10 pr-9 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+              {isLoadingReaders ? (
+                <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+              ) : searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 absolute right-2.5 top-1/2 -translate-y-1/2"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Lista de lectores encontrados */}
+          {isLoadingReaders && readers.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+              <Loader2 className="w-7 h-7 text-amber-600 dark:text-amber-400 animate-spin" />
+              <span className="font-serif text-sm">Buscando lectores en Nexus Library...</span>
+            </div>
+          ) : readers.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center text-stone-600 dark:text-slate-400 space-y-2">
+              <Users className="w-8 h-8 mx-auto text-amber-600/60 dark:text-amber-400/60" />
+              <p className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
+                {searchQuery ? `No encontramos lectores con "${searchQuery}"` : 'Aún no hay otros lectores públicos'}
+              </p>
+              <p className="text-xs max-w-md mx-auto">
+                {searchQuery
+                  ? 'Verifica que el nombre o el @usuario esté bien escrito, o invita a tus amigos a crear su perfil público.'
+                  : 'Diles a tus amigos que se registren y configuren su perfil público en Ajustes para compartir estanterías.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {readers.map((reader) => {
+                const isSelf = currentUserId === reader.id;
+                const fInfo = friendshipMap[reader.id];
+                const isFriend = fInfo?.status === 'accepted';
+                const isPendingSent = fInfo?.status === 'pending' && fInfo.isRequester;
+                const isPendingReceived = fInfo?.status === 'pending' && !fInfo.isRequester;
+                const isBusy = actionLoadingId === reader.id || actionLoadingId === fInfo?.friendshipId;
+
+                return (
+                  <div
+                    key={reader.id}
+                    onClick={() => handleSelectReader(reader)}
+                    className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                        {reader.displayName
+                          ? reader.displayName.charAt(0).toUpperCase()
+                          : reader.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                            {reader.displayName}
+                          </h3>
+                        </div>
+                        <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 block">
+                          @{reader.username}
+                        </span>
+                        {reader.bio ? (
+                          <p className="text-xs text-stone-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                            "{reader.bio}"
+                          </p>
+                        ) : (
+                          <p className="text-xs italic text-stone-400 dark:text-slate-500 mt-1">
+                            Lector de Nexus Library
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold gap-2">
+                      {isSelf ? (
+                        <span className="text-[11px] text-stone-500">Tú</span>
+                      ) : isFriend ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
+                          <Check className="w-3 h-3" /> Amigo
+                        </span>
+                      ) : isPendingSent ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                          <Clock className="w-3 h-3" /> Solicitud enviada
+                        </span>
+                      ) : isPendingReceived ? (
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcceptFriendRequest(fInfo.friendshipId, reader.displayName);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-1 rounded-lg shadow-sm transition disabled:opacity-50"
+                        >
+                          {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
+                          <span>Aceptar amistad</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendFriendRequest(reader.id, reader.displayName);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 dark:text-amber-200 border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
+                        >
+                          {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
+                          <span>Añadir amigo</span>
+                        </button>
+                      )}
+
+                      <span className="text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform text-right">
+                        Estantería →
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Edit3,
@@ -10,11 +10,13 @@ import {
   Hash,
   Globe,
   Building2,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { Book, StarRating } from '../types/models';
 import { BookCover } from './BookCover';
 import { READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
+import { RecommendBookModal } from './RecommendBookModal';
 
 interface BookDetailModalProps {
   book: Book | null;
@@ -24,6 +26,8 @@ interface BookDetailModalProps {
   onStatusChange: (bookId: string, status: ReadingStatus) => void;
   onRatingChange: (bookId: string, rating: StarRating) => void;
   onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
+  currentUserId?: string;
+  onShowToast?: (message: string) => void;
 }
 
 export const BookDetailModal: React.FC<BookDetailModalProps> = ({
@@ -33,8 +37,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onDelete,
   onStatusChange,
   onRatingChange,
-  onDatesChange
+  onDatesChange,
+  currentUserId,
+  onShowToast
 }) => {
+  const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+
   if (!book) return null;
 
   const isUrl = /^https?:\/\//i.test(book.lecturaVirtual);
@@ -57,6 +65,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             <span className="truncate">Ficha Bibliográfica</span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsRecommendOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-amber-900 dark:text-amber-300 transition"
+              title="Recomendar este libro a un amigo"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Recomendar</span>
+            </button>
             <button
               type="button"
               onClick={() => onEdit(book)}
@@ -297,6 +314,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           </div>
         </div>
       </div>
+
+      {isRecommendOpen && (
+        <RecommendBookModal
+          isOpen={isRecommendOpen}
+          onClose={() => setIsRecommendOpen(false)}
+          book={book}
+          currentUserId={currentUserId}
+          onSuccess={onShowToast}
+        />
+      )}
     </div>
   );
 };

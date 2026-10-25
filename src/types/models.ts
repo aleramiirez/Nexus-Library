@@ -101,4 +101,45 @@ export interface UserProfile {
   updatedAt?: string;
 }
 
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
+
+export interface Friendship {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: FriendshipStatus;
+  createdAt: string;
+  updatedAt: string;
+  friendProfile?: UserProfile;
+}
+
+export type RecommendationStatus = 'unread' | 'read' | 'accepted' | 'dismissed';
+
+export interface BookRecommendationPayload {
+  nombre: string;
+  autor: string;
+  portadaUrl: string;
+  portadaFallbackUrl?: string;
+  isbn?: string;
+  editorial?: string;
+  fechaPublicacion?: number | null;
+  paginas?: number | null;
+  genero?: Genre | '';
+  subgeneros?: Subgenre[];
+  sinopsis?: string;
+}
+
+export interface BookRecommendation {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  bookData: BookRecommendationPayload;
+  note: string;
+  status: RecommendationStatus;
+  createdAt: string;
+  updatedAt: string;
+  senderProfile?: UserProfile;
+}
+
+
 

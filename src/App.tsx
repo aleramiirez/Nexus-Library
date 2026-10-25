@@ -30,6 +30,7 @@ import {
   LogIn,
   Menu,
   Settings,
+  Mail,
   X
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -54,6 +55,8 @@ import {
 import {
   BibliographicCandidate,
   Book,
+  BookRecommendation,
+  BookRecommendationPayload,
   LibraryFilters,
   LibraryViewMode,
   Saga,
@@ -62,6 +65,7 @@ import {
   UserProfile
 } from './types/models';
 import { profileService } from './services/profileService';
+import { recommendationInboxService } from './services/recommendationInboxService';
 import {
   formatStars,
   GENRES,
@@ -99,6 +103,9 @@ const DiscoverBooksScreen = React.lazy(() =>
 );
 const SettingsScreen = React.lazy(() =>
   import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen }))
+);
+const BookInboxModal = React.lazy(() =>
+  import('./components/BookInboxModal').then((m) => ({ default: m.BookInboxModal }))
 );
 
 const initialFilters: LibraryFilters = {
@@ -163,6 +170,37 @@ export const App: React.FC = () => {
   const [assignVolume, setAssignVolume] = useState<string>('1');
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
 
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = React.useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast((curr) => (curr?.message === message ? null : curr));
+    }, 4500);
+  }, []);
+
+  const refreshInboxCount = React.useCallback(async () => {
+    if (!currentUser?.id) {
+      setInboxUnreadCount(0);
+      return;
+    }
+    try {
+      const count = await recommendationInboxService.getUnreadCount(currentUser.id);
+      setInboxUnreadCount(count);
+    } catch {
+      // Ignore background unread check errors silently
+    }
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    refreshInboxCount();
+    if (!currentUser?.id) return;
+    const interval = setInterval(refreshInboxCount, 45000);
+    return () => clearInterval(interval);
+  }, [refreshInboxCount, currentUser?.id]);
+
   const isAnyModalOpen = Boolean(
     mobileMenuOpen ||
     isAddEditOpen ||
@@ -170,7 +208,8 @@ export const App: React.FC = () => {
     isImportOpen ||
     isAuthModalOpen ||
     bookToDelete ||
-    sagaFormOpen
+    sagaFormOpen ||
+    isInboxOpen
   );
 
   // Bloquea el scroll del fondo mientras cualquier modal o menú móvil está abierto
@@ -185,7 +224,10 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (bookToDelete) {
+        if (isInboxOpen) {
+          setIsInboxOpen(false);
+          refreshInboxCount();
+        } else if (bookToDelete) {
           setBookToDelete(null);
         } else if (isAddEditOpen) {
           setIsAddEditOpen(false);
@@ -208,13 +250,15 @@ export const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isInboxOpen,
     bookToDelete,
     isAddEditOpen,
     detailBookId,
     isImportOpen,
     isAuthModalOpen,
     sagaFormOpen,
-    mobileMenuOpen
+    mobileMenuOpen,
+    refreshInboxCount
   ]);
 
   const runCloudSync = async () => {
@@ -504,6 +548,34 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleAddRecommendedBook = async (payload: BookRecommendationPayload) => {
+    await saveBookRecord({
+      nombre: payload.nombre,
+      autor: payload.autor,
+      genero: (payload.genero || '') as Genre,
+      subgeneros: payload.subgeneros || [],
+      fechaPublicacion: payload.fechaPublicacion ?? null,
+      paginas: payload.paginas || null,
+      puntuacion: null,
+      progreso: '❌ No Leído',
+      sagaId: null,
+      sagaNombre: '',
+      volumen: null,
+      fechaInicio: '',
+      fechaFin: '',
+      lecturaVirtual: '',
+      tiempoLectura: '',
+      isbn: payload.isbn || '',
+      editorial: payload.editorial || '',
+      idioma: 'Español',
+      edicion: '',
+      sinopsis: payload.sinopsis || '',
+      portadaUrl: payload.portadaUrl || '',
+      portadaFallbackUrl: payload.portadaFallbackUrl || ''
+    });
+    setInboxUnreadCount((c) => Math.max(0, c - 1));
+  };
+
   const confirmDeleteBook = async () => {
     if (!bookToDelete) return;
     try {
@@ -659,6 +731,8 @@ export const App: React.FC = () => {
         isSyncing={isSyncing}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
+        inboxUnreadCount={inboxUnreadCount}
+        onOpenInbox={() => setIsInboxOpen(true)}
       />
 
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-stone-300 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]">
@@ -681,6 +755,20 @@ export const App: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsInboxOpen(true)}
+            className="relative p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition"
+            title="Buzón Literario"
+            aria-label="Buzón Literario"
+          >
+            <Mail className="w-4 h-4" />
+            {inboxUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] flex items-center justify-center shadow-sm">
+                {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => handleNavigate('discover')}
@@ -2101,6 +2189,8 @@ export const App: React.FC = () => {
             onStatusChange={updateBookQuickStatus}
             onRatingChange={updateBookQuickRating}
             onDatesChange={updateBookQuickDates}
+            currentUserId={currentUser?.id}
+            onShowToast={showToast}
           />
         )}
 
@@ -2138,6 +2228,19 @@ export const App: React.FC = () => {
             isSyncing={isSyncing}
             onTriggerSync={runCloudSync}
             onClose={() => setIsAuthModalOpen(false)}
+          />
+        )}
+
+        {isInboxOpen && (
+          <BookInboxModal
+            isOpen={isInboxOpen}
+            currentUserId={currentUser?.id}
+            onClose={() => {
+              setIsInboxOpen(false);
+              refreshInboxCount();
+            }}
+            onAddBookToLibrary={handleAddRecommendedBook}
+            onShowToast={showToast}
           />
         )}
       </React.Suspense>
@@ -2178,6 +2281,20 @@ export const App: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">
+          <span>{toast.message}</span>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-stone-400 hover:text-white ml-2 text-xs"
+            aria-label="Cerrar notificación"
+          >
+            ✕
+          </button>
         </div>
       )}
     </div>
