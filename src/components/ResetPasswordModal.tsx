@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import { formatAuthErrorMessage } from '../utils/errorUtils';
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
@@ -95,16 +96,22 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
         onSuccess();
       }, 1200);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : 'No se pudo actualizar la contraseña. El enlace puede haber caducado.';
-      if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+      const formatted = formatAuthErrorMessage(
+        err,
+        'No se pudo actualizar la contraseña. El enlace puede haber caducado.'
+      );
+      const raw = err instanceof Error ? err.message.toLowerCase() : '';
+      if (
+        raw.includes('expired') ||
+        raw.includes('invalid') ||
+        raw.includes('session missing') ||
+        raw.includes('session_not_found')
+      ) {
         setIsTokenError(true);
       }
       setFeedback({
         type: 'error',
-        text: msg
+        text: formatted
       });
     } finally {
       setIsLoading(false);

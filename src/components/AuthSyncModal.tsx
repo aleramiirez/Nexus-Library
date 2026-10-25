@@ -22,6 +22,7 @@ import {
   getAuthRedirectUrl
 } from '../services/supabaseClient';
 import { clearLocalCacheOnSignOut, SyncMigrationResult } from '../db/database';
+import { formatAuthErrorMessage, isValidEmail } from '../utils/errorUtils';
 
 interface AuthSyncModalProps {
   isOpen: boolean;
@@ -68,14 +69,23 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
     setFeedback(null);
     const cleanEmail = email.trim();
 
+    if (!cleanEmail) {
+      setFeedback({
+        type: 'error',
+        text: 'Por favor, introduce tu correo electrónico.'
+      });
+      return;
+    }
+
+    if (!isValidEmail(cleanEmail)) {
+      setFeedback({
+        type: 'error',
+        text: 'Por favor, introduce una dirección de correo válida (ejemplo: usuario@correo.com).'
+      });
+      return;
+    }
+
     if (mode === 'forgot') {
-      if (!cleanEmail) {
-        setFeedback({
-          type: 'error',
-          text: 'Por favor, introduce tu correo electrónico.'
-        });
-        return;
-      }
       setIsLoading(true);
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
@@ -89,7 +99,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       } catch (err: unknown) {
         setFeedback({
           type: 'error',
-          text: err instanceof Error ? err.message : 'No se pudo enviar el correo de recuperación.'
+          text: formatAuthErrorMessage(
+            err,
+            'No se pudo enviar el correo de recuperación. Comprueba que el correo exista e inténtalo de nuevo.'
+          )
         });
       } finally {
         setIsLoading(false);
@@ -97,10 +110,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       return;
     }
 
-    if (!cleanEmail || password.length < 6) {
+    if (password.length < 6) {
       setFeedback({
         type: 'error',
-        text: 'Introduce un correo válido y una contraseña de al menos 6 caracteres.'
+        text: 'La contraseña debe tener al menos 6 caracteres.'
       });
       return;
     }
@@ -162,10 +175,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'No se pudo completar la autenticación con Supabase.'
+        text: formatAuthErrorMessage(err, 'No se pudo completar la autenticación con Supabase.')
       });
     } finally {
       setIsLoading(false);
@@ -185,10 +195,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'Las sesiones anónimas no están habilitadas en este proyecto de Supabase.'
+        text: formatAuthErrorMessage(
+          err,
+          'Las sesiones anónimas no están habilitadas en este proyecto de Supabase.'
+        )
       });
     } finally {
       setIsLoading(false);

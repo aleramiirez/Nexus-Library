@@ -22,6 +22,7 @@ import {
   getAuthRedirectUrl
 } from '../services/supabaseClient';
 import { AnimatedBackground } from './AnimatedBackground';
+import { formatAuthErrorMessage, isValidEmail } from '../utils/errorUtils';
 
 interface AuthScreenProps {
   onContinueOffline: () => void;
@@ -54,6 +55,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
       return;
     }
 
+    if (!isValidEmail(cleanEmail)) {
+      setFeedback({
+        type: 'error',
+        text: 'Por favor, introduce una dirección de correo electrónico válida (ejemplo: usuario@correo.com).'
+      });
+      return;
+    }
+
     if (mode === 'forgot') {
       setIsLoading(true);
       try {
@@ -66,20 +75,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
           text: 'Te hemos enviado un correo con el enlace para restablecer tu contraseña. Revisa tu bandeja de entrada o la carpeta de spam.'
         });
       } catch (err: unknown) {
-        let msg = 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.';
-        if (err instanceof Error) {
-          const raw = err.message.toLowerCase();
-          if (raw.includes('rate limit')) {
-            msg = 'Has solicitado varios correos en poco tiempo. Por seguridad, espera unos minutos o revisa si ya recibiste un correo anterior en tu bandeja de entrada o spam.';
-          } else if (raw.includes('user not found')) {
-            msg = 'No se ha encontrado ninguna cuenta asociada a este correo electrónico.';
-          } else {
-            msg = err.message;
-          }
-        }
         setFeedback({
           type: 'error',
-          text: msg
+          text: formatAuthErrorMessage(
+            err,
+            'No se pudo enviar el correo de recuperación. Comprueba que el correo exista e inténtalo de nuevo.'
+          )
         });
       } finally {
         setIsLoading(false);
@@ -109,17 +110,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
           email: cleanEmail,
           password
         });
-        if (error) {
-          if (error.message.toLowerCase().includes('invalid login credentials')) {
-            throw new Error('El correo o la contraseña no son correctos.');
-          }
-          if (error.message.toLowerCase().includes('email not confirmed')) {
-            throw new Error(
-              'Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada o desactiva la confirmación de email en tu panel.'
-            );
-          }
-          throw error;
-        }
+        if (error) throw error;
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
@@ -133,7 +124,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
         if (!data.session) {
           setFeedback({
             type: 'info',
-            text: ' ¡Cuenta creada! Te hemos enviado un enlace de confirmación a tu correo. Confírmalo e inicia sesión aquí.'
+            text: '¡Cuenta creada! Te hemos enviado un enlace de confirmación a tu correo. Confírmalo e inicia sesión aquí.'
           });
           setMode('login');
           setPassword('');
@@ -143,10 +134,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text:
-          err instanceof Error
-            ? err.message
-            : 'No se pudo completar el acceso. Inténtalo de nuevo.'
+        text: formatAuthErrorMessage(err, 'No se pudo completar el acceso. Inténtalo de nuevo.')
       });
     } finally {
       setIsLoading(false);
