@@ -24,6 +24,7 @@ import {
   Globe,
   UserPlus,
   UserCheck,
+  UserMinus,
   Lock
 } from 'lucide-react';
 import { Book, UserProfile, Friendship, FriendshipStatus } from '../types/models';
@@ -73,6 +74,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     Record<string, { status: FriendshipStatus; friendshipId: string; isRequester: boolean }>
   >({});
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [friendToRemove, setFriendToRemove] = useState<{ id: string; name: string; friendshipId: string } | null>(null);
 
   // Lector seleccionado para ver su estantería
   const [selectedReader, setSelectedReader] = useState<UserProfile | null>(null);
@@ -120,6 +122,57 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       setSelectedReader(null);
       setReaderBooks([]);
     });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  };
+
+  const handleSubTabChange = (tab: 'friends' | 'explore') => {
+    setCommunitySubTab(tab);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  };
+
+  const handleConfirmRemoveFriend = async () => {
+    if (!friendToRemove) return;
+    setActionLoadingId(friendToRemove.friendshipId);
+
+    try {
+      const res = await friendshipService.removeFriend(friendToRemove.friendshipId);
+      if (res.success) {
+        setFriends((prev) => prev.filter((f) => f.id !== friendToRemove.friendshipId));
+        setFriendshipMap((prev) => {
+          const next = { ...prev };
+          delete next[friendToRemove.id];
+          return next;
+        });
+        setToast({
+          type: 'info',
+          title: 'Amistad finalizada',
+          message: `Has dejado de ser amigo de ${friendToRemove.name}.`
+        });
+        setFriendToRemove(null);
+      } else {
+        setToast({
+          type: 'error',
+          title: 'No se pudo eliminar',
+          message: res.message
+        });
+      }
+    } catch {
+      setToast({
+        type: 'error',
+        title: 'Error de red',
+        message: 'No se pudo completar la operación en este momento.'
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const handleSendFriendRequest = async (targetUserId: string, targetName: string) => {
@@ -251,6 +304,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       setShelfFilter('all');
       setViewMode('shelf');
     });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
     setIsLoadingLibrary(true);
 
     try {
@@ -609,7 +667,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
               {selectedReader.isPublic ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -620,6 +678,26 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   <Lock className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400" />
                   Biblioteca Privada
                 </span>
+              )}
+
+              {/* Botón para dejar de ser amigos desde la vista del perfil */}
+              {friendshipMap[selectedReader.id]?.status === 'accepted' && (
+                <button
+                  type="button"
+                  disabled={Boolean(actionLoadingId)}
+                  onClick={() =>
+                    setFriendToRemove({
+                      id: selectedReader.id,
+                      name: selectedReader.displayName || `@${selectedReader.username}`,
+                      friendshipId: friendshipMap[selectedReader.id].friendshipId
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
+                  title="Dejar de ser amigos"
+                >
+                  <UserMinus className="w-3.5 h-3.5" />
+                  <span>Dejar de ser amigos</span>
+                </button>
               )}
             </div>
           </div>
@@ -878,7 +956,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setCommunitySubTab('friends')}
+            onClick={() => handleSubTabChange('friends')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
               (communitySubTab === 'friends'
@@ -897,7 +975,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
           <button
             type="button"
-            onClick={() => setCommunitySubTab('explore')}
+            onClick={() => handleSubTabChange('explore')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
               (communitySubTab === 'explore'
@@ -949,7 +1027,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </p>
               <button
                 type="button"
-                onClick={() => setCommunitySubTab('explore')}
+                onClick={() => handleSubTabChange('explore')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
               >
                 <Search className="w-3.5 h-3.5" /> Explorar lectores
@@ -993,11 +1071,32 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg font-bold">
-                        <Check className="w-3 h-3" /> Amigo
+                    <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg font-bold">
+                          <Check className="w-3 h-3" /> Amigo
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFriendToRemove({
+                              id: profile.id,
+                              name: profile.displayName || `@${profile.username}`,
+                              friendshipId: f.id
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 border border-stone-300 dark:border-[#283246] hover:border-rose-500/40 hover:bg-rose-500/10 px-2 py-0.5 rounded-lg transition"
+                          title="Dejar de ser amigos"
+                          aria-label={`Dejar de ser amigo de ${profile.displayName}`}
+                        >
+                          <UserMinus className="w-3 h-3" />
+                          <span>Quitar</span>
+                        </button>
+                      </div>
+                      <span className="group-hover:translate-x-0.5 transition-transform text-right">
+                        {profile.isPublic ? 'Ver estantería →' : 'Biblioteca privada →'}
                       </span>
-                      <span>{profile.isPublic ? 'Ver estantería →' : 'Biblioteca privada →'}</span>
                     </div>
                   </div>
                 );
@@ -1111,9 +1210,28 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       {isSelf ? (
                         <span className="text-[11px] text-stone-500">Tú</span>
                       ) : isFriend ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
-                          <Check className="w-3 h-3" /> Amigo
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
+                            <Check className="w-3 h-3" /> Amigo
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFriendToRemove({
+                                id: reader.id,
+                                name: reader.displayName || `@${reader.username}`,
+                                friendshipId: fInfo.friendshipId
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 border border-stone-300 dark:border-[#283246] hover:border-rose-500/40 hover:bg-rose-500/10 px-2 py-0.5 rounded-lg transition"
+                            title="Dejar de ser amigos"
+                            aria-label={`Dejar de ser amigo de ${reader.displayName}`}
+                          >
+                            <UserMinus className="w-3 h-3" />
+                            <span>Quitar</span>
+                          </button>
+                        </div>
                       ) : isPendingSent ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
                           <Clock className="w-3 h-3" /> Solicitud enviada
@@ -1157,6 +1275,68 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           )}
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar amigo */}
+      {friendToRemove &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-[2px] p-4 animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-friend-dialog-title"
+            onClick={() => !actionLoadingId && setFriendToRemove(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+                  <UserMinus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="remove-friend-dialog-title" className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
+                    ¿Dejar de ser amigos?
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-slate-400">
+                    {friendToRemove.name}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                ¿Seguro que deseas eliminar a <strong>{friendToRemove.name}</strong> de tu lista de amigos? Dejaréis de estar conectados y ya no podréis recomendaros libros mutuamente.
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={Boolean(actionLoadingId)}
+                  onClick={() => setFriendToRemove(null)}
+                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={Boolean(actionLoadingId)}
+                  onClick={handleConfirmRemoveFriend}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
+                >
+                  {actionLoadingId === friendToRemove.friendshipId ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Eliminando...
+                    </>
+                  ) : (
+                    'Eliminar amigo'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Toast amigable */}
       {renderToastNotification()}

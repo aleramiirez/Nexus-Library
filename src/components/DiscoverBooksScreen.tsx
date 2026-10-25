@@ -72,6 +72,11 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     startTransition(() => {
       setDiscoverTab(tab);
     });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   };
 
   const handleCategoryChange = (catId: string) => {
