@@ -66,12 +66,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
           text: 'Te hemos enviado un correo con el enlace para restablecer tu contraseña. Revisa tu bandeja de entrada o la carpeta de spam.'
         });
       } catch (err: unknown) {
+        let msg = 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.';
+        if (err instanceof Error) {
+          const raw = err.message.toLowerCase();
+          if (raw.includes('rate limit')) {
+            msg = 'Has solicitado varios correos en poco tiempo. Por seguridad, espera unos minutos o revisa si ya recibiste un correo anterior en tu bandeja de entrada o spam.';
+          } else if (raw.includes('user not found')) {
+            msg = 'No se ha encontrado ninguna cuenta asociada a este correo electrónico.';
+          } else {
+            msg = err.message;
+          }
+        }
         setFeedback({
           type: 'error',
-          text:
-            err instanceof Error
-              ? err.message
-              : 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.'
+          text: msg
         });
       } finally {
         setIsLoading(false);
