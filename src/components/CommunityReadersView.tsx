@@ -1164,13 +1164,17 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         {profile.displayName.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {profile.displayName}
                           </h3>
-                          {!profile.isPublic && (
-                            <span title="Biblioteca privada" className="inline-flex items-center gap-1 text-[10px] text-stone-600 dark:text-slate-400 bg-stone-500/10 dark:bg-stone-500/20 px-1.5 py-0.5 rounded border border-stone-400/20 font-sans font-medium">
-                              <Lock className="w-2.5 h-2.5" /> Privada
+                          {profile.isPublic ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
+                              <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
+                              <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
                             </span>
                           )}
                         </div>
@@ -1190,7 +1194,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         <UserIcon className="w-3.5 h-3.5" /> Amigo
                       </span>
                       <span className="group-hover:translate-x-0.5 transition-transform text-right">
-                        {profile.isPublic ? 'Ver estantería →' : 'Biblioteca privada →'}
+                        {profile.isPublic ? 'Ver estantería →' : 'Ver perfil →'}
                       </span>
                     </div>
                   </div>
@@ -1245,12 +1249,12 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center text-stone-600 dark:text-slate-400 space-y-2">
               <Users className="w-8 h-8 mx-auto text-amber-600/60 dark:text-amber-400/60" />
               <p className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-                {searchQuery ? `No encontramos lectores con "${searchQuery}"` : 'Aún no hay otros lectores públicos'}
+                {searchQuery ? `No encontramos lectores con "${searchQuery}"` : 'Aún no hay otros lectores registrados'}
               </p>
               <p className="text-xs max-w-md mx-auto">
                 {searchQuery
-                  ? 'Verifica que el nombre o el @usuario esté bien escrito, o invita a tus amigos a crear su perfil público.'
-                  : 'Diles a tus amigos que se registren y configuren su perfil público en Ajustes para compartir estanterías.'}
+                  ? 'Verifica que el nombre o el @usuario esté bien escrito.'
+                  : 'Invita a tus amigos a registrarse en Nexus Library para conectaros y compartir recomendaciones.'}
               </p>
             </div>
           ) : (
@@ -1280,9 +1284,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {reader.displayName}
                           </h3>
-                          {!reader.isPublic && (
-                            <span title="Biblioteca privada" className="inline-flex items-center gap-1 text-[10px] text-stone-600 dark:text-slate-400 bg-stone-500/10 dark:bg-stone-500/20 px-1.5 py-0.5 rounded border border-stone-400/20 font-sans font-medium">
-                              <Lock className="w-2.5 h-2.5" /> Privada
+                          {reader.isPublic ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
+                              <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
+                              <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
                             </span>
                           )}
                         </div>

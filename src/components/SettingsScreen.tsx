@@ -855,10 +855,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     />
                     <div className="text-xs">
                       <span className="font-semibold text-stone-800 dark:text-slate-200 block">
-                        Estantería y perfil público
+                        Estantería pública
                       </span>
                       <span className="text-stone-600 dark:text-slate-400 text-[11px]">
-                        Permite que amigos puedan buscarte, ver qué estás leyendo y recomendarte libros.
+                        Si está activada, otros lectores pueden explorar tus libros. Si la desactivas (privada), tu perfil seguirá siendo visible para que puedan agregarte como amigo, pero tu estantería estará protegida.
                       </span>
                     </div>
                   </label>

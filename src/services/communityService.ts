@@ -11,8 +11,7 @@ export const communityService = {
 
     let req = supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, bio, is_public, created_at, updated_at')
-      .eq('is_public', true);
+      .select('id, username, display_name, avatar_url, bio, is_public, created_at, updated_at');
 
     if (currentUserId) {
       req = req.neq('id', currentUserId);
