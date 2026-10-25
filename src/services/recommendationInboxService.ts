@@ -169,6 +169,36 @@ export const recommendationInboxService = {
   },
 
   /**
+   * Obtiene la cantidad total de novedades en el buzón:
+   * Recomendaciones de libros sin leer + Solicitudes de amistad pendientes recibidas
+   */
+  async getTotalInboxNotificationsCount(userId: string): Promise<number> {
+    if (!userId) return 0;
+
+    try {
+      const [recsRes, friendsRes] = await Promise.all([
+        supabase
+          .from('book_recommendations')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', userId)
+          .eq('status', 'unread'),
+        supabase
+          .from('friendships')
+          .select('*', { count: 'exact', head: true })
+          .eq('addressee_id', userId)
+          .eq('status', 'pending')
+      ]);
+
+      const recsCount = recsRes.count || 0;
+      const friendsCount = friendsRes.count || 0;
+      return recsCount + friendsCount;
+    } catch (err) {
+      console.warn('Error al obtener novedades del buzón:', err);
+      return 0;
+    }
+  },
+
+  /**
    * Marca una recomendación como leída
    */
   async markAsRead(recommendationId: string): Promise<void> {

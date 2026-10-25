@@ -7,8 +7,6 @@ import {
   Layers,
   BarChart3,
   Settings,
-  Sun,
-  Moon,
   BookMarked,
   BookmarkCheck,
   Clock,
@@ -183,11 +181,24 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
-                onClick={onToggleTheme}
-                title="Cambiar tema claro/oscuro"
-                className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-500 dark:text-slate-400 hover:text-amber-500 transition"
+                onClick={() => {
+                  onOpenInbox?.();
+                  onCloseMobile?.();
+                }}
+                title={
+                  inboxUnreadCount > 0
+                    ? `Buzón Literario (${inboxUnreadCount} novedad${inboxUnreadCount > 1 ? 'es' : ''})`
+                    : 'Buzón Literario'
+                }
+                aria-label="Abrir Buzón Literario"
+                className="relative p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/40 transition group"
               >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                {inboxUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] leading-none flex items-center justify-center shadow-sm animate-pulse ring-2 ring-[#f7f0df] dark:ring-[#080C15]">
+                    {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
+                  </span>
+                )}
               </button>
               {onCloseMobile && (
                 <button
@@ -237,40 +248,6 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               active={activeSection === 'discover'}
               onSelect={handleSelectSection}
             />
-            <button
-              type="button"
-              onClick={() => {
-                onOpenInbox?.();
-                onCloseMobile?.();
-              }}
-              className="group relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5 mt-0.5"
-              title="Abrir Buzón Literario con recomendaciones y solicitudes"
-            >
-              <div className="relative shrink-0">
-                <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
-                {inboxUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-[#f7f0df] dark:ring-[#111622] animate-pulse" />
-                )}
-              </div>
-              <span className="font-serif text-[15px] font-semibold tracking-wide whitespace-nowrap">
-                Buzón Literario
-              </span>
-              {inboxUnreadCount > 0 ? (
-                <>
-                  <span
-                    aria-hidden="true"
-                    className="flex-1 min-w-[10px] mx-1 border-b border-dotted border-current opacity-30 translate-y-[3px]"
-                  />
-                  <span className="font-serif text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 tabular-nums">
-                    {inboxUnreadCount} {inboxUnreadCount === 1 ? 'nuevo' : 'nuevos'}
-                  </span>
-                </>
-              ) : (
-                <span className="ml-auto text-[11px] font-serif italic text-stone-400 dark:text-slate-600 group-hover:text-amber-600/70 dark:group-hover:text-amber-400/70 transition">
-                  Cartas
-                </span>
-              )}
-            </button>
 
             <Chapter>Estanterías de lectura</Chapter>
             <NavItem

@@ -188,7 +188,7 @@ export const App: React.FC = () => {
       return;
     }
     try {
-      const count = await recommendationInboxService.getUnreadCount(currentUser.id);
+      const count = await recommendationInboxService.getTotalInboxNotificationsCount(currentUser.id);
       setInboxUnreadCount(count);
     } catch {
       // Ignore background unread check errors silently
@@ -2242,6 +2242,7 @@ export const App: React.FC = () => {
             }}
             onAddBookToLibrary={handleAddRecommendedBook}
             onShowToast={showToast}
+            onInboxUpdated={refreshInboxCount}
           />
         )}
       </React.Suspense>

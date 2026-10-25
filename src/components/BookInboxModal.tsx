@@ -64,10 +64,11 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
       setRecommendations(recs);
       setPendingRequests(requests);
 
-      // Si hay recomendaciones no leídas, marcarlas en segundo plano
-      recs.filter((r) => r.status === 'unread').forEach((r) => {
-        recommendationInboxService.markAsRead(r.id);
-      });
+      // Si hay recomendaciones no leídas, marcarlas como leídas
+      const unreadList = recs.filter((r) => r.status === 'unread');
+      if (unreadList.length > 0) {
+        await Promise.all(unreadList.map((r) => recommendationInboxService.markAsRead(r.id)));
+      }
       onInboxUpdated?.();
     } catch {
       // Manejo silencioso
