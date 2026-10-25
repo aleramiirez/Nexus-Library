@@ -40,3 +40,8 @@ pnpm-debug.log*
 # Metadatos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Scripts y migraciones SQL
+*.sql
+src/db/migrations/
+supabase/migrations/
