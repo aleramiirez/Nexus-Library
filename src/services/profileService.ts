@@ -1,32 +1,64 @@
 import { supabase } from './supabaseClient';
-import { UserProfile } from '../types/models';
+import { UserProfile, ProfileVisibility } from '../types/models';
 
-interface ProfileRow {
+export interface RawProfileRow {
   id: string;
   username: string;
   display_name: string;
-  avatar_url: string | null;
-  bio: string | null;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+  is_public?: boolean | null;
+  visibility?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
-const PROFILE_CACHE_PREFIX = 'nexus_library_profile_';
-const GUEST_ALIAS_KEY = 'nexus_library_guest_alias';
+export type ProfileRow = RawProfileRow;
 
-function mapRowToProfile(row: ProfileRow): UserProfile {
+export function extractVisibility(row: {
+  is_public?: boolean | null;
+  visibility?: string | null;
+  bio?: string | null;
+}): {
+  visibility: ProfileVisibility;
+  cleanBio: string;
+} {
+  if (row.visibility === 'public' || row.visibility === 'friends' || row.visibility === 'private') {
+    const cleanBio = row.bio ? row.bio.replace(/<!--vis:(public|friends|private)-->/g, '').trim() : '';
+    return { visibility: row.visibility, cleanBio };
+  }
+
+  if (row.bio) {
+    const match = row.bio.match(/<!--vis:(public|friends|private)-->/);
+    if (match) {
+      const vis = match[1] as ProfileVisibility;
+      const cleanBio = row.bio.replace(/<!--vis:(public|friends|private)-->/g, '').trim();
+      return { visibility: vis, cleanBio };
+    }
+  }
+
+  const vis: ProfileVisibility = row.is_public === false ? 'private' : 'public';
+  const cleanBio = row.bio ? row.bio.replace(/<!--vis:(public|friends|private)-->/g, '').trim() : '';
+  return { visibility: vis, cleanBio };
+}
+
+export function mapRowToProfile(row: RawProfileRow): UserProfile {
+  const { visibility, cleanBio } = extractVisibility(row);
   return {
     id: row.id,
     username: row.username,
-    displayName: row.display_name,
+    displayName: row.display_name || row.username,
     avatarUrl: row.avatar_url,
-    bio: row.bio,
-    isPublic: row.is_public ?? true,
+    bio: cleanBio,
+    isPublic: visibility === 'public',
+    visibility,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
+
+const PROFILE_CACHE_PREFIX = 'nexus_library_profile_';
+const GUEST_ALIAS_KEY = 'nexus_library_guest_alias';
 
 export const profileService = {
   /**
@@ -71,7 +103,7 @@ export const profileService = {
       }
 
       if (data) {
-        const profile = mapRowToProfile(data as ProfileRow);
+        const profile = mapRowToProfile(data as RawProfileRow);
         this.setCachedProfile(profile);
         return profile;
       }
@@ -81,7 +113,7 @@ export const profileService = {
       const cleanUsername = `${baseName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${userId.slice(0, 4)}`;
       const displayName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
 
-      const initialRow: Partial<ProfileRow> = {
+      const initialRow: Partial<RawProfileRow> = {
         id: userId,
         username: cleanUsername,
         display_name: displayName,
@@ -100,7 +132,7 @@ export const profileService = {
         return this.getCachedProfile(userId);
       }
 
-      const profile = mapRowToProfile(inserted as ProfileRow);
+      const profile = mapRowToProfile(inserted as RawProfileRow);
       this.setCachedProfile(profile);
       return profile;
     } catch (err) {
@@ -113,8 +145,33 @@ export const profileService = {
    * Actualiza los datos del perfil en Supabase y sincroniza la caché local
    */
   async updateUserProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
-    const payload: Partial<ProfileRow> = {
-      updated_at: new Date().toISOString()
+    const current = this.getCachedProfile(userId);
+    const targetVisibility: ProfileVisibility =
+      updates.visibility !== undefined
+        ? updates.visibility
+        : updates.isPublic !== undefined
+        ? updates.isPublic
+          ? 'public'
+          : 'private'
+        : current?.visibility || (current?.isPublic === false ? 'private' : 'public');
+
+    const isPublicBoolean = targetVisibility === 'public';
+
+    let rawBio = updates.bio ? updates.bio.trim() : (current?.bio || '');
+    rawBio = rawBio.replace(/<!--vis:(public|friends|private)-->/g, '').trim();
+
+    let bioToSave: string | null = rawBio;
+    if (targetVisibility === 'friends') {
+      bioToSave = rawBio ? `${rawBio} <!--vis:friends-->` : '<!--vis:friends-->';
+    } else if (targetVisibility === 'private') {
+      bioToSave = rawBio ? `${rawBio} <!--vis:private-->` : '<!--vis:private-->';
+    } else {
+      bioToSave = rawBio || null;
+    }
+
+    const payload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+      is_public: isPublicBoolean
     };
 
     if (updates.username !== undefined) {
@@ -126,25 +183,45 @@ export const profileService = {
     if (updates.avatarUrl !== undefined) {
       payload.avatar_url = updates.avatarUrl;
     }
-    if (updates.bio !== undefined) {
-      payload.bio = updates.bio ? updates.bio.trim() : null;
-    }
-    if (updates.isPublic !== undefined) {
-      payload.is_public = updates.isPublic;
+    if (updates.bio !== undefined || updates.visibility !== undefined || updates.isPublic !== undefined) {
+      payload.bio = bioToSave;
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(payload)
-      .eq('id', userId)
-      .select()
-      .single();
+    let resultRow: RawProfileRow | null = null;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...payload, visibility: targetVisibility })
+        .eq('id', userId)
+        .select()
+        .single();
 
-    if (error || !data) {
-      throw new Error(error?.message || 'Error al guardar los cambios del perfil');
+      if (!error && data) {
+        resultRow = data as RawProfileRow;
+      }
+    } catch {
+      // Ignorado si la columna aún no existe en Supabase
     }
 
-    const updatedProfile = mapRowToProfile(data as ProfileRow);
+    if (!resultRow) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(payload)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error || !data) {
+        throw new Error(error?.message || 'Error al guardar los cambios del perfil');
+      }
+      resultRow = data as RawProfileRow;
+    }
+
+    const updatedProfile = mapRowToProfile(resultRow);
+    updatedProfile.visibility = targetVisibility;
+    updatedProfile.isPublic = targetVisibility === 'public';
+    updatedProfile.bio = rawBio;
+
     this.setCachedProfile(updatedProfile);
     return updatedProfile;
   },

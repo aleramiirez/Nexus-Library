@@ -90,6 +90,8 @@ export interface BackupPayload {
   sagas: Saga[];
 }
 
+export type ProfileVisibility = 'public' | 'friends' | 'private';
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -97,6 +99,7 @@ export interface UserProfile {
   avatarUrl?: string | null;
   bio?: string | null;
   isPublic: boolean;
+  visibility?: ProfileVisibility;
   createdAt?: string;
   updatedAt?: string;
 }

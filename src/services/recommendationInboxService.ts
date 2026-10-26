@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { mapRowToProfile } from './profileService';
 import {
   Book,
   BibliographicCandidate,
@@ -29,15 +30,22 @@ interface RawProfileRow {
 }
 
 function mapProfile(row: RawProfileRow): UserProfile {
+  return mapRowToProfile(row);
+}
+
+// legacy mapper removed
+/*
   return {
     id: row.id,
     username: row.username,
     displayName: row.display_name || row.username,
     avatarUrl: row.avatar_url,
     bio: row.bio,
-    isPublic: row.is_public ?? true
+    isPublic: true
   };
 }
+
+*/
 
 export const recommendationInboxService = {
   /**

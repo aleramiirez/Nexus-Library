@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { Friendship, FriendshipStatus, UserProfile } from '../types/models';
+import { mapRowToProfile, RawProfileRow } from './profileService';
 
 interface RawFriendshipRow {
   id: string;
@@ -10,27 +11,33 @@ interface RawFriendshipRow {
   updated_at: string;
 }
 
-interface RawProfileRow {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url?: string | null;
-  bio?: string | null;
-  is_public?: boolean | null;
-}
+// RawProfileRow imported
 
 function mapProfile(row: RawProfileRow): UserProfile {
-  return {
-    id: row.id,
-    username: row.username,
-    displayName: row.display_name || row.username,
-    avatarUrl: row.avatar_url,
-    bio: row.bio,
-    isPublic: row.is_public ?? true
-  };
+  return mapRowToProfile(row);
 }
 
 export const friendshipService = {
+  /**
+   * Comprueba si dos usuarios son amigos aceptados mutuamente
+   */
+  async isFriend(userIdA: string, userIdB: string): Promise<boolean> {
+    if (!userIdA || !userIdB || userIdA === userIdB) return false;
+    try {
+      const { data, error } = await supabase
+        .from('friendships')
+        .select('id')
+        .eq('status', 'accepted')
+        .or(
+          `and(requester_id.eq.${userIdA},addressee_id.eq.${userIdB}),and(requester_id.eq.${userIdB},addressee_id.eq.${userIdA})`
+        )
+        .limit(1);
+
+      return Boolean(!error && data && data.length > 0);
+    } catch {
+      return false;
+    }
+  },
   /**
    * Obtiene la lista de amigos aceptados de un usuario con sus perfiles cargados
    */

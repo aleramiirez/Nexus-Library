@@ -22,12 +22,15 @@ import {
   Check,
   Info,
   User as UserIcon,
+  Globe,
+  Users,
+  Lock,
   BookOpen,
   Save,
   AlertCircle
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
-import { Book, Saga, UserProfile } from '../types/models';
+import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
   clearLocalCacheOnSignOut,
   requestPersistentStorage,
@@ -108,7 +111,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   );
   const [profileUsername, setProfileUsername] = useState(userProfile?.username || '');
   const [profileBio, setProfileBio] = useState(userProfile?.bio || '');
-  const [profileIsPublic, setProfileIsPublic] = useState(userProfile?.isPublic ?? true);
+  const [profileVisibility, setProfileVisibility] = useState<ProfileVisibility>(
+    userProfile?.visibility ?? (userProfile?.isPublic === false ? 'private' : 'public')
+  );
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [usernameCheck, setUsernameCheck] = useState<{
     status: 'idle' | 'checking' | 'available' | 'unavailable';
@@ -120,7 +125,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setProfileDisplayName(userProfile.displayName || '');
       setProfileUsername(userProfile.username || '');
       setProfileBio(userProfile.bio || '');
-      setProfileIsPublic(userProfile.isPublic ?? true);
+      setProfileVisibility(userProfile.visibility ?? (userProfile.isPublic === false ? 'private' : 'public'));
     } else if (!currentUser) {
       setProfileDisplayName(guestAlias);
     }
@@ -177,7 +182,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           displayName: profileDisplayName.trim(),
           username: cleanUsername,
           bio: profileBio.trim(),
-          isPublic: profileIsPublic
+          isPublic: profileVisibility === 'public',
+          visibility: profileVisibility
         });
       }
 
@@ -741,9 +747,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     Define cómo quieres que te conozcan en Nexus Library para cuando busques amigos o compartas recomendaciones.
                   </p>
                 </div>
-                {currentUser && userProfile?.isPublic && (
-                  <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold px-2.5 py-0.5 border border-emerald-500/30">
-                    Perfil público
+                {currentUser && (
+                  <span
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full text-[10px] font-semibold px-2.5 py-0.5 border ${
+                      profileVisibility === 'public'
+                        ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+                        : profileVisibility === 'friends'
+                        ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300 border-sky-500/30'
+                        : 'bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-400/30'
+                    }`}
+                  >
+                    {profileVisibility === 'public' && (
+                      <>
+                        <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        Público
+                      </>
+                    )}
+                    {profileVisibility === 'friends' && (
+                      <>
+                        <Users className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                        Solo amigos
+                      </>
+                    )}
+                    {profileVisibility === 'private' && (
+                      <>
+                        <Lock className="w-3 h-3 text-stone-500 dark:text-stone-400" />
+                        Privado
+                      </>
+                    )}
                   </span>
                 )}
               </div>
@@ -844,24 +875,104 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </div>
                 )}
 
-                {/* Switch de Privacidad */}
+                {/* Selector de Privacidad de la Estantería */}
                 {currentUser && (
-                  <label className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/60 dark:bg-[#141A26] cursor-pointer hover:border-amber-500/40 transition">
-                    <input
-                      type="checkbox"
-                      checked={profileIsPublic}
-                      onChange={(e) => setProfileIsPublic(e.target.checked)}
-                      className="rounded border-amber-600 text-amber-600 focus:ring-amber-500 mt-0.5"
-                    />
-                    <div className="text-xs">
-                      <span className="font-semibold text-stone-800 dark:text-slate-200 block">
-                        Estantería pública
-                      </span>
-                      <span className="text-stone-600 dark:text-slate-400 text-[11px]">
-                        Si está activada, otros lectores pueden explorar tus libros. Si la desactivas (privada), tu perfil seguirá siendo visible para que puedan agregarte como amigo, pero tu estantería estará protegida.
-                      </span>
+                  <div className="space-y-2 pt-1">
+                    <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+                      Privacidad de tu estantería y lecturas
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Opción 1: Público */}
+                      <button
+                        type="button"
+                        onClick={() => setProfileVisibility('public')}
+                        className={`flex flex-col text-left p-3.5 rounded-xl border transition ${
+                          profileVisibility === 'public'
+                            ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 ring-2 ring-emerald-500/30'
+                            : 'border-amber-900/15 dark:border-[#242E42] bg-white dark:bg-[#141A26] hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-900 dark:text-slate-100">
+                            <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            Público
+                          </span>
+                          <span
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              profileVisibility === 'public'
+                                ? 'border-emerald-600 bg-emerald-600 text-white'
+                                : 'border-stone-400 dark:border-stone-600'
+                            }`}
+                          >
+                            {profileVisibility === 'public' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-tight">
+                          Cualquier lector de la comunidad puede explorar tu estantería y ver tus libros.
+                        </p>
+                      </button>
+
+                      {/* Opción 2: Solo amigos */}
+                      <button
+                        type="button"
+                        onClick={() => setProfileVisibility('friends')}
+                        className={`flex flex-col text-left p-3.5 rounded-xl border transition ${
+                          profileVisibility === 'friends'
+                            ? 'border-sky-500 bg-sky-500/10 dark:bg-sky-500/15 ring-2 ring-sky-500/30'
+                            : 'border-amber-900/15 dark:border-[#242E42] bg-white dark:bg-[#141A26] hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-900 dark:text-slate-100">
+                            <Users className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                            Solo amigos
+                          </span>
+                          <span
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              profileVisibility === 'friends'
+                                ? 'border-sky-600 bg-sky-600 text-white'
+                                : 'border-stone-400 dark:border-stone-600'
+                            }`}
+                          >
+                            {profileVisibility === 'friends' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-tight">
+                          Tu perfil es visible en la comunidad, pero solo tus amigos aceptados pueden ver tus libros.
+                        </p>
+                      </button>
+
+                      {/* Opción 3: Privado */}
+                      <button
+                        type="button"
+                        onClick={() => setProfileVisibility('private')}
+                        className={`flex flex-col text-left p-3.5 rounded-xl border transition ${
+                          profileVisibility === 'private'
+                            ? 'border-amber-700 dark:border-amber-400 bg-amber-500/10 dark:bg-amber-500/15 ring-2 ring-amber-500/30'
+                            : 'border-amber-900/15 dark:border-[#242E42] bg-white dark:bg-[#141A26] hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-900 dark:text-slate-100">
+                            <Lock className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+                            Privado
+                          </span>
+                          <span
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              profileVisibility === 'private'
+                                ? 'border-stone-600 dark:border-stone-400 bg-stone-700 dark:bg-stone-300 text-white dark:text-slate-900'
+                                : 'border-stone-400 dark:border-stone-600'
+                            }`}
+                          >
+                            {profileVisibility === 'private' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-tight">
+                          Nadie puede ver tus libros ni tu estantería. Solo verán tu @usuario para agregarte.
+                        </p>
+                      </button>
                     </div>
-                  </label>
+                  </div>
                 )}
 
                 <div className="flex justify-end pt-1">

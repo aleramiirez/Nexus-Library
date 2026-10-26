@@ -1,17 +1,19 @@
 import { supabase } from './supabaseClient';
 import { UserProfile, Book } from '../types/models';
 import { mapRowToBook, SupabaseBookRow } from '../db/database';
+import { mapRowToProfile, RawProfileRow } from './profileService';
+import { friendshipService } from './friendshipService';
 
 export const communityService = {
   /**
-   * Busca perfiles públicos de lectores por nombre (@username o Alias)
+   * Busca perfiles de lectores por nombre (@username o Alias)
    */
   async searchPublicProfiles(query: string, currentUserId?: string): Promise<UserProfile[]> {
     const clean = query.trim().replace(/^@/, '');
 
     let req = supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, bio, is_public, created_at, updated_at');
+      .select('*');
 
     if (currentUserId) {
       req = req.neq('id', currentUserId);
@@ -30,24 +32,17 @@ export const communityService = {
       return [];
     }
 
-    return data.map((r) => ({
-      id: r.id,
-      username: r.username,
-      displayName: r.display_name,
-      avatarUrl: r.avatar_url,
-      bio: r.bio,
-      isPublic: r.is_public ?? true,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at
-    }));
+    return data.map((r) => mapRowToProfile(r as RawProfileRow));
   },
 
   /**
-   * Obtiene la estantería pública y perfil de otro lector
+   * Obtiene la estantería y perfil de otro lector considerando su nivel de visibilidad
+   * (Público, Solo amigos, Privado).
    */
   async fetchUserPublicLibrary(
-    targetUserId: string
-  ): Promise<{ profile: UserProfile; books: Book[] } | null> {
+    targetUserId: string,
+    currentUserId?: string
+  ): Promise<{ profile: UserProfile; books: Book[]; canViewShelf: boolean } | null> {
     try {
       // 1. Obtener perfil
       const { data: pRow, error: pError } = await supabase
@@ -60,23 +55,25 @@ export const communityService = {
         return null;
       }
 
-      const profile: UserProfile = {
-        id: pRow.id,
-        username: pRow.username,
-        displayName: pRow.display_name,
-        avatarUrl: pRow.avatar_url,
-        bio: pRow.bio,
-        isPublic: pRow.is_public ?? true,
-        createdAt: pRow.created_at,
-        updatedAt: pRow.updated_at
-      };
+      const profile = mapRowToProfile(pRow as RawProfileRow);
 
-      // Si el perfil no es público, retornar solo el perfil sin libros
-      if (!profile.isPublic) {
-        return { profile, books: [] };
+      // Comprobar permisos de visibilidad para ver la estantería
+      const isCurrentUser = Boolean(currentUserId && currentUserId === targetUserId);
+      let isFriend = false;
+      if (currentUserId && !isCurrentUser) {
+        isFriend = await friendshipService.isFriend(currentUserId, targetUserId);
       }
 
-      // 2. Obtener libros públicos
+      const visibility = profile.visibility || (profile.isPublic ? 'public' : 'private');
+      const canViewShelf =
+        isCurrentUser || visibility === 'public' || (visibility === 'friends' && isFriend);
+
+      // Si no tiene permiso para ver la estantería, retornar solo el perfil
+      if (!canViewShelf) {
+        return { profile, books: [], canViewShelf: false };
+      }
+
+      // 2. Obtener libros de la estantería
       const { data: bRows, error: bError } = await supabase
         .from('books')
         .select('*')
@@ -84,13 +81,13 @@ export const communityService = {
         .order('updated_at', { ascending: false });
 
       if (bError || !bRows) {
-        return { profile, books: [] };
+        return { profile, books: [], canViewShelf: true };
       }
 
       const books = (bRows as SupabaseBookRow[]).map(mapRowToBook);
-      return { profile, books };
+      return { profile, books, canViewShelf: true };
     } catch (err) {
-      console.warn('Excepción al cargar la biblioteca pública:', err);
+      console.warn('Excepción al cargar la biblioteca del lector:', err);
       return null;
     }
   }

@@ -27,7 +27,7 @@ import {
   UserMinus,
   Lock
 } from 'lucide-react';
-import { Book, UserProfile, Friendship, FriendshipStatus } from '../types/models';
+import { Book, UserProfile, Friendship, FriendshipStatus, ProfileVisibility } from '../types/models';
 import { communityService } from '../services/communityService';
 import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
@@ -83,6 +83,19 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
+
+  const isSelectedReaderSelf = Boolean(
+    currentUserId && selectedReader && currentUserId === selectedReader.id
+  );
+  const selectedReaderVisibility: ProfileVisibility =
+    selectedReader?.visibility || (selectedReader?.isPublic ? 'public' : 'private');
+  const isSelectedReaderFriend = Boolean(
+    selectedReader && friendshipMap[selectedReader.id]?.status === 'accepted'
+  );
+  const canViewSelectedReaderShelf =
+    isSelectedReaderSelf ||
+    selectedReaderVisibility === 'public' ||
+    (selectedReaderVisibility === 'friends' && isSelectedReaderFriend);
 
   const loadFriendsData = async () => {
     if (!currentUserId) return;
@@ -312,7 +325,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     setIsLoadingLibrary(true);
 
     try {
-      const data = await communityService.fetchUserPublicLibrary(reader.id);
+      const data = await communityService.fetchUserPublicLibrary(reader.id, currentUserId);
       if (data) {
         setSelectedReader(data.profile);
         setReaderBooks(data.books);
@@ -732,10 +745,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-              {selectedReader.isPublic ? (
+              {selectedReaderVisibility === 'public' ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Estantería Pública
+                </span>
+              ) : selectedReaderVisibility === 'friends' ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-800 dark:text-sky-300 text-xs font-semibold px-3 py-1">
+                  <Users className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                  Solo Amigos
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-500/15 border border-stone-400/30 text-stone-700 dark:text-slate-300 text-xs font-semibold px-3 py-1">
@@ -810,8 +828,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
           </div>
 
-          {/* Filtros de estantería y selector de vista (solo si la biblioteca es pública) */}
-          {selectedReader.isPublic && (
+          {/* Filtros de estantería y selector de vista (si tiene permiso para verla) */}
+          {canViewSelectedReaderShelf && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -899,26 +917,63 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           )}
         </div>
 
-        {/* Libros de la estantería del lector o aviso de biblioteca privada */}
-        {!selectedReader.isPublic ? (
+        {/* Libros de la estantería del lector o aviso de biblioteca privada / solo amigos */}
+        {!canViewSelectedReaderShelf ? (
           <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#111622] p-8 sm:p-12 text-center space-y-4 shadow-sm my-2">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400 shadow-sm">
-              <Lock className="w-6 h-6" />
-            </div>
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
-                Esta biblioteca es privada
-              </h3>
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
-                <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca en modo privado, por lo que su colección de libros y lecturas no son visibles para otros usuarios.
-              </p>
-            </div>
-            {friendshipMap[selectedReader.id]?.status === 'accepted' && (
-              <div className="pt-2 max-w-md mx-auto">
-                <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-2.5 leading-relaxed font-medium">
-                  🤝 Sois amigos: aunque no puedas explorar su estantería, puedes seguir recomendándole libros desde la ficha de cualquier obra.
-                </p>
-              </div>
+            {selectedReaderVisibility === 'friends' ? (
+              <>
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-sky-700 dark:text-sky-400 shadow-sm">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div className="max-w-md mx-auto space-y-2">
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
+                    Estantería visible solo para amigos
+                  </h3>
+                  <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
+                    <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca para que solo sus amigos aceptados puedan ver sus libros y lecturas.
+                  </p>
+                </div>
+                {currentUserId && currentUserId !== selectedReader.id && (
+                  <div className="pt-2 max-w-sm mx-auto flex justify-center">
+                    {!friendshipMap[selectedReader.id] ? (
+                      <button
+                        type="button"
+                        disabled={Boolean(actionLoadingId)}
+                        onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName || selectedReader.username)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition shadow-sm"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Enviar solicitud de amistad</span>
+                      </button>
+                    ) : friendshipMap[selectedReader.id].status === 'pending' ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-3 py-1.5 rounded-xl font-medium">
+                        <Clock className="w-3.5 h-3.5" /> Solicitud pendiente de respuesta
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400 shadow-sm">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div className="max-w-md mx-auto space-y-2">
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
+                    Esta biblioteca es privada
+                  </h3>
+                  <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
+                    <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca en modo privado, por lo que su colección de libros y lecturas no son visibles para otros usuarios.
+                  </p>
+                </div>
+                {friendshipMap[selectedReader.id]?.status === 'accepted' && (
+                  <div className="pt-2 max-w-md mx-auto">
+                    <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-2.5 leading-relaxed font-medium">
+                      🤝 Sois amigos: aunque no puedas explorar su estantería, puedes seguir recomendándole libros desde la ficha de cualquier obra.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : isLoadingLibrary ? (
@@ -1181,9 +1236,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
                       {/* Etiqueta de privacidad arriba a la derecha */}
                       <div className="shrink-0 pt-0.5">
-                        {profile.isPublic ? (
+                        {profile.visibility === 'public' ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
                             <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                          </span>
+                        ) : profile.visibility === 'friends' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-full font-sans">
+                            <Users className="w-2.5 h-2.5 text-sky-600 dark:text-sky-400" /> Solo amigos
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
@@ -1198,7 +1257,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         <UserIcon className="w-3.5 h-3.5" /> Amigo
                       </span>
                       <span className="group-hover:translate-x-0.5 transition-transform text-right">
-                        {profile.isPublic ? 'Ver estantería →' : 'Ver perfil →'}
+                        {profile.visibility !== 'private' ? 'Ver estantería →' : 'Ver perfil →'}
                       </span>
                     </div>
                   </div>
@@ -1305,9 +1364,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
                       {/* Etiqueta de privacidad arriba a la derecha */}
                       <div className="shrink-0 pt-0.5">
-                        {reader.isPublic ? (
+                        {reader.visibility === 'public' ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
                             <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                          </span>
+                        ) : reader.visibility === 'friends' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-full font-sans">
+                            <Users className="w-2.5 h-2.5 text-sky-600 dark:text-sky-400" /> Solo amigos
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
@@ -1357,7 +1420,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       )}
 
                       <span className="text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform text-right">
-                        {reader.isPublic ? 'Estantería →' : 'Ver perfil →'}
+                        {reader.visibility === 'public' || (reader.visibility === 'friends' && isFriend) ? 'Estantería →' : 'Ver perfil →'}
                       </span>
                     </div>
                   </div>
