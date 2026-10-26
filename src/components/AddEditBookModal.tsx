@@ -17,7 +17,8 @@ import {
   Check,
   Plus,
   Edit2,
-  Hash
+  Hash,
+  Images
 } from 'lucide-react';
 import {
   BibliographicCandidate,
@@ -36,6 +37,7 @@ import {
 } from '../constants/catalogs';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
+import { BookCoverPickerModal, SelectedCoverPayload } from './BookCoverPickerModal';
 import { isDuplicateBook } from '../services/importExportService';
 import { tryCacheCoverDataUrl } from '../services/coverService';
 
@@ -112,6 +114,9 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [sinopsis, setSinopsis] = useState('');
   const [portadaUrl, setPortadaUrl] = useState('');
   const [portadaFallbackUrl, setPortadaFallbackUrl] = useState('');
+  const [customDataUrl, setCustomDataUrl] = useState<string | undefined>(undefined);
+  const [isCoverPickerOpen, setIsCoverPickerOpen] = useState(false);
+  const [coverBadgeMsg, setCoverBadgeMsg] = useState<string | null>(null);
 
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -204,8 +209,14 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setSinopsis(editingBook.sinopsis);
       setPortadaUrl(editingBook.portadaUrl);
       setPortadaFallbackUrl(editingBook.portadaFallbackUrl);
+      setCustomDataUrl(editingBook.portadaDataUrl);
+      setIsCoverPickerOpen(false);
+      setCoverBadgeMsg(null);
     } else if (initialCandidate) {
       applyCandidate(initialCandidate);
+      setCustomDataUrl(undefined);
+      setIsCoverPickerOpen(false);
+      setCoverBadgeMsg(null);
     } else {
       setNombre('');
       setAutor('');
@@ -230,6 +241,9 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setSinopsis('');
       setPortadaUrl('');
       setPortadaFallbackUrl('');
+      setCustomDataUrl(undefined);
+      setIsCoverPickerOpen(false);
+      setCoverBadgeMsg(null);
     }
   }, [isOpen, editingBook, initialCandidate]);
 
@@ -288,11 +302,36 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     setSinopsis(cand.sinopsis);
     setPortadaUrl(cand.portadaUrl);
     setPortadaFallbackUrl(cand.portadaFallbackUrl);
+    setCustomDataUrl(undefined);
+    setCoverBadgeMsg(null);
 
     if (!editingBook) {
       setGenero(cand.suggestedGenre);
       setSubgeneros(cand.suggestedSubgenres);
     }
+  };
+
+  const handleCoverSelected = (payload: SelectedCoverPayload) => {
+    setPortadaUrl(payload.portadaUrl);
+    if (payload.portadaFallbackUrl !== undefined) {
+      setPortadaFallbackUrl(payload.portadaFallbackUrl);
+    }
+    if (payload.portadaDataUrl) {
+      setCustomDataUrl(payload.portadaDataUrl);
+    } else {
+      setCustomDataUrl(undefined);
+    }
+    if (payload.editionInfo?.publisher && !editorial.trim()) {
+      setEditorial(payload.editionInfo.publisher);
+    }
+    if (payload.editionInfo?.year && !fechaPublicacion.trim()) {
+      setFechaPublicacion(String(payload.editionInfo.year));
+    }
+    setCoverBadgeMsg(
+      payload.editionInfo?.publisher
+        ? `Edición de ${payload.editionInfo.publisher}`
+        : 'Portada actualizada'
+    );
   };
 
   const toggleSubgenre = (sub: Subgenre) => {
@@ -350,9 +389,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     setIsSaving(true);
     try {
       const cachedDataUrl =
-        portadaUrl && portadaUrl !== editingBook?.portadaUrl
+        customDataUrl ||
+        (portadaUrl && portadaUrl !== editingBook?.portadaUrl
           ? await tryCacheCoverDataUrl(portadaUrl)
-          : editingBook?.portadaDataUrl;
+          : editingBook?.portadaDataUrl);
 
       await onSave(
         {
@@ -404,14 +444,48 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
       {/* Cover preview */}
       <div className="md:col-span-3 flex flex-col items-center">
-        <div className="w-40 md:w-full max-w-[190px]">
+        <div
+          className="group relative w-40 md:w-full max-w-[190px] cursor-pointer rounded-xl overflow-hidden transition-transform duration-200 hover:scale-[1.02] shadow-md"
+          onClick={() => setIsCoverPickerOpen(true)}
+          title="Haz clic para elegir otra portada de este libro"
+        >
           <BookCover
             nombre={nombre || 'Título del libro'}
             autor={autor || 'Autor'}
-            portadaUrl={portadaUrl}
+            portadaUrl={customDataUrl || portadaUrl}
             portadaFallbackUrl={portadaFallbackUrl}
+            portadaDataUrl={customDataUrl}
           />
+          {/* Overlay interactivo en hover */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-3 text-center text-white">
+            <div className="p-2 rounded-full bg-amber-500 text-stone-950 shadow-md">
+              <Images className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold font-serif leading-tight">
+              Cambiar portada
+            </span>
+            <span className="text-[10px] text-amber-200">
+              Ver otras ediciones
+            </span>
+          </div>
         </div>
+
+        {/* Botón explícito debajo de la portada */}
+        <button
+          type="button"
+          onClick={() => setIsCoverPickerOpen(true)}
+          className="mt-3 w-40 md:w-full max-w-[190px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 transition shadow-sm"
+        >
+          <Images className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+          <span>Elegir otra portada</span>
+        </button>
+
+        {coverBadgeMsg && (
+          <div className="mt-2 w-40 md:w-full max-w-[190px] px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-[11px] font-medium text-center flex items-center justify-center gap-1.5 shadow-sm">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{coverBadgeMsg}</span>
+          </div>
+        )}
       </div>
 
       <div className="md:col-span-9 space-y-4">
@@ -1043,13 +1117,23 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
           URL de portada (autocompletada o personalizada)
         </label>
-        <input
-          type="url"
-          value={portadaUrl}
-          onChange={(e) => setPortadaUrl(e.target.value)}
-          placeholder="https://..."
-          className={inputCls}
-        />
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={portadaUrl}
+            onChange={(e) => setPortadaUrl(e.target.value)}
+            placeholder="https://..."
+            className={inputCls}
+          />
+          <button
+            type="button"
+            onClick={() => setIsCoverPickerOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 transition flex items-center gap-1.5 shrink-0"
+          >
+            <Images className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+            <span>Explorar ediciones</span>
+          </button>
+        </div>
       </div>
 
       {/* Synopsis */}
@@ -1129,10 +1213,20 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
             {candidates.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs text-stone-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                  Selecciona la edición deseada con un clic para autocompletar portada y metadatos:
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <p className="text-xs text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                    <span>Selecciona la edición deseada o explora portadas alternativas:</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsCoverPickerOpen(true)}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition"
+                  >
+                    <Images className="w-3.5 h-3.5" />
+                    <span>Galería de portadas</span>
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
                   {candidates.map((cand) => {
                     const isSelected = selectedCandidateId === cand.id;
@@ -1288,6 +1382,20 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           </form>
         </div>
       </div>
+
+      {/* Selector modal de portadas de ediciones */}
+      <BookCoverPickerModal
+        isOpen={isCoverPickerOpen}
+        onClose={() => setIsCoverPickerOpen(false)}
+        bookTitle={nombre || searchQuery}
+        bookAuthor={autor}
+        isbn={isbn}
+        currentCoverUrl={portadaUrl}
+        currentCoverFallbackUrl={portadaFallbackUrl}
+        currentCoverDataUrl={customDataUrl}
+        existingCandidates={candidates}
+        onSelectCover={handleCoverSelected}
+      />
     </div>
   );
 };

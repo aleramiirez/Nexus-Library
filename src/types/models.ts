@@ -59,6 +59,19 @@ export interface BibliographicCandidate {
   recommendationReason?: string;
 }
 
+export interface EditionCoverOption {
+  id: string;
+  url: string;
+  fallbackUrl?: string;
+  title?: string;
+  publisher?: string;
+  year?: string | number | null;
+  language?: string;
+  isbn?: string;
+  source: 'openlibrary' | 'googlebooks' | 'candidate' | 'custom' | 'upload';
+  badge?: string;
+}
+
 export type SortField =
   | 'nombre'
   | 'autor'
