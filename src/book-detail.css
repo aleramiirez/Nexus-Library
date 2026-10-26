@@ -1,25 +1,25 @@
-/* ===== Modal "Libro Abierto a Doble Página" (BookDetailModal) + Animación FLIP 3D ===== */
+/* ===== Modal "Libro Abierto a Doble Página" (BookDetailModal) + Coreografía 3D Realista ===== */
 
 /* Hueco en la balda mientras el libro está extraído y abierto */
 .shelf-book.is-extracted {
   opacity: 0 !important;
   pointer-events: none !important;
-  transition: opacity 0.2s ease-out !important;
+  transition: opacity 0.15s ease-out !important;
 }
 
 /* Backdrop con desenfoque progresivo */
 .open-book-backdrop {
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(22, 15, 9, 0.72) 0%,
-    rgba(6, 8, 14, 0.86) 100%
+    rgba(22, 15, 9, 0.74) 0%,
+    rgba(6, 8, 14, 0.88) 100%
   );
-  backdrop-filter: blur(5px);
-  animation: open-book-backdrop-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  backdrop-filter: blur(6px);
+  animation: open-book-backdrop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .open-book-backdrop.is-closing {
-  animation: open-book-backdrop-out 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: open-book-backdrop-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes open-book-backdrop-in {
@@ -32,155 +32,748 @@
 }
 
 @keyframes open-book-backdrop-out {
-  from {
+  0%,
+  45% {
     opacity: 1;
   }
-  to {
+  100% {
     opacity: 0;
   }
 }
 
-/* Escenario con perspectiva 3D */
+/* Escenario con perspectiva 3D profunda */
 .open-book-stage {
-  perspective: 2000px;
+  perspective: 2400px;
   perspective-origin: 50% 50%;
 }
 
-/* Cubierta dura exterior (Tapas de cuero/madera que sobresalen 6px-8px alrededor de las hojas) */
+/* Contenedor 3D del libro: SIN overflow:hidden para preservar el espacio 3D (preserve-3d) */
 .open-book-shell {
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.28 -0.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   position: relative;
-  padding: 6px 6px 8px 6px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
-  box-shadow:
-    0 32px 64px -12px rgba(0, 0, 0, 0.78),
-    0 14px 28px -8px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 230, 175, 0.22),
-    inset 0 0 0 1px rgba(217, 160, 65, 0.25);
   transform-style: preserve-3d;
   will-change: transform, opacity;
-  /* backwards asegura que al finalizar la entrada no quede transform activo que afecte a hijos fixed */
-  animation: open-book-flight-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  /* backwards garantiza que al terminar la apertura no quede ningún transform residual */
+  animation: open-book-flight-in-mobile 0.82s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.open-book-shell.is-closing {
+  animation: open-book-flight-out-mobile 0.72s cubic-bezier(0.32, 0, 0.2, 1) forwards;
 }
 
 @media (min-width: 768px) {
   .open-book-shell {
-    padding: 7px 9px 10px 9px;
-    border-radius: 16px;
+    animation: open-book-flight-in-desktop 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   }
 
-  /* Lomo central de cuero que asoma arriba y abajo en el eje del pliegue (5/12 = 41.6667%) */
-  .open-book-shell::before,
-  .open-book-shell::after {
-    content: '';
-    position: absolute;
-    left: 41.6667%;
-    transform: translateX(-50%);
-    width: 42px;
-    height: 7px;
-    background: linear-gradient(90deg, #1d130b, #3d291a 50%, #1d130b);
-    border-left: 1px solid rgba(235, 185, 90, 0.3);
-    border-right: 1px solid rgba(235, 185, 90, 0.3);
-    z-index: 4;
-    pointer-events: none;
-  }
-
-  .open-book-shell::before {
-    top: 0;
-    border-radius: 0 0 6px 6px;
-  }
-
-  .open-book-shell::after {
-    bottom: 0;
-    height: 9px;
-    border-radius: 6px 6px 0 0;
+  .open-book-shell.is-closing {
+    animation: open-book-flight-out-desktop 0.74s cubic-bezier(0.32, 0, 0.2, 1) forwards;
   }
 }
 
-html.dark .open-book-shell {
-  background: linear-gradient(145deg, #131a2a 0%, #0b0f19 55%, #070a11 100%);
-  box-shadow:
-    0 34px 68px -12px rgba(0, 0, 0, 0.9),
-    0 16px 32px -8px rgba(0, 0, 0, 0.75),
-    inset 0 1px 0 rgba(255, 205, 110, 0.16),
-    inset 0 0 0 1px rgba(245, 180, 60, 0.22);
-}
-
-@media (min-width: 768px) {
-  html.dark .open-book-shell::before,
-  html.dark .open-book-shell::after {
-    background: linear-gradient(90deg, #070a11, #182236 50%, #070a11);
-    border-color: rgba(245, 180, 60, 0.25);
-  }
-}
-
-/* Animación de salida (Reverse Flight de vuelta a la coordenada de origen) */
-.open-book-shell.is-closing {
-  animation: open-book-flight-out 0.38s cubic-bezier(0.32, 0, 0.67, 0) forwards;
-}
-
-@keyframes open-book-flight-in {
+/*
+ * Coreografía en Escritorio (900ms al abrir / 740ms al cerrar):
+ * - 0% -> 34%: El libro cerrado (con su portada visible y centrada con translateX(-12.5%))
+ *              sale de su coordenada exacta en la balda (--from-x, --from-y, --from-scale)
+ *              y vuela en 3D hacia el centro.
+ * - 34% -> 100%: Se despliega a doble página mientras se asienta en el plano de lectura.
+ */
+@keyframes open-book-flight-in-desktop {
   0% {
-    opacity: 0.2;
-    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -120px)
-      scale(var(--from-scale, 0.35))
-      rotateY(-18deg)
-      rotateX(8deg);
+    opacity: 0.95;
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), 0px)
+      scale(var(--from-scale, 0.34))
+      translateX(-12.5%)
+      rotateX(10deg)
+      rotateY(-14deg)
+      rotateZ(-1.5deg);
   }
-  22% {
+  34% {
     opacity: 1;
+    transform: translate3d(
+        calc(var(--from-x, 0px) * 0.12),
+        calc(var(--from-y, 24px) * 0.12),
+        90px
+      )
+      scale(0.88)
+      translateX(-9%)
+      rotateX(14deg)
+      rotateY(-8deg)
+      rotateZ(-0.5deg);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0px, 0px, 25px)
+      scale(1.01)
+      translateX(0%)
+      rotateX(4deg)
+      rotateY(0deg)
+      rotateZ(0deg);
   }
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) rotateX(0deg);
+    transform: translate3d(0px, 0px, 0px)
+      scale(1)
+      translateX(0%)
+      rotateX(0deg)
+      rotateY(0deg)
+      rotateZ(0deg);
   }
 }
 
-@keyframes open-book-flight-out {
+/*
+ * Vuelo inverso al cerrar en Escritorio (740ms):
+ * - 0% -> 46%: El libro permanece en el centro mientras la tapa izquierda se pliega 180° sobre la derecha.
+ * - 46% -> 100%: Ya cerrado con su portada a la vista, vuela de vuelta al hueco vacío de la balda.
+ */
+@keyframes open-book-flight-out-desktop {
   0% {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) rotateX(0deg);
+    transform: translate3d(0px, 0px, 0px)
+      scale(1)
+      translateX(0%)
+      rotateX(0deg)
+      rotateY(0deg)
+      rotateZ(0deg);
   }
-  70% {
+  42% {
+    opacity: 1;
+    transform: translate3d(0px, -4px, 60px)
+      scale(0.92)
+      translateX(-11%)
+      rotateX(12deg)
+      rotateY(-10deg)
+      rotateZ(-1deg);
+  }
+  88% {
+    opacity: 0.96;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), 0px)
+      scale(var(--from-scale, 0.34))
+      translateX(-12.5%)
+      rotateX(8deg)
+      rotateY(-14deg)
+      rotateZ(-1.5deg);
+  }
+}
+
+/* Coreografía en Móvil */
+@keyframes open-book-flight-in-mobile {
+  0% {
+    opacity: 0.9;
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -60px)
+      scale(var(--from-scale, 0.38))
+      rotateX(12deg)
+      rotateY(-18deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate3d(0px, 0px, 40px)
+      scale(0.96)
+      rotateX(6deg)
+      rotateY(-4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0px, 0px, 0px)
+      scale(1)
+      rotateX(0deg)
+      rotateY(0deg);
+  }
+}
+
+@keyframes open-book-flight-out-mobile {
+  0% {
+    opacity: 1;
+    transform: translate3d(0px, 0px, 0px) scale(1) rotateX(0deg) rotateY(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: translate3d(0px, 0px, 30px) scale(0.92) rotateX(8deg) rotateY(-10deg);
+  }
+  90% {
     opacity: 0.9;
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -120px)
-      scale(var(--from-scale, 0.35))
-      rotateY(-18deg)
-      rotateX(8deg);
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -60px)
+      scale(var(--from-scale, 0.38))
+      rotateX(10deg)
+      rotateY(-18deg);
   }
 }
 
-/* Bloque interior de hojas con cantos apilados (izquierdo, derecho e inferior) */
+/* Bloque 3D de las dos alas del libro: SIN overflow:hidden para permitir rotación 3D real */
 .open-book-pages-block {
   position: relative;
-  padding-left: 6px;
-  padding-right: 4px;
-  padding-bottom: 5px;
-  border-radius: 10px;
-  overflow: hidden;
   transform-style: preserve-3d;
 }
 
+.open-book-spread-grid {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+/* ============================================================================
+ * ALA IZQUIERDA (VERSO + TAPA DURA EXTERIOR EN EL REVERSO 3D)
+ * ============================================================================ */
+.open-book-page-left {
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: right center;
+  z-index: 30;
+}
+
 @media (min-width: 768px) {
-  .open-book-pages-block {
-    padding-left: 7px;
-    padding-right: 7px;
-    padding-bottom: 6px;
-    border-radius: 11px;
+  .open-book-page-left {
+    animation: open-page-left-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .open-book-shell.is-closing .open-book-page-left {
+    animation: open-page-left-out 0.74s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 }
 
-/* Cantos de hojas apiladas: izquierdo, derecho e inferior */
+/*
+ * Apertura de la Tapa/Página Izquierda:
+ * - De 0% a 24%: Permanece cerrada a 180° (mostrando la portada física del libro en su cara trasera).
+ * - De 24% a 92%: Gira 180° en 3D sobre el eje del lomo central hasta quedar abierta a 0°.
+ */
+@keyframes open-page-left-in {
+  0%,
+  22% {
+    transform: rotateY(179.5deg) translateZ(3px);
+  }
+  56% {
+    transform: rotateY(75deg) translateZ(2px);
+  }
+  88% {
+    transform: rotateY(-3deg) translateZ(0px);
+  }
+  100% {
+    transform: rotateY(0deg) translateZ(0px);
+  }
+}
+
+/*
+ * Cierre de la Tapa/Página Izquierda:
+ * - De 0% a 52%: Se levanta desde 0° y se pliega hasta 180° sobre la página derecha,
+ *                mostrando de nuevo la portada exterior del libro antes de volar a la estantería.
+ */
+@keyframes open-page-left-out {
+  0% {
+    transform: rotateY(0deg) translateZ(0px);
+  }
+  26% {
+    transform: rotateY(95deg) translateZ(2px);
+  }
+  52%,
+  100% {
+    transform: rotateY(179.5deg) translateZ(3px);
+  }
+}
+
+/* Cara interior del Ala Izquierda (Página Verso: Ex-Libris) */
+.open-book-left-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg) translateZ(1px);
+  /* Marco de tapa dura izquierda + canto izquierdo e inferior */
+  padding: 6px 0 8px 6px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
+  border-top: 1px solid rgba(180, 130, 50, 0.45);
+  border-left: 1px solid rgba(180, 130, 50, 0.45);
+  border-right: 1px solid rgba(180, 130, 50, 0.45);
+  box-shadow:
+    -12px 24px 48px -10px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 230, 175, 0.22);
+}
+
+@media (min-width: 768px) {
+  .open-book-left-inner {
+    padding: 7px 0 10px 9px;
+    border-radius: 16px 0 0 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(180, 130, 50, 0.45);
+  }
+}
+
+html.dark .open-book-left-inner {
+  background: linear-gradient(145deg, #131a2a 0%, #0b0f19 55%, #070a11 100%);
+  border-color: rgba(245, 180, 60, 0.28);
+  box-shadow:
+    -14px 26px 54px -10px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 205, 110, 0.16);
+}
+
+.open-book-left-paper {
+  position: relative;
+  height: 100%;
+  margin-left: 7px;
+  margin-bottom: 6px;
+  border-radius: 9px 9px 0 0;
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
+}
+
+@media (min-width: 768px) {
+  .open-book-left-paper {
+    border-radius: 9px 0 0 9px;
+  }
+}
+
+html.dark .open-book-left-paper {
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #141A26 0%, #121722 76%, #0e131d 100%);
+}
+
+/*
+ * Cara exterior del Ala Izquierda: LA PORTADA FÍSICA DEL LIBRO CERRADO
+ * Visible cuando el ala izquierda está entre 90° y 180° (al salir de la balda y al cerrarse).
+ */
+.open-book-front-cover-face {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-front-cover-face {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateY(180deg) translateZ(3px);
+    border-radius: 4px 16px 16px 4px;
+    padding: 8px 10px 10px 6px;
+    background: linear-gradient(145deg, #362417 0%, #24170e 55%, #180f09 100%);
+    border: 1px solid rgba(217, 165, 75, 0.5);
+    box-shadow:
+      0 28px 56px -10px rgba(0, 0, 0, 0.82),
+      4px 0 0 #dccfae,
+      6px 0 0 #b6a784,
+      8px 0 0 #8e8062,
+      inset 0 0 0 1px rgba(255, 225, 160, 0.22);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  html.dark .open-book-front-cover-face {
+    background: linear-gradient(145deg, #161f33 0%, #0b0f19 55%, #060911 100%);
+    border-color: rgba(245, 180, 60, 0.4);
+  }
+
+  .open-book-front-cover-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 2px 10px 10px 2px;
+    overflow: hidden;
+  }
+
+  .open-book-front-cover-inner .book-cover {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    border-radius: 2px 10px 10px 2px;
+  }
+}
+
+/* Portada 3D desplegable en Móvil */
+.open-book-mobile-cover {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  transform-origin: left center;
+  pointer-events: none;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: open-mobile-cover-in 0.78s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.open-book-shell.is-closing .open-book-mobile-cover {
+  animation: open-mobile-cover-out 0.68s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.open-book-mobile-cover .book-cover {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+@media (min-width: 768px) {
+  .open-book-mobile-cover {
+    display: none;
+  }
+}
+
+@keyframes open-mobile-cover-in {
+  0%,
+  18% {
+    opacity: 1;
+    transform: perspective(1600px) rotateY(0deg);
+  }
+  75% {
+    opacity: 0.9;
+    transform: perspective(1600px) rotateY(-120deg);
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(1600px) rotateY(-150deg);
+  }
+}
+
+@keyframes open-mobile-cover-out {
+  0% {
+    opacity: 0;
+    transform: perspective(1600px) rotateY(-140deg);
+  }
+  45%,
+  100% {
+    opacity: 1;
+    transform: perspective(1600px) rotateY(0deg);
+  }
+}
+
+/* ============================================================================
+ * ALA DERECHA (RECTO: CABECERA LITERARIA, METADATOS Y SINOPSIS)
+ * ============================================================================ */
+.open-book-page-right {
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  z-index: 10;
+  /* Marco de tapa dura derecha + canto derecho e inferior */
+  padding: 0 6px 8px 6px;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
+  border-left: 1px solid rgba(180, 130, 50, 0.45);
+  border-right: 1px solid rgba(180, 130, 50, 0.45);
+  border-bottom: 1px solid rgba(180, 130, 50, 0.45);
+  box-shadow:
+    12px 24px 48px -10px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 230, 175, 0.22);
+}
+
+@media (min-width: 768px) {
+  .open-book-page-right {
+    padding: 7px 9px 10px 0;
+    border-radius: 0 16px 16px 0;
+    border-left: none;
+    border-top: 1px solid rgba(180, 130, 50, 0.45);
+    animation: open-page-right-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .open-book-shell.is-closing .open-book-page-right {
+    animation: open-page-right-out 0.74s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+html.dark .open-book-page-right {
+  background: linear-gradient(145deg, #131a2a 0%, #0b0f19 55%, #070a11 100%);
+  border-color: rgba(245, 180, 60, 0.28);
+  box-shadow:
+    14px 26px 54px -10px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 205, 110, 0.16);
+}
+
+/*
+ * Cuando el libro está cerrado (0% - 22%), el ala derecha tiene el mismo ancho que la tapa (scaleX(0.7143))
+ * y se despliega suavemente a su ancho completo al abrirse la tapa.
+ */
+@keyframes open-page-right-in {
+  0%,
+  22% {
+    transform: scaleX(0.7143) rotateY(-8deg);
+  }
+  75% {
+    transform: scaleX(1) rotateY(0deg);
+  }
+  100% {
+    transform: scaleX(1) rotateY(0deg);
+  }
+}
+
+@keyframes open-page-right-out {
+  0% {
+    transform: scaleX(1) rotateY(0deg);
+  }
+  48%,
+  100% {
+    transform: scaleX(0.7143) rotateY(-8deg);
+  }
+}
+
+.open-book-right-paper {
+  position: relative;
+  height: 100%;
+  margin-left: 7px;
+  margin-right: 4px;
+  margin-bottom: 6px;
+  border-radius: 0 0 9px 9px;
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #efe3c8 0%, #f8efdc 12%, #fbf6ea 45%, #f6ecda 100%);
+}
+
+@media (min-width: 768px) {
+  .open-book-right-paper {
+    margin-left: 0;
+    margin-right: 7px;
+    border-radius: 0 9px 9px 0;
+  }
+}
+
+html.dark .open-book-right-paper {
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
+}
+
+/* Sombra proyectada por la tapa sobre la página derecha mientras se abre o se cierra */
+.open-book-shadow-sweep {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-shadow-sweep {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    pointer-events: none;
+    border-radius: 0 9px 9px 0;
+    background: linear-gradient(
+      90deg,
+      rgba(20, 12, 4, 0.72) 0%,
+      rgba(20, 12, 4, 0.48) 55%,
+      rgba(20, 12, 4, 0.2) 100%
+    );
+    animation: open-shadow-sweep-in 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .open-book-shell.is-closing .open-book-shadow-sweep {
+    animation: open-shadow-sweep-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes open-shadow-sweep-in {
+  0%,
+  25% {
+    opacity: 0.95;
+  }
+  78% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes open-shadow-sweep-out {
+  0% {
+    opacity: 0;
+  }
+  42%,
+  100% {
+    opacity: 0.92;
+  }
+}
+
+/* ============================================================================
+ * HOJAS INTERMEDIAS QUE ABANICAN EN 3D AL PASAR PÁGINA (.open-book-fan-sheet)
+ * ============================================================================ */
+.open-book-fan-sheet {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-fan-sheet {
+    display: block;
+    position: absolute;
+    top: 10px;
+    bottom: 18px;
+    right: 58.3333%;
+    width: 40.2%;
+    transform-origin: right center;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    z-index: 28;
+    border-radius: 8px 0 0 8px;
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 18px,
+        rgba(140, 105, 50, 0.09) 18px,
+        rgba(140, 105, 50, 0.09) 19px
+      ),
+      linear-gradient(90deg, #faf3e3 0%, #f3e6cc 85%, #e5d4b3 100%);
+    border: 1px solid rgba(160, 120, 60, 0.28);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  }
+
+  html.dark .open-book-fan-sheet {
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 18px,
+        rgba(229, 193, 88, 0.06) 18px,
+        rgba(229, 193, 88, 0.06) 19px
+      ),
+      linear-gradient(90deg, #171f2e 0%, #121824 85%, #0d121b 100%);
+    border-color: rgba(229, 193, 88, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .open-book-fan-sheet-1 {
+    animation: open-fan-sheet-1-in 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .open-book-fan-sheet-2 {
+    animation: open-fan-sheet-2-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .open-book-fan-sheet-3 {
+    animation: open-fan-sheet-3-in 0.92s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .open-book-shell.is-closing .open-book-fan-sheet-1 {
+    animation: open-fan-sheet-1-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .open-book-shell.is-closing .open-book-fan-sheet-2 {
+    animation: open-fan-sheet-2-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .open-book-shell.is-closing .open-book-fan-sheet-3 {
+    animation: open-fan-sheet-3-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes open-fan-sheet-1-in {
+  0%,
+  26% {
+    opacity: 0.95;
+    transform: rotateY(176deg) translateZ(2px);
+  }
+  62% {
+    opacity: 0.95;
+    transform: rotateY(65deg) translateZ(1.5px);
+  }
+  88% {
+    opacity: 0.35;
+    transform: rotateY(4deg) translateZ(0.5px);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+}
+
+@keyframes open-fan-sheet-2-in {
+  0%,
+  31% {
+    opacity: 0.92;
+    transform: rotateY(174deg) translateZ(1.5px);
+  }
+  68% {
+    opacity: 0.9;
+    transform: rotateY(55deg) translateZ(1px);
+  }
+  92% {
+    opacity: 0.3;
+    transform: rotateY(3deg) translateZ(0.5px);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+}
+
+@keyframes open-fan-sheet-3-in {
+  0%,
+  36% {
+    opacity: 0.88;
+    transform: rotateY(172deg) translateZ(1px);
+  }
+  74% {
+    opacity: 0.85;
+    transform: rotateY(45deg) translateZ(0.8px);
+  }
+  95% {
+    opacity: 0.25;
+    transform: rotateY(2deg) translateZ(0.3px);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+}
+
+@keyframes open-fan-sheet-1-out {
+  0%,
+  5% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+  15% {
+    opacity: 0.9;
+    transform: rotateY(35deg) translateZ(1px);
+  }
+  46%,
+  100% {
+    opacity: 0;
+    transform: rotateY(176deg) translateZ(2px);
+  }
+}
+
+@keyframes open-fan-sheet-2-out {
+  0% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+  12% {
+    opacity: 0.88;
+    transform: rotateY(45deg) translateZ(1.5px);
+  }
+  42%,
+  100% {
+    opacity: 0;
+    transform: rotateY(174deg) translateZ(1.5px);
+  }
+}
+
+@keyframes open-fan-sheet-3-out {
+  0% {
+    opacity: 0;
+    transform: rotateY(0deg) translateZ(0px);
+  }
+  10% {
+    opacity: 0.85;
+    transform: rotateY(55deg) translateZ(1px);
+  }
+  38%,
+  100% {
+    opacity: 0;
+    transform: rotateY(172deg) translateZ(1px);
+  }
+}
+
+/* ============================================================================
+ * CANTOS DE HOJAS APILADAS Y PLIEGUE CENTRAL DEL LOMO
+ * ============================================================================ */
 .open-book-edge-left,
 .open-book-edge-right {
   position: absolute;
-  top: 2px;
-  bottom: 5px;
+  top: 9px;
+  bottom: 16px;
   width: 7px;
   pointer-events: none;
   z-index: 20;
@@ -192,32 +785,42 @@ html.dark .open-book-shell {
 }
 
 .open-book-edge-left {
-  left: 0;
+  left: 9px;
   border-radius: 8px 0 0 8px;
   box-shadow: 1px 0 3px rgba(0, 0, 0, 0.25);
 }
 
 .open-book-edge-right {
-  right: 0;
+  right: 9px;
   border-radius: 0 8px 8px 0;
   box-shadow: -1px 0 3px rgba(0, 0, 0, 0.25);
 }
 
-.open-book-edge-bottom {
+.open-book-edge-bottom-left,
+.open-book-edge-bottom-right {
   position: absolute;
-  left: 5px;
-  right: 5px;
-  bottom: 0;
+  bottom: 10px;
   height: 6px;
   pointer-events: none;
   z-index: 20;
-  border-radius: 0 0 8px 8px;
   background: repeating-linear-gradient(
     180deg,
     rgba(120, 90, 40, 0.35) 0 1px,
     rgba(250, 243, 225, 0.8) 1px 2px
   );
   box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.open-book-edge-bottom-left {
+  left: 12px;
+  right: 0;
+  border-radius: 0 0 0 8px;
+}
+
+.open-book-edge-bottom-right {
+  left: 0;
+  right: 12px;
+  border-radius: 0 0 8px 0;
 }
 
 html.dark .open-book-edge-left,
@@ -229,89 +832,13 @@ html.dark .open-book-edge-right {
   );
 }
 
-html.dark .open-book-edge-bottom {
+html.dark .open-book-edge-bottom-left,
+html.dark .open-book-edge-bottom-right {
   background: repeating-linear-gradient(
     180deg,
     rgba(229, 193, 88, 0.24) 0 1px,
     rgba(10, 14, 22, 0.85) 1px 2px
   );
-}
-
-/* Superficie de Página Izquierda (Verso) y Página Derecha (Recto) */
-.open-book-page-left {
-  position: relative;
-  background:
-    var(--paper-grain),
-    linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
-  transform-origin: right center;
-  animation: open-page-left-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-.open-book-page-right {
-  position: relative;
-  background:
-    var(--paper-grain),
-    linear-gradient(90deg, #efe3c8 0%, #f8efdc 12%, #fbf6ea 45%, #f6ecda 100%);
-  transform-origin: left center;
-  animation: open-page-right-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-
-html.dark .open-book-page-left {
-  background:
-    var(--paper-grain),
-    linear-gradient(90deg, #141A26 0%, #121722 76%, #0e131d 100%);
-}
-
-html.dark .open-book-page-right {
-  background:
-    var(--paper-grain),
-    linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
-}
-
-.open-book-shell.is-closing .open-book-page-left {
-  animation: open-page-left-out 0.36s cubic-bezier(0.4, 0, 0.6, 1) forwards;
-}
-
-.open-book-shell.is-closing .open-book-page-right {
-  animation: open-page-right-out 0.36s cubic-bezier(0.4, 0, 0.6, 1) forwards;
-}
-
-@media (min-width: 768px) {
-  @keyframes open-page-left-in {
-    0% {
-      transform: perspective(1800px) rotateY(80deg);
-    }
-    100% {
-      transform: perspective(1800px) rotateY(0deg);
-    }
-  }
-
-  @keyframes open-page-right-in {
-    0% {
-      transform: perspective(1800px) rotateY(-40deg);
-    }
-    100% {
-      transform: perspective(1800px) rotateY(0deg);
-    }
-  }
-
-  @keyframes open-page-left-out {
-    0% {
-      transform: perspective(1800px) rotateY(0deg);
-    }
-    100% {
-      transform: perspective(1800px) rotateY(70deg);
-    }
-  }
-
-  @keyframes open-page-right-out {
-    0% {
-      transform: perspective(1800px) rotateY(0deg);
-    }
-    100% {
-      transform: perspective(1800px) rotateY(-35deg);
-    }
-  }
 }
 
 /* Pliegue Central del Lomo (.open-book-gutter): franja cilíndrica de 36px sobre la unión 5/12 */
@@ -323,13 +850,13 @@ html.dark .open-book-page-right {
   .open-book-gutter {
     display: block;
     position: absolute;
-    top: 0;
-    bottom: 6px;
+    top: 7px;
+    bottom: 16px;
     left: 41.6667%;
     width: 36px;
     transform: translateX(-50%);
     pointer-events: none;
-    z-index: 25;
+    z-index: 35;
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -342,6 +869,11 @@ html.dark .open-book-page-right {
       rgba(255, 252, 244, 0.35) 86%,
       transparent 100%
     );
+    animation: open-gutter-fade-in 0.88s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .open-book-shell.is-closing .open-book-gutter {
+    animation: open-gutter-fade-out 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   /* Hilo de cosido central del lomo */
@@ -386,9 +918,29 @@ html.dark .open-book-page-right {
   }
 }
 
-/* Contenido interior con aparición escalonada suave */
+@keyframes open-gutter-fade-in {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes open-gutter-fade-out {
+  0% {
+    opacity: 1;
+  }
+  30%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Contenido interior con aparición escalonada tras desplegarse las hojas */
 .open-book-content {
-  animation: open-book-content-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.11s backwards;
+  animation: open-book-content-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.38s backwards;
 }
 
 @keyframes open-book-content-in {
@@ -432,8 +984,18 @@ html.dark .open-book-page-right {
   .open-book-page-right,
   .open-book-shell.is-closing .open-book-page-left,
   .open-book-shell.is-closing .open-book-page-right,
+  .open-book-fan-sheet,
+  .open-book-mobile-cover,
+  .open-book-shadow-sweep,
+  .open-book-gutter,
   .open-book-content {
     animation: none !important;
     transform: none !important;
+  }
+  .open-book-front-cover-face,
+  .open-book-mobile-cover,
+  .open-book-fan-sheet,
+  .open-book-shadow-sweep {
+    display: none !important;
   }
 }

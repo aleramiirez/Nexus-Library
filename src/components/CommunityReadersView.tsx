@@ -121,7 +121,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       communityCloseTimerRef.current = null;
       setSelectedCommunityBook(null);
       setIsClosingCommunityBook(false);
-    }, 380);
+    }, 720);
   }, [isClosingCommunityBook, selectedCommunityBook?.id]);
 
   useEffect(() => {
@@ -567,30 +567,74 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         >
           <div
             className={
-              'open-book-shell w-full border border-amber-700/40 dark:border-amber-500/30 text-stone-900 dark:text-slate-100' +
+              'open-book-shell w-full text-stone-900 dark:text-slate-100' +
               (isClosingCommunityBook ? ' is-closing' : '')
             }
             style={communityFlipVars}
           >
             <div className="open-book-pages-block">
-              <div className="open-book-edge-left" aria-hidden="true" />
-              <div className="open-book-edge-right" aria-hidden="true" />
-              <div className="open-book-edge-bottom" aria-hidden="true" />
+              <div className="open-book-mobile-cover" aria-hidden="true">
+                <BookCover
+                  nombre={selectedCommunityBook.nombre}
+                  autor={selectedCommunityBook.autor}
+                  portadaUrl={selectedCommunityBook.portadaUrl}
+                  portadaFallbackUrl={selectedCommunityBook.portadaFallbackUrl}
+                  portadaDataUrl={selectedCommunityBook.portadaDataUrl}
+                  size="lg"
+                  variant="book"
+                />
+              </div>
+
               <div className="open-book-gutter" aria-hidden="true" />
+              <div className="open-book-fan-sheet open-book-fan-sheet-1" aria-hidden="true" />
+              <div className="open-book-fan-sheet open-book-fan-sheet-2" aria-hidden="true" />
+              <div className="open-book-fan-sheet open-book-fan-sheet-3" aria-hidden="true" />
 
-              <div className="relative grid grid-cols-1 md:grid-cols-12 max-h-[86dvh] md:max-h-[84dvh] overflow-y-auto md:overflow-hidden rounded-[9px]">
-                {/* PÁGINA IZQUIERDA (VERSO: Ex-Libris y Portada) */}
-                <div className="open-book-page-left md:col-span-5 flex flex-col justify-between p-4 sm:p-6 md:pr-7 md:pl-6 md:py-6 md:overflow-y-auto border-b md:border-b-0 border-amber-900/15 dark:border-[#222B3C]">
-                  <div className="open-book-content flex flex-col items-center">
-                    <div className="w-full flex items-center justify-between text-[11px] font-serif italic text-amber-900/75 dark:text-amber-400/80 border-b border-amber-900/15 dark:border-[#242E42] pb-2 mb-4">
-                      <span>fol. I</span>
-                      <span className="flex items-center gap-1.5 font-medium tracking-wide truncate">
-                        <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                        Ex-Libris · {selectedReader.displayName}
-                      </span>
+              <div className="open-book-spread-grid grid grid-cols-1 md:grid-cols-12 max-h-[88dvh] md:max-h-none overflow-y-auto md:overflow-visible rounded-[14px] md:rounded-none">
+                {/* ALA IZQUIERDA (VERSO + PORTADA EXTERIOR 3D) */}
+                <div className="open-book-page-left md:col-span-5 flex flex-col">
+                  <div className="open-book-left-inner flex-1 flex flex-col">
+                    <div className="open-book-edge-left" aria-hidden="true" />
+                    <div className="open-book-edge-bottom-left" aria-hidden="true" />
+
+                    <div className="open-book-left-paper flex-1 flex flex-col justify-between p-4 sm:p-6 md:pr-7 md:pl-6 md:py-6 md:max-h-[82dvh] md:overflow-y-auto border-b md:border-b-0 border-amber-900/15 dark:border-[#222B3C]">
+                      <div className="open-book-content flex flex-col items-center">
+                        <div className="w-full flex items-center justify-between text-[11px] font-serif italic text-amber-900/75 dark:text-amber-400/80 border-b border-amber-900/15 dark:border-[#242E42] pb-2 mb-4">
+                          <span>fol. I</span>
+                          <span className="flex items-center gap-1.5 font-medium tracking-wide truncate">
+                            <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                            Ex-Libris · {selectedReader.displayName}
+                          </span>
+                        </div>
+
+                        <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 drop-shadow-[0_14px_20px_rgba(30,20,10,0.38)]">
+                          <BookCover
+                            nombre={selectedCommunityBook.nombre}
+                            autor={selectedCommunityBook.autor}
+                            portadaUrl={selectedCommunityBook.portadaUrl}
+                            portadaFallbackUrl={selectedCommunityBook.portadaFallbackUrl}
+                            portadaDataUrl={selectedCommunityBook.portadaDataUrl}
+                            size="lg"
+                            variant="book"
+                          />
+                        </div>
+
+                        <div className="mt-4 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-3 py-3 text-center shadow-inner">
+                          <p className="font-serif italic text-xs text-stone-700 dark:text-slate-300 mb-1">
+                            Valoración de {selectedReader.displayName}
+                          </p>
+                          <div className="text-sm sm:text-base text-amber-700 dark:text-amber-400 font-bold">
+                            {selectedCommunityBook.puntuacion
+                              ? `${formatStars(selectedCommunityBook.puntuacion)} (${selectedCommunityBook.puntuacion}/5)`
+                              : 'Sin valorar'}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 drop-shadow-[0_14px_20px_rgba(30,20,10,0.38)]">
+                  <div className="open-book-front-cover-face" aria-hidden="true">
+                    <div className="open-book-front-cover-inner">
                       <BookCover
                         nombre={selectedCommunityBook.nombre}
                         autor={selectedCommunityBook.autor}
@@ -601,214 +645,209 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         variant="book"
                       />
                     </div>
-
-                    <div className="mt-4 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-3 py-3 text-center shadow-inner">
-                      <p className="font-serif italic text-xs text-stone-700 dark:text-slate-300 mb-1">
-                        Valoración de {selectedReader.displayName}
-                      </p>
-                      <div className="text-sm sm:text-base text-amber-700 dark:text-amber-400 font-bold">
-                        {selectedCommunityBook.puntuacion
-                          ? `${formatStars(selectedCommunityBook.puntuacion)} (${selectedCommunityBook.puntuacion}/5)`
-                          : 'Sin valorar'}
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                {/* PÁGINA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) */}
-                <div className="open-book-page-right md:col-span-7 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:overflow-y-auto">
-                  <div className="flex items-start justify-between gap-2 mb-4 -mt-4 sm:-mt-6 md:mt-0">
-                    <span className="hidden md:inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
-                      Catálogo de Comunidad · fol. II
-                    </span>
+                {/* ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) */}
+                <div className="open-book-page-right md:col-span-7 flex flex-col">
+                  <div className="open-book-edge-right" aria-hidden="true" />
+                  <div className="open-book-edge-bottom-right" aria-hidden="true" />
+                  <div className="open-book-shadow-sweep" aria-hidden="true" />
 
-                    <div className="flex items-start gap-1.5 ml-auto">
-                      {alreadySaved ? (
-                        <span className="open-book-ribbon-tab border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
-                          <Check className="w-3.5 h-3.5" /> En tu biblioteca
-                        </span>
-                      ) : (
+                  <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:max-h-[82dvh] md:overflow-y-auto">
+                    <div className="flex items-start justify-between gap-2 mb-4 -mt-4 sm:-mt-6 md:mt-0">
+                      <span className="hidden md:inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
+                        Catálogo de Comunidad · fol. II
+                      </span>
+
+                      <div className="flex items-start gap-1.5 ml-auto">
+                        {alreadySaved ? (
+                          <span className="open-book-ribbon-tab border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold">
+                            <Check className="w-3.5 h-3.5" /> En tu biblioteca
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isAdding}
+                            onClick={() => handleAddBook(selectedCommunityBook)}
+                            className="open-book-ribbon-tab border-amber-600/50 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold"
+                          >
+                            {isAdding ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Plus className="w-3.5 h-3.5" />
+                            )}
+                            <span>{isAdding ? 'Guardando...' : 'Añadir a mi lista'}</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
-                          disabled={isAdding}
-                          onClick={() => handleAddBook(selectedCommunityBook)}
-                          className="open-book-ribbon-tab border-amber-600/50 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold"
+                          onClick={handleCloseCommunityBook}
+                          aria-label="Cerrar ficha"
+                          title="Cerrar libro (Esc)"
+                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5"
                         >
-                          {isAdding ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Plus className="w-3.5 h-3.5" />
-                          )}
-                          <span>{isAdding ? 'Guardando...' : 'Añadir a mi lista'}</span>
+                          <X className="w-4 h-4" />
                         </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={handleCloseCommunityBook}
-                        aria-label="Cerrar ficha"
-                        title="Cerrar libro (Esc)"
-                        className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="open-book-content flex flex-col gap-4 sm:gap-5">
-                    <div className="text-center md:text-left">
-                      {selectedCommunityBook.sagaNombre && (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-3 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-300 mb-2">
-                          <Layers className="w-3.5 h-3.5" />
-                          <span>
-                            Saga: {selectedCommunityBook.sagaNombre}
-                            {selectedCommunityBook.volumen
-                              ? ' · Volumen ' + String(selectedCommunityBook.volumen)
-                              : ''}
-                          </span>
-                        </div>
-                      )}
-
-                      <h2
-                        id="community-detail-book-title"
-                        className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight tracking-tight"
-                      >
-                        {selectedCommunityBook.nombre}
-                      </h2>
-                      <p className="font-serif italic text-base sm:text-lg text-stone-700 dark:text-slate-300 mt-1">
-                        {selectedCommunityBook.autor || 'Autor no especificado'}
-                      </p>
-
-                      <div className="flex items-center gap-3 mt-3" aria-hidden="true">
-                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
-                        <span className="text-amber-700 dark:text-amber-400 text-xs select-none">
-                          ✦
-                        </span>
-                        <div className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div>
-                        <span className="block text-[11px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
-                          Estado en la estantería de {selectedReader.displayName}
-                        </span>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {READING_STATUSES.map((status) => (
-                            <div
-                              key={status}
-                              className={
-                                'py-2 px-2.5 rounded-lg text-xs font-medium border text-center transition ' +
-                                (selectedCommunityBook.progreso === status
-                                  ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
-                                  : 'border-amber-900/15 dark:border-[#263147] bg-[#f4ead4]/60 dark:bg-[#1A2232]/60 text-stone-400 dark:text-slate-500 opacity-60')
-                              }
+                    <div className="open-book-content flex flex-col gap-4 sm:gap-5">
+                      <div className="text-center md:text-left">
+                        {selectedCommunityBook.sagaNombre && (
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-3 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-300 mb-2">
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>
+                              Saga: {selectedCommunityBook.sagaNombre}
+                              {selectedCommunityBook.volumen
+                                ? ' · Volumen ' + String(selectedCommunityBook.volumen)
+                                : ''}
+                            </span>
+                          </div>
+                        )}
+
+                        <h2
+                          id="community-detail-book-title"
+                          className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight tracking-tight"
+                        >
+                          {selectedCommunityBook.nombre}
+                        </h2>
+                        <p className="font-serif italic text-base sm:text-lg text-stone-700 dark:text-slate-300 mt-1">
+                          {selectedCommunityBook.autor || 'Autor no especificado'}
+                        </p>
+
+                        <div className="flex items-center gap-3 mt-3" aria-hidden="true">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
+                          <span className="text-amber-700 dark:text-amber-400 text-xs select-none">
+                            ✦
+                          </span>
+                          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <span className="block text-[11px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                            Estado en la estantería de {selectedReader.displayName}
+                          </span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {READING_STATUSES.map((status) => (
+                              <div
+                                key={status}
+                                className={
+                                  'py-2 px-2.5 rounded-lg text-xs font-medium border text-center transition ' +
+                                  (selectedCommunityBook.progreso === status
+                                    ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
+                                    : 'border-amber-900/15 dark:border-[#263147] bg-[#f4ead4]/60 dark:bg-[#1A2232]/60 text-stone-400 dark:text-slate-500 opacity-60')
+                                }
+                              >
+                                {status}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                          {selectedCommunityBook.genero ? (
+                            <span className="rounded-lg bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-1 text-xs font-semibold text-amber-950 dark:text-amber-300">
+                              {selectedCommunityBook.genero}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-stone-500 dark:text-slate-500 italic">
+                              Sin género asignado
+                            </span>
+                          )}
+                          {selectedCommunityBook.subgeneros?.map((sub) => (
+                            <span
+                              key={sub}
+                              className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-1 text-xs text-stone-700 dark:text-slate-300"
                             >
-                              {status}
-                            </div>
+                              {sub}
+                            </span>
                           ))}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
-                        {selectedCommunityBook.genero ? (
-                          <span className="rounded-lg bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-1 text-xs font-semibold text-amber-950 dark:text-amber-300">
-                            {selectedCommunityBook.genero}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-stone-500 dark:text-slate-500 italic">
-                            Sin género asignado
-                          </span>
-                        )}
-                        {selectedCommunityBook.subgeneros?.map((sub) => (
-                          <span
-                            key={sub}
-                            className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-1 text-xs text-stone-700 dark:text-slate-300"
-                          >
-                            {sub}
-                          </span>
-                        ))}
+                      <div className="border-y border-amber-900/20 dark:border-slate-800 divide-y divide-amber-900/15 dark:divide-slate-800/90 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
+                          <div className="py-2.5 pr-3">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              Año Publicación
+                            </span>
+                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {selectedCommunityBook.fechaPublicacion ?? 'No disponible'}
+                            </p>
+                          </div>
+
+                          <div className="py-2.5 px-3">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              Páginas
+                            </span>
+                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {selectedCommunityBook.paginas ?? 'No disponible'}
+                            </p>
+                          </div>
+
+                          <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              ISBN
+                            </span>
+                            <p className="font-mono font-semibold text-xs text-stone-900 dark:text-slate-100 mt-0.5 break-all">
+                              {selectedCommunityBook.isbn || 'No disponible'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
+                          <div className="py-2.5 pr-3">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              Editorial
+                            </span>
+                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {selectedCommunityBook.editorial || 'No disponible'}
+                            </p>
+                          </div>
+
+                          <div className="py-2.5 px-3">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              Idioma / Edición
+                            </span>
+                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {[selectedCommunityBook.idioma, selectedCommunityBook.edicion]
+                                .filter(Boolean)
+                                .join(' · ') || 'No disponible'}
+                            </p>
+                          </div>
+
+                          <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                              <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                              Tiempo de Lectura
+                            </span>
+                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {selectedCommunityBook.tiempoLectura || 'Sin calcular'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
+
+                      {selectedCommunityBook.sinopsis && (
+                        <div className="pt-1">
+                          <h3 className="font-serif italic text-xs text-amber-900 dark:text-amber-400 font-semibold mb-1.5">
+                            Sinopsis de la obra
+                          </h3>
+                          <p className="text-sm text-stone-800 dark:text-slate-300 leading-relaxed whitespace-pre-line first-letter:font-serif first-letter:text-2xl first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-0.5">
+                            {selectedCommunityBook.sinopsis}
+                          </p>
+                        </div>
+                      )}
                     </div>
-
-                    <div className="border-y border-amber-900/20 dark:border-slate-800 divide-y divide-amber-900/15 dark:divide-slate-800/90 text-xs">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
-                        <div className="py-2.5 pr-3">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Año Publicación
-                          </span>
-                          <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                            {selectedCommunityBook.fechaPublicacion ?? 'No disponible'}
-                          </p>
-                        </div>
-
-                        <div className="py-2.5 px-3">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Páginas
-                          </span>
-                          <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                            {selectedCommunityBook.paginas ?? 'No disponible'}
-                          </p>
-                        </div>
-
-                        <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            ISBN
-                          </span>
-                          <p className="font-mono font-semibold text-xs text-stone-900 dark:text-slate-100 mt-0.5 break-all">
-                            {selectedCommunityBook.isbn || 'No disponible'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
-                        <div className="py-2.5 pr-3">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Editorial
-                          </span>
-                          <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                            {selectedCommunityBook.editorial || 'No disponible'}
-                          </p>
-                        </div>
-
-                        <div className="py-2.5 px-3">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Idioma / Edición
-                          </span>
-                          <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                            {[selectedCommunityBook.idioma, selectedCommunityBook.edicion]
-                              .filter(Boolean)
-                              .join(' · ') || 'No disponible'}
-                          </p>
-                        </div>
-
-                        <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
-                          <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                            <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Tiempo de Lectura
-                          </span>
-                          <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                            {selectedCommunityBook.tiempoLectura || 'Sin calcular'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedCommunityBook.sinopsis && (
-                      <div className="pt-1">
-                        <h3 className="font-serif italic text-xs text-amber-900 dark:text-amber-400 font-semibold mb-1.5">
-                          Sinopsis de la obra
-                        </h3>
-                        <p className="text-sm text-stone-800 dark:text-slate-300 leading-relaxed whitespace-pre-line first-letter:font-serif first-letter:text-2xl first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-0.5">
-                          {selectedCommunityBook.sinopsis}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
