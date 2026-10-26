@@ -730,7 +730,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Nueva saga</span>
+                  <span>Nueva saga</span>
                 </button>
               </div>
             </div>
