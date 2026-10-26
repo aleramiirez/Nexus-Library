@@ -18,7 +18,8 @@ import {
   Plus,
   Edit2,
   Hash,
-  Images
+  Images,
+  FileUp
 } from 'lucide-react';
 import {
   BibliographicCandidate,
@@ -40,11 +41,17 @@ import { BookCover } from './BookCover';
 import { BookCoverPickerModal, SelectedCoverPayload } from './BookCoverPickerModal';
 import { isDuplicateBook } from '../services/importExportService';
 import { tryCacheCoverDataUrl } from '../services/coverService';
+import {
+  enrichParsedEbookFromCatalog,
+  ParsedEbookFile,
+  parseEbookFile
+} from '../services/epubParserService';
 
 interface AddEditBookModalProps {
   isOpen: boolean;
   editingBook: Book | null;
   initialCandidate?: BibliographicCandidate | null;
+  initialParsedEbook?: ParsedEbookFile | null;
   sagas: Saga[];
   existingBooks: Book[];
   onClose: () => void;
@@ -52,6 +59,7 @@ interface AddEditBookModalProps {
     bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>,
     existingId?: string
   ) => Promise<void>;
+  onOpenMultiEpubImport?: (files: File[]) => void;
 }
 
 type TabId = 'essential' | 'reading' | 'edition';
@@ -73,10 +81,12 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   isOpen,
   editingBook,
   initialCandidate,
+  initialParsedEbook,
   sagas,
   existingBooks,
   onClose,
-  onSave
+  onSave,
+  onOpenMultiEpubImport
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [candidates, setCandidates] = useState<BibliographicCandidate[]>([]);
@@ -120,6 +130,9 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [parsedFileBadge, setParsedFileBadge] = useState<string | null>(null);
+  const ebookInputRef = useRef<HTMLInputElement>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -212,11 +225,15 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setCustomDataUrl(editingBook.portadaDataUrl);
       setIsCoverPickerOpen(false);
       setCoverBadgeMsg(null);
+    } else if (initialParsedEbook) {
+      applyParsedEbook(initialParsedEbook);
+      setIsCoverPickerOpen(false);
     } else if (initialCandidate) {
       applyCandidate(initialCandidate);
       setCustomDataUrl(undefined);
       setIsCoverPickerOpen(false);
       setCoverBadgeMsg(null);
+      setParsedFileBadge(null);
     } else {
       setNombre('');
       setAutor('');
@@ -244,8 +261,9 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setCustomDataUrl(undefined);
       setIsCoverPickerOpen(false);
       setCoverBadgeMsg(null);
+      setParsedFileBadge(null);
     }
-  }, [isOpen, editingBook, initialCandidate]);
+  }, [isOpen, editingBook, initialCandidate, initialParsedEbook]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -308,6 +326,79 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     if (!editingBook) {
       setGenero(cand.suggestedGenre);
       setSubgeneros(cand.suggestedSubgenres);
+    }
+  };
+
+  const applyParsedEbook = (parsed: ParsedEbookFile) => {
+    setSelectedCandidateId(null);
+    if (parsed.nombre) setNombre(parsed.nombre);
+    if (parsed.autor) setAutor(parsed.autor);
+    if (parsed.genero) setGenero(parsed.genero);
+    if (parsed.subgeneros && parsed.subgeneros.length > 0) {
+      setSubgeneros(parsed.subgeneros);
+    }
+    if (parsed.fechaPublicacion) setFechaPublicacion(String(parsed.fechaPublicacion));
+    if (parsed.paginas) setPaginas(String(parsed.paginas));
+    if (parsed.isbn) setIsbn(parsed.isbn);
+    if (parsed.editorial) setEditorial(parsed.editorial);
+    if (parsed.idioma) setIdioma(parsed.idioma);
+    if (parsed.edicion) setEdicion(parsed.edicion);
+    if (parsed.sinopsis) setSinopsis(parsed.sinopsis);
+    if (parsed.lecturaVirtual) setLecturaVirtual(parsed.lecturaVirtual);
+    if (parsed.portadaUrl) setPortadaUrl(parsed.portadaUrl);
+    if (parsed.portadaFallbackUrl) setPortadaFallbackUrl(parsed.portadaFallbackUrl);
+    if (parsed.portadaDataUrl) {
+      setCustomDataUrl(parsed.portadaDataUrl);
+      setCoverBadgeMsg('Portada extraída del archivo');
+    }
+
+    if (parsed.sagaNombre) {
+      const matched = sagas.find(
+        (s) => s.nombre.trim().toLowerCase() === parsed.sagaNombre.trim().toLowerCase()
+      );
+      if (matched) {
+        setSagaMode('existing');
+        setSelectedSagaId(matched.id);
+        setNewSagaName(matched.nombre);
+      } else {
+        setSagaMode('new');
+        setSelectedSagaId('');
+        setNewSagaName(parsed.sagaNombre);
+      }
+    }
+    if (parsed.volumen) {
+      setVolumen(String(parsed.volumen));
+    }
+
+    setParsedFileBadge(`Datos cargados de "${parsed.fileName}"`);
+  };
+
+  const handleEbookFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    const files = Array.from(fileList);
+    e.target.value = '';
+
+    if (files.length > 1 && onOpenMultiEpubImport) {
+      onClose();
+      onOpenMultiEpubImport(files);
+      return;
+    }
+
+    const file = files[0];
+    setIsParsingFile(true);
+    setSearchError('');
+    try {
+      let parsed = await parseEbookFile(file);
+      if (!parsed.portadaDataUrl || !parsed.sinopsis || !parsed.genero || !parsed.paginas) {
+        parsed = await enrichParsedEbookFromCatalog(parsed);
+      }
+      applyParsedEbook(parsed);
+    } catch {
+      setSearchError('No se pudo leer el archivo seleccionado. Verifica que sea un .epub o .fb2 válido.');
+    } finally {
+      setIsParsingFile(false);
     }
   };
 
@@ -1183,9 +1274,50 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5 sm:space-y-6">
             {/* ─── Search section (always visible) ─── */}
           <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
-            <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold mb-2">
-              Búsqueda Bibliográfica Instantánea
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+              <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold">
+                Búsqueda Bibliográfica o Carga desde Archivo
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={ebookInputRef}
+                  type="file"
+                  accept=".epub,.fb2,.pdf,.mobi,.azw3,application/epub+zip"
+                  multiple
+                  onChange={handleEbookFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => ebookInputRef.current?.click()}
+                  disabled={isParsingFile}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-amber-600/45 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition shadow-sm disabled:opacity-50"
+                  title="Sube uno o varios archivos .epub o .fb2 para rellenar los datos automáticamente"
+                >
+                  {isParsingFile ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700 dark:text-amber-400" />
+                  ) : (
+                    <FileUp className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                  )}
+                  <span>{isParsingFile ? 'Leyendo archivo...' : 'Rellenar desde archivo (.epub)'}</span>
+                </button>
+              </div>
+            </div>
+            {parsedFileBadge && (
+              <div className="mb-2.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-medium flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 truncate">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{parsedFileBadge}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setParsedFileBadge(null)}
+                  className="text-emerald-700 dark:text-emerald-300 hover:underline text-[11px] shrink-0"
+                >
+                  Ocultar
+                </button>
+              </div>
+            )}
             <div className="relative">
               <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input

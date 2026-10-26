@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  FileUp,
   X
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
@@ -27,13 +28,15 @@ interface ImportModalProps {
   books: Book[];
   sagas: Saga[];
   onClose: () => void;
+  onOpenEpubImport?: () => void;
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({
   isOpen,
   books,
   sagas,
-  onClose
+  onClose,
+  onOpenEpubImport
 }) => {
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error' | 'info';
@@ -223,6 +226,29 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               )}
               <span>{statusMessage.text}</span>
+            </div>
+          )}
+
+          {onOpenEpubImport && (
+            <div className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                  <FileUp className="w-5 h-5 text-amber-700 dark:text-amber-400" /> Subir Archivos de Libros (.epub)
+                </h3>
+                <p className="text-xs text-stone-700 dark:text-slate-300 mt-1 leading-relaxed">
+                  ¿Tienes muchos libros en tu ordenador? Sube uno o varios archivos <strong>.epub, .fb2, .pdf o .mobi</strong> a la vez y rellenaremos automáticamente título, autor, portada original, sinopsis y saga.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenEpubImport();
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition shrink-0"
+              >
+                <FileUp className="w-4 h-4" /> Subir archivos (.epub)
+              </button>
             </div>
           )}
 

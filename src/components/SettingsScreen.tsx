@@ -27,6 +27,7 @@ import {
   Lock,
   BookOpen,
   Save,
+  FileUp,
   AlertCircle
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -64,6 +65,7 @@ interface SettingsScreenProps {
   books: Book[];
   sagas: Saga[];
   initialTab?: SettingsTab;
+  onOpenEpubImport?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -79,7 +81,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   isSyncing,
   books,
   sagas,
-  initialTab = 'appearance'
+  initialTab = 'appearance',
+  onOpenEpubImport
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [, startTransition] = useTransition();
@@ -1103,6 +1106,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
             </div>
 
+
+            {onOpenEpubImport && (
+              <div className="rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-br from-amber-500/15 via-[#f4ebd6] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/30 shrink-0 mt-0.5">
+                    <FileUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
+                      Cargar Libros desde Archivos (.epub, .fb2, .pdf)
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-slate-300 mt-1 leading-relaxed max-w-xl">
+                      Sube uno o varios archivos de libros desde tu ordenador o móvil. Nexus Library lee sus metadatos internos para rellenar título, autor, portada original, sinopsis, páginas y saga automáticamente.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenEpubImport}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md shrink-0"
+                >
+                  <FileUp className="w-4 h-4" /> Subir archivos (.epub)
+                </button>
+              </div>
+            )}
+
             {/* Blindaje de almacenamiento en el navegador */}
             <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/70 dark:bg-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -1149,6 +1178,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 en tu ordenador o exportar tus libros para abrirlos en una hoja de cálculo.
               </p>
             </div>
+
+
+            {onOpenEpubImport && (
+              <div className="rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-br from-amber-500/15 via-[#f4ebd6] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/30 shrink-0 mt-0.5">
+                    <FileUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100">
+                      Cargar Libros desde Archivos (.epub, .fb2, .pdf)
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-slate-300 mt-1 leading-relaxed max-w-xl">
+                      Sube uno o varios archivos de libros desde tu ordenador o móvil. Nexus Library lee sus metadatos internos para rellenar título, autor, portada original, sinopsis, páginas y saga automáticamente.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenEpubImport}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md shrink-0"
+                >
+                  <FileUp className="w-4 h-4" /> Subir archivos (.epub)
+                </button>
+              </div>
+            )}
 
             {/* Opciones de Exportación */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

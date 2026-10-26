@@ -31,6 +31,7 @@ import {
   Menu,
   Settings,
   Mail,
+  FileUp,
   X
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -91,8 +92,12 @@ import { BookDetailModal } from './components/BookDetailModal';
 const AddEditBookModal = React.lazy(() =>
   import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
 );
+import { ParsedEbookFile } from './services/epubParserService';
 const ImportModal = React.lazy(() =>
   import('./components/ImportModal').then((m) => ({ default: m.ImportModal }))
+);
+const EpubImportModal = React.lazy(() =>
+  import('./components/EpubImportModal').then((m) => ({ default: m.EpubImportModal }))
 );
 const AuthSyncModal = React.lazy(() =>
   import('./components/AuthSyncModal').then((m) => ({ default: m.AuthSyncModal }))
@@ -163,7 +168,10 @@ export const App: React.FC = () => {
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
+  const [selectedParsedEbook, setSelectedParsedEbook] = useState<ParsedEbookFile | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isEpubImportOpen, setIsEpubImportOpen] = useState(false);
+  const [initialEpubFiles, setInitialEpubFiles] = useState<File[] | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -228,6 +236,7 @@ export const App: React.FC = () => {
     isAddEditOpen ||
     detailBookId ||
     isImportOpen ||
+    isEpubImportOpen ||
     isAuthModalOpen ||
     bookToDelete ||
     sagaToDelete ||
@@ -259,9 +268,13 @@ export const App: React.FC = () => {
         } else if (isAddEditOpen) {
           setIsAddEditOpen(false);
           setSelectedInitialCandidate(null);
+          setSelectedParsedEbook(null);
         } else if (detailBookId) {
           // El cierre por Escape lo gestiona BookDetailModal para ejecutar la animación inversa (380ms)
           return;
+        } else if (isEpubImportOpen) {
+          setIsEpubImportOpen(false);
+          setInitialEpubFiles(undefined);
         } else if (isImportOpen) {
           setIsImportOpen(false);
         } else if (isAuthModalOpen) {
@@ -284,6 +297,7 @@ export const App: React.FC = () => {
     isAddEditOpen,
     detailBookId,
     isImportOpen,
+    isEpubImportOpen,
     isAuthModalOpen,
     sagaFormOpen,
     mobileMenuOpen,
@@ -556,12 +570,14 @@ export const App: React.FC = () => {
 
   const handleOpenCreateBook = () => {
     setSelectedInitialCandidate(null);
+    setSelectedParsedEbook(null);
     setEditingBook(null);
     setIsAddEditOpen(true);
   };
 
   const handleOpenEditBook = (book: Book) => {
     setSelectedInitialCandidate(null);
+    setSelectedParsedEbook(null);
     setDetailBookId(null);
     setEditingBook(book);
     setIsAddEditOpen(true);
@@ -1279,6 +1295,20 @@ export const App: React.FC = () => {
                     className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
                   >
                     <Plus className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInitialEpubFiles(undefined);
+                      setIsEpubImportOpen(true);
+                    }}
+                    title="Subir archivos de libros (.epub, .fb2, .pdf)"
+                    aria-label="Subir archivos .epub"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600/45 dark:border-amber-500/45 bg-amber-500/15 hover:bg-amber-500/25 px-3 py-2 text-xs font-semibold text-amber-900 dark:text-amber-200 transition shadow-sm shrink-0"
+                  >
+                    <FileUp className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                    <span className="hidden md:inline">Subir .epub</span>
                   </button>
 
                   {(() => {
@@ -2218,6 +2248,10 @@ export const App: React.FC = () => {
                 syncResult={syncResult}
                 books={books}
                 sagas={sagas}
+                onOpenEpubImport={() => {
+                  setInitialEpubFiles(undefined);
+                  setIsEpubImportOpen(true);
+                }}
               />
             </React.Suspense>
           )}
@@ -2309,15 +2343,46 @@ export const App: React.FC = () => {
             isOpen={isAddEditOpen}
             editingBook={editingBook}
             initialCandidate={selectedInitialCandidate}
+            initialParsedEbook={selectedParsedEbook}
             sagas={sagas}
             existingBooks={books}
             onClose={() => {
               setIsAddEditOpen(false);
               setSelectedInitialCandidate(null);
+              setSelectedParsedEbook(null);
             }}
             onSave={async (data, id) => {
               await saveBookRecord(data, id);
             }}
+            onOpenMultiEpubImport={(files) => {
+              setInitialEpubFiles(files);
+              setIsEpubImportOpen(true);
+            }}
+          />
+        )}
+
+        {isEpubImportOpen && (
+          <EpubImportModal
+            isOpen={isEpubImportOpen}
+            existingBooks={books}
+            sagas={sagas}
+            initialFiles={initialEpubFiles}
+            onClose={() => {
+              setIsEpubImportOpen(false);
+              setInitialEpubFiles(undefined);
+            }}
+            onSaveBook={async (data, id) => {
+              await saveBookRecord(data, id);
+            }}
+            onOpenInEditor={(parsed) => {
+              setIsEpubImportOpen(false);
+              setInitialEpubFiles(undefined);
+              setEditingBook(null);
+              setSelectedInitialCandidate(null);
+              setSelectedParsedEbook(parsed);
+              setIsAddEditOpen(true);
+            }}
+            onShowToast={(msg) => showToast(msg, 'success')}
           />
         )}
 
@@ -2327,6 +2392,10 @@ export const App: React.FC = () => {
             books={books}
             sagas={sagas}
             onClose={() => setIsImportOpen(false)}
+            onOpenEpubImport={() => {
+              setInitialEpubFiles(undefined);
+              setIsEpubImportOpen(true);
+            }}
           />
         )}
 
