@@ -461,13 +461,6 @@ export const BookCoverPickerModal: React.FC<BookCoverPickerModalProps> = ({
                           </p>
                           <div className="flex items-center justify-between text-[10px] text-stone-500 dark:text-slate-400 mt-0.5">
                             <span>{opt.year || 'Año desconocido'}</span>
-                            <span className="uppercase text-[9px] opacity-75">
-                              {opt.source === 'openlibrary'
-                                ? 'OpenLib'
-                                : opt.source === 'googlebooks'
-                                ? 'Google'
-                                : 'Catálogo'}
-                            </span>
                           </div>
                         </div>
                       </button>
@@ -596,9 +589,6 @@ export const BookCoverPickerModal: React.FC<BookCoverPickerModalProps> = ({
                           </p>
                           <div className="flex items-center justify-between text-[10px] text-stone-500 dark:text-slate-400 mt-0.5">
                             <span className="truncate">{opt.publisher || opt.year || 'Edición'}</span>
-                            <span className="uppercase text-[9px] opacity-75 shrink-0 ml-1">
-                              {opt.source === 'openlibrary' ? 'OL' : 'GB'}
-                            </span>
                           </div>
                         </div>
                       </button>

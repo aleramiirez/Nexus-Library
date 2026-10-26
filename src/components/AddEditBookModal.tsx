@@ -1181,10 +1181,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           {/* ─── Scrollable body ─── */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5 sm:space-y-6">
-          {/* ─── Search section (always visible) ─── */}
+            {/* ─── Search section (always visible) ─── */}
           <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
             <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold mb-2">
-              Búsqueda Bibliográfica Instantánea (Open Library + Google Books)
+              Búsqueda Bibliográfica Instantánea
             </label>
             <div className="relative">
               <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
