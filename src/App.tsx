@@ -87,9 +87,7 @@ import { SagaProgressBar } from './components/SagaProgressBar';
 import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
 
-const BookDetailModal = React.lazy(() =>
-  import('./components/BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
-);
+import { BookDetailModal } from './components/BookDetailModal';
 const AddEditBookModal = React.lazy(() =>
   import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
 );
@@ -258,7 +256,8 @@ export const App: React.FC = () => {
           setIsAddEditOpen(false);
           setSelectedInitialCandidate(null);
         } else if (detailBookId) {
-          setDetailBookId(null);
+          // El cierre por Escape lo gestiona BookDetailModal para ejecutar la animación inversa (380ms)
+          return;
         } else if (isImportOpen) {
           setIsImportOpen(false);
         } else if (isAuthModalOpen) {
@@ -1057,6 +1056,7 @@ export const App: React.FC = () => {
                         .map((book) => (
                           <div
                             key={book.id}
+                            data-book-id={book.id}
                             onClick={() => setDetailBookId(book.id)}
                             className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300"
                           >
@@ -1494,6 +1494,7 @@ export const App: React.FC = () => {
                     {filteredBooks.map((book) => (
                       <li
                         key={book.id}
+                        data-book-id={book.id}
                         onClick={() => setDetailBookId(book.id)}
                         className="flex items-center gap-3 p-3 active:bg-[#f4ead4] dark:active:bg-[#192131] cursor-pointer"
                       >
@@ -1542,6 +1543,7 @@ export const App: React.FC = () => {
                         {filteredBooks.map((book) => (
                           <tr
                             key={book.id}
+                            data-book-id={book.id}
                             onClick={() => setDetailBookId(book.id)}
                             className="group hover:bg-[#f4ead4] dark:hover:bg-[#192131] cursor-pointer transition"
                           >
@@ -1595,7 +1597,7 @@ export const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <BookShelf books={filteredBooks} onOpenDetail={(id) => setDetailBookId(id)} />
+                <BookShelf books={filteredBooks} onOpenDetail={(id) => setDetailBookId(id)} openedBookId={detailBookId} />
               )}
             </div>
           )}
@@ -1969,6 +1971,7 @@ export const App: React.FC = () => {
                           {item.books.map((book) => (
                             <div
                               key={book.id}
+                              data-book-id={book.id}
                               onClick={() => setDetailBookId(book.id)}
                               className="group cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-500/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >

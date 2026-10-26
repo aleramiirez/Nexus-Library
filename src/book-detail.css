@@ -1,0 +1,439 @@
+/* ===== Modal "Libro Abierto a Doble Página" (BookDetailModal) + Animación FLIP 3D ===== */
+
+/* Hueco en la balda mientras el libro está extraído y abierto */
+.shelf-book.is-extracted {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.2s ease-out !important;
+}
+
+/* Backdrop con desenfoque progresivo */
+.open-book-backdrop {
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(22, 15, 9, 0.72) 0%,
+    rgba(6, 8, 14, 0.86) 100%
+  );
+  backdrop-filter: blur(5px);
+  animation: open-book-backdrop-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.open-book-backdrop.is-closing {
+  animation: open-book-backdrop-out 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes open-book-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes open-book-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Escenario con perspectiva 3D */
+.open-book-stage {
+  perspective: 2000px;
+  perspective-origin: 50% 50%;
+}
+
+/* Cubierta dura exterior (Tapas de cuero/madera que sobresalen 6px-8px alrededor de las hojas) */
+.open-book-shell {
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.28 -0.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  position: relative;
+  padding: 6px 6px 8px 6px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
+  box-shadow:
+    0 32px 64px -12px rgba(0, 0, 0, 0.78),
+    0 14px 28px -8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 230, 175, 0.22),
+    inset 0 0 0 1px rgba(217, 160, 65, 0.25);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  /* backwards asegura que al finalizar la entrada no quede transform activo que afecte a hijos fixed */
+  animation: open-book-flight-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (min-width: 768px) {
+  .open-book-shell {
+    padding: 7px 9px 10px 9px;
+    border-radius: 16px;
+  }
+
+  /* Lomo central de cuero que asoma arriba y abajo en el eje del pliegue (5/12 = 41.6667%) */
+  .open-book-shell::before,
+  .open-book-shell::after {
+    content: '';
+    position: absolute;
+    left: 41.6667%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 7px;
+    background: linear-gradient(90deg, #1d130b, #3d291a 50%, #1d130b);
+    border-left: 1px solid rgba(235, 185, 90, 0.3);
+    border-right: 1px solid rgba(235, 185, 90, 0.3);
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .open-book-shell::before {
+    top: 0;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .open-book-shell::after {
+    bottom: 0;
+    height: 9px;
+    border-radius: 6px 6px 0 0;
+  }
+}
+
+html.dark .open-book-shell {
+  background: linear-gradient(145deg, #131a2a 0%, #0b0f19 55%, #070a11 100%);
+  box-shadow:
+    0 34px 68px -12px rgba(0, 0, 0, 0.9),
+    0 16px 32px -8px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 205, 110, 0.16),
+    inset 0 0 0 1px rgba(245, 180, 60, 0.22);
+}
+
+@media (min-width: 768px) {
+  html.dark .open-book-shell::before,
+  html.dark .open-book-shell::after {
+    background: linear-gradient(90deg, #070a11, #182236 50%, #070a11);
+    border-color: rgba(245, 180, 60, 0.25);
+  }
+}
+
+/* Animación de salida (Reverse Flight de vuelta a la coordenada de origen) */
+.open-book-shell.is-closing {
+  animation: open-book-flight-out 0.38s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+}
+
+@keyframes open-book-flight-in {
+  0% {
+    opacity: 0.2;
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -120px)
+      scale(var(--from-scale, 0.35))
+      rotateY(-18deg)
+      rotateX(8deg);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) rotateX(0deg);
+  }
+}
+
+@keyframes open-book-flight-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) rotateX(0deg);
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -120px)
+      scale(var(--from-scale, 0.35))
+      rotateY(-18deg)
+      rotateX(8deg);
+  }
+}
+
+/* Bloque interior de hojas con cantos apilados (izquierdo, derecho e inferior) */
+.open-book-pages-block {
+  position: relative;
+  padding-left: 6px;
+  padding-right: 4px;
+  padding-bottom: 5px;
+  border-radius: 10px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+@media (min-width: 768px) {
+  .open-book-pages-block {
+    padding-left: 7px;
+    padding-right: 7px;
+    padding-bottom: 6px;
+    border-radius: 11px;
+  }
+}
+
+/* Cantos de hojas apiladas: izquierdo, derecho e inferior */
+.open-book-edge-left,
+.open-book-edge-right {
+  position: absolute;
+  top: 2px;
+  bottom: 5px;
+  width: 7px;
+  pointer-events: none;
+  z-index: 20;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(120, 90, 40, 0.38) 0 1px,
+    rgba(255, 250, 235, 0.78) 1px 2px
+  );
+}
+
+.open-book-edge-left {
+  left: 0;
+  border-radius: 8px 0 0 8px;
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.25);
+}
+
+.open-book-edge-right {
+  right: 0;
+  border-radius: 0 8px 8px 0;
+  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.25);
+}
+
+.open-book-edge-bottom {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 0;
+  height: 6px;
+  pointer-events: none;
+  z-index: 20;
+  border-radius: 0 0 8px 8px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(120, 90, 40, 0.35) 0 1px,
+    rgba(250, 243, 225, 0.8) 1px 2px
+  );
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.18);
+}
+
+html.dark .open-book-edge-left,
+html.dark .open-book-edge-right {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(229, 193, 88, 0.26) 0 1px,
+    rgba(10, 14, 22, 0.82) 1px 2px
+  );
+}
+
+html.dark .open-book-edge-bottom {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(229, 193, 88, 0.24) 0 1px,
+    rgba(10, 14, 22, 0.85) 1px 2px
+  );
+}
+
+/* Superficie de Página Izquierda (Verso) y Página Derecha (Recto) */
+.open-book-page-left {
+  position: relative;
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
+  transform-origin: right center;
+  animation: open-page-left-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.open-book-page-right {
+  position: relative;
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #efe3c8 0%, #f8efdc 12%, #fbf6ea 45%, #f6ecda 100%);
+  transform-origin: left center;
+  animation: open-page-right-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+html.dark .open-book-page-left {
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #141A26 0%, #121722 76%, #0e131d 100%);
+}
+
+html.dark .open-book-page-right {
+  background:
+    var(--paper-grain),
+    linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
+}
+
+.open-book-shell.is-closing .open-book-page-left {
+  animation: open-page-left-out 0.36s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+.open-book-shell.is-closing .open-book-page-right {
+  animation: open-page-right-out 0.36s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+@media (min-width: 768px) {
+  @keyframes open-page-left-in {
+    0% {
+      transform: perspective(1800px) rotateY(80deg);
+    }
+    100% {
+      transform: perspective(1800px) rotateY(0deg);
+    }
+  }
+
+  @keyframes open-page-right-in {
+    0% {
+      transform: perspective(1800px) rotateY(-40deg);
+    }
+    100% {
+      transform: perspective(1800px) rotateY(0deg);
+    }
+  }
+
+  @keyframes open-page-left-out {
+    0% {
+      transform: perspective(1800px) rotateY(0deg);
+    }
+    100% {
+      transform: perspective(1800px) rotateY(70deg);
+    }
+  }
+
+  @keyframes open-page-right-out {
+    0% {
+      transform: perspective(1800px) rotateY(0deg);
+    }
+    100% {
+      transform: perspective(1800px) rotateY(-35deg);
+    }
+  }
+}
+
+/* Pliegue Central del Lomo (.open-book-gutter): franja cilíndrica de 36px sobre la unión 5/12 */
+.open-book-gutter {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-gutter {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 6px;
+    left: 41.6667%;
+    width: 36px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 25;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 252, 244, 0.38) 14%,
+      rgba(95, 65, 25, 0.08) 32%,
+      rgba(75, 48, 15, 0.26) 46%,
+      rgba(45, 28, 8, 0.45) 50%,
+      rgba(75, 48, 15, 0.24) 54%,
+      rgba(95, 65, 25, 0.07) 68%,
+      rgba(255, 252, 244, 0.35) 86%,
+      transparent 100%
+    );
+  }
+
+  /* Hilo de cosido central del lomo */
+  .open-book-gutter::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+      180deg,
+      rgba(140, 100, 35, 0.5),
+      rgba(90, 60, 20, 0.35) 50%,
+      rgba(140, 100, 35, 0.5)
+    );
+  }
+
+  html.dark .open-book-gutter {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.025) 14%,
+      rgba(0, 0, 0, 0.32) 34%,
+      rgba(0, 0, 0, 0.68) 47%,
+      rgba(0, 0, 0, 0.88) 50%,
+      rgba(0, 0, 0, 0.65) 53%,
+      rgba(0, 0, 0, 0.28) 66%,
+      rgba(255, 255, 255, 0.02) 86%,
+      transparent 100%
+    );
+  }
+
+  html.dark .open-book-gutter::after {
+    background: linear-gradient(
+      180deg,
+      rgba(229, 193, 88, 0.35),
+      rgba(229, 193, 88, 0.16) 50%,
+      rgba(229, 193, 88, 0.35)
+    );
+  }
+}
+
+/* Contenido interior con aparición escalonada suave */
+.open-book-content {
+  animation: open-book-content-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) 0.11s backwards;
+}
+
+@keyframes open-book-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pestañas / cintas marcapáginas superiores en la página derecha */
+.open-book-ribbon-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.65rem 0.425rem;
+  border-radius: 0 0 0.65rem 0.65rem;
+  border-width: 0 1px 1px 1px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 3px 8px -2px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s, box-shadow 0.2s;
+}
+
+.open-book-ribbon-tab:hover {
+  transform: translateY(2px);
+}
+
+/* Accesibilidad: movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .open-book-backdrop,
+  .open-book-backdrop.is-closing,
+  .open-book-shell,
+  .open-book-shell.is-closing,
+  .open-book-page-left,
+  .open-book-page-right,
+  .open-book-shell.is-closing .open-book-page-left,
+  .open-book-shell.is-closing .open-book-page-right,
+  .open-book-content {
+    animation: none !important;
+    transform: none !important;
+  }
+}

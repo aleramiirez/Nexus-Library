@@ -121,6 +121,11 @@ html.dark .bookcase {
   animation: shelf-drop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   animation-delay: calc(var(--i, 0) * 45ms);
 }
+.shelf-book.is-extracted {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
 .shelf-book:hover,
 .shelf-book:focus-visible {
   transform: translateY(-12px) rotate(-1.2deg);

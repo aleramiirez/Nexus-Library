@@ -6,6 +6,7 @@ import { BookCover } from './BookCover';
 interface BookShelfProps {
   books: Book[];
   onOpenDetail: (bookId: string) => void;
+  openedBookId?: string | null;
 }
 
 // Debe coincidir con --shelf-pad y --shelf-gap de book-shelf.css
@@ -20,7 +21,11 @@ const MAX_COLS = 6;
  * - Título de cada libro en una placa de latón en el canto de la balda.
  * - El número de libros por balda se adapta al ancho disponible.
  */
-const BookShelfComponent: React.FC<BookShelfProps> = ({ books, onOpenDetail }) => {
+const BookShelfComponent: React.FC<BookShelfProps> = ({
+  books,
+  onOpenDetail,
+  openedBookId
+}) => {
   const backRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(MAX_COLS);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -65,7 +70,10 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({ books, onOpenDetail }) =
                   <button
                     key={book.id}
                     type="button"
-                    className="shelf-book"
+                    data-book-id={book.id}
+                    className={
+                      'shelf-book' + (openedBookId === book.id ? ' is-extracted' : '')
+                    }
                     style={{ '--i': i } as React.CSSProperties}
                     onClick={() => onOpenDetail(book.id)}
                     onMouseEnter={() => setActiveId(book.id)}
@@ -95,7 +103,10 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({ books, onOpenDetail }) =
                     {row.map((book) => (
                       <div
                         key={book.id}
-                        className={'shelf-plate' + (activeId === book.id ? ' is-active' : '')}
+                        className={
+                          'shelf-plate' +
+                          (activeId === book.id || openedBookId === book.id ? ' is-active' : '')
+                        }
                       >
                         {book.nombre}
                       </div>

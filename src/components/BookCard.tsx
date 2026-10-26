@@ -28,6 +28,7 @@ const BookCardComponent: React.FC<BookCardProps> = ({
 }) => {
   return (
     <article
+      data-book-id={book.id}
       onClick={() => onOpenDetail(book)}
       role="button"
       tabIndex={0}
