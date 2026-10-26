@@ -158,6 +158,8 @@ export const App: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
+  const handleOpenBookDetail = React.useCallback((id: string) => setDetailBookId(id), []);
+  const handleOpenCardDetail = React.useCallback((b: Book) => setDetailBookId(b.id), []);
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
@@ -236,8 +238,10 @@ export const App: React.FC = () => {
   // Bloquea el scroll del fondo mientras cualquier modal o menú móvil está abierto
   useEffect(() => {
     document.body.style.overflow = isAnyModalOpen ? 'hidden' : '';
+    document.documentElement.classList.toggle('modal-open', isAnyModalOpen);
     return () => {
       document.body.style.overflow = '';
+      document.documentElement.classList.remove('modal-open');
     };
   }, [isAnyModalOpen]);
 
@@ -722,7 +726,7 @@ export const App: React.FC = () => {
               <BookCard
                 key={book.id}
                 book={book}
-                onOpenDetail={(b) => setDetailBookId(b.id)}
+                onOpenDetail={handleOpenCardDetail}
                 onEdit={handleOpenEditBook}
                 onDelete={(b) => setBookToDelete(b)}
                 onQuickStatusChange={updateBookQuickStatus}
@@ -1181,7 +1185,7 @@ export const App: React.FC = () => {
                         <BookCard
                           key={book.id}
                           book={book}
-                          onOpenDetail={(b) => setDetailBookId(b.id)}
+                          onOpenDetail={handleOpenCardDetail}
                           onEdit={handleOpenEditBook}
                           onDelete={(b) => setBookToDelete(b)}
                           onQuickStatusChange={updateBookQuickStatus}
@@ -1481,7 +1485,7 @@ export const App: React.FC = () => {
                     <BookCard
                       key={book.id}
                       book={book}
-                      onOpenDetail={(b) => setDetailBookId(b.id)}
+                      onOpenDetail={handleOpenCardDetail}
                       onEdit={handleOpenEditBook}
                       onDelete={(b) => setBookToDelete(b)}
                       onQuickStatusChange={updateBookQuickStatus}
@@ -1597,7 +1601,7 @@ export const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <BookShelf books={filteredBooks} onOpenDetail={(id) => setDetailBookId(id)} openedBookId={detailBookId} />
+                <BookShelf books={filteredBooks} onOpenDetail={handleOpenBookDetail} openedBookId={detailBookId} />
               )}
             </div>
           )}
@@ -1617,7 +1621,7 @@ export const App: React.FC = () => {
                 onCustomizeBook={handleCustomizeFromDiscover}
                 currentUserId={currentUser?.id}
                 onAddBookFromCommunity={handleAddBookFromCommunity}
-                onOpenBookDetail={(b) => setDetailBookId(b.id)}
+                onOpenBookDetail={handleOpenCardDetail}
               />
             </React.Suspense>
           )}

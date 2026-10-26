@@ -32,7 +32,7 @@ import { communityService } from '../services/communityService';
 import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
-import { computeBookFlipVars } from './BookDetailModal';
+import { applyBookFlipVarsToElement, computeBookFlipVars } from './BookDetailModal';
 import '../book-detail.css';
 import { formatStars, ReadingStatus, READING_STATUSES } from '../constants/catalogs';
 import { formatFriendlyErrorMessage } from '../utils/errorUtils';
@@ -86,14 +86,31 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
   const [isClosingCommunityBook, setIsClosingCommunityBook] = useState(false);
-  const [communityFlipVars, setCommunityFlipVars] = useState<React.CSSProperties>({});
+  const [communityEntered, setCommunityEntered] = useState(false);
+  const [communityAnimDone, setCommunityAnimDone] = useState(false);
+  const communityShellRef = useRef<HTMLDivElement>(null);
+  const communityFlipVars = useMemo(
+    () => computeBookFlipVars(selectedCommunityBook?.id),
+    [selectedCommunityBook?.id]
+  );
   const communityCloseTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!selectedCommunityBook?.id) return;
     setIsClosingCommunityBook(false);
-    setCommunityFlipVars(computeBookFlipVars(selectedCommunityBook.id));
+    setCommunityEntered(false);
+    setCommunityAnimDone(false);
+    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('modal-open');
+    let rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        setCommunityEntered(true);
+      });
+    });
     return () => {
+      cancelAnimationFrame(rafId);
+      document.body.style.overflow = '';
+      document.documentElement.classList.remove('modal-open');
       if (communityCloseTimerRef.current !== null) {
         window.clearTimeout(communityCloseTimerRef.current);
         communityCloseTimerRef.current = null;
@@ -114,8 +131,9 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     }
 
     if (selectedCommunityBook?.id) {
-      setCommunityFlipVars(computeBookFlipVars(selectedCommunityBook.id));
+      applyBookFlipVarsToElement(communityShellRef.current, selectedCommunityBook.id);
     }
+    setCommunityAnimDone(false);
     setIsClosingCommunityBook(true);
     communityCloseTimerRef.current = window.setTimeout(() => {
       communityCloseTimerRef.current = null;
@@ -542,6 +560,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     return readerBooks;
   }, [readerBooks, shelfFilter]);
 
+  const handleOpenCommunityShelfBook = useCallback(
+    (bookId: string) => {
+      const book = filteredReaderBooks.find((b) => b.id === bookId);
+      if (book) setSelectedCommunityBook(book);
+    },
+    [filteredReaderBooks]
+  );
+
   // Modal de detalle con diseño de Libro Abierto a Doble Página y animación FLIP 3D
   const renderCommunityBookModal = () => {
     if (!selectedCommunityBook || !selectedReader) return null;
@@ -554,6 +580,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       <div
         className={
           'open-book-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto' +
+          (communityEntered ? ' is-entered' : '') +
           (isClosingCommunityBook ? ' is-closing' : '')
         }
         role="dialog"
@@ -561,15 +588,38 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         aria-labelledby="community-detail-book-title"
         onClick={handleCloseCommunityBook}
       >
+        <div className="open-book-backdrop-fill" aria-hidden="true" />
         <div
-          className="open-book-stage w-full max-w-5xl my-auto"
+          className="open-book-stage relative w-full max-w-5xl my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div
             className={
               'open-book-shell w-full text-stone-900 dark:text-slate-100' +
+              (communityEntered ? ' is-entered' : '') +
+              (communityAnimDone ? ' is-anim-done' : '') +
               (isClosingCommunityBook ? ' is-closing' : '')
             }
+            ref={communityShellRef}
+            onAnimationEnd={(e) => {
+              if (isClosingCommunityBook && e.target === e.currentTarget) {
+                if (communityCloseTimerRef.current !== null) {
+                  window.clearTimeout(communityCloseTimerRef.current);
+                  communityCloseTimerRef.current = null;
+                }
+                setSelectedCommunityBook(null);
+                setIsClosingCommunityBook(false);
+                return;
+              }
+              if (
+                !isClosingCommunityBook &&
+                (e.animationName === 'open-page-left-in' ||
+                  e.animationName === 'open-mobile-cover-in' ||
+                  e.animationName === 'open-book-flight-in-mobile')
+              ) {
+                setCommunityAnimDone(true);
+              }
+            }}
             style={communityFlipVars}
           >
             <div className="open-book-pages-block">
@@ -582,6 +632,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   portadaDataUrl={selectedCommunityBook.portadaDataUrl}
                   size="lg"
                   variant="book"
+                  priority
                 />
               </div>
 
@@ -616,6 +667,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                             portadaDataUrl={selectedCommunityBook.portadaDataUrl}
                             size="lg"
                             variant="book"
+                  priority
                           />
                         </div>
 
@@ -643,6 +695,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         portadaDataUrl={selectedCommunityBook.portadaDataUrl}
                         size="lg"
                         variant="book"
+                  priority
                       />
                     </div>
                   </div>
@@ -1153,10 +1206,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             <BookShelf
               books={filteredReaderBooks}
               openedBookId={selectedCommunityBook?.id ?? null}
-              onOpenDetail={(bookId) => {
-                const book = filteredReaderBooks.find((b) => b.id === bookId);
-                if (book) setSelectedCommunityBook(book);
-              }}
+              onOpenDetail={handleOpenCommunityShelfBook}
             />
           </div>
         ) : (

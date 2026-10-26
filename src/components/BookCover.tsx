@@ -12,7 +12,26 @@ interface BookCoverProps {
   size?: 'sm' | 'md' | 'lg';
   /** 'book' (por defecto): libro de tapa dura con textura realista. 'card': tarjeta tradicional. */
   variant?: 'book' | 'card';
+  /** Si es true, fuerza loading="eager" y decoding="async" para animaciones 3D inmediatas */
+  priority?: boolean;
 }
+
+const preloadedUrls = new Set<string>();
+
+export const preloadBookCover = (book: {
+  portadaDataUrl?: string;
+  portadaUrl?: string;
+  portadaFallbackUrl?: string;
+}) => {
+  const src = [book.portadaDataUrl, book.portadaUrl, book.portadaFallbackUrl].find((u) =>
+    Boolean(u && u.trim())
+  );
+  if (!src || preloadedUrls.has(src)) return;
+  preloadedUrls.add(src);
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = src;
+};
 
 // Telas de encuadernación para libros sin portada (color estable según título/autor)
 const CLOTH_PALETTE: Array<[string, string]> = [
@@ -38,7 +57,8 @@ const BookCoverComponent: React.FC<BookCoverProps> = ({
   portadaDataUrl,
   className = '',
   size = 'md',
-  variant = 'book'
+  variant = 'book',
+  priority = false
 }) => {
   const candidates = [portadaDataUrl, portadaUrl, portadaFallbackUrl].filter(
     (u): u is string => Boolean(u && u.trim())
@@ -83,7 +103,8 @@ const BookCoverComponent: React.FC<BookCoverProps> = ({
             alt={'Portada de ' + nombre}
             onError={handleImageError}
             onLoad={handleImageLoad}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
             className="book-cover-img"
           />
         ) : (
@@ -115,7 +136,8 @@ const BookCoverComponent: React.FC<BookCoverProps> = ({
             alt={'Portada de ' + nombre}
             onError={handleImageError}
             onLoad={handleImageLoad}
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
             className="w-full h-full object-contain object-center group-hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (

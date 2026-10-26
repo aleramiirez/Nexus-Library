@@ -1,6 +1,6 @@
 import React from 'react';
 import { Book } from '../types/models';
-import { BookCover } from './BookCover';
+import { BookCover, preloadBookCover } from './BookCover';
 import { formatStars, ReadingStatus } from '../constants/catalogs';
 
 interface BookCardProps {
@@ -30,6 +30,7 @@ const BookCardComponent: React.FC<BookCardProps> = ({
     <article
       data-book-id={book.id}
       onClick={() => onOpenDetail(book)}
+      onPointerEnter={() => preloadBookCover(book)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

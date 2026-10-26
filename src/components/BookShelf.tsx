@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../book-shelf.css';
 import { Book } from '../types/models';
-import { BookCover } from './BookCover';
+import { BookCover, preloadBookCover } from './BookCover';
 
 interface BookShelfProps {
   books: Book[];
@@ -28,20 +28,36 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
 }) => {
   const backRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(MAX_COLS);
-  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     const el = backRef.current;
     if (!el) return;
+    let prevWidth = el.clientWidth;
     const update = () => {
-      const available = el.clientWidth - SHELF_PAD * 2;
+      const w = el.clientWidth;
+      const available = w - SHELF_PAD * 2;
       const fit = Math.floor((available + SHELF_GAP) / (MIN_BOOK_WIDTH + SHELF_GAP));
-      setCols(Math.min(MAX_COLS, Math.max(2, fit)));
+      const nextCols = Math.min(MAX_COLS, Math.max(2, fit));
+      setCols((c) => (c === nextCols ? c : nextCols));
     };
     update();
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(() => {
+      if (!el || el.clientWidth === prevWidth) return;
+      prevWidth = el.clientWidth;
+      update();
+    });
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  const setPlateActive = useCallback((bookId: string, active: boolean) => {
+    const container = backRef.current;
+    if (!container) return;
+    const safeId = bookId.replace(/"/g, '\\"');
+    const plate = container.querySelector(`[data-plate-id="${safeId}"]`);
+    if (plate) {
+      plate.classList.toggle('is-active', active);
+    }
   }, []);
 
   const rows = useMemo(() => {
@@ -76,10 +92,20 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
                     }
                     style={{ '--i': i } as React.CSSProperties}
                     onClick={() => onOpenDetail(book.id)}
-                    onMouseEnter={() => setActiveId(book.id)}
-                    onMouseLeave={() => setActiveId(null)}
-                    onFocus={() => setActiveId(book.id)}
-                    onBlur={() => setActiveId(null)}
+                    onPointerEnter={() => {
+                      preloadBookCover(book);
+                      setPlateActive(book.id, true);
+                    }}
+                    onPointerLeave={() => {
+                      if (openedBookId !== book.id) setPlateActive(book.id, false);
+                    }}
+                    onFocus={() => {
+                      preloadBookCover(book);
+                      setPlateActive(book.id, true);
+                    }}
+                    onBlur={() => {
+                      if (openedBookId !== book.id) setPlateActive(book.id, false);
+                    }}
                     aria-label={book.nombre}
                     title={book.nombre}
                   >
@@ -103,9 +129,9 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
                     {row.map((book) => (
                       <div
                         key={book.id}
+                        data-plate-id={book.id}
                         className={
-                          'shelf-plate' +
-                          (activeId === book.id || openedBookId === book.id ? ' is-active' : '')
+                          'shelf-plate' + (openedBookId === book.id ? ' is-active' : '')
                         }
                       >
                         {book.nombre}

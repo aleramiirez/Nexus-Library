@@ -63,7 +63,10 @@ const AnimatedBackgroundComponent: React.FC = () => {
 
     const frame = (t: number) => {
       // Pausar el redibujado del canvas cuando hay un modal abierto para garantizar 60/120fps puros en las animaciones 3D
-      if (document.body.style.overflow === 'hidden') {
+      if (
+        document.documentElement.classList.contains('modal-open') ||
+        document.body.style.overflow === 'hidden'
+      ) {
         raf = requestAnimationFrame(frame);
         return;
       }

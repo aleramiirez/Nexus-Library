@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -32,16 +32,18 @@ export interface BookDetailModalProps {
   onShowToast?: (message: string) => void;
 }
 
-/**
- * Calcula las variables CSS (--from-x, --from-y, --from-scale) desde la coordenada exacta
- * del libro en la estantería o tarjeta hasta el centro del viewport.
- */
-export function computeBookFlipVars(bookId?: string | null): React.CSSProperties {
-  const fallback = {
-    '--from-x': '0px',
-    '--from-y': '24px',
-    '--from-scale': '0.45'
-  } as React.CSSProperties;
+export interface BookFlipValues {
+  fromX: string;
+  fromY: string;
+  fromScale: string;
+}
+
+export function getBookFlipValues(bookId?: string | null): BookFlipValues {
+  const fallback: BookFlipValues = {
+    fromX: '0px',
+    fromY: '24px',
+    fromScale: '0.45'
+  };
 
   if (typeof window === 'undefined' || typeof document === 'undefined' || !bookId) {
     return fallback;
@@ -70,14 +72,40 @@ export function computeBookFlipVars(bookId?: string | null): React.CSSProperties
 
   const fromX = rect.left + rect.width / 2 - window.innerWidth / 2;
   const fromY = rect.top + rect.height / 2 - window.innerHeight / 2;
-  // El libro cerrado mide ~420px de ancho sin escalar; así coincide 1:1 con el tamaño en la balda
   const fromScale = Math.max(0.2, Math.min(0.72, rect.width / 420));
 
   return {
-    '--from-x': `${Math.round(fromX)}px`,
-    '--from-y': `${Math.round(fromY)}px`,
-    '--from-scale': fromScale.toFixed(3)
+    fromX: `${Math.round(fromX)}px`,
+    fromY: `${Math.round(fromY)}px`,
+    fromScale: fromScale.toFixed(3)
+  };
+}
+
+/**
+ * Calcula las variables CSS (--from-x, --from-y, --from-scale) desde la coordenada exacta
+ * del libro en la estantería o tarjeta hasta el centro del viewport.
+ */
+export function computeBookFlipVars(bookId?: string | null): React.CSSProperties {
+  const { fromX, fromY, fromScale } = getBookFlipValues(bookId);
+  return {
+    '--from-x': fromX,
+    '--from-y': fromY,
+    '--from-scale': fromScale
   } as React.CSSProperties;
+}
+
+/**
+ * Escribe directamente las coordenadas FLIP en el nodo DOM sin provocar un re-render de React.
+ */
+export function applyBookFlipVarsToElement(
+  el: HTMLElement | null,
+  bookId?: string | null
+): void {
+  if (!el) return;
+  const { fromX, fromY, fromScale } = getBookFlipValues(bookId);
+  el.style.setProperty('--from-x', fromX);
+  el.style.setProperty('--from-y', fromY);
+  el.style.setProperty('--from-scale', fromScale);
 }
 
 export const BookDetailModal: React.FC<BookDetailModalProps> = ({
@@ -93,16 +121,28 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 }) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [flipVars, setFlipVars] = useState<React.CSSProperties>(() =>
-    computeBookFlipVars(book?.id)
-  );
+  const [entered, setEntered] = useState(false);
+  const [animDone, setAnimDone] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+
+  // Se calcula una única vez al montar/cambiar de libro sin un segundo render en useEffect
+  const flipVars = useMemo(() => computeBookFlipVars(book?.id), [book?.id]);
 
   useEffect(() => {
     if (!book?.id) return;
     setIsClosing(false);
-    setFlipVars(computeBookFlipVars(book.id));
+    setEntered(false);
+    setAnimDone(false);
+
+    let rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        setEntered(true);
+      });
+    });
+
     return () => {
+      cancelAnimationFrame(rafId);
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
@@ -124,14 +164,39 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
 
     if (book?.id) {
-      setFlipVars(computeBookFlipVars(book.id));
+      applyBookFlipVarsToElement(shellRef.current, book.id);
     }
+    setAnimDone(false);
     setIsClosing(true);
+
     closeTimerRef.current = window.setTimeout(() => {
       closeTimerRef.current = null;
       onClose();
-    }, 680);
+    }, 720);
   }, [book?.id, isClosing, onClose]);
+
+  const handleShellAnimationEnd = useCallback(
+    (e: React.AnimationEvent<HTMLDivElement>) => {
+      if (isClosing && e.target === e.currentTarget) {
+        if (closeTimerRef.current !== null) {
+          window.clearTimeout(closeTimerRef.current);
+          closeTimerRef.current = null;
+        }
+        onClose();
+        return;
+      }
+
+      if (
+        !isClosing &&
+        (e.animationName === 'open-page-left-in' ||
+          e.animationName === 'open-mobile-cover-in' ||
+          e.animationName === 'open-book-flight-in-mobile')
+      ) {
+        setAnimDone(true);
+      }
+    },
+    [isClosing, onClose]
+  );
 
   useEffect(() => {
     if (!book) return;
@@ -158,6 +223,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       <div
         className={
           'open-book-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto' +
+          (entered ? ' is-entered' : '') +
           (isClosing ? ' is-closing' : '')
         }
         role="dialog"
@@ -165,14 +231,21 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
         aria-labelledby="detail-book-title"
         onClick={handleRequestClose}
       >
+        {/* Hermano independiente para el fade del fondo sin afectar el contexto 3D del libro */}
+        <div className="open-book-backdrop-fill" aria-hidden="true" />
+
         <div
-          className="open-book-stage w-full max-w-5xl my-auto"
+          className="open-book-stage relative w-full max-w-5xl my-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Contenedor 3D del Libro (preserve-3d) */}
+          {/* Contenedor 3D del Libro (preserve-3d, siempre opacity: 1) */}
           <div
+            ref={shellRef}
+            onAnimationEnd={handleShellAnimationEnd}
             className={
               'open-book-shell w-full text-stone-900 dark:text-slate-100' +
+              (entered ? ' is-entered' : '') +
+              (animDone ? ' is-anim-done' : '') +
               (isClosing ? ' is-closing' : '')
             }
             style={flipVars}
@@ -188,6 +261,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   portadaDataUrl={book.portadaDataUrl}
                   size="lg"
                   variant="book"
+                  priority
                 />
               </div>
 
@@ -229,6 +303,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             portadaDataUrl={book.portadaDataUrl}
                             size="lg"
                             variant="book"
+                            priority
                           />
                         </div>
 
@@ -354,6 +429,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         portadaDataUrl={book.portadaDataUrl}
                         size="lg"
                         variant="book"
+                        priority
                       />
                     </div>
                   </div>
