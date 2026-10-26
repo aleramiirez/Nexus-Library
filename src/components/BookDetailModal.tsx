@@ -130,7 +130,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     closeTimerRef.current = window.setTimeout(() => {
       closeTimerRef.current = null;
       onClose();
-    }, 720);
+    }, 680);
   }, [book?.id, isClosing, onClose]);
 
   useEffect(() => {
@@ -220,7 +220,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </div>
 
                         {/* Portada del libro centrada con sombra realista sobre el papel */}
-                        <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 drop-shadow-[0_14px_20px_rgba(30,20,10,0.38)]">
+                        <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 shadow-xl rounded-xl">
                           <BookCover
                             nombre={book.nombre}
                             autor={book.autor}

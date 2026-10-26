@@ -121,7 +121,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       communityCloseTimerRef.current = null;
       setSelectedCommunityBook(null);
       setIsClosingCommunityBook(false);
-    }, 720);
+    }, 680);
   }, [isClosingCommunityBook, selectedCommunityBook?.id]);
 
   useEffect(() => {
@@ -607,7 +607,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           </span>
                         </div>
 
-                        <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 drop-shadow-[0_14px_20px_rgba(30,20,10,0.38)]">
+                        <div className="w-36 sm:w-44 md:w-48 max-w-[205px] my-1 shadow-xl rounded-xl">
                           <BookCover
                             nombre={selectedCommunityBook.nombre}
                             autor={selectedCommunityBook.autor}
