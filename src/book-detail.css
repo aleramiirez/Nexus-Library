@@ -36,11 +36,11 @@ html.modal-open .nexus-rays {
     rgba(6, 8, 14, 0.92) 100%
   );
   will-change: opacity;
-  animation: open-book-backdrop-in 0.38s ease-out backwards;
+  animation: open-book-backdrop-in 0.38s ease-out both;
 }
 
 .open-book-backdrop.is-closing .open-book-backdrop-fill {
-  animation: open-book-backdrop-out 0.44s ease-in 0.18s forwards;
+  animation: open-book-backdrop-out 0.44s ease-in 0.18s both;
 }
 
 @keyframes open-book-backdrop-in {
@@ -244,6 +244,33 @@ html.modal-open .nexus-rays {
     border-radius: 16px 0 0 16px;
     border-right: none;
     border-bottom: 1px solid rgba(180, 130, 50, 0.45);
+    animation: open-left-inner-in 0.01s linear 0.28s both;
+  }
+
+  .open-book-shell.is-closing .open-book-left-inner {
+    animation: open-left-inner-out 0.01s linear 0.16s both;
+  }
+}
+
+@keyframes open-left-inner-in {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@keyframes open-left-inner-out {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
@@ -259,6 +286,8 @@ html.dark .open-book-left-inner {
   margin-left: 7px;
   margin-bottom: 6px;
   border-radius: 9px 9px 0 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   contain: layout paint;
   background: linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
 }
@@ -462,9 +491,10 @@ html.dark .open-book-right-paper {
   background: linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
 }
 
-/* Sombra proyectada sobre la página derecha (2 keyframes + delay) */
+/* Sombra proyectada sobre la página derecha (2 keyframes + delay, base opacity: 0) */
 .open-book-shadow-sweep {
   display: none;
+  opacity: 0;
 }
 
 @media (min-width: 768px) {
@@ -475,24 +505,25 @@ html.dark .open-book-right-paper {
     z-index: 25;
     pointer-events: none;
     will-change: opacity;
+    opacity: 0;
     border-radius: 0 9px 9px 0;
     background: linear-gradient(
       90deg,
-      rgba(20, 12, 4, 0.7) 0%,
-      rgba(20, 12, 4, 0.42) 55%,
-      rgba(20, 12, 4, 0.16) 100%
+      rgba(20, 12, 4, 0.65) 0%,
+      rgba(20, 12, 4, 0.35) 55%,
+      rgba(20, 12, 4, 0.1) 100%
     );
-    animation: open-shadow-sweep-in 0.48s ease-out 0.18s backwards;
+    animation: open-shadow-sweep-in 0.46s ease-out 0.16s both;
   }
 
   .open-book-shell.is-closing .open-book-shadow-sweep {
-    animation: open-shadow-sweep-out 0.32s ease-in 0.02s forwards;
+    animation: open-shadow-sweep-out 0.22s ease-in 0.02s both;
   }
 }
 
 @keyframes open-shadow-sweep-in {
   from {
-    opacity: 0.88;
+    opacity: 0.82;
   }
   to {
     opacity: 0;
@@ -504,16 +535,18 @@ html.dark .open-book-right-paper {
     opacity: 0;
   }
   to {
-    opacity: 0.82;
+    opacity: 0.75;
   }
 }
 
 /* ============================================================================
  * HOJAS INTERMEDIAS QUE ABANICAN EN 3D (.open-book-fan-sheet)
- * - 2 keyframes (from -> to) secuenciados mediante animation-delay (.16s, .21s, .26s)
+ * - Base opacity: 0 y fill-mode: both para que al terminar de abrir o cerrar
+ *   queden 100% invisibles sin dar ningún salto ni mostrar hojas sueltas.
  * ============================================================================ */
 .open-book-fan-sheet {
   display: none;
+  opacity: 0;
 }
 
 @media (min-width: 768px) {
@@ -524,6 +557,7 @@ html.dark .open-book-right-paper {
     bottom: 18px;
     right: 50%;
     width: 48.2%;
+    opacity: 0;
     transform-origin: right center;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -558,29 +592,29 @@ html.dark .open-book-right-paper {
   }
 
   .open-book-fan-sheet-1 {
-    animation: open-fan-sheet-in 0.48s cubic-bezier(0.42, 0, 0.2, 1) 0.16s backwards;
+    animation: open-fan-sheet-in 0.46s cubic-bezier(0.42, 0, 0.2, 1) 0.15s both;
   }
   .open-book-fan-sheet-2 {
-    animation: open-fan-sheet-in 0.5s cubic-bezier(0.42, 0, 0.2, 1) 0.21s backwards;
+    animation: open-fan-sheet-in 0.48s cubic-bezier(0.42, 0, 0.2, 1) 0.19s both;
   }
   .open-book-fan-sheet-3 {
-    animation: open-fan-sheet-in 0.52s cubic-bezier(0.42, 0, 0.2, 1) 0.26s backwards;
+    animation: open-fan-sheet-in 0.5s cubic-bezier(0.42, 0, 0.2, 1) 0.23s both;
   }
 
   .open-book-shell.is-closing .open-book-fan-sheet-1 {
-    animation: open-fan-sheet-out 0.34s cubic-bezier(0.42, 0, 0.2, 1) 0.02s backwards;
+    animation: open-fan-sheet-1-out 0.32s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
   }
   .open-book-shell.is-closing .open-book-fan-sheet-2 {
-    animation: open-fan-sheet-out 0.34s cubic-bezier(0.42, 0, 0.2, 1) 0.05s backwards;
+    animation: open-fan-sheet-2-out 0.28s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
   }
   .open-book-shell.is-closing .open-book-fan-sheet-3 {
-    animation: open-fan-sheet-out 0.34s cubic-bezier(0.42, 0, 0.2, 1) 0.08s backwards;
+    animation: open-fan-sheet-3-out 0.24s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
   }
 }
 
 @keyframes open-fan-sheet-in {
   from {
-    opacity: 0.92;
+    opacity: 0.88;
     transform: rotateY(176deg) translateZ(2px);
   }
   to {
@@ -589,14 +623,36 @@ html.dark .open-book-right-paper {
   }
 }
 
-@keyframes open-fan-sheet-out {
+@keyframes open-fan-sheet-1-out {
   from {
-    opacity: 0;
-    transform: rotateY(0deg) translateZ(0px);
+    opacity: 0.72;
+    transform: rotateY(24deg) translateZ(1px);
   }
   to {
     opacity: 0;
-    transform: rotateY(176deg) translateZ(2px);
+    transform: rotateY(179.5deg) translateZ(2px);
+  }
+}
+
+@keyframes open-fan-sheet-2-out {
+  from {
+    opacity: 0.78;
+    transform: rotateY(42deg) translateZ(1.5px);
+  }
+  to {
+    opacity: 0;
+    transform: rotateY(179.5deg) translateZ(2px);
+  }
+}
+
+@keyframes open-fan-sheet-3-out {
+  from {
+    opacity: 0.82;
+    transform: rotateY(60deg) translateZ(2px);
+  }
+  to {
+    opacity: 0;
+    transform: rotateY(179.5deg) translateZ(2px);
   }
 }
 
@@ -809,6 +865,8 @@ html.dark .open-book-edge-bottom-right {
   .open-book-shell,
   .open-book-shell.is-closing,
   .open-book-page-left,
+  .open-book-left-inner,
+  .open-book-shell.is-closing .open-book-left-inner,
   .open-book-page-right,
   .open-book-shell.is-closing .open-book-page-left,
   .open-book-shell.is-closing .open-book-page-right,
