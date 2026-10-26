@@ -932,6 +932,103 @@ html.dark .open-book-edge-bottom-right {
   transform: translateY(2px);
 }
 
+/* ============================================================================
+ * 5. HOJA 3D DE PASO DE PÁGINA ENTRE FICHA Y SINOPSIS
+ * ============================================================================ */
+.open-book-leaf-turn {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-leaf-turn {
+    display: block;
+    position: absolute;
+    top: 7px;
+    bottom: 16px;
+    width: calc(50% - 16px);
+    box-sizing: border-box;
+    will-change: transform;
+    pointer-events: none;
+    z-index: 48;
+    border-radius: 0 9px 9px 0;
+    box-shadow:
+      inset 3px 0px 20px rgba(0, 0, 0, 0.16),
+      0px 0px 15px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(90deg, #f5ebd6 0%, #fbf6ea 78%, #efe3c8 100%);
+    border: 1px solid rgba(160, 120, 60, 0.28);
+  }
+
+  html.dark .open-book-leaf-turn {
+    background: linear-gradient(90deg, #0e131d 0%, #141A26 78%, #111722 100%);
+    border-color: rgba(229, 193, 88, 0.2);
+    box-shadow:
+      inset 3px 0px 20px rgba(0, 0, 0, 0.45),
+      0px 0px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .open-book-leaf-turn.is-turning-forward {
+    right: 16px;
+    transform-origin: 0% 50%;
+    animation: internal-leaf-turn-forward 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .open-book-leaf-turn.is-turning-backward {
+    left: 16px;
+    transform-origin: 100% 50%;
+    animation: internal-leaf-turn-backward 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes internal-leaf-turn-forward {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes internal-leaf-turn-backward {
+  0% {
+    transform: rotateY(-180deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+/* Transición suave para el contenido que aparece en la página derecha */
+.open-book-fade-content {
+  animation: open-book-fade-content-in 0.32s ease-out both;
+}
+
+@keyframes open-book-fade-content-in {
+  from {
+    opacity: 0.15;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Transición en móvil */
+.mobile-page-transition-enter {
+  animation: mobile-page-fade 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes mobile-page-fade {
+  from {
+    opacity: 0.2;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Accesibilidad: movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   .open-book-backdrop-fill,

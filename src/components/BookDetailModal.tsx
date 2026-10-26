@@ -12,7 +12,9 @@ import {
   Globe,
   Building2,
   Clock,
-  Sparkles
+  Sparkles,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating } from '../types/models';
@@ -130,8 +132,38 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [animDone, setAnimDone] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'synopsis'>('details');
+  const [isFlippingPage, setIsFlippingPage] = useState(false);
+  const [flipDirection, setFlipDirection] = useState<'forward' | 'backward'>('forward');
+  const flipTimerRef = useRef<number | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+
+  const handleTurnToSynopsis = useCallback(() => {
+    if (activeTab === 'synopsis' || isFlippingPage) return;
+    setIsFlippingPage(true);
+    setFlipDirection('forward');
+    if (flipTimerRef.current) window.clearTimeout(flipTimerRef.current);
+    flipTimerRef.current = window.setTimeout(() => {
+      setActiveTab('synopsis');
+    }, 180);
+    window.setTimeout(() => {
+      setIsFlippingPage(false);
+    }, 450);
+  }, [activeTab, isFlippingPage]);
+
+  const handleTurnToDetails = useCallback(() => {
+    if (activeTab === 'details' || isFlippingPage) return;
+    setIsFlippingPage(true);
+    setFlipDirection('backward');
+    if (flipTimerRef.current) window.clearTimeout(flipTimerRef.current);
+    flipTimerRef.current = window.setTimeout(() => {
+      setActiveTab('details');
+    }, 180);
+    window.setTimeout(() => {
+      setIsFlippingPage(false);
+    }, 450);
+  }, [activeTab, isFlippingPage]);
 
   // Se calcula una única vez al montar/cambiar de libro sin un segundo render en useEffect
   const flipVars = useMemo(() => computeBookFlipVars(book?.id), [book?.id]);
@@ -140,6 +172,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     if (!book?.id) return;
     setIsClosing(false);
     setAnimDone(false);
+    setActiveTab('details');
+    setIsFlippingPage(false);
 
     return () => {
       if (closeTimerRef.current !== null) {
@@ -201,6 +235,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   useEffect(() => {
     if (!book) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' && activeTab === 'details') {
+        e.preventDefault();
+        handleTurnToSynopsis();
+        return;
+      }
+      if (e.key === 'ArrowLeft' && activeTab === 'synopsis') {
+        e.preventDefault();
+        handleTurnToDetails();
+        return;
+      }
       if (e.key === 'Escape') {
         if (isRecommendOpen) return;
         if (typeof document !== 'undefined' && document.getElementById('delete-dialog-title')) {
@@ -212,7 +256,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [book, isRecommendOpen, handleRequestClose]);
+  }, [book, isRecommendOpen, handleRequestClose, activeTab, handleTurnToSynopsis, handleTurnToDetails]);
 
   if (!book) return null;
 
@@ -262,6 +306,29 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {activeTab === 'synopsis' ? (
+                      <button
+                        type="button"
+                        onClick={handleTurnToDetails}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border border-amber-600/40 bg-amber-500/25 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                        title="Volver a la ficha técnica"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Ficha</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleTurnToSynopsis}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                        title="Leer sinopsis"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                        <span>Sinopsis</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setIsRecommendOpen(true)}
@@ -269,7 +336,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       title="Recomendar este libro"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                      <span>Recomendar</span>
+                      <span className="hidden sm:inline">Recomendar</span>
                     </button>
 
                     <button
@@ -307,6 +374,54 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
               {/* Cuerpo deslizable de la ficha en móvil */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {activeTab === 'synopsis' ? (
+                  <div className="mobile-page-transition-enter space-y-4">
+                    <div className="border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
+                        fol. III · Sinopsis Literaria
+                      </span>
+                      <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-white mt-0.5">
+                        {book.nombre}
+                      </h2>
+                      <p className="font-serif italic text-xs text-stone-600 dark:text-slate-400">
+                        {book.autor || 'Autor no especificado'}
+                      </p>
+                    </div>
+
+                    {book.sinopsis ? (
+                      <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 shadow-sm">
+                        <p className="font-serif text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line first-letter:float-left first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-2.5 first-letter:leading-none">
+                          {book.sinopsis}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-8 px-4 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2">
+                        <BookOpen className="w-8 h-8 text-amber-700/60 dark:text-amber-400/60 mx-auto" />
+                        <p className="font-serif text-sm text-stone-700 dark:text-slate-300">
+                          Esta edición no incluye una sinopsis registrada.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => onEdit(book)}
+                          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 text-slate-950 font-bold"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Escribir sinopsis</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleTurnToDetails}
+                      className="w-full py-2.5 px-4 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span>Volver a la ficha del libro</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
                 {/* Cabecera Principal: Portada + Título + Autor + Saga */}
                 <div className="flex gap-3.5 items-start">
                   <div className="w-24 sm:w-28 shrink-0 shadow-lg rounded-lg">
@@ -433,17 +548,32 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
                 </div>
 
-                {/* Sinopsis en móvil con letra capitular */}
-                {book.sinopsis && (
-                  <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/80 dark:bg-[#161D2B]/70 p-3.5">
-                    <h3 className="font-serif italic text-xs text-amber-900 dark:text-amber-400 font-semibold mb-1.5">
-                      Sinopsis de la obra
-                    </h3>
-                    <p className="text-xs sm:text-sm text-stone-800 dark:text-slate-300 leading-relaxed whitespace-pre-line first-letter:font-serif first-letter:text-2xl first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-0.5">
-                      {book.sinopsis}
-                    </p>
+                {/* Botón para pasar página a la Sinopsis en móvil */}
+                <button
+                  type="button"
+                  onClick={handleTurnToSynopsis}
+                  className="w-full p-3.5 rounded-2xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 text-left active:scale-[0.98] transition flex items-center justify-between gap-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 shrink-0">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 block">
+                        Leer sinopsis de la obra
+                      </span>
+                      <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
+                        {book.sinopsis
+                          ? 'Pasa de página para ver el argumento'
+                          : 'Sin sinopsis registrada'}
+                      </span>
+                    </div>
                   </div>
-                )}
+                  <div className="flex items-center gap-1 text-xs font-bold text-amber-900 dark:text-amber-300 shrink-0">
+                    <span>Pasar página</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </button>
 
                 {/* Registro de Lectura (Fechas y Lectura Virtual) */}
                 <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-3.5 space-y-2.5 text-xs">
@@ -566,6 +696,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </p>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -575,6 +707,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             <div className="open-book-pages-block hidden md:block">
               {/* Pliegue central del lomo en escritorio (36px de ancho en la unión central 50%) */}
               <div className="open-book-gutter" aria-hidden="true" />
+
+              {/* Hoja animada interactiva al pasar página entre Ficha y Sinopsis */}
+              {isFlippingPage && (
+                <div
+                  className={`open-book-leaf-turn ${
+                    flipDirection === 'forward' ? 'is-turning-forward' : 'is-turning-backward'
+                  }`}
+                  aria-hidden="true"
+                />
+              )}
 
               {/* Doble página simétrica en escritorio (6 cols Verso / 6 cols Recto) */}
               <div className="open-book-spread-grid grid grid-cols-12">
@@ -759,10 +901,33 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}
                     <div className="flex items-start justify-between gap-2 mb-4">
                       <span className="inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
-                        Catálogo Literario · fol. II
+                        {activeTab === 'details' ? 'Catálogo Literario · fol. II' : 'Sinopsis Literaria · fol. III'}
                       </span>
 
                       <div className="flex items-start gap-1.5 ml-auto">
+                        {activeTab === 'synopsis' ? (
+                          <button
+                            type="button"
+                            onClick={handleTurnToDetails}
+                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-200 font-bold"
+                            title="Volver a la ficha técnica (←)"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                            <span>Ver ficha</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleTurnToSynopsis}
+                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 font-semibold"
+                            title="Pasar página para leer la sinopsis (→)"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                            <span>Sinopsis</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => setIsRecommendOpen(true)}
@@ -805,7 +970,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="open-book-content flex flex-col gap-4 sm:gap-5">
+                    {activeTab === 'details' ? (
+                      <div className="open-book-content flex flex-col gap-4 sm:gap-5">
                       {/* Título, Autor, Saga y Divisor Ornamental */}
                       <div className="text-left">
                         {book.sagaNombre && (
@@ -953,18 +1119,100 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Sinopsis con estilo de página literaria y letra capitular */}
-                      {book.sinopsis && (
-                        <div className="pt-1">
-                          <h3 className="font-serif italic text-xs text-amber-900 dark:text-amber-400 font-semibold mb-1.5">
-                            Sinopsis de la obra
-                          </h3>
-                          <p className="text-sm text-stone-800 dark:text-slate-300 leading-relaxed whitespace-pre-line first-letter:font-serif first-letter:text-2xl first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-0.5">
+                      {/* Botón interactivo para pasar página a la Sinopsis */}
+                      <button
+                        type="button"
+                        onClick={handleTurnToSynopsis}
+                        className="group w-full mt-2 p-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 dark:hover:border-amber-400 text-left transition-all duration-300 shadow-sm flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2.5 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+                            <BookOpen className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors">
+                              Leer sinopsis de la obra
+                            </span>
+                            <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
+                              {book.sinopsis
+                                ? 'Pasa la página para descubrir la trama y el argumento'
+                                : 'Sin sinopsis registrada todavía (pulsa para consultar)'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-xs font-bold text-amber-950 dark:text-amber-200 border border-amber-600/30 shrink-0 group-hover:translate-x-1 transition-transform">
+                          <span>Pasar página</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="open-book-fade-content flex flex-col gap-4 sm:gap-5">
+                      <div className="text-left border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
+                            Argumento & Sinopsis de la obra
+                          </span>
+                          <span className="text-[10px] text-stone-500 dark:text-slate-400 font-serif italic">
+                            fol. III
+                          </span>
+                        </div>
+                        <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white mt-1">
+                          {book.nombre}
+                        </h2>
+                        <p className="font-serif italic text-sm text-stone-700 dark:text-slate-300 mt-0.5">
+                          por {book.autor || 'Autor no especificado'}
+                        </p>
+                        <div className="flex items-center gap-3 mt-3" aria-hidden="true">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
+                          <span className="text-amber-700 dark:text-amber-400 text-xs select-none">
+                            ✦
+                          </span>
+                          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
+                        </div>
+                      </div>
+
+                      {book.sinopsis ? (
+                        <div className="py-2">
+                          <p className="font-serif text-[15px] sm:text-base leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line tracking-normal first-letter:float-left first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-3 first-letter:leading-none">
                             {book.sinopsis}
                           </p>
                         </div>
+                      ) : (
+                        <div className="py-12 px-6 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
+                          <BookOpen className="w-9 h-9 text-amber-700/60 dark:text-amber-400/60 mx-auto" />
+                          <h3 className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
+                            Esta obra no incluye sinopsis registrada todavía
+                          </h3>
+                          <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
+                            Puedes editar la ficha del libro para redactar el argumento o completar sus datos desde el catálogo online.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(book)}
+                            className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Escribir sinopsis</span>
+                          </button>
+                        </div>
                       )}
+
+                      <div className="pt-4 mt-auto border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={handleTurnToDetails}
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] dark:hover:bg-[#222C3F] text-xs font-bold text-amber-950 dark:text-amber-200 transition shadow-sm"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Volver a la ficha técnica</span>
+                        </button>
+                        <span className="text-[11px] text-stone-500 dark:text-slate-500 italic">
+                          Pulsa ← o flecha izquierda para volver
+                        </span>
+                      </div>
                     </div>
+                  )}
                   </div>
                 </div>
               </div>
