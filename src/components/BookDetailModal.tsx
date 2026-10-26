@@ -49,6 +49,11 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
     return fallback;
   }
 
+  // En móvil usamos animación nativa tipo bottom-sheet sin cálculo 3D FLIP
+  if (window.innerWidth < 768) {
+    return fallback;
+  }
+
   const safeId = bookId.replace(/"/g, '\\"');
   const findVisible = (selector: string): Element | null => {
     const list = document.querySelectorAll(selector);
@@ -70,9 +75,8 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
   const rect = sourceEl.getBoundingClientRect();
   if (rect.width === 0 && rect.height === 0) return fallback;
 
-  const isDesktop = window.innerWidth >= 768;
-  const stageWidth = Math.min(window.innerWidth - (isDesktop ? 48 : 16), 1024);
-  const closedBookWidth = isDesktop ? stageWidth * 0.5 : stageWidth;
+  const stageWidth = Math.min(window.innerWidth - 48, 1024);
+  const closedBookWidth = stageWidth * 0.5;
 
   const fromX = rect.left + rect.width / 2 - window.innerWidth / 2;
   const fromY = rect.top + rect.height / 2 - window.innerHeight / 2;
@@ -158,7 +162,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       return;
     }
 
-    if (book?.id) {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (!isMobile && book?.id) {
       applyBookFlipVarsToElement(shellRef.current, book.id);
     }
     setAnimDone(false);
@@ -167,7 +173,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     closeTimerRef.current = window.setTimeout(() => {
       closeTimerRef.current = null;
       onClose();
-    }, 680);
+    }, isMobile ? 260 : 680);
   }, [book?.id, isClosing, onClose]);
 
   const handleShellAnimationEnd = useCallback(
@@ -184,8 +190,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       if (
         !isClosing &&
         (e.animationName === 'book-turn-open' ||
-          e.animationName === 'open-mobile-cover-in' ||
-          e.animationName === 'open-book-flight-in-mobile')
+          e.animationName === 'open-book-sheet-in-mobile')
       ) {
         setAnimDone(true);
       }
@@ -217,7 +222,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     <>
       <div
         className={
-          'open-book-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto' +
+          'open-book-backdrop fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 sm:p-3 md:p-6 overflow-y-auto' +
           (isClosing ? ' is-closing' : '')
         }
         role="dialog"
@@ -229,10 +234,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
         <div className="open-book-backdrop-fill" aria-hidden="true" />
 
         <div
-          className="open-book-stage relative w-full max-w-5xl my-auto"
+          className="open-book-stage relative w-full max-w-5xl md:my-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Contenedor 3D del Libro (preserve-3d, siempre opacity: 1) */}
+          {/* Contenedor del Libro (en móvil actúa como hoja editorial; en escritorio como libro 3D a doble página) */}
           <div
             ref={shellRef}
             onAnimationEnd={handleShellAnimationEnd}
@@ -243,26 +248,336 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             }
             style={flipVars}
           >
-            <div className="open-book-pages-block">
-              {/* Portada 3D abatible en pantallas móviles */}
-              <div className="open-book-mobile-cover" aria-hidden="true">
-                <BookCover
-                  nombre={book.nombre}
-                  autor={book.autor}
-                  portadaUrl={book.portadaUrl}
-                  portadaFallbackUrl={book.portadaFallbackUrl}
-                  portadaDataUrl={book.portadaDataUrl}
-                  size="lg"
-                  variant="book"
-                  priority
-                />
+            {/* ═══════════════════════════════════════════════════════════════════════════
+                VISTA MÓVIL (< 768px): Ficha Editorial / Códice Fluido con Barra Fija
+               ═══════════════════════════════════════════════════════════════════════════ */}
+            <div className="md:hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh] rounded-t-3xl sm:rounded-2xl border-t-2 sm:border border-amber-700/40 dark:border-[#2B3750] bg-[#fbf6ea] dark:bg-[#131926] shadow-[0_-12px_40px_rgba(0,0,0,0.5)] overflow-hidden">
+              {/* Tirador visual superior y barra de acciones fija */}
+              <div className="shrink-0 bg-[#f0e5cc] dark:bg-[#0E131D] border-b border-amber-900/20 dark:border-[#232D42] px-3.5 pt-2 pb-2.5">
+                <div className="w-10 h-1 rounded-full bg-amber-900/25 dark:bg-slate-600/80 mx-auto mb-2 sm:hidden" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-serif italic text-amber-900 dark:text-amber-400 min-w-0">
+                    <BookOpen className="w-3.5 h-3.5 shrink-0 text-amber-700 dark:text-amber-400" />
+                    <span className="truncate font-medium">Ex-Libris · Ficha Literaria</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsRecommendOpen(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                      title="Recomendar este libro"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                      <span>Recomendar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onEdit(book)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                      title="Editar libro"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Editar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDelete(book)}
+                      className="p-1.5 rounded-xl border border-rose-500/35 bg-rose-500/15 text-rose-800 dark:text-rose-300 active:scale-95 transition"
+                      title="Eliminar libro"
+                      aria-label="Eliminar libro"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleRequestClose}
+                      className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#e4d4b4] dark:bg-[#1A2232] text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                      title="Cerrar"
+                      aria-label="Cerrar ficha"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
+              {/* Cuerpo deslizable de la ficha en móvil */}
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                {/* Cabecera Principal: Portada + Título + Autor + Saga */}
+                <div className="flex gap-3.5 items-start">
+                  <div className="w-24 sm:w-28 shrink-0 shadow-lg rounded-lg">
+                    <BookCover
+                      nombre={book.nombre}
+                      autor={book.autor}
+                      portadaUrl={book.portadaUrl}
+                      portadaFallbackUrl={book.portadaFallbackUrl}
+                      portadaDataUrl={book.portadaDataUrl}
+                      size="md"
+                      variant="book"
+                      priority
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    {book.sagaNombre && (
+                      <div className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-[11px] font-medium text-amber-900 dark:text-amber-300 max-w-full">
+                        <Layers className="w-3 h-3 shrink-0" />
+                        <span className="truncate">
+                          {book.sagaNombre}
+                          {book.volumen ? ` · Vol. ${book.volumen}` : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-white leading-snug">
+                      {book.nombre}
+                    </h2>
+
+                    <p className="font-serif italic text-sm text-stone-700 dark:text-slate-300">
+                      {book.autor || 'Autor no especificado'}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {book.genero ? (
+                        <span className="rounded-md bg-amber-500/15 border border-amber-600/35 px-2 py-0.5 text-[11px] font-semibold text-amber-950 dark:text-amber-300">
+                          {book.genero}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-stone-500 dark:text-slate-500 italic">
+                          Sin género
+                        </span>
+                      )}
+                      {book.fechaPublicacion && (
+                        <span className="rounded-md bg-[#efe3c8] dark:bg-[#1B2333] px-2 py-0.5 text-[11px] text-stone-700 dark:text-slate-300">
+                          {book.fechaPublicacion}
+                        </span>
+                      )}
+                      {book.paginas && (
+                        <span className="rounded-md bg-[#efe3c8] dark:bg-[#1B2333] px-2 py-0.5 text-[11px] text-stone-700 dark:text-slate-300">
+                          {book.paginas} págs.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subgéneros si existen */}
+                {book.subgeneros.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {book.subgeneros.map((sub) => (
+                      <span
+                        key={sub}
+                        className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300"
+                      >
+                        {sub}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Estado de Lectura + Puntuación Personal */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#0f141f]/90 p-3.5 space-y-3">
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                      Estado de lectura
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {READING_STATUSES.map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => onStatusChange(book.id, status)}
+                          className={
+                            'py-2 px-2.5 rounded-xl text-xs font-medium border text-center active:scale-[0.98] transition ' +
+                            (book.progreso === status
+                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
+                              : 'border-amber-900/20 dark:border-[#263147] bg-[#fbf6ea] dark:bg-[#171F2E] text-stone-700 dark:text-slate-300')
+                          }
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
+                    <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                      Puntuación personal
+                    </span>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {STAR_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            onRatingChange(
+                              book.id,
+                              book.puntuacion === opt.value ? null : opt.value
+                            )
+                          }
+                          className={
+                            'py-1.5 rounded-xl text-xs border text-center active:scale-95 transition ' +
+                            (book.puntuacion === opt.value
+                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
+                              : 'border-amber-900/15 dark:border-[#263147] bg-[#fbf6ea]/70 dark:bg-[#171F2E]/70 text-stone-600 dark:text-slate-400')
+                          }
+                        >
+                          {opt.value} ⭐
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sinopsis en móvil con letra capitular */}
+                {book.sinopsis && (
+                  <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/80 dark:bg-[#161D2B]/70 p-3.5">
+                    <h3 className="font-serif italic text-xs text-amber-900 dark:text-amber-400 font-semibold mb-1.5">
+                      Sinopsis de la obra
+                    </h3>
+                    <p className="text-xs sm:text-sm text-stone-800 dark:text-slate-300 leading-relaxed whitespace-pre-line first-letter:font-serif first-letter:text-2xl first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-0.5">
+                      {book.sinopsis}
+                    </p>
+                  </div>
+                )}
+
+                {/* Registro de Lectura (Fechas y Lectura Virtual) */}
+                <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-3.5 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1.5">
+                    <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                      Registro de Lectura
+                    </span>
+                    <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
+                      NEXUS
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                        Fecha Inicio
+                      </label>
+                      {onDatesChange ? (
+                        <input
+                          type="date"
+                          value={book.fechaInicio || ''}
+                          onChange={(e) =>
+                            onDatesChange(book.id, e.target.value, book.fechaFin)
+                          }
+                          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                        />
+                      ) : (
+                        <span className="font-semibold text-xs block">
+                          {book.fechaInicio || '—'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                        Fecha Fin
+                      </label>
+                      {onDatesChange ? (
+                        <input
+                          type="date"
+                          value={book.fechaFin || ''}
+                          onChange={(e) =>
+                            onDatesChange(book.id, book.fechaInicio, e.target.value)
+                          }
+                          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                        />
+                      ) : (
+                        <span className="font-semibold text-xs block">
+                          {book.fechaFin || '—'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-stone-600 dark:text-slate-400 shrink-0">
+                      Lectura Virtual
+                    </span>
+                    {book.lecturaVirtual ? (
+                      isUrl ? (
+                        <a
+                          href={book.lecturaVirtual}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate"
+                        >
+                          Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
+                        </a>
+                      ) : (
+                        <span className="font-medium text-xs truncate">
+                          {book.lecturaVirtual}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-stone-400 dark:text-slate-500">—</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabla Bibliográfica Compacta */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/50 dark:bg-[#101520]/60 p-3.5 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                      <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                      Editorial
+                    </span>
+                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5 truncate">
+                      {book.editorial || 'No disponible'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                      <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                      Idioma / Edición
+                    </span>
+                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5 truncate">
+                      {[book.idioma, book.edicion].filter(Boolean).join(' · ') || 'No disponible'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                      <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                      Tiempo Lectura
+                    </span>
+                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5">
+                      {book.tiempoLectura || 'Sin calcular'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                      <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                      ISBN
+                    </span>
+                    <p className="font-mono font-semibold text-[11px] text-stone-900 dark:text-slate-100 mt-0.5 break-all">
+                      {book.isbn || 'No disponible'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ═══════════════════════════════════════════════════════════════════════════
+                VISTA ESCRITORIO (>= 768px): Libro Abierto 3D a Doble Página Simétrica
+               ═══════════════════════════════════════════════════════════════════════════ */}
+            <div className="open-book-pages-block hidden md:block">
               {/* Pliegue central del lomo en escritorio (36px de ancho en la unión central 50%) */}
               <div className="open-book-gutter" aria-hidden="true" />
 
-              {/* Doble página simétrica en escritorio (6 cols Verso / 6 cols Recto) y página continua en móvil */}
-              <div className="open-book-spread-grid grid grid-cols-1 md:grid-cols-12 max-h-[88dvh] md:max-h-none overflow-y-auto md:overflow-visible rounded-[14px] md:rounded-none">
+              {/* Doble página simétrica en escritorio (6 cols Verso / 6 cols Recto) */}
+              <div className="open-book-spread-grid grid grid-cols-12">
                 {/* ─────────── 1. TAPA DURA DELANTERA (.cover.turn): Abre primero y cierra última ─────────── */}
                 <div className="open-book-cover-turn" aria-hidden="true">
                   <div className="open-book-cover-inside">
@@ -298,10 +613,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                   {/* Cara Interior: Página Izquierda (Ex-Libris, Portada y Registro Personal) */}
                   <div className="open-book-left-inner flex-1 flex flex-col">
-                    <div className="open-book-edge-left md:hidden" aria-hidden="true" />
-                    <div className="open-book-edge-bottom-left md:hidden" aria-hidden="true" />
-
-                    <div className="open-book-left-paper flex-1 flex flex-col justify-between p-4 sm:p-6 md:pr-7 md:pl-6 md:py-6 md:max-h-[82dvh] md:overflow-y-auto border-b md:border-b-0 border-amber-900/15 dark:border-[#222B3C]">
+                    <div className="open-book-left-paper flex-1 flex flex-col justify-between p-4 sm:p-6 md:pr-7 md:pl-6 md:py-6 md:max-h-[82dvh] md:overflow-y-auto">
                       <div className="open-book-content flex flex-col items-center">
                         {/* Encabezado superior sutil de folio (Verso) */}
                         <div className="w-full flex items-center justify-between text-[11px] font-serif italic text-amber-900/75 dark:text-amber-400/80 border-b border-amber-900/15 dark:border-[#242E42] pb-2 mb-4">
@@ -445,8 +757,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                   <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:max-h-[82dvh] md:overflow-y-auto">
                     {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}
-                    <div className="flex items-start justify-between gap-2 mb-4 -mt-4 sm:-mt-6 md:mt-0">
-                      <span className="hidden md:inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
+                    <div className="flex items-start justify-between gap-2 mb-4">
+                      <span className="inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
                         Catálogo Literario · fol. II
                       </span>
 
@@ -495,7 +807,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                     <div className="open-book-content flex flex-col gap-4 sm:gap-5">
                       {/* Título, Autor, Saga y Divisor Ornamental */}
-                      <div className="text-center md:text-left">
+                      <div className="text-left">
                         {book.sagaNombre && (
                           <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-3 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-300 mb-2">
                             <Layers className="w-3.5 h-3.5" />
@@ -575,7 +887,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                       {/* Tabla Bibliográfica Clásica con líneas divisorias finas */}
                       <div className="border-y border-amber-900/20 dark:border-slate-800 divide-y divide-amber-900/15 dark:divide-slate-800/90 text-xs">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
+                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
                           <div className="py-2.5 pr-3">
                             <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
                               <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
@@ -596,7 +908,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
+                          <div className="py-2.5 pl-3">
                             <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
                               <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               ISBN
@@ -607,7 +919,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
+                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
                           <div className="py-2.5 pr-3">
                             <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
                               <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
@@ -629,7 +941,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="col-span-2 sm:col-span-1 py-2.5 sm:pl-3 border-t sm:border-t-0 border-amber-900/15 dark:border-slate-800/90">
+                          <div className="py-2.5 pl-3">
                             <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
                               <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Tiempo de Lectura

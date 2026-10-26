@@ -689,11 +689,56 @@ export const App: React.FC = () => {
     }
   };
 
+  const renderMobileShelfTabs = () => {
+    const shelfTabs: { id: NavigationSection; label: string; count: number }[] = [
+      { id: 'library', label: 'Todos', count: metrics.total },
+      { id: 'shelf-reading', label: '⏳ Leyendo', count: metrics.reading },
+      { id: 'shelf-unread', label: '❌ Por leer', count: metrics.unread },
+      { id: 'shelf-read', label: '✅ Leídos', count: metrics.read },
+      { id: 'shelf-paused', label: '⏸️ Pausados', count: metrics.paused }
+    ];
+
+    return (
+      <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {shelfTabs.map((tab) => {
+          const isActive = activeSection === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleNavigate(tab.id)}
+              className={
+                'shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition active:scale-95 ' +
+                (isActive
+                  ? 'border-amber-600 dark:border-amber-400 bg-amber-500 text-slate-950 shadow-sm'
+                  : 'border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300')
+              }
+            >
+              <span>{tab.label}</span>
+              <span
+                className={
+                  'text-[10px] px-1.5 py-0.2 rounded-full font-bold ' +
+                  (isActive
+                    ? 'bg-slate-950/15 text-slate-950'
+                    : 'bg-amber-900/10 dark:bg-slate-800 text-stone-600 dark:text-slate-400')
+                }
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderShelfSection = (status: ReadingStatus, title: string, subtitle: string) => {
     const shelfBooks = books.filter((b) => b.progreso === status);
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
+      <div className="space-y-4 sm:space-y-6">
+        {renderMobileShelfTabs()}
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-3.5 sm:pb-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold">{title}</h1>
             <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
@@ -704,7 +749,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenCreateBook}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition self-start"
+            className="hidden sm:inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition self-start"
           >
             <Plus className="w-4 h-4" /> Añadir libro
           </button>
@@ -845,30 +890,43 @@ export const App: React.FC = () => {
         onOpenInbox={() => setIsInboxOpen(true)}
       />
 
-      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-stone-300 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur px-3 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]">
+      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-amber-900/20 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            aria-label="Abrir menú"
-            className="p-2 -ml-1 rounded-lg text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+            aria-label="Abrir índice y menú lateral"
+            className="w-9 h-9 -ml-1 inline-flex items-center justify-center rounded-xl text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 active:scale-95 transition"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <img
-            src="/logo.svg"
-            alt="Nexus Library Logo"
-            className="w-8 h-8 shrink-0 drop-shadow-sm"
-          />
-          <span className="font-serif text-base sm:text-lg font-bold tracking-wide truncate">
-            <span className="text-amber-700 dark:text-amber-400">N</span>EXUS
-          </span>
+          <button
+            type="button"
+            onClick={() => handleNavigate('dashboard')}
+            className="flex items-center gap-2 min-w-0 text-left"
+          >
+            <img
+              src="/logo.svg"
+              alt="Nexus Library Logo"
+              className="w-7 h-7 shrink-0 drop-shadow-sm"
+            />
+            <span className="font-serif text-base font-bold tracking-wide truncate">
+              <span className="text-amber-700 dark:text-amber-400">N</span>EXUS
+            </span>
+          </button>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
+            onClick={handleOpenCreateBook}
+            className="inline-flex items-center gap-1 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold px-3 py-2 text-xs shadow-sm transition"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Añadir
+          </button>
+          <button
+            type="button"
             onClick={() => setIsInboxOpen(true)}
-            className="relative p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition"
+            className="relative w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition"
             title="Buzón Literario"
             aria-label="Buzón Literario"
           >
@@ -881,36 +939,17 @@ export const App: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleNavigate('discover')}
-            className={
-              'p-2 rounded-lg border transition ' +
-              (activeSection === 'discover'
-                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold'
-                : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400')
-            }
-            title="Explorar y Descubrir Libros"
-          >
-            <Compass className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
             onClick={() => handleNavigate('settings')}
+            aria-label="Ajustes y Perfil"
+            title="Ajustes y Perfil"
             className={
-              'p-2 rounded-lg border transition ' +
+              'w-9 h-9 inline-flex items-center justify-center rounded-xl border transition active:scale-95 ' +
               (activeSection === 'settings'
-                ? 'border-amber-600 bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold'
-                : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400')
+                ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
+                : 'border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400')
             }
-            title="Ajustes y Configuración"
           >
             <Settings className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleOpenCreateBook}
-            className="inline-flex items-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 text-xs shadow-sm transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> Añadir
           </button>
         </div>
       </header>
@@ -986,48 +1025,48 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3.5">
                 <button
                   type="button"
                   onClick={() => handleNavigate('library')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
-                  <span className="text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.total}</p>
+                  <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
+                  <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.total}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-reading')}
-                  className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-4 text-left hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
+                  className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
                 >
-                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-900 dark:text-amber-200 mt-1">
+                  <span className="text-[11px] sm:text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
+                  <p className="font-serif text-xl sm:text-3xl font-bold text-amber-900 dark:text-amber-200 mt-0.5 sm:mt-1">
                     {metrics.reading}
                   </p>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-unread')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
                 >
-                  <span className="text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.unread}</p>
+                  <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
+                  <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.unread}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-paused')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-4 text-left hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
+                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
                 >
-                  <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">{metrics.paused}</p>
+                  <span className="text-[11px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
+                  <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.paused}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-read')}
-                  className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-4 text-left hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1"
+                  className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1 flex sm:block items-center justify-between"
                 >
-                  <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">
+                  <span className="text-[11px] sm:text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
+                  <p className="font-serif text-xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-200 sm:mt-1">
                     {metrics.read}
                   </p>
                 </button>
@@ -1198,8 +1237,10 @@ export const App: React.FC = () => {
           )}
 
           {activeSection === 'library' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-4 sm:space-y-6">
+              {renderMobileShelfTabs()}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
                   <h1 className="font-serif text-2xl sm:text-3xl font-bold">Mi Biblioteca</h1>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
@@ -1208,7 +1249,7 @@ export const App: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2">
                   <div className="relative w-full sm:w-44 md:w-52 lg:w-60">
                     <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
@@ -1216,7 +1257,7 @@ export const App: React.FC = () => {
                       value={filters.search}
                       onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
                       placeholder="Buscar título, autor, ISBN..."
-                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2.5 sm:py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
                     />
                     {filters.search && (
                       <button
@@ -1235,7 +1276,7 @@ export const App: React.FC = () => {
                     onClick={handleOpenCreateBook}
                     title="Añadir libro"
                     aria-label="Añadir libro"
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
+                    className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -2183,98 +2224,69 @@ export const App: React.FC = () => {
         </div>
       </main>
 
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur grid grid-cols-7 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-[10px]">
-        <button
-          type="button"
-          onClick={() => handleNavigate('dashboard')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'dashboard'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
+      <nav
+        aria-label="Navegación principal móvil"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-amber-900/20 dark:border-[#222B3C] bg-[#fbf6ea]/95 dark:bg-[#111622]/95 backdrop-blur-md grid grid-cols-5 px-1 pt-1.5 pb-[max(0.45rem,env(safe-area-inset-bottom))] text-[11px] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.2)]"
+      >
+        {([
+          {
+            id: 'dashboard' as NavigationSection,
+            label: 'Inicio',
+            icon: LayoutDashboard,
+            isActive: activeSection === 'dashboard'
+          },
+          {
+            id: 'library' as NavigationSection,
+            label: 'Biblioteca',
+            icon: Library,
+            isActive: activeSection === 'library' || activeSection.startsWith('shelf-')
+          },
+          {
+            id: 'discover' as NavigationSection,
+            label: 'Descubrir',
+            icon: Compass,
+            isActive: activeSection === 'discover'
+          },
+          {
+            id: 'sagas' as NavigationSection,
+            label: 'Sagas',
+            icon: Layers,
+            isActive: activeSection === 'sagas'
+          },
+          {
+            id: 'stats' as NavigationSection,
+            label: 'Resumen',
+            icon: BarChart3,
+            isActive: activeSection === 'stats'
           }
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          Inicio
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('library')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'library'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <Library className="w-4 h-4" />
-          Biblioteca
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('discover')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'discover'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <Compass className="w-4 h-4" />
-          Descubrir
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('shelf-reading')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection.startsWith('shelf-')
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <Clock className="w-4 h-4" />
-          Leyendo
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('sagas')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'sagas'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <Layers className="w-4 h-4" />
-          Sagas
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('stats')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'stats'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <BarChart3 className="w-4 h-4" />
-          Stats
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNavigate('settings')}
-          className={
-            'flex flex-col items-center gap-1 ' +
-            (activeSection === 'settings'
-              ? 'text-[#8e2836] dark:text-amber-400 font-bold'
-              : 'text-stone-500 dark:text-slate-400')
-          }
-        >
-          <Settings className="w-4 h-4" />
-          Ajustes
-        </button>
+        ]).map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleNavigate(item.id)}
+              className={
+                'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition active:scale-95 ' +
+                (item.isActive
+                  ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+                  : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200')
+              }
+            >
+              <span
+                className={
+                  'inline-flex items-center justify-center rounded-full px-3 py-0.5 transition-colors ' +
+                  (item.isActive
+                    ? 'bg-[#8e2836]/15 dark:bg-amber-500/20'
+                    : 'bg-transparent')
+                }
+              >
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="leading-tight tracking-tight">{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <React.Suspense fallback={null}>
@@ -2423,7 +2435,7 @@ export const App: React.FC = () => {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">
+        <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">
           <span>{toast.message}</span>
           <button
             type="button"

@@ -346,7 +346,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     <div className="space-y-8 animate-fade-in">
       {/* Toast de confirmación */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl border border-emerald-500/40 bg-[#101520] text-emerald-200 px-4 py-3 shadow-2xl backdrop-blur-md animate-slide-up text-xs sm:text-sm font-medium">
+        <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-50 flex items-center justify-between sm:justify-start gap-2.5 rounded-2xl border border-emerald-500/40 bg-[#101520] text-emerald-200 px-4 py-3 shadow-2xl backdrop-blur-md animate-slide-up text-xs sm:text-sm font-medium">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
           <button
@@ -360,31 +360,31 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       )}
 
       {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Comunidad de Lectores) ─── */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
         <button
           type="button"
           onClick={() => handleTabChange('books')}
           className={
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+            'inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold transition ' +
             (discoverTab === 'books'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
           }
         >
-          <Compass className="w-4 h-4" /> Catálogo de Libros
+          <Compass className="w-4 h-4 shrink-0" /> <span className="truncate">Catálogo de Libros</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleTabChange('community')}
           className={
-            'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+            'inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold transition ' +
             (discoverTab === 'community'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
           }
         >
-          <Users className="w-4 h-4" /> Comunidad de Lectores
+          <Users className="w-4 h-4 shrink-0" /> <span className="truncate">Comunidad</span>
         </button>
       </div>
 
@@ -430,9 +430,9 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           </div>
         </div>
 
-        {/* Chips de sugerencias rápidas sin scroll horizontal */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs">
-          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400">
+        {/* Chips de sugerencias rápidas (deslizables en móvil, multilínea en escritorio) */}
+        <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 pt-0.5 pb-1 sm:pb-0 -mx-1 px-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs">
+          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400 shrink-0">
             Sugerencias:
           </span>
           {QUICK_CHIPS.map((chip) => {
@@ -442,7 +442,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                 key={chip}
                 type="button"
                 onClick={() => handleQuickChip(cleanText)}
-                className="rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition"
+                className="shrink-0 rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-1 sm:py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition active:scale-95"
               >
                 {chip}
               </button>
@@ -674,7 +674,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleDismissRec(cand, e)}
-                        className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full bg-stone-900/70 hover:bg-rose-600 text-stone-200 hover:text-white flex items-center justify-center transition shadow opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full bg-stone-900/75 hover:bg-rose-600 text-stone-200 hover:text-white flex items-center justify-center transition shadow opacity-85 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                         title="No me interesa esta sugerencia"
                         aria-label={`Descartar recomendación de ${cand.nombre}`}
                       >
@@ -782,8 +782,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
               </p>
             </div>
 
-            {/* Píldoras selectoras de categoría sin scroll horizontal */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Píldoras selectoras de categoría (deslizables en móvil, multilínea en escritorio) */}
+            <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {DISCOVER_CATEGORIES.map((cat) => {
                 const active = cat.id === activeCategoryId;
                 return (
@@ -1067,45 +1067,46 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                   </div>
                 </div>
 
-                {/* Botones de acción del modal */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-amber-900/20 dark:border-[#242E42] pt-4 shrink-0">
+              </div>
+
+              {/* Pie fijo con botones de acción del modal */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-t border-amber-900/20 dark:border-[#242E42] bg-[#f0e5cc] dark:bg-[#101520] px-4 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCandidate(null)}
+                  className="hidden sm:inline-flex rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+                >
+                  Cerrar
+                </button>
+
+                <div className="w-full sm:w-auto flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedCandidate(null)}
-                    className="w-full sm:w-auto rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+                    onClick={(e) => handleCustomize(selectedCandidate, e)}
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 font-semibold px-3.5 py-2.5 sm:py-2 text-xs transition"
                   >
-                    Cerrar
+                    <Sliders className="w-3.5 h-3.5 shrink-0" /> <span>Personalizar</span>
                   </button>
 
-                  <div className="w-full sm:w-auto flex items-center gap-2">
+                  {isCandidateInLibrary(selectedCandidate) ? (
+                    <div className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-4 py-2.5 sm:py-2 text-xs">
+                      <Check className="w-3.5 h-3.5 shrink-0" /> En tu biblioteca
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      onClick={(e) => handleCustomize(selectedCandidate, e)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 font-semibold px-4 py-2 text-xs transition"
+                      disabled={addingId === selectedCandidate.id}
+                      onClick={(e) => handleQuickAdd(selectedCandidate, e)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2.5 sm:py-2 text-xs shadow-md transition disabled:opacity-50"
                     >
-                      <Sliders className="w-3.5 h-3.5" /> Personalizar y Añadir
+                      {addingId === selectedCandidate.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>Añadir a Por Leer</span>
                     </button>
-
-                    {isCandidateInLibrary(selectedCandidate) ? (
-                      <div className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-4 py-2 text-xs">
-                        <Check className="w-3.5 h-3.5" /> En tu biblioteca
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={addingId === selectedCandidate.id}
-                        onClick={(e) => handleQuickAdd(selectedCandidate, e)}
-                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2 text-xs shadow-md transition disabled:opacity-50"
-                      >
-                        {addingId === selectedCandidate.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Plus className="w-3.5 h-3.5" />
-                        )}
-                        Añadir a Por Leer
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

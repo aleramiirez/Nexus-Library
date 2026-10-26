@@ -23,6 +23,14 @@
   padding: 0 6px;
 }
 
+@media (max-width: 639px) {
+  .bookcase {
+    --shelf-pad: 10px;
+    --shelf-gap: 12px;
+    padding: 0 2px;
+  }
+}
+
 /* Tema oscuro: nogal */
 html.dark .bookcase {
   --wood-light: #62412b;
@@ -48,6 +56,13 @@ html.dark .bookcase {
   box-shadow:
     0 6px 10px -4px var(--shade),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 639px) {
+  .bookcase-cornice {
+    height: 18px;
+    margin: 0 -2px;
+  }
 }
 
 /* Cuerpo: laterales de madera + fondo */
@@ -77,6 +92,16 @@ html.dark .bookcase {
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.35), 3px 0 8px -2px var(--shade);
 }
 
+@media (max-width: 639px) {
+  .bookcase-body {
+    padding: 0 12px;
+  }
+  .bookcase-body::before,
+  .bookcase-body::after {
+    width: 12px;
+  }
+}
+
 .bookcase-back {
   position: relative;
   background:
@@ -103,6 +128,12 @@ html.dark .bookcase {
   padding: 30px var(--shelf-pad) 0;
 }
 
+@media (max-width: 639px) {
+  .shelf-books {
+    padding: 20px var(--shelf-pad) 0;
+  }
+}
+
 /* Libro apoyado sobre la balda */
 .shelf-book {
   position: relative;
@@ -117,20 +148,29 @@ html.dark .bookcase {
   cursor: pointer;
   text-align: left;
   transform-origin: bottom center;
-  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  animation: shelf-drop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 45ms);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: shelf-drop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
 }
 .shelf-book.is-extracted {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s;
 }
-.shelf-book:hover,
 .shelf-book:focus-visible {
-  transform: translateY(-12px) rotate(-1.2deg);
+  transform: translateY(-10px) rotate(-1deg);
   outline: none;
 }
+.shelf-book:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) {
+  .shelf-book:hover {
+    transform: translateY(-12px) rotate(-1.2deg);
+    outline: none;
+  }
+}
+
 /* Sombra de contacto sobre la balda (se queda en la balda cuando el libro sube) */
 .shelf-book::after {
   content: '';
@@ -145,10 +185,15 @@ html.dark .bookcase {
   filter: blur(2px);
   transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s;
 }
-.shelf-book:hover::after,
 .shelf-book:focus-visible::after {
   transform: translateY(12px) scaleX(0.88);
   opacity: 0.55;
+}
+@media (hover: hover) {
+  .shelf-book:hover::after {
+    transform: translateY(12px) scaleX(0.88);
+    opacity: 0.55;
+  }
 }
 
 /* ===== Libro de tapa dura (BookCover variant="book") ===== */
@@ -171,16 +216,6 @@ html.dark .bookcase {
     0 9px 12px -5px rgba(0, 0, 0, 0.7);
   transition: box-shadow 0.35s, transform 0.35s;
 }
-.shelf-book:hover .book-cover,
-.shelf-book:focus-visible .book-cover {
-  box-shadow:
-    1px 0 0 #dccfae,
-    2px 0 0 #b6a784,
-    3px 0 0 #d3c5a2,
-    4px 0 0 #8e8062,
-    0 20px 24px -8px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(245, 180, 60, 0.4);
-}
 .shelf-book:focus-visible .book-cover {
   box-shadow:
     1px 0 0 #dccfae,
@@ -189,15 +224,27 @@ html.dark .bookcase {
     0 9px 12px -5px rgba(0, 0, 0, 0.7);
 }
 
-/* Hover en tarjetas generales (BookCard, carruseles, etc.) */
-.group:hover .book-cover {
-  box-shadow:
-    1px 0 0 #dccfae,
-    2px 0 0 #b6a784,
-    3px 0 0 #d3c5a2,
-    4px 0 0 #8e8062,
-    0 16px 22px -6px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(245, 180, 60, 0.35);
+@media (hover: hover) {
+  .shelf-book:hover .book-cover {
+    box-shadow:
+      1px 0 0 #dccfae,
+      2px 0 0 #b6a784,
+      3px 0 0 #d3c5a2,
+      4px 0 0 #8e8062,
+      0 20px 24px -8px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(245, 180, 60, 0.4);
+  }
+
+  /* Hover en tarjetas generales (BookCard, carruseles, etc.) */
+  .group:hover .book-cover {
+    box-shadow:
+      1px 0 0 #dccfae,
+      2px 0 0 #b6a784,
+      3px 0 0 #d3c5a2,
+      4px 0 0 #8e8062,
+      0 16px 22px -6px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(245, 180, 60, 0.35);
+  }
 }
 
 .book-cover-img {
@@ -208,9 +255,11 @@ html.dark .bookcase {
   object-position: center;
   transition: transform 0.4s ease-out;
 }
-.group:hover .book-cover-img,
-.shelf-book:hover .book-cover-img {
-  transform: scale(1.025);
+@media (hover: hover) {
+  .group:hover .book-cover-img,
+  .shelf-book:hover .book-cover-img {
+    transform: scale(1.025);
+  }
 }
 
 /* Articulación junto al lomo: canto, relieve y surco, como una tapa dura */
@@ -242,11 +291,19 @@ html.dark .bookcase {
   border-radius: inherit;
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%),
-    var(--paper-grain);
+    linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.1),
     inset 0 0 16px rgba(0, 0, 0, 0.28);
+}
+
+@media (min-width: 768px) {
+  .book-cover::after {
+    background:
+      linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%),
+      var(--paper-grain);
+  }
 }
 
 /* Libro sin portada: cubierta de tela con título estampado en oro */
@@ -419,6 +476,12 @@ html.dark .bookcase {
     0 1px 2px rgba(0, 0, 0, 0.5);
   transition: filter 0.3s, box-shadow 0.3s;
 }
+@media (max-width: 639px) {
+  .shelf-plate {
+    padding: 3px 10px;
+    font-size: 11.5px;
+  }
+}
 .shelf-plate::before,
 .shelf-plate::after {
   content: '';
@@ -454,6 +517,13 @@ html.dark .bookcase {
   box-shadow:
     0 20px 28px -10px rgba(0, 0, 0, 0.55),
     inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 639px) {
+  .bookcase-plinth {
+    height: 20px;
+    margin: 0 -2px;
+  }
 }
 
 /* Los libros caen sobre la balda al aparecer.

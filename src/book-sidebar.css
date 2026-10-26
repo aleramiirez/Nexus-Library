@@ -85,11 +85,23 @@ html:not(.dark) .bookmark-marker {
 }
 
 /* Pasar página al cambiar de sección.
+   - En móvil (< 768px): transición 2D ligera sin perspectiva 3D pesada para cambiar de pestaña a 60/120fps.
+   - En escritorio (>= 768px): giro de página 3D desde el lomo izquierdo.
    Se usa "backwards" (no "both"): al acabar no queda ningún transform,
    así no se rompen los modales con position: fixed. */
 .book-turn {
-  transform-origin: left center;
-  animation: book-turn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation: book-turn-mobile 0.24s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes book-turn-mobile {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (min-width: 768px) {
+  .book-turn {
+    transform-origin: left center;
+    animation: book-turn 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
 }
 @keyframes book-turn {
   from { opacity: 0; transform: perspective(1400px) rotateY(-9deg) translateX(-14px); }

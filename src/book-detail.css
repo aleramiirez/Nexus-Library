@@ -36,11 +36,21 @@ html.modal-open .nexus-rays {
     rgba(6, 8, 14, 0.92) 100%
   );
   will-change: opacity;
-  animation: open-book-backdrop-in 0.38s ease-out both;
+  animation: open-book-backdrop-in 0.3s ease-out both;
 }
 
 .open-book-backdrop.is-closing .open-book-backdrop-fill {
-  animation: open-book-backdrop-out 0.44s ease-in 0.2s both;
+  animation: open-book-backdrop-out 0.24s ease-in 0s both;
+}
+
+@media (min-width: 768px) {
+  .open-book-backdrop-fill {
+    animation: open-book-backdrop-in 0.38s ease-out both;
+  }
+
+  .open-book-backdrop.is-closing .open-book-backdrop-fill {
+    animation: open-book-backdrop-out 0.44s ease-in 0.2s both;
+  }
 }
 
 @keyframes open-book-backdrop-in {
@@ -61,28 +71,31 @@ html.modal-open .nexus-rays {
   }
 }
 
-/* Escenario con perspectiva 3D profunda para el vuelo FLIP del libro */
+/* Escenario con perspectiva 3D profunda para el vuelo FLIP del libro en escritorio */
 .open-book-stage {
   position: relative;
   z-index: 10;
-  perspective: 2400px;
-  perspective-origin: 50% 50%;
+}
+
+@media (min-width: 768px) {
+  .open-book-stage {
+    perspective: 2400px;
+    perspective-origin: 50% 50%;
+  }
 }
 
 /*
- * Contenedor de vuelo FLIP del libro (.open-book-shell):
- * - 2 keyframes puros (from -> to) para que la curva cubic-bezier sea continua de principio a fin.
- * - Al estar las dos páginas en proporción 50% / 50% (col-span-6 + col-span-6), el libro cerrado
- *   ocupa la mitad derecha (centro en +25%), por lo que translateX(-25%) lo centra exactamente
- *   sobre la coordenada (--from-x, --from-y) de la estantería.
+ * Contenedor de animación del modal (.open-book-shell):
+ * - En móvil (< 768px): Bottom-sheet literario ergonómico 2D (60/120fps puros sin deformación 3D).
+ * - En escritorio (>= 768px): Vuelo FLIP 3D hacia el centro y apertura de páginas en cascada.
  */
 .open-book-shell {
   position: relative;
-  will-change: transform;
-  animation: open-book-flight-in-mobile 0.56s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+  animation: open-book-flight-in-mobile 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Desactivar el filtro SVG feTurbulence dentro del modal 3D para mantener rasterizado 100% GPU */
+/* Desactivar el filtro SVG feTurbulence dentro del modal para mantener rasterizado 100% GPU */
 .open-book-shell .book-cover::after {
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%),
@@ -90,11 +103,12 @@ html.modal-open .nexus-rays {
 }
 
 .open-book-shell.is-closing {
-  animation: open-book-flight-out-mobile 0.46s cubic-bezier(0.4, 0, 0.2, 1) 0.14s both;
+  animation: open-book-flight-out-mobile 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0s both;
 }
 
 @media (min-width: 768px) {
   .open-book-shell {
+    will-change: transform;
     animation: open-book-flight-in-desktop 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
@@ -133,28 +147,26 @@ html.modal-open .nexus-rays {
   }
 }
 
-/* Vuelo en Móvil (2 keyframes puros, sin opacity) */
+/* Entrada de Ficha Literaria en Móvil (deslizamiento suave tipo sheet sin 3D pesado) */
 @keyframes open-book-flight-in-mobile {
   from {
-    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -40px)
-      scale(var(--from-scale, 0.38))
-      rotateX(10deg)
-      rotateY(-16deg);
+    opacity: 0;
+    transform: translate3d(0px, 36px, 0px) scale(0.97);
   }
   to {
-    transform: translate3d(0px, 0px, 0px) scale(1) rotateX(0deg) rotateY(0deg);
+    opacity: 1;
+    transform: translate3d(0px, 0px, 0px) scale(1);
   }
 }
 
 @keyframes open-book-flight-out-mobile {
   from {
-    transform: translate3d(0px, 0px, 0px) scale(1) rotateX(0deg) rotateY(0deg);
+    opacity: 1;
+    transform: translate3d(0px, 0px, 0px) scale(1);
   }
   to {
-    transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -40px)
-      scale(var(--from-scale, 0.38))
-      rotateX(10deg)
-      rotateY(-16deg);
+    opacity: 0;
+    transform: translate3d(0px, 32px, 0px) scale(0.97);
   }
 }
 
@@ -560,7 +572,6 @@ html.modal-open .nexus-rays {
   display: none;
 }
 
-/* En móvil mantiene su marco de tapa dura propio */
 .open-book-left-inner {
   position: relative;
   width: 100%;
@@ -653,59 +664,6 @@ html.dark .open-book-left-paper {
 @keyframes book-z-page5-close {
   0% { z-index: 25; }
   50%, 100% { z-index: 40; }
-}
-
-/* Portada 3D desplegable en Móvil (2 keyframes + delay) */
-.open-book-mobile-cover {
-  display: block;
-  position: absolute;
-  inset: 0;
-  z-index: 45;
-  transform-origin: left center;
-  will-change: transform, opacity;
-  contain: layout paint;
-  pointer-events: none;
-  border-radius: 12px;
-  overflow: hidden;
-  animation: open-mobile-cover-in 0.52s cubic-bezier(0.42, 0, 0.2, 1) 0.12s both;
-}
-
-.open-book-shell.is-closing .open-book-mobile-cover {
-  animation: open-mobile-cover-out 0.38s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
-}
-
-.open-book-mobile-cover .book-cover {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-}
-
-@media (min-width: 768px) {
-  .open-book-mobile-cover {
-    display: none;
-  }
-}
-
-@keyframes open-mobile-cover-in {
-  from {
-    opacity: 1;
-    transform: rotateY(0deg);
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(-145deg);
-  }
-}
-
-@keyframes open-mobile-cover-out {
-  from {
-    opacity: 0;
-    transform: rotateY(-145deg);
-  }
-  to {
-    opacity: 1;
-    transform: rotateY(0deg);
-  }
 }
 
 /* ============================================================================
@@ -991,15 +949,13 @@ html.dark .open-book-edge-bottom-right {
   .open-book-left-inner,
   .open-book-shell.is-closing .open-book-left-inner,
   .open-book-page-left-back,
-  .open-book-mobile-cover,
   .open-book-gutter {
     animation: none !important;
     transform: none !important;
   }
   .open-book-cover-front,
   .open-book-turn-page,
-  .open-book-page-left-back,
-  .open-book-mobile-cover {
+  .open-book-page-left-back {
     display: none !important;
   }
 }

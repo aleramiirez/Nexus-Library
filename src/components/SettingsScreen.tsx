@@ -398,34 +398,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        {/* ─── Pestañas ─── */}
-        <div className="mt-6 flex flex-wrap gap-2">
+        {/* ─── Pestañas (cuadrícula 2x2 en móvil, fila en escritorio) ─── */}
+        <div className="mt-5 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <button
             type="button"
             onClick={() => handleTabChange('appearance')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'appearance'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Palette className="w-4 h-4" /> Apariencia
+            <Palette className="w-4 h-4 shrink-0" /> <span className="truncate">Apariencia</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('account')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'account'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Cloud className="w-4 h-4" /> Cuenta y Nube
+            <Cloud className="w-4 h-4 shrink-0" /> <span className="truncate">Cuenta y Nube</span>
             {currentUser && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block ml-0.5" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
             )}
           </button>
 
@@ -433,15 +433,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('metadata')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'metadata'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Sparkles className="w-4 h-4" /> Portadas y Catálogo
+            <Sparkles className="w-4 h-4 shrink-0" /> <span className="truncate">Catálogo</span>
             {booksMissingCovers.length > 0 && (
-              <span className="rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.2 text-[10px] font-bold shrink-0">
                 {booksMissingCovers.length}
               </span>
             )}
@@ -451,13 +451,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('backup')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'backup'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <HardDrive className="w-4 h-4" /> Copias de Seguridad
+            <HardDrive className="w-4 h-4 shrink-0" /> <span className="truncate">Copias</span>
           </button>
         </div>
       </div>
