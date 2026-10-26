@@ -1157,11 +1157,11 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-6"
+        className="relative w-full max-w-5xl h-[92dvh] sm:h-[86vh] max-h-[94dvh] sm:max-h-[88vh] flex flex-col rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ─── Header ─── */}
-        <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-4 bg-[#f0e5cc] dark:bg-[#101520]">
+        {/* ─── Header (Fixed / Pinned top) ─── */}
+        <div className="shrink-0 flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-3.5 bg-[#f0e5cc] dark:bg-[#101520]">
           <div className="flex items-center gap-2.5">
             <BookPlus className="w-5 h-5 text-amber-700 dark:text-amber-400" />
             <h2 className="font-serif text-lg sm:text-xl font-bold">
@@ -1177,7 +1177,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 max-h-[calc(92dvh-56px)] sm:max-h-[84vh] overflow-y-auto overscroll-contain space-y-5 sm:space-y-6">
+        {/* ─── Form covering scrollable body and pinned footer ─── */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* ─── Scrollable body ─── */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5 sm:space-y-6">
           {/* ─── Search section (always visible) ─── */}
           <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
             <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold mb-2">
@@ -1189,6 +1192,9 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.preventDefault();
+                }}
                 placeholder="Escribe un título, autor o pega un ISBN (ej. El nombre del viento, Brandon Sanderson, 9788401352836)..."
                 className="w-full rounded-xl border border-amber-900/25 dark:border-[#2E3B52] bg-[#fffcf5] dark:bg-[#0D1017]/90 pl-10 pr-10 py-2.5 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
                 autoFocus={!editingBook}
@@ -1290,7 +1296,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           </div>
 
           {/* ─── Tabs ─── */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-5">
             {formError && (
               <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1335,53 +1341,56 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
               {activeTab === 'reading' && renderReadingTab()}
               {activeTab === 'edition' && renderEditionTab()}
             </div>
-
-            {/* Footer navigation + actions */}
-            <div className="flex items-center justify-between gap-3 border-t border-amber-900/20 dark:border-[#242E42] pt-4">
-              <div className="flex items-center gap-2">
-                {!isFirstTab && (
-                  <button
-                    type="button"
-                    onClick={goPrevTab}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 px-3 py-2 text-xs font-semibold text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    {TABS[tabIndex - 1].shortLabel}
-                  </button>
-                )}
-                {!isLastTab && (
-                  <button
-                    type="button"
-                    onClick={goNextTab}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 px-3 py-2 text-xs font-semibold transition"
-                  >
-                    {TABS[tabIndex + 1].shortLabel}
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs font-semibold text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-5 py-2.5 text-xs shadow-lg transition disabled:opacity-50"
-                >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {editingBook ? 'Guardar Cambios' : 'Añadir a mi biblioteca'}
-                </button>
-              </div>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {/* ─── Footer navigation + actions (Fixed & pinned at bottom) ─── */}
+        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 bg-[#f0e5cc] dark:bg-[#101520] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.25)]">
+          <div className="flex items-center gap-2">
+            {!isFirstTab && (
+              <button
+                type="button"
+                onClick={goPrevTab}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 px-3 py-2 text-xs font-semibold text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Anterior: </span>
+                {TABS[tabIndex - 1].shortLabel}
+              </button>
+            )}
+            {!isLastTab && (
+              <button
+                type="button"
+                onClick={goNextTab}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 px-3 py-2 text-xs font-semibold transition"
+              >
+                <span className="hidden sm:inline">Siguiente: </span>
+                {TABS[tabIndex + 1].shortLabel}
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-3.5 sm:px-4 py-2 text-xs font-semibold text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 sm:px-5 py-2 sm:py-2.5 text-xs shadow-lg transition disabled:opacity-50"
+            >
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>{editingBook ? 'Guardar Cambios' : 'Añadir a mi biblioteca'}</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
 
       {/* Selector modal de portadas de ediciones */}
       <BookCoverPickerModal
