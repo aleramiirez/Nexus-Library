@@ -183,7 +183,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
       if (
         !isClosing &&
-        (e.animationName === 'open-page-left-in' ||
+        (e.animationName === 'book-turn-open' ||
           e.animationName === 'open-mobile-cover-in' ||
           e.animationName === 'open-book-flight-in-mobile')
       ) {
@@ -261,19 +261,45 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               {/* Pliegue central del lomo en escritorio (36px de ancho en la unión central 50%) */}
               <div className="open-book-gutter" aria-hidden="true" />
 
-              {/* Hojas intermedias que abanican en 3D al abrir y cerrar el libro */}
-              <div className="open-book-fan-sheet open-book-fan-sheet-1" aria-hidden="true" />
-              <div className="open-book-fan-sheet open-book-fan-sheet-2" aria-hidden="true" />
-              <div className="open-book-fan-sheet open-book-fan-sheet-3" aria-hidden="true" />
-
               {/* Doble página simétrica en escritorio (6 cols Verso / 6 cols Recto) y página continua en móvil */}
               <div className="open-book-spread-grid grid grid-cols-1 md:grid-cols-12 max-h-[88dvh] md:max-h-none overflow-y-auto md:overflow-visible rounded-[14px] md:rounded-none">
-                {/* ─────────── ALA IZQUIERDA (VERSO INTERIOR + PORTADA DURA EXTERIOR EN EL REVERSO 3D) ─────────── */}
+                {/* ─────────── 1. TAPA DURA DELANTERA (.cover.turn): Abre primero y cierra última ─────────── */}
+                <div className="open-book-cover-turn" aria-hidden="true">
+                  <div className="open-book-cover-inside">
+                    <div className="open-book-edge-left" />
+                    <div className="open-book-edge-bottom-left" />
+                  </div>
+                  <div className="open-book-cover-front">
+                    <div className="open-book-front-cover-inner">
+                      <BookCover
+                        nombre={book.nombre}
+                        autor={book.autor}
+                        portadaUrl={book.portadaUrl}
+                        portadaFallbackUrl={book.portadaFallbackUrl}
+                        portadaDataUrl={book.portadaDataUrl}
+                        size="lg"
+                        variant="book"
+                        priority
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ─────────── 2. HOJAS INTERMEDIAS QUE PASAN EN CASCADA (.page.turn 1..4) ─────────── */}
+                <div className="open-book-turn-page open-book-turn-page-1" aria-hidden="true" />
+                <div className="open-book-turn-page open-book-turn-page-2" aria-hidden="true" />
+                <div className="open-book-turn-page open-book-turn-page-3" aria-hidden="true" />
+                <div className="open-book-turn-page open-book-turn-page-4" aria-hidden="true" />
+
+                {/* ─────────── 3. ALA IZQUIERDA (VERSO: Última hoja en abrirse y primera en cerrarse) ─────────── */}
                 <div className="open-book-page-left md:col-span-6 flex flex-col">
+                  {/* Dorso de papel mientras la hoja está en el lado derecho (> 90deg) */}
+                  <div className="open-book-page-left-back" aria-hidden="true" />
+
                   {/* Cara Interior: Página Izquierda (Ex-Libris, Portada y Registro Personal) */}
                   <div className="open-book-left-inner flex-1 flex flex-col">
-                    <div className="open-book-edge-left" aria-hidden="true" />
-                    <div className="open-book-edge-bottom-left" aria-hidden="true" />
+                    <div className="open-book-edge-left md:hidden" aria-hidden="true" />
+                    <div className="open-book-edge-bottom-left md:hidden" aria-hidden="true" />
 
                     <div className="open-book-left-paper flex-1 flex flex-col justify-between p-4 sm:p-6 md:pr-7 md:pl-6 md:py-6 md:max-h-[82dvh] md:overflow-y-auto border-b md:border-b-0 border-amber-900/15 dark:border-[#222B3C]">
                       <div className="open-book-content flex flex-col items-center">
@@ -410,29 +436,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
                     </div>
                   </div>
-
-                  {/* Cara Exterior 3D: Portada Dura del Libro Cerrado (visible durante el vuelo y el giro de apertura/cierre) */}
-                  <div className="open-book-front-cover-face" aria-hidden="true">
-                    <div className="open-book-front-cover-inner">
-                      <BookCover
-                        nombre={book.nombre}
-                        autor={book.autor}
-                        portadaUrl={book.portadaUrl}
-                        portadaFallbackUrl={book.portadaFallbackUrl}
-                        portadaDataUrl={book.portadaDataUrl}
-                        size="lg"
-                        variant="book"
-                        priority
-                      />
-                    </div>
-                  </div>
                 </div>
 
-                {/* ─────────── ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) ─────────── */}
+                {/* ─────────── 4. ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) ─────────── */}
                 <div className="open-book-page-right md:col-span-6 flex flex-col">
                   <div className="open-book-edge-right" aria-hidden="true" />
                   <div className="open-book-edge-bottom-right" aria-hidden="true" />
-                  <div className="open-book-shadow-sweep" aria-hidden="true" />
 
                   <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:max-h-[82dvh] md:overflow-y-auto">
                     {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}

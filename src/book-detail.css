@@ -1,4 +1,4 @@
-/* ===== Modal "Libro Abierto a Doble Página" (BookDetailModal) — 60/120fps Pure 3D Engine ===== */
+/* ===== Modal "Libro Abierto a Doble Página" (BookDetailModal) — 60/120fps Multi-Page Cascade Engine ===== */
 
 /* Evita que overflow: hidden en el body altere el ancho del viewport o dispare ResizeObserver */
 html {
@@ -20,7 +20,7 @@ html.modal-open .nexus-rays {
 
 /*
  * El contenedor .open-book-backdrop NO anima opacity ni tiene background propio,
- * para no crear un grupo de opacidad < 1 que aplane el contexto preserve-3d del libro.
+ * para mantener el árbol del libro en su propio contexto limpio.
  */
 .open-book-backdrop {
   isolation: isolate;
@@ -40,7 +40,7 @@ html.modal-open .nexus-rays {
 }
 
 .open-book-backdrop.is-closing .open-book-backdrop-fill {
-  animation: open-book-backdrop-out 0.44s ease-in 0.18s both;
+  animation: open-book-backdrop-out 0.44s ease-in 0.2s both;
 }
 
 @keyframes open-book-backdrop-in {
@@ -61,7 +61,7 @@ html.modal-open .nexus-rays {
   }
 }
 
-/* Escenario con perspectiva 3D profunda */
+/* Escenario con perspectiva 3D profunda para el vuelo FLIP del libro */
 .open-book-stage {
   position: relative;
   z-index: 10;
@@ -70,8 +70,7 @@ html.modal-open .nexus-rays {
 }
 
 /*
- * Contenedor 3D del libro:
- * - Siempre con opacity: 1 para que el navegador NUNCA aplane transform-style: preserve-3d.
+ * Contenedor de vuelo FLIP del libro (.open-book-shell):
  * - 2 keyframes puros (from -> to) para que la curva cubic-bezier sea continua de principio a fin.
  * - Al estar las dos páginas en proporción 50% / 50% (col-span-6 + col-span-6), el libro cerrado
  *   ocupa la mitad derecha (centro en +25%), por lo que translateX(-25%) lo centra exactamente
@@ -79,9 +78,8 @@ html.modal-open .nexus-rays {
  */
 .open-book-shell {
   position: relative;
-  transform-style: preserve-3d;
   will-change: transform;
-  animation: open-book-flight-in-mobile 0.56s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: open-book-flight-in-mobile 0.56s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Desactivar el filtro SVG feTurbulence dentro del modal 3D para mantener rasterizado 100% GPU */
@@ -91,27 +89,17 @@ html.modal-open .nexus-rays {
     linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%) !important;
 }
 
-/* Mientras dura la rotación 3D de apertura o cierre, desactivar scroll containers internos */
-.open-book-shell:not(.is-anim-done) .open-book-left-paper,
-.open-book-shell:not(.is-anim-done) .open-book-right-paper,
-.open-book-shell:not(.is-anim-done) .open-book-spread-grid,
-.open-book-shell.is-closing .open-book-left-paper,
-.open-book-shell.is-closing .open-book-right-paper,
-.open-book-shell.is-closing .open-book-spread-grid {
-  overflow: hidden !important;
-}
-
 .open-book-shell.is-closing {
-  animation: open-book-flight-out-mobile 0.46s cubic-bezier(0.4, 0, 0.2, 1) 0.14s forwards;
+  animation: open-book-flight-out-mobile 0.46s cubic-bezier(0.4, 0, 0.2, 1) 0.14s both;
 }
 
 @media (min-width: 768px) {
   .open-book-shell {
-    animation: open-book-flight-in-desktop 0.62s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: open-book-flight-in-desktop 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .open-book-shell.is-closing {
-    animation: open-book-flight-out-desktop 0.46s cubic-bezier(0.4, 0, 0.2, 1) 0.18s forwards;
+    animation: open-book-flight-out-desktop 0.46s cubic-bezier(0.4, 0, 0.2, 1) 0.22s both;
   }
 }
 
@@ -126,14 +114,14 @@ html.modal-open .nexus-rays {
       rotateZ(-1.5deg);
   }
   to {
-    transform: none;
+    transform: translate3d(0px, 0px, 0px) scale(1) translateX(0%) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
 }
 
-/* Vuelo de salida en Escritorio (2 keyframes puros, arranca en .18s cuando la tapa ya va cerrándose) */
+/* Vuelo de salida en Escritorio (2 keyframes puros, arranca en .22s cuando las hojas ya van cerrándose) */
 @keyframes open-book-flight-out-desktop {
   from {
-    transform: none;
+    transform: translate3d(0px, 0px, 0px) scale(1) translateX(0%) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
   to {
     transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), 0px)
@@ -154,13 +142,13 @@ html.modal-open .nexus-rays {
       rotateY(-16deg);
   }
   to {
-    transform: none;
+    transform: translate3d(0px, 0px, 0px) scale(1) rotateX(0deg) rotateY(0deg);
   }
 }
 
 @keyframes open-book-flight-out-mobile {
   from {
-    transform: none;
+    transform: translate3d(0px, 0px, 0px) scale(1) rotateX(0deg) rotateY(0deg);
   }
   to {
     transform: translate3d(var(--from-x, 0px), var(--from-y, 24px), -40px)
@@ -170,65 +158,413 @@ html.modal-open .nexus-rays {
   }
 }
 
-/* Bloque 3D de las dos alas del libro */
+/*
+ * Bloque del libro (.open-book-pages-block y .open-book-spread-grid):
+ * Inspirado directamente en la técnica clásica de .book + .cover.turn + .page.turn:
+ * - perspective: 2200px en .open-book-spread-grid proyecta cada hoja directa en 3D real
+ *   alrededor del lomo central (50% 50%), mientras transform-style: flat garantiza que el
+ *   apilamiento entre la tapa y las hojas se controle al 100% mediante z-index sin que
+ *   overflow-y: auto ni las sombras alteren jamás la perspectiva.
+ */
 .open-book-pages-block {
   position: relative;
-  transform-style: preserve-3d;
 }
 
 .open-book-spread-grid {
   position: relative;
-  transform-style: preserve-3d;
-}
-
-/* ============================================================================
- * ALA IZQUIERDA (VERSO + TAPA DURA EXTERIOR EN EL REVERSO 3D)
- * - 2 keyframes (from -> to) con curva ease-in-out cubic-bezier(.42, 0, .2, 1) y delay .14s
- * ============================================================================ */
-.open-book-page-left {
-  position: relative;
-  transform-style: preserve-3d;
-  transform-origin: right center;
-  will-change: transform;
-  z-index: 30;
 }
 
 @media (min-width: 768px) {
-  .open-book-page-left {
-    animation: open-page-left-in 0.56s cubic-bezier(0.42, 0, 0.2, 1) 0.14s backwards;
-  }
-
-  .open-book-shell.is-closing .open-book-page-left {
-    animation: open-page-left-out 0.38s cubic-bezier(0.42, 0, 0.2, 1) 0s forwards;
+  .open-book-spread-grid {
+    perspective: 2200px;
+    perspective-origin: 50% 50%;
+    transform-style: flat;
   }
 }
 
-@keyframes open-page-left-in {
+/* ============================================================================
+ * GIRO PURO DE 2 KEYFRAMES (180deg <-> 0deg) COMPARTIDO POR TAPA Y HOJAS
+ * Con curva simétrica ease-in-out cubic-bezier(0.42, 0, 0.58, 1), el paso por
+ * 90deg (canto perpendicular a cámara, 0px de ancho proyectado) ocurre
+ * matemáticamente en el 50.0% exacto tanto al abrir como al cerrar.
+ * ============================================================================ */
+@keyframes book-turn-open {
   from {
-    transform: rotateY(179.5deg) translateZ(3px);
+    transform: rotateY(180deg);
   }
   to {
-    transform: none;
+    transform: rotateY(0deg);
   }
 }
 
-@keyframes open-page-left-out {
+@keyframes book-turn-close {
   from {
-    transform: none;
+    transform: rotateY(0deg);
   }
   to {
-    transform: rotateY(179.5deg) translateZ(3px);
+    transform: rotateY(180deg);
   }
 }
 
-/* Cara interior del Ala Izquierda (Página Verso: Ex-Libris) */
+/* ============================================================================
+ * 1. TAPA DURA DELANTERA (.open-book-cover-turn = .cover.turn)
+ * - Al abrir: gira primero (.03s delay). En el 50% (90deg) su z-index baja de 60 a 5
+ *   para quedar como tablero de tapa dura debajo de todas las hojas izquierdas.
+ * - Al cerrar: gira última (.20s delay). En el 50% (90deg) su z-index sube de 5 a 60
+ *   para cubrir todas las hojas cerradas.
+ * ============================================================================ */
+.open-book-cover-turn {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-cover-turn {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    transform-origin: 100% 50%;
+    will-change: transform;
+    pointer-events: none;
+    animation:
+      book-turn-open 0.5s cubic-bezier(0.42, 0, 0.58, 1) 0.03s both,
+      book-z-cover-open 0.5s step-end 0.03s both;
+  }
+
+  .open-book-shell.is-closing .open-book-cover-turn {
+    animation:
+      book-turn-close 0.4s cubic-bezier(0.42, 0, 0.58, 1) 0.2s both,
+      book-z-cover-close 0.4s step-end 0.2s both;
+  }
+
+  /* Cara interior del tablero izquierdo de tapa dura (visible cuando el ángulo < 90deg) */
+  .open-book-cover-inside {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px 0 0 16px;
+    background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
+    border-top: 1px solid rgba(180, 130, 50, 0.45);
+    border-left: 1px solid rgba(180, 130, 50, 0.45);
+    border-bottom: 1px solid rgba(180, 130, 50, 0.45);
+    box-shadow: -8px 18px 32px -8px rgba(0, 0, 0, 0.6);
+    animation: book-face-inside-open 0.5s step-end 0.03s both;
+  }
+
+  html.dark .open-book-cover-inside {
+    background: linear-gradient(145deg, #131a2a 0%, #0b0f19 55%, #070a11 100%);
+    border-color: rgba(245, 180, 60, 0.28);
+    box-shadow: -10px 20px 36px -8px rgba(0, 0, 0, 0.78);
+  }
+
+  .open-book-shell.is-closing .open-book-cover-inside {
+    animation: book-face-inside-close 0.4s step-end 0.2s both;
+  }
+
+  /* Cara exterior de la tapa dura (portada del libro cerrado, visible cuando el ángulo > 90deg) */
+  .open-book-cover-front {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px 0 0 16px;
+    padding: 8px 6px 10px 10px;
+    background: linear-gradient(145deg, #362417 0%, #24170e 55%, #180f09 100%);
+    border: 1px solid rgba(217, 165, 75, 0.5);
+    box-shadow:
+      0 20px 38px -8px rgba(0, 0, 0, 0.72),
+      -4px 0 0 #dccfae,
+      -6px 0 0 #b6a784,
+      -8px 0 0 #8e8062;
+    overflow: hidden;
+    animation: book-face-front-open 0.5s step-end 0.03s both;
+  }
+
+  html.dark .open-book-cover-front {
+    background: linear-gradient(145deg, #161f33 0%, #0b0f19 55%, #060911 100%);
+    border-color: rgba(245, 180, 60, 0.4);
+  }
+
+  .open-book-shell.is-closing .open-book-cover-front {
+    animation: book-face-front-close 0.4s step-end 0.2s both;
+  }
+
+  /* Al estar .open-book-cover-turn en rotateY(180deg..90deg), scaleX(-1) des-espeja la portada */
+  .open-book-front-cover-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    border-radius: 2px 10px 10px 2px;
+    overflow: hidden;
+  }
+
+  .open-book-front-cover-inner .book-cover {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    border-radius: 2px 10px 10px 2px;
+  }
+}
+
+@keyframes book-z-cover-open {
+  0% {
+    z-index: 60;
+  }
+  50%,
+  100% {
+    z-index: 5;
+  }
+}
+
+@keyframes book-z-cover-close {
+  0% {
+    z-index: 5;
+  }
+  50%,
+  100% {
+    z-index: 60;
+  }
+}
+
+@keyframes book-face-inside-open {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  50%,
+  100% {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@keyframes book-face-inside-close {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  50%,
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes book-face-front-open {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  50%,
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes book-face-front-close {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  50%,
+  100% {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* ============================================================================
+ * 2. HOJAS INTERMEDIAS QUE PASAN EN CASCADA (.open-book-turn-page 1..4 = .page.turn)
+ * - Adaptación directa del snippet .page.turn:
+ *   - Sombra interior de pliegue (inset 3px 0px 20px rgba(0,0,0,0.2), 0px 0px 15px rgba(0,0,0,0.1))
+ *   - Líneas discontinuas de texto simulado en ::before y ::after
+ *   - Pasan escalonadas tras la tapa y aterrizan DEBAJO de la página izquierda (z-index 11..14 < 25),
+ *     por lo que NUNCA necesitan fade de opacidad ni provocan saltos al terminar.
+ * ============================================================================ */
+.open-book-turn-page {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .open-book-turn-page,
+  .open-book-page-left-back {
+    display: block;
+    position: absolute;
+    top: 7px;
+    bottom: 16px;
+    left: 16px;
+    width: calc(50% - 16px);
+    padding: 1.75rem 2rem;
+    box-sizing: border-box;
+    transform-origin: 100% 50%;
+    border-radius: 9px 0 0 9px;
+    will-change: transform;
+    pointer-events: none;
+    background: linear-gradient(90deg, #faf3e3 0%, #f5ebd6 78%, #eadbc0 100%);
+    border: 1px solid rgba(160, 120, 60, 0.28);
+    box-shadow:
+      inset 3px 0px 20px rgba(0, 0, 0, 0.16),
+      inset -4px 0px 16px rgba(90, 60, 20, 0.12),
+      0px 0px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .open-book-page-left-back {
+    left: 16px;
+    right: 0;
+    width: auto;
+  }
+
+  html.dark .open-book-turn-page,
+  html.dark .open-book-page-left-back {
+    background: linear-gradient(90deg, #161d2b 0%, #121824 78%, #0d121b 100%);
+    border-color: rgba(229, 193, 88, 0.2);
+    box-shadow:
+      inset 3px 0px 20px rgba(0, 0, 0, 0.45),
+      inset -4px 0px 16px rgba(0, 0, 0, 0.35),
+      0px 0px 15px rgba(0, 0, 0, 0.28);
+  }
+
+  .open-book-turn-page::before,
+  .open-book-turn-page::after,
+  .open-book-page-left-back::before,
+  .open-book-page-left-back::after {
+    display: block;
+    content: "";
+    border-top: 1px dashed rgba(120, 90, 45, 0.28);
+    padding-bottom: 1.25rem;
+  }
+
+  .open-book-turn-page::after,
+  .open-book-page-left-back::after {
+    height: 75%;
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 16px,
+      rgba(120, 90, 45, 0.15) 16px,
+      rgba(120, 90, 45, 0.15) 17px
+    );
+  }
+
+  html.dark .open-book-turn-page::before,
+  html.dark .open-book-turn-page::after,
+  html.dark .open-book-page-left-back::before,
+  html.dark .open-book-page-left-back::after {
+    border-top-color: rgba(229, 193, 88, 0.2);
+  }
+
+  html.dark .open-book-turn-page::after,
+  html.dark .open-book-page-left-back::after {
+    background: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 16px,
+      rgba(229, 193, 88, 0.08) 16px,
+      rgba(229, 193, 88, 0.08) 17px
+    );
+  }
+
+  /* Cascada de apertura (.09s, .15s, .21s, .27s) */
+  .open-book-turn-page-1 {
+    animation:
+      book-turn-open 0.5s cubic-bezier(0.42, 0, 0.58, 1) 0.09s both,
+      book-z-page1-open 0.5s step-end 0.09s both;
+  }
+  .open-book-turn-page-2 {
+    animation:
+      book-turn-open 0.5s cubic-bezier(0.42, 0, 0.58, 1) 0.15s both,
+      book-z-page2-open 0.5s step-end 0.15s both;
+  }
+  .open-book-turn-page-3 {
+    animation:
+      book-turn-open 0.5s cubic-bezier(0.42, 0, 0.58, 1) 0.21s both,
+      book-z-page3-open 0.5s step-end 0.21s both;
+  }
+  .open-book-turn-page-4 {
+    animation:
+      book-turn-open 0.5s cubic-bezier(0.42, 0, 0.58, 1) 0.27s both,
+      book-z-page4-open 0.5s step-end 0.27s both;
+  }
+
+  /* Cascada inversa de cierre (.04s, .08s, .12s, .16s) */
+  .open-book-shell.is-closing .open-book-turn-page-4 {
+    animation:
+      book-turn-close 0.38s cubic-bezier(0.42, 0, 0.58, 1) 0.04s both,
+      book-z-page4-close 0.38s step-end 0.04s both;
+  }
+  .open-book-shell.is-closing .open-book-turn-page-3 {
+    animation:
+      book-turn-close 0.38s cubic-bezier(0.42, 0, 0.58, 1) 0.08s both,
+      book-z-page3-close 0.38s step-end 0.08s both;
+  }
+  .open-book-shell.is-closing .open-book-turn-page-2 {
+    animation:
+      book-turn-close 0.38s cubic-bezier(0.42, 0, 0.58, 1) 0.12s both,
+      book-z-page2-close 0.38s step-end 0.12s both;
+  }
+  .open-book-shell.is-closing .open-book-turn-page-1 {
+    animation:
+      book-turn-close 0.38s cubic-bezier(0.42, 0, 0.58, 1) 0.16s both,
+      book-z-page1-close 0.38s step-end 0.16s both;
+  }
+}
+
+@keyframes book-z-page1-open {
+  0% { z-index: 44; }
+  50%, 100% { z-index: 11; }
+}
+@keyframes book-z-page2-open {
+  0% { z-index: 43; }
+  50%, 100% { z-index: 12; }
+}
+@keyframes book-z-page3-open {
+  0% { z-index: 42; }
+  50%, 100% { z-index: 13; }
+}
+@keyframes book-z-page4-open {
+  0% { z-index: 41; }
+  50%, 100% { z-index: 14; }
+}
+
+@keyframes book-z-page1-close {
+  0% { z-index: 11; }
+  50%, 100% { z-index: 44; }
+}
+@keyframes book-z-page2-close {
+  0% { z-index: 12; }
+  50%, 100% { z-index: 43; }
+}
+@keyframes book-z-page3-close {
+  0% { z-index: 13; }
+  50%, 100% { z-index: 42; }
+}
+@keyframes book-z-page4-close {
+  0% { z-index: 14; }
+  50%, 100% { z-index: 41; }
+}
+
+/* ============================================================================
+ * 3. ALA IZQUIERDA (VERSO: Ex-Libris fol. I)
+ * - Es la 5ª y última hoja en girar al abrir (.33s delay), aterrizando en z-index: 25
+ *   encima de las 4 hojas intermedias (z-index 11..14) y dejando al descubierto la
+ *   página derecha (z-index: 10).
+ * - Al cerrar, es la 1ª hoja en girar (.00s delay), cubriendo de inmediato la página derecha.
+ * ============================================================================ */
+.open-book-page-left {
+  position: relative;
+  z-index: 25;
+}
+
+.open-book-page-left-back {
+  display: none;
+}
+
+/* En móvil mantiene su marco de tapa dura propio */
 .open-book-left-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: rotateY(0deg) translateZ(1px);
   padding: 6px 0 8px 6px;
   border-radius: 14px 14px 0 0;
   background: linear-gradient(145deg, #362417 0%, #2a1d12 52%, #1d130b 100%);
@@ -236,42 +572,6 @@ html.modal-open .nexus-rays {
   border-left: 1px solid rgba(180, 130, 50, 0.45);
   border-right: 1px solid rgba(180, 130, 50, 0.45);
   box-shadow: -8px 18px 32px -8px rgba(0, 0, 0, 0.6);
-}
-
-@media (min-width: 768px) {
-  .open-book-left-inner {
-    padding: 7px 0 10px 9px;
-    border-radius: 16px 0 0 16px;
-    border-right: none;
-    border-bottom: 1px solid rgba(180, 130, 50, 0.45);
-    animation: open-left-inner-in 0.01s linear 0.28s both;
-  }
-
-  .open-book-shell.is-closing .open-book-left-inner {
-    animation: open-left-inner-out 0.01s linear 0.16s both;
-  }
-}
-
-@keyframes open-left-inner-in {
-  from {
-    opacity: 0;
-    visibility: hidden;
-  }
-  to {
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-@keyframes open-left-inner-out {
-  from {
-    opacity: 1;
-    visibility: visible;
-  }
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
 }
 
 html.dark .open-book-left-inner {
@@ -286,70 +586,73 @@ html.dark .open-book-left-inner {
   margin-left: 7px;
   margin-bottom: 6px;
   border-radius: 9px 9px 0 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  contain: layout paint;
   background: linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
-}
-
-@media (min-width: 768px) {
-  .open-book-left-paper {
-    border-radius: 9px 0 0 9px;
-  }
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 100, 40, 0.25) transparent;
 }
 
 html.dark .open-book-left-paper {
   background: linear-gradient(90deg, #141A26 0%, #121722 76%, #0e131d 100%);
-}
-
-/*
- * Cara exterior del Ala Izquierda: LA PORTADA FÍSICA DEL LIBRO CERRADO
- */
-.open-book-front-cover-face {
-  display: none;
+  scrollbar-color: rgba(229, 193, 88, 0.22) transparent;
 }
 
 @media (min-width: 768px) {
-  .open-book-front-cover-face {
-    display: flex;
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: rotateY(180deg) translateZ(3px);
-    contain: layout paint;
-    border-radius: 4px 16px 16px 4px;
-    padding: 8px 10px 10px 6px;
-    background: linear-gradient(145deg, #362417 0%, #24170e 55%, #180f09 100%);
-    border: 1px solid rgba(217, 165, 75, 0.5);
+  .open-book-page-left {
+    transform-origin: 100% 50%;
+    will-change: transform;
+    padding: 7px 0 16px 16px;
+    animation:
+      book-turn-open 0.52s cubic-bezier(0.42, 0, 0.58, 1) 0.33s both,
+      book-z-page5-open 0.52s step-end 0.33s both;
+  }
+
+  .open-book-shell.is-closing .open-book-page-left {
+    animation:
+      book-turn-close 0.38s cubic-bezier(0.42, 0, 0.58, 1) 0s both,
+      book-z-page5-close 0.38s step-end 0s both;
+  }
+
+  /* En escritorio el tablero de tapa dura ya lo aporta .open-book-cover-inside (z-index: 5) */
+  .open-book-left-inner,
+  html.dark .open-book-left-inner {
+    padding: 0;
+    border-radius: 9px 0 0 9px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    animation: book-face-inside-open 0.52s step-end 0.33s both;
+  }
+
+  .open-book-shell.is-closing .open-book-left-inner {
+    animation: book-face-inside-close 0.38s step-end 0s both;
+  }
+
+  .open-book-page-left-back {
+    animation: book-face-front-open 0.52s step-end 0.33s both;
+  }
+
+  .open-book-shell.is-closing .open-book-page-left-back {
+    animation: book-face-front-close 0.38s step-end 0s both;
+  }
+
+  .open-book-left-paper {
+    margin-left: 0;
+    margin-bottom: 0;
+    border-radius: 9px 0 0 9px;
     box-shadow:
-      0 20px 38px -8px rgba(0, 0, 0, 0.72),
-      4px 0 0 #dccfae,
-      6px 0 0 #b6a784,
-      8px 0 0 #8e8062;
-    overflow: hidden;
-    pointer-events: none;
+      inset 3px 0px 18px rgba(0, 0, 0, 0.1),
+      0px 0px 12px rgba(0, 0, 0, 0.08);
   }
+}
 
-  html.dark .open-book-front-cover-face {
-    background: linear-gradient(145deg, #161f33 0%, #0b0f19 55%, #060911 100%);
-    border-color: rgba(245, 180, 60, 0.4);
-  }
+@keyframes book-z-page5-open {
+  0% { z-index: 40; }
+  50%, 100% { z-index: 25; }
+}
 
-  .open-book-front-cover-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 2px 10px 10px 2px;
-    overflow: hidden;
-  }
-
-  .open-book-front-cover-inner .book-cover {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
-    border-radius: 2px 10px 10px 2px;
-  }
+@keyframes book-z-page5-close {
+  0% { z-index: 25; }
+  50%, 100% { z-index: 40; }
 }
 
 /* Portada 3D desplegable en Móvil (2 keyframes + delay) */
@@ -364,11 +667,11 @@ html.dark .open-book-left-paper {
   pointer-events: none;
   border-radius: 12px;
   overflow: hidden;
-  animation: open-mobile-cover-in 0.52s cubic-bezier(0.42, 0, 0.2, 1) 0.12s forwards;
+  animation: open-mobile-cover-in 0.52s cubic-bezier(0.42, 0, 0.2, 1) 0.12s both;
 }
 
 .open-book-shell.is-closing .open-book-mobile-cover {
-  animation: open-mobile-cover-out 0.38s cubic-bezier(0.42, 0, 0.2, 1) 0s forwards;
+  animation: open-mobile-cover-out 0.38s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
 }
 
 .open-book-mobile-cover .book-cover {
@@ -406,16 +709,14 @@ html.dark .open-book-left-paper {
 }
 
 /* ============================================================================
- * ALA DERECHA (RECTO: CABECERA LITERARIA, METADATOS Y SINOPSIS)
- * - Permanece oculta (opacity: 0) en los primeros 140ms mientras el libro despega cerrado
- *   de la estantería y en el tramo final del cierre (a partir de .20s) cuando la tapa ya
- *   la ha cubierto, garantizando que durante el vuelo solo se vea el libro cerrado.
+ * 4. ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis — fol. II)
+ * - Base estática en z-index: 10 (igual que .cover + .page en el snippet).
+ * - Permanece siempre a opacity: 1 con su papel crema brillante; mientras el libro
+ *   está cerrado o abriéndose, las hojas 1..5 (z-index 44..40) y la tapa (z-index 60)
+ *   descansan físicamente encima de ella hasta que la 5ª hoja se levanta y la descubre.
  * ============================================================================ */
 .open-book-page-right {
   position: relative;
-  transform-style: preserve-3d;
-  transform-origin: left center;
-  will-change: transform, opacity;
   z-index: 10;
   padding: 0 6px 8px 6px;
   border-radius: 0 0 14px 14px;
@@ -432,11 +733,6 @@ html.dark .open-book-left-paper {
     border-radius: 0 16px 16px 0;
     border-left: none;
     border-top: 1px solid rgba(180, 130, 50, 0.45);
-    animation: open-page-right-in 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.14s backwards;
-  }
-
-  .open-book-shell.is-closing .open-book-page-right {
-    animation: open-page-right-out 0.18s ease-in 0.2s forwards;
   }
 }
 
@@ -446,28 +742,6 @@ html.dark .open-book-page-right {
   box-shadow: 10px 20px 36px -8px rgba(0, 0, 0, 0.78);
 }
 
-@keyframes open-page-right-in {
-  from {
-    opacity: 0;
-    transform: rotateY(-18deg);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes open-page-right-out {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(-14deg);
-  }
-}
-
 .open-book-right-paper {
   position: relative;
   height: 100%;
@@ -475,8 +749,9 @@ html.dark .open-book-page-right {
   margin-right: 4px;
   margin-bottom: 6px;
   border-radius: 0 0 9px 9px;
-  contain: layout paint;
   background: linear-gradient(90deg, #efe3c8 0%, #f8efdc 12%, #fbf6ea 45%, #f6ecda 100%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 100, 40, 0.25) transparent;
 }
 
 @media (min-width: 768px) {
@@ -484,176 +759,31 @@ html.dark .open-book-page-right {
     margin-left: 0;
     margin-right: 7px;
     border-radius: 0 9px 9px 0;
+    box-shadow:
+      inset -3px 0px 18px rgba(0, 0, 0, 0.1),
+      0px 0px 12px rgba(0, 0, 0, 0.08);
   }
 }
 
 html.dark .open-book-right-paper {
   background: linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
+  scrollbar-color: rgba(229, 193, 88, 0.22) transparent;
 }
 
-/* Sombra proyectada sobre la página derecha (2 keyframes + delay, base opacity: 0) */
-.open-book-shadow-sweep {
-  display: none;
-  opacity: 0;
+.open-book-left-paper::-webkit-scrollbar,
+.open-book-right-paper::-webkit-scrollbar {
+  width: 5px;
 }
 
-@media (min-width: 768px) {
-  .open-book-shadow-sweep {
-    display: block;
-    position: absolute;
-    inset: 0;
-    z-index: 25;
-    pointer-events: none;
-    will-change: opacity;
-    opacity: 0;
-    border-radius: 0 9px 9px 0;
-    background: linear-gradient(
-      90deg,
-      rgba(20, 12, 4, 0.65) 0%,
-      rgba(20, 12, 4, 0.35) 55%,
-      rgba(20, 12, 4, 0.1) 100%
-    );
-    animation: open-shadow-sweep-in 0.46s ease-out 0.16s both;
-  }
-
-  .open-book-shell.is-closing .open-book-shadow-sweep {
-    animation: open-shadow-sweep-out 0.22s ease-in 0.02s both;
-  }
+.open-book-left-paper::-webkit-scrollbar-track,
+.open-book-right-paper::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-@keyframes open-shadow-sweep-in {
-  from {
-    opacity: 0.82;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes open-shadow-sweep-out {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.75;
-  }
-}
-
-/* ============================================================================
- * HOJAS INTERMEDIAS QUE ABANICAN EN 3D (.open-book-fan-sheet)
- * - Base opacity: 0 y fill-mode: both para que al terminar de abrir o cerrar
- *   queden 100% invisibles sin dar ningún salto ni mostrar hojas sueltas.
- * ============================================================================ */
-.open-book-fan-sheet {
-  display: none;
-  opacity: 0;
-}
-
-@media (min-width: 768px) {
-  .open-book-fan-sheet {
-    display: block;
-    position: absolute;
-    top: 10px;
-    bottom: 18px;
-    right: 50%;
-    width: 48.2%;
-    opacity: 0;
-    transform-origin: right center;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    will-change: transform, opacity;
-    contain: strict;
-    pointer-events: none;
-    z-index: 28;
-    border-radius: 8px 0 0 8px;
-    background:
-      repeating-linear-gradient(
-        180deg,
-        transparent 0px,
-        transparent 18px,
-        rgba(140, 105, 50, 0.08) 18px,
-        rgba(140, 105, 50, 0.08) 19px
-      ),
-      linear-gradient(90deg, #faf3e3 0%, #f3e6cc 85%, #e5d4b3 100%);
-    border: 1px solid rgba(160, 120, 60, 0.26);
-  }
-
-  html.dark .open-book-fan-sheet {
-    background:
-      repeating-linear-gradient(
-        180deg,
-        transparent 0px,
-        transparent 18px,
-        rgba(229, 193, 88, 0.05) 18px,
-        rgba(229, 193, 88, 0.05) 19px
-      ),
-      linear-gradient(90deg, #171f2e 0%, #121824 85%, #0d121b 100%);
-    border-color: rgba(229, 193, 88, 0.18);
-  }
-
-  .open-book-fan-sheet-1 {
-    animation: open-fan-sheet-in 0.46s cubic-bezier(0.42, 0, 0.2, 1) 0.15s both;
-  }
-  .open-book-fan-sheet-2 {
-    animation: open-fan-sheet-in 0.48s cubic-bezier(0.42, 0, 0.2, 1) 0.19s both;
-  }
-  .open-book-fan-sheet-3 {
-    animation: open-fan-sheet-in 0.5s cubic-bezier(0.42, 0, 0.2, 1) 0.23s both;
-  }
-
-  .open-book-shell.is-closing .open-book-fan-sheet-1 {
-    animation: open-fan-sheet-1-out 0.32s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
-  }
-  .open-book-shell.is-closing .open-book-fan-sheet-2 {
-    animation: open-fan-sheet-2-out 0.28s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
-  }
-  .open-book-shell.is-closing .open-book-fan-sheet-3 {
-    animation: open-fan-sheet-3-out 0.24s cubic-bezier(0.42, 0, 0.2, 1) 0s both;
-  }
-}
-
-@keyframes open-fan-sheet-in {
-  from {
-    opacity: 0.88;
-    transform: rotateY(176deg) translateZ(2px);
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(0deg) translateZ(0px);
-  }
-}
-
-@keyframes open-fan-sheet-1-out {
-  from {
-    opacity: 0.72;
-    transform: rotateY(24deg) translateZ(1px);
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(179.5deg) translateZ(2px);
-  }
-}
-
-@keyframes open-fan-sheet-2-out {
-  from {
-    opacity: 0.78;
-    transform: rotateY(42deg) translateZ(1.5px);
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(179.5deg) translateZ(2px);
-  }
-}
-
-@keyframes open-fan-sheet-3-out {
-  from {
-    opacity: 0.82;
-    transform: rotateY(60deg) translateZ(2px);
-  }
-  to {
-    opacity: 0;
-    transform: rotateY(179.5deg) translateZ(2px);
-  }
+.open-book-left-paper::-webkit-scrollbar-thumb,
+.open-book-right-paper::-webkit-scrollbar-thumb {
+  background-color: rgba(140, 100, 40, 0.25);
+  border-radius: 9999px;
 }
 
 /* ============================================================================
@@ -728,7 +858,7 @@ html.dark .open-book-edge-bottom-right {
   );
 }
 
-/* Pliegue Central del Lomo (.open-book-gutter): 2 keyframes + delay en el centro (50%) */
+/* Pliegue Central del Lomo (.open-book-gutter) en el centro (50%) */
 .open-book-gutter {
   display: none;
 }
@@ -744,7 +874,7 @@ html.dark .open-book-edge-bottom-right {
     transform: translateX(-50%);
     will-change: opacity;
     pointer-events: none;
-    z-index: 35;
+    z-index: 70;
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -757,11 +887,11 @@ html.dark .open-book-edge-bottom-right {
       rgba(255, 252, 244, 0.35) 86%,
       transparent 100%
     );
-    animation: open-gutter-fade-in 0.38s ease-out 0.26s backwards;
+    animation: open-gutter-fade-in 0.35s ease-out 0.35s both;
   }
 
   .open-book-shell.is-closing .open-book-gutter {
-    animation: open-gutter-fade-out 0.2s ease-in 0s forwards;
+    animation: open-gutter-fade-out 0.18s ease-in 0s both;
   }
 
   /* Hilo de cosido central del lomo */
@@ -824,20 +954,6 @@ html.dark .open-book-edge-bottom-right {
   }
 }
 
-/* Contenido interior (sin will-change estático) */
-.open-book-content {
-  animation: open-book-content-in 0.32s ease-out 0.24s backwards;
-}
-
-@keyframes open-book-content-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 /* Pestañas / cintas marcapáginas superiores en la página derecha */
 .open-book-ribbon-tab {
   position: relative;
@@ -864,24 +980,26 @@ html.dark .open-book-edge-bottom-right {
   .open-book-backdrop.is-closing .open-book-backdrop-fill,
   .open-book-shell,
   .open-book-shell.is-closing,
+  .open-book-cover-turn,
+  .open-book-shell.is-closing .open-book-cover-turn,
+  .open-book-cover-inside,
+  .open-book-cover-front,
+  .open-book-turn-page,
+  .open-book-shell.is-closing .open-book-turn-page,
   .open-book-page-left,
+  .open-book-shell.is-closing .open-book-page-left,
   .open-book-left-inner,
   .open-book-shell.is-closing .open-book-left-inner,
-  .open-book-page-right,
-  .open-book-shell.is-closing .open-book-page-left,
-  .open-book-shell.is-closing .open-book-page-right,
-  .open-book-fan-sheet,
+  .open-book-page-left-back,
   .open-book-mobile-cover,
-  .open-book-shadow-sweep,
-  .open-book-gutter,
-  .open-book-content {
+  .open-book-gutter {
     animation: none !important;
     transform: none !important;
   }
-  .open-book-front-cover-face,
-  .open-book-mobile-cover,
-  .open-book-fan-sheet,
-  .open-book-shadow-sweep {
+  .open-book-cover-front,
+  .open-book-turn-page,
+  .open-book-page-left-back,
+  .open-book-mobile-cover {
     display: none !important;
   }
 }
