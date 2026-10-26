@@ -405,7 +405,6 @@ html.modal-open .nexus-rays {
 
 @media (min-width: 768px) {
   .open-book-turn-page,
-  .open-book-leaf-turn,
   .open-book-page-left-back {
     display: block;
     position: absolute;
@@ -963,6 +962,7 @@ html.dark .open-book-edge-bottom-right {
   /* Giro Hacia Adelante (De Ficha fol. II a Sinopsis fol. III):
      La hoja nace en el ala derecha y se voltea hacia la izquierda sobre el lomo */
   .open-book-leaf-turn.is-turning-forward {
+    left: auto;
     right: 16px;
     transform-origin: 0% 50%;
     border-radius: 0 9px 9px 0;
@@ -986,6 +986,7 @@ html.dark .open-book-edge-bottom-right {
      La hoja nace en el ala izquierda y se voltea hacia la derecha sobre el lomo */
   .open-book-leaf-turn.is-turning-backward {
     left: 16px;
+    right: auto;
     transform-origin: 100% 50%;
     border-radius: 9px 0 0 9px;
     background: linear-gradient(270deg, #f5ebd6 0%, #fbf6ea 78%, #efe3c8 100%);
