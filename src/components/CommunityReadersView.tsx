@@ -86,7 +86,6 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
   const [isClosingCommunityBook, setIsClosingCommunityBook] = useState(false);
-  const [communityEntered, setCommunityEntered] = useState(false);
   const [communityAnimDone, setCommunityAnimDone] = useState(false);
   const communityShellRef = useRef<HTMLDivElement>(null);
   const communityFlipVars = useMemo(
@@ -98,17 +97,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   useEffect(() => {
     if (!selectedCommunityBook?.id) return;
     setIsClosingCommunityBook(false);
-    setCommunityEntered(false);
     setCommunityAnimDone(false);
     document.body.style.overflow = 'hidden';
     document.documentElement.classList.add('modal-open');
-    let rafId = requestAnimationFrame(() => {
-      rafId = requestAnimationFrame(() => {
-        setCommunityEntered(true);
-      });
-    });
     return () => {
-      cancelAnimationFrame(rafId);
       document.body.style.overflow = '';
       document.documentElement.classList.remove('modal-open');
       if (communityCloseTimerRef.current !== null) {
@@ -580,7 +572,6 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       <div
         className={
           'open-book-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto' +
-          (communityEntered ? ' is-entered' : '') +
           (isClosingCommunityBook ? ' is-closing' : '')
         }
         role="dialog"
@@ -596,7 +587,6 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           <div
             className={
               'open-book-shell w-full text-stone-900 dark:text-slate-100' +
-              (communityEntered ? ' is-entered' : '') +
               (communityAnimDone ? ' is-anim-done' : '') +
               (isClosingCommunityBook ? ' is-closing' : '')
             }
@@ -643,7 +633,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
               <div className="open-book-spread-grid grid grid-cols-1 md:grid-cols-12 max-h-[88dvh] md:max-h-none overflow-y-auto md:overflow-visible rounded-[14px] md:rounded-none">
                 {/* ALA IZQUIERDA (VERSO + PORTADA EXTERIOR 3D) */}
-                <div className="open-book-page-left md:col-span-5 flex flex-col">
+                <div className="open-book-page-left md:col-span-6 flex flex-col">
                   <div className="open-book-left-inner flex-1 flex flex-col">
                     <div className="open-book-edge-left" aria-hidden="true" />
                     <div className="open-book-edge-bottom-left" aria-hidden="true" />
@@ -702,7 +692,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 </div>
 
                 {/* ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) */}
-                <div className="open-book-page-right md:col-span-7 flex flex-col">
+                <div className="open-book-page-right md:col-span-6 flex flex-col">
                   <div className="open-book-edge-right" aria-hidden="true" />
                   <div className="open-book-edge-bottom-right" aria-hidden="true" />
                   <div className="open-book-shadow-sweep" aria-hidden="true" />

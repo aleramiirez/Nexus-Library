@@ -42,7 +42,7 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
   const fallback: BookFlipValues = {
     fromX: '0px',
     fromY: '24px',
-    fromScale: '0.45'
+    fromScale: '0.28'
   };
 
   if (typeof window === 'undefined' || typeof document === 'undefined' || !bookId) {
@@ -70,9 +70,13 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
   const rect = sourceEl.getBoundingClientRect();
   if (rect.width === 0 && rect.height === 0) return fallback;
 
+  const isDesktop = window.innerWidth >= 768;
+  const stageWidth = Math.min(window.innerWidth - (isDesktop ? 48 : 16), 1024);
+  const closedBookWidth = isDesktop ? stageWidth * 0.5 : stageWidth;
+
   const fromX = rect.left + rect.width / 2 - window.innerWidth / 2;
   const fromY = rect.top + rect.height / 2 - window.innerHeight / 2;
-  const fromScale = Math.max(0.2, Math.min(0.72, rect.width / 420));
+  const fromScale = Math.max(0.18, Math.min(0.75, rect.width / closedBookWidth));
 
   return {
     fromX: `${Math.round(fromX)}px`,
@@ -121,7 +125,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 }) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [entered, setEntered] = useState(false);
   const [animDone, setAnimDone] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -132,17 +135,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   useEffect(() => {
     if (!book?.id) return;
     setIsClosing(false);
-    setEntered(false);
     setAnimDone(false);
 
-    let rafId = requestAnimationFrame(() => {
-      rafId = requestAnimationFrame(() => {
-        setEntered(true);
-      });
-    });
-
     return () => {
-      cancelAnimationFrame(rafId);
       if (closeTimerRef.current !== null) {
         window.clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
@@ -172,7 +167,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     closeTimerRef.current = window.setTimeout(() => {
       closeTimerRef.current = null;
       onClose();
-    }, 720);
+    }, 680);
   }, [book?.id, isClosing, onClose]);
 
   const handleShellAnimationEnd = useCallback(
@@ -223,7 +218,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       <div
         className={
           'open-book-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto' +
-          (entered ? ' is-entered' : '') +
           (isClosing ? ' is-closing' : '')
         }
         role="dialog"
@@ -244,7 +238,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             onAnimationEnd={handleShellAnimationEnd}
             className={
               'open-book-shell w-full text-stone-900 dark:text-slate-100' +
-              (entered ? ' is-entered' : '') +
               (animDone ? ' is-anim-done' : '') +
               (isClosing ? ' is-closing' : '')
             }
@@ -265,7 +258,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 />
               </div>
 
-              {/* Pliegue central del lomo en escritorio (36px de ancho en la unión 5/12) */}
+              {/* Pliegue central del lomo en escritorio (36px de ancho en la unión central 50%) */}
               <div className="open-book-gutter" aria-hidden="true" />
 
               {/* Hojas intermedias que abanican en 3D al abrir y cerrar el libro */}
@@ -273,10 +266,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               <div className="open-book-fan-sheet open-book-fan-sheet-2" aria-hidden="true" />
               <div className="open-book-fan-sheet open-book-fan-sheet-3" aria-hidden="true" />
 
-              {/* Doble página en escritorio (5 cols Verso / 7 cols Recto) y página continua en móvil */}
+              {/* Doble página simétrica en escritorio (6 cols Verso / 6 cols Recto) y página continua en móvil */}
               <div className="open-book-spread-grid grid grid-cols-1 md:grid-cols-12 max-h-[88dvh] md:max-h-none overflow-y-auto md:overflow-visible rounded-[14px] md:rounded-none">
                 {/* ─────────── ALA IZQUIERDA (VERSO INTERIOR + PORTADA DURA EXTERIOR EN EL REVERSO 3D) ─────────── */}
-                <div className="open-book-page-left md:col-span-5 flex flex-col">
+                <div className="open-book-page-left md:col-span-6 flex flex-col">
                   {/* Cara Interior: Página Izquierda (Ex-Libris, Portada y Registro Personal) */}
                   <div className="open-book-left-inner flex-1 flex flex-col">
                     <div className="open-book-edge-left" aria-hidden="true" />
@@ -436,7 +429,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 </div>
 
                 {/* ─────────── ALA DERECHA (RECTO: Cabecera Literaria, Metadatos y Sinopsis) ─────────── */}
-                <div className="open-book-page-right md:col-span-7 flex flex-col">
+                <div className="open-book-page-right md:col-span-6 flex flex-col">
                   <div className="open-book-edge-right" aria-hidden="true" />
                   <div className="open-book-edge-bottom-right" aria-hidden="true" />
                   <div className="open-book-shadow-sweep" aria-hidden="true" />
