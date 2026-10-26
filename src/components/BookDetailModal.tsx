@@ -146,7 +146,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     if (flipTimerRef.current) window.clearTimeout(flipTimerRef.current);
     flipTimerRef.current = window.setTimeout(() => {
       setActiveTab('synopsis');
-    }, 180);
+    }, 200);
     window.setTimeout(() => {
       setIsFlippingPage(false);
     }, 450);
@@ -159,7 +159,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     if (flipTimerRef.current) window.clearTimeout(flipTimerRef.current);
     flipTimerRef.current = window.setTimeout(() => {
       setActiveTab('details');
-    }, 180);
+    }, 200);
     window.setTimeout(() => {
       setIsFlippingPage(false);
     }, 450);
@@ -306,7 +306,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {activeTab === 'synopsis' ? (
+                    {activeTab === 'synopsis' && (
                       <button
                         type="button"
                         onClick={handleTurnToDetails}
@@ -316,24 +316,14 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         <ChevronLeft className="w-3.5 h-3.5" />
                         <span>Ficha</span>
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleTurnToSynopsis}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
-                        title="Leer sinopsis"
-                      >
-                        <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                        <span>Sinopsis</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
                     )}
 
                     <button
                       type="button"
                       onClick={() => setIsRecommendOpen(true)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                      className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-semibold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
                       title="Recomendar este libro"
+                      aria-label="Recomendar este libro"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                       <span className="hidden sm:inline">Recomendar</span>
@@ -342,11 +332,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     <button
                       type="button"
                       onClick={() => onEdit(book)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] text-stone-800 dark:text-slate-200 active:scale-95 transition"
-                      title="Editar libro"
+                      className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                      title="Editar ficha"
+                      aria-label="Editar ficha"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
                     </button>
 
                     <button
@@ -362,8 +352,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     <button
                       type="button"
                       onClick={handleRequestClose}
-                      className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#e4d4b4] dark:bg-[#1A2232] text-stone-800 dark:text-slate-200 active:scale-95 transition"
-                      title="Cerrar"
+                      className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#e4d4b4] dark:bg-[#1A2232] text-stone-800 dark:text-slate-200 active:scale-95 transition shrink-0"
+                      title="Cerrar libro (Esc)"
                       aria-label="Cerrar ficha"
                     >
                       <X className="w-4 h-4" />
@@ -375,7 +365,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               {/* Cuerpo deslizable de la ficha en móvil */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                 {activeTab === 'synopsis' ? (
-                  <div className="mobile-page-transition-enter space-y-4">
+                  <div className="mobile-page-transition-forward space-y-4">
                     <div className="border-b border-amber-900/15 dark:border-[#242E42] pb-3">
                       <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
                         fol. III · Sinopsis Literaria
@@ -421,7 +411,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <>
+                  <div className="mobile-page-transition-backward space-y-4">
                 {/* Cabecera Principal: Portada + Título + Autor + Saga */}
                 <div className="flex gap-3.5 items-start">
                   <div className="w-24 sm:w-28 shrink-0 shadow-lg rounded-lg">
@@ -696,7 +686,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </p>
                   </div>
                 </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -900,12 +890,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:max-h-[82dvh] md:overflow-y-auto">
                     {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}
                     <div className="flex items-start justify-between gap-2 mb-4">
-                      <span className="inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75">
+                      <span className="inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75 select-none truncate">
                         {activeTab === 'details' ? 'Catálogo Literario · fol. II' : 'Sinopsis Literaria · fol. III'}
                       </span>
 
-                      <div className="flex items-start gap-1.5 ml-auto">
-                        {activeTab === 'synopsis' ? (
+                      <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                        {activeTab === 'synopsis' && (
                           <button
                             type="button"
                             onClick={handleTurnToDetails}
@@ -914,17 +904,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           >
                             <ChevronLeft className="w-3.5 h-3.5" />
                             <span>Ver ficha</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleTurnToSynopsis}
-                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 font-semibold"
-                            title="Pasar página para leer la sinopsis (→)"
-                          >
-                            <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                            <span>Sinopsis</span>
-                            <ChevronRight className="w-3 h-3" />
                           </button>
                         )}
 
@@ -935,27 +914,27 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           title="Recomendar este libro a un amigo"
                         >
                           <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          <span>Recomendar</span>
+                          <span className="hidden xl:inline">Recomendar</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => onEdit(book)}
-                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200"
+                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
                           title="Editar ficha del libro"
+                          aria-label="Editar ficha"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
-                          <span>Editar</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => onDelete(book)}
-                          className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300"
+                          className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 px-2.5"
                           title="Eliminar libro"
+                          aria-label="Eliminar libro"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Eliminar</span>
                         </button>
 
                         <button
@@ -963,7 +942,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           onClick={handleRequestClose}
                           aria-label="Cerrar ficha"
                           title="Cerrar libro (Esc)"
-                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5"
+                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5 shrink-0"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -971,7 +950,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </div>
 
                     {activeTab === 'details' ? (
-                      <div className="open-book-content flex flex-col gap-4 sm:gap-5">
+                      <div className="open-book-content open-book-fade-content flex flex-col gap-4 sm:gap-5">
                       {/* Título, Autor, Saga y Divisor Ornamental */}
                       <div className="text-left">
                         {book.sagaNombre && (

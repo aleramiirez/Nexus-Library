@@ -187,6 +187,11 @@ html.modal-open .nexus-rays {
 }
 
 @media (min-width: 768px) {
+  .open-book-pages-block {
+    perspective: 2200px;
+    perspective-origin: 50% 50%;
+  }
+
   .open-book-spread-grid {
     perspective: 2200px;
     perspective-origin: 50% 50%;
@@ -400,6 +405,7 @@ html.modal-open .nexus-rays {
 
 @media (min-width: 768px) {
   .open-book-turn-page,
+  .open-book-leaf-turn,
   .open-book-page-left-back {
     display: block;
     position: absolute;
@@ -950,15 +956,25 @@ html.dark .open-book-edge-bottom-right {
     will-change: transform;
     pointer-events: none;
     z-index: 48;
+    backface-visibility: visible;
+    transform-style: preserve-3d;
+  }
+
+  /* Giro Hacia Adelante (De Ficha fol. II a Sinopsis fol. III):
+     La hoja nace en el ala derecha y se voltea hacia la izquierda sobre el lomo */
+  .open-book-leaf-turn.is-turning-forward {
+    right: 16px;
+    transform-origin: 0% 50%;
     border-radius: 0 9px 9px 0;
+    background: linear-gradient(90deg, #f5ebd6 0%, #fbf6ea 78%, #efe3c8 100%);
+    border: 1px solid rgba(160, 120, 60, 0.28);
     box-shadow:
       inset 3px 0px 20px rgba(0, 0, 0, 0.16),
       0px 0px 15px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(90deg, #f5ebd6 0%, #fbf6ea 78%, #efe3c8 100%);
-    border: 1px solid rgba(160, 120, 60, 0.28);
+    animation: internal-leaf-turn-forward 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 
-  html.dark .open-book-leaf-turn {
+  html.dark .open-book-leaf-turn.is-turning-forward {
     background: linear-gradient(90deg, #0e131d 0%, #141A26 78%, #111722 100%);
     border-color: rgba(229, 193, 88, 0.2);
     box-shadow:
@@ -966,16 +982,26 @@ html.dark .open-book-edge-bottom-right {
       0px 0px 15px rgba(0, 0, 0, 0.3);
   }
 
-  .open-book-leaf-turn.is-turning-forward {
-    right: 16px;
-    transform-origin: 0% 50%;
-    animation: internal-leaf-turn-forward 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
-
+  /* Giro Hacia Atrás (De Sinopsis fol. III a Ficha fol. II):
+     La hoja nace en el ala izquierda y se voltea hacia la derecha sobre el lomo */
   .open-book-leaf-turn.is-turning-backward {
     left: 16px;
     transform-origin: 100% 50%;
+    border-radius: 9px 0 0 9px;
+    background: linear-gradient(270deg, #f5ebd6 0%, #fbf6ea 78%, #efe3c8 100%);
+    border: 1px solid rgba(160, 120, 60, 0.28);
+    box-shadow:
+      inset -3px 0px 20px rgba(0, 0, 0, 0.16),
+      0px 0px 15px rgba(0, 0, 0, 0.15);
     animation: internal-leaf-turn-backward 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  html.dark .open-book-leaf-turn.is-turning-backward {
+    background: linear-gradient(270deg, #0e131d 0%, #141A26 78%, #111722 100%);
+    border-color: rgba(229, 193, 88, 0.2);
+    box-shadow:
+      inset -3px 0px 20px rgba(0, 0, 0, 0.45),
+      0px 0px 15px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -990,10 +1016,10 @@ html.dark .open-book-edge-bottom-right {
 
 @keyframes internal-leaf-turn-backward {
   0% {
-    transform: rotateY(-180deg);
+    transform: rotateY(0deg);
   }
   100% {
-    transform: rotateY(0deg);
+    transform: rotateY(180deg);
   }
 }
 
@@ -1013,15 +1039,30 @@ html.dark .open-book-edge-bottom-right {
   }
 }
 
-/* Transición en móvil */
-.mobile-page-transition-enter {
-  animation: mobile-page-fade 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+/* Transiciones direccionales en móvil */
+.mobile-page-transition-forward {
+  animation: mobile-page-slide-forward 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes mobile-page-fade {
+.mobile-page-transition-backward {
+  animation: mobile-page-slide-backward 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes mobile-page-slide-forward {
   from {
     opacity: 0.2;
-    transform: translateX(8px);
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-page-slide-backward {
+  from {
+    opacity: 0.2;
+    transform: translateX(-12px);
   }
   to {
     opacity: 1;
