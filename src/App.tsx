@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useDeferredValue } from 'react';
+import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LayoutDashboard,
@@ -651,10 +652,12 @@ export const App: React.FC = () => {
 
   const confirmDeleteBook = async () => {
     if (!bookToDelete) return;
+    const bookTitle = bookToDelete.nombre;
     try {
       await deleteBookRecord(bookToDelete.id);
       if (detailBookId === bookToDelete.id) setDetailBookId(null);
       setBookToDelete(null);
+      showToast(`Se ha eliminado "${bookTitle}" de tu biblioteca.`, 'info');
     } catch (err: unknown) {
       setGlobalError(
         formatFriendlyErrorMessage(err, 'No se pudo eliminar el libro de tu biblioteca.')
@@ -664,9 +667,11 @@ export const App: React.FC = () => {
 
   const confirmDeleteSaga = async () => {
     if (!sagaToDelete) return;
+    const sagaTitle = sagaToDelete.nombre;
     try {
       await deleteSagaAndUnlinkBooks(sagaToDelete.id);
       setSagaToDelete(null);
+      showToast(`Se ha eliminado la saga "${sagaTitle}". Los libros se conservan.`, 'info');
     } catch (err: unknown) {
       setGlobalError(
         formatFriendlyErrorMessage(err, 'No pudimos eliminar la saga en este momento.')
@@ -2426,82 +2431,111 @@ export const App: React.FC = () => {
         )}
       </React.Suspense>
 
-      {bookToDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
-          onClick={() => setBookToDelete(null)}
-        >
+      {bookToDelete &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            onClick={() => setBookToDelete(null)}
           >
-            <h3 id="delete-dialog-title" className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
-              Confirmar eliminación
-            </h3>
-            <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-              ¿Seguro que deseas eliminar <strong>"{bookToDelete.nombre}"</strong> de tu biblioteca?
-              Esta acción no se puede deshacer.
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setBookToDelete(null)}
-                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteBook}
-                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition"
-              >
-                Eliminar definitivamente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <div
+              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="delete-dialog-title" className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
+                    Confirmar eliminación
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                    Esta acción no se puede deshacer
+                  </p>
+                </div>
+              </div>
 
-      {sagaToDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-saga-dialog-title"
-          onClick={() => setSagaToDelete(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 id="delete-saga-dialog-title" className="font-serif text-xl font-bold text-rose-700 dark:text-rose-400">
-              Confirmar eliminación de saga
-            </h3>
-            <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-              ¿Eliminar la saga <strong>"{sagaToDelete.nombre}"</strong>? Los libros asociados se conservarán en tu biblioteca como libros independientes.
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setSagaToDelete(null)}
-                className="rounded-xl border border-amber-900/25 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteSaga}
-                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition"
-              >
-                Eliminar saga
-              </button>
+              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                ¿Seguro que deseas eliminar <strong>"{bookToDelete.nombre}"</strong> de tu biblioteca?
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBookToDelete(null)}
+                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteBook}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
+                >
+                  Eliminar definitivamente
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
+
+      {sagaToDelete &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-saga-dialog-title"
+            onClick={() => setSagaToDelete(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="delete-saga-dialog-title" className="font-serif text-lg font-bold text-rose-700 dark:text-rose-400">
+                    Confirmar eliminación de saga
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                    Los libros asociados se conservarán
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                ¿Eliminar la saga <strong>"{sagaToDelete.nombre}"</strong>? Los libros asociados se conservarán en tu biblioteca como libros independientes.
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSagaToDelete(null)}
+                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteSaga}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
+                >
+                  Eliminar saga
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {toast && (
         <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">
