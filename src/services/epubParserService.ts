@@ -1,4 +1,4 @@
-import { Genre, Subgenre, inferCatalogFromCategories } from '../constants/catalogs';
+import { Genre, Subgenre, inferCatalogFromCategories, normalizeText } from '../constants/catalogs';
 import { bookMetadataService, extractCleanIsbn } from './bookMetadataService';
 
 export interface ParsedEbookFile {
@@ -332,6 +332,12 @@ export function parseFilenameMetadata(fileName: string): {
     }
   }
 
+  // Si la saga detectada en el archivo es idéntica al título del libro, se descarta
+  if (sagaNombre && nombre && normalizeText(sagaNombre) === normalizeText(nombre)) {
+    sagaNombre = '';
+    volumen = null;
+  }
+
   return {
     nombre: nombre || 'Libro sin título',
     autor,
@@ -522,8 +528,23 @@ async function parseEpubBuffer(
     if (pubYear) break;
   }
 
+  const resolvedTitle = rawTitle || fallbackMeta.nombre;
+  let finalSagaNombre = sagaNombre || fallbackMeta.sagaNombre;
+  let finalVolumen = volumen ?? fallbackMeta.volumen;
+
+  // Si la saga detectada es idéntica o prácticamente idéntica al título del libro, se descarta
+  // para evitar que libros independientes con metadatos de serie redundantes creen sagas falsas
+  if (
+    finalSagaNombre &&
+    resolvedTitle &&
+    normalizeText(finalSagaNombre) === normalizeText(resolvedTitle)
+  ) {
+    finalSagaNombre = '';
+    finalVolumen = null;
+  }
+
   return {
-    nombre: rawTitle || fallbackMeta.nombre,
+    nombre: resolvedTitle,
     autor: creators.join(', ') || fallbackMeta.autor,
     isbn: detectedIsbn,
     editorial: rawPublisher,
@@ -533,8 +554,8 @@ async function parseEpubBuffer(
     sinopsis: cleanSynopsis,
     genero: catalogInference.genre,
     subgeneros: catalogInference.subgenres,
-    sagaNombre: sagaNombre || fallbackMeta.sagaNombre,
-    volumen: volumen ?? fallbackMeta.volumen,
+    sagaNombre: finalSagaNombre,
+    volumen: finalVolumen,
     portadaDataUrl
   };
 }
@@ -595,8 +616,21 @@ async function parseFb2File(
 
     const catalogInference = inferCatalogFromCategories([...genres, bookTitle, annotation]);
 
+    const resolvedTitle = bookTitle || fallbackMeta.nombre;
+    let finalSagaNombre = sagaNombre || fallbackMeta.sagaNombre;
+    let finalVolumen = volumen ?? fallbackMeta.volumen;
+
+    if (
+      finalSagaNombre &&
+      resolvedTitle &&
+      normalizeText(finalSagaNombre) === normalizeText(resolvedTitle)
+    ) {
+      finalSagaNombre = '';
+      finalVolumen = null;
+    }
+
     return {
-      nombre: bookTitle || fallbackMeta.nombre,
+      nombre: resolvedTitle,
       autor: authors.join(', ') || fallbackMeta.autor,
       isbn,
       editorial: publisher,
@@ -605,8 +639,8 @@ async function parseFb2File(
       sinopsis: annotation,
       genero: catalogInference.genre,
       subgeneros: catalogInference.subgenres,
-      sagaNombre: sagaNombre || fallbackMeta.sagaNombre,
-      volumen: volumen ?? fallbackMeta.volumen,
+      sagaNombre: finalSagaNombre,
+      volumen: finalVolumen,
       portadaDataUrl
     };
   } catch {

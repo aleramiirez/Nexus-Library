@@ -48,6 +48,7 @@ interface StagedEbookItem extends ParsedEbookFile {
 export const EpubImportModal: React.FC<EpubImportModalProps> = ({
   isOpen,
   existingBooks,
+  sagas = [],
   initialFiles,
   onClose,
   onSaveBook,
@@ -59,6 +60,7 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [autoEnrich, setAutoEnrich] = useState(true);
+  const [autoDetectSagas, setAutoDetectSagas] = useState(true);
   const [defaultStatus, setDefaultStatus] = useState<ReadingStatus>('❌ No Leído');
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
@@ -130,6 +132,8 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
 
         newStaged.push({
           ...parsed,
+          sagaNombre: autoDetectSagas ? parsed.sagaNombre : '',
+          volumen: autoDetectSagas ? parsed.volumen : null,
           selected: !duplicate,
           isDuplicate: duplicate,
           progreso: defaultStatus
@@ -371,40 +375,77 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
           </div>
 
           {/* Barra de preferencias de extracción */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-[#f3e8d0]/80 dark:bg-[#101520] border border-amber-900/20 dark:border-[#242E42]">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={autoEnrich}
-                onChange={(e) => setAutoEnrich(e.target.checked)}
-                className="w-4 h-4 rounded border-amber-900/30 text-amber-600 focus:ring-amber-500"
-              />
-              <div className="text-xs">
-                <span className="font-semibold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  Completar huecos automáticamente con el catálogo
-                </span>
-                <span className="text-stone-600 dark:text-slate-400 block">
-                  Si al archivo le falta género, páginas, sinopsis o portada, se rellenan solos.
-                </span>
-              </div>
-            </label>
+          <div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[#f3e8d0]/80 dark:bg-[#101520] border border-amber-900/20 dark:border-[#242E42]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autoEnrich}
+                  onChange={(e) => setAutoEnrich(e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-900/30 text-amber-600 focus:ring-amber-500"
+                />
+                <div className="text-xs">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Completar datos faltantes con el catálogo
+                  </span>
+                  <span className="text-stone-600 dark:text-slate-400 block">
+                    Si al archivo le falta género, páginas o portada, se rellenan solos.
+                  </span>
+                </div>
+              </label>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-stone-600 dark:text-slate-400 whitespace-nowrap">
-                Estado inicial:
-              </span>
-              <select
-                value={defaultStatus}
-                onChange={(e) => handleApplyDefaultStatus(e.target.value as ReadingStatus)}
-                className="rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-amber-600"
-              >
-                {READING_STATUSES.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-stone-600 dark:text-slate-400 whitespace-nowrap">
+                  Estado inicial:
+                </span>
+                <select
+                  value={defaultStatus}
+                  onChange={(e) => handleApplyDefaultStatus(e.target.value as ReadingStatus)}
+                  className="rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-amber-600"
+                >
+                  {READING_STATUSES.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-2.5 border-t border-amber-900/10 dark:border-[#242E42]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={autoDetectSagas}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setAutoDetectSagas(checked);
+                    if (!checked) {
+                      setItems((prev) =>
+                        prev.map((item) => ({ ...item, sagaNombre: '', volumen: null }))
+                      );
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-amber-900/30 text-amber-600 focus:ring-amber-500"
+                />
+                <div className="text-xs">
+                  <span className="font-semibold flex items-center gap-1.5 text-stone-800 dark:text-slate-200">
+                    <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Detectar sagas automáticamente
+                  </span>
+                  <span className="text-stone-600 dark:text-slate-400 block">
+                    {autoDetectSagas
+                      ? 'Extrae sagas y volúmenes de los archivos (descarta títulos repetidos como en libros sueltos).'
+                      : 'Desactivado: todos los libros entrarán sin saga para que los vincules tú a mano.'}
+                  </span>
+                </div>
+              </label>
+              {!autoDetectSagas && (
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
+                  Control manual activado
+                </span>
+              )}
             </div>
           </div>
 
@@ -666,18 +707,51 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-stone-600 dark:text-slate-400 mb-0.5">
-                              Saga (opcional)
-                            </label>
-                            <input
-                              type="text"
-                              value={item.sagaNombre}
-                              onChange={(e) =>
-                                updateItem(item.id, { sagaNombre: e.target.value })
-                              }
-                              placeholder="Ej: Nacidos de la Bruma"
-                              className={inputCls}
-                            />
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="block text-[10px] font-semibold uppercase tracking-wider text-stone-600 dark:text-slate-400">
+                                Saga (opcional)
+                              </label>
+                              {item.sagaNombre && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateItem(item.id, { sagaNombre: '', volumen: null })
+                                  }
+                                  className="text-[10px] text-amber-700 dark:text-amber-400 hover:underline"
+                                  title="Quitar saga (dejar como libro independiente)"
+                                >
+                                  Quitar saga
+                                </button>
+                              )}
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                list="nexus-library-sagas-list"
+                                value={item.sagaNombre}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  updateItem(item.id, {
+                                    sagaNombre: val,
+                                    volumen: val.trim() ? (item.volumen ?? 1) : null
+                                  });
+                                }}
+                                placeholder="Ej: Canción de hielo y fuego"
+                                className={inputCls + (item.sagaNombre ? ' pr-6' : '')}
+                              />
+                              {item.sagaNombre && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateItem(item.id, { sagaNombre: '', volumen: null })
+                                  }
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200"
+                                  title="Quitar saga"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           <div>
@@ -786,6 +860,12 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
             </button>
           </div>
         </div>
+        {/* Sugerencias de sagas ya existentes en la biblioteca */}
+        <datalist id="nexus-library-sagas-list">
+          {sagas.map((s) => (
+            <option key={s.id} value={s.nombre} />
+          ))}
+        </datalist>
       </div>
     </div>
   );
