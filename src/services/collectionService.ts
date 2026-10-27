@@ -1,6 +1,8 @@
+import { supabase } from './supabaseClient';
 import { CustomCollection, LentRecord } from '../types/models';
 
 const COLLECTIONS_KEY_PREFIX = 'nexus_custom_collections_';
+const COLLECTIONS_GLOBAL_BACKUP_KEY = 'nexus_custom_collections_global_backup';
 const LENT_KEY_PREFIX = 'nexus_lent_records_';
 
 class CollectionService {
@@ -38,7 +40,28 @@ class CollectionService {
   public getCollections(userId?: string): CustomCollection[] {
     if (typeof window === 'undefined' || !window.localStorage) return [];
     try {
-      const raw = localStorage.getItem(this.getCollectionsStorageKey(userId));
+      const userKey = this.getCollectionsStorageKey(userId);
+      let raw = localStorage.getItem(userKey);
+
+      // Si el usuario tiene sesión activa pero su clave específica está vacía,
+      // comprobamos si existen colecciones creadas como 'local' o en el backup global y las migramos.
+      if (!raw && userId && userId.trim()) {
+        const localRaw = localStorage.getItem(`${COLLECTIONS_KEY_PREFIX}local`);
+        const backupRaw = localStorage.getItem(COLLECTIONS_GLOBAL_BACKUP_KEY);
+        const fallbackRaw = localRaw || backupRaw;
+        if (fallbackRaw) {
+          raw = fallbackRaw;
+          try {
+            localStorage.setItem(userKey, fallbackRaw);
+          } catch {}
+        }
+      }
+
+      // Si aún no hay datos, intentar recuperar del backup global
+      if (!raw) {
+        raw = localStorage.getItem(COLLECTIONS_GLOBAL_BACKUP_KEY);
+      }
+
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -62,11 +85,90 @@ class CollectionService {
   public saveCollections(collections: CustomCollection[], userId?: string): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
     try {
-      localStorage.setItem(this.getCollectionsStorageKey(userId), JSON.stringify(collections));
+      const payload = JSON.stringify(collections);
+      localStorage.setItem(this.getCollectionsStorageKey(userId), payload);
+      // Guardar también copia de seguridad global local
+      localStorage.setItem(COLLECTIONS_GLOBAL_BACKUP_KEY, payload);
       this.notify();
+
+      // Sincronizar en segundo plano con Supabase si hay sesión
+      this.syncToCloud(collections, userId).catch(() => {});
     } catch (e) {
       console.error('Error saving collections to localStorage:', e);
     }
+  }
+
+  /**
+   * Guarda las colecciones en Supabase Auth (user_metadata)
+   * para que persistan entre ramas, dominios de Vercel y diferentes navegadores.
+   */
+  public async syncToCloud(collections: CustomCollection[], userId?: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (userId && user.id !== userId) return;
+
+      await supabase.auth.updateUser({
+        data: {
+          custom_collections: collections
+        }
+      });
+    } catch (e) {
+      console.warn('Could not sync collections to Supabase user_metadata:', e);
+    }
+  }
+
+  /**
+   * Descarga y fusiona las colecciones desde Supabase al iniciar sesión o cargar la app.
+   */
+  public async syncFromCloud(userId?: string): Promise<CustomCollection[]> {
+    if (typeof window === 'undefined') return [];
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return this.getCollections(userId);
+      if (userId && user.id !== userId) return this.getCollections(userId);
+
+      const remoteCollections = user.user_metadata?.custom_collections;
+      if (Array.isArray(remoteCollections) && remoteCollections.length > 0) {
+        const localCollections = this.getCollections(user.id);
+
+        const map = new Map<string, CustomCollection>();
+        for (const col of localCollections) {
+          map.set(col.id, col);
+        }
+        for (const col of remoteCollections) {
+          if (!map.has(col.id)) {
+            map.set(col.id, col);
+          } else {
+            const existing = map.get(col.id)!;
+            const existingTime = new Date(existing.updatedAt || 0).getTime();
+            const remoteTime = new Date(col.updatedAt || 0).getTime();
+            if (remoteTime >= existingTime) {
+              map.set(col.id, col);
+            }
+          }
+        }
+
+        const merged = Array.from(map.values());
+        const payload = JSON.stringify(merged);
+        const userKey = this.getCollectionsStorageKey(user.id);
+        localStorage.setItem(userKey, payload);
+        localStorage.setItem(COLLECTIONS_GLOBAL_BACKUP_KEY, payload);
+        this.notify();
+        return merged;
+      } else {
+        // Si el usuario remoto aún no tiene colecciones pero localmente sí tenemos,
+        // sincronizamos las locales hacia la nube automáticamente.
+        const localCollections = this.getCollections(user.id);
+        if (localCollections.length > 0) {
+          this.syncToCloud(localCollections, user.id).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Could not sync collections from Supabase:', e);
+    }
+    return this.getCollections(userId);
   }
 
   public createCollection(

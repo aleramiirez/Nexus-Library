@@ -362,6 +362,7 @@ export const App: React.FC = () => {
           profileService.fetchUserProfile(user.id, user.email).then((prof) => {
             if (mounted && prof) setCurrentUserProfile(prof);
           });
+          collectionService.syncFromCloud(user.id).catch(() => {});
           await runCloudSync();
         } else {
           const settings = await fetchSupabaseAuthSettings();
@@ -425,6 +426,7 @@ export const App: React.FC = () => {
         profileService.fetchUserProfile(nextUser.id, nextUser.email).then((prof) => {
           if (mounted && prof) setCurrentUserProfile(prof);
         });
+        collectionService.syncFromCloud(nextUser.id).catch(() => {});
         runCloudSync();
       } else {
         setCurrentUserProfile(null);
