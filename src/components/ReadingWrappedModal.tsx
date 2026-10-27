@@ -28,6 +28,226 @@ interface ReadingWrappedModalProps {
   onShowToast?: (message: string) => void;
 }
 
+/**
+ * Carga de forma segura una imagen de portada para el canvas evitando el "tainting"
+ * (contaminación por CORS de navegadores) mediante conversión a DataURL o verificación en micro-canvas.
+ */
+async function loadSafeCoverImage(book: Book): Promise<HTMLImageElement | null> {
+  const sources = [book.portadaDataUrl, book.portadaUrl, book.portadaFallbackUrl].filter(
+    (u): u is string => Boolean(u && u.trim())
+  );
+  if (sources.length === 0) return null;
+
+  for (const src of sources) {
+    // 1. Data URL local (nunca contamina el canvas)
+    if (src.startsWith('data:image/')) {
+      try {
+        const img = await new Promise<HTMLImageElement | null>((resolve) => {
+          const i = new Image();
+          i.onload = () => resolve(i);
+          i.onerror = () => resolve(null);
+          i.src = src;
+        });
+        if (img && (img.naturalWidth || img.width) > 2) return img;
+      } catch {}
+    }
+
+    // 2. Fetch CORS a Blob y conversión a DataURL local
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(src, { mode: 'cors', signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.type.startsWith('image/')) {
+          const dataUrl = await new Promise<string | null>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+          if (dataUrl) {
+            const img = await new Promise<HTMLImageElement | null>((resolve) => {
+              const i = new Image();
+              i.onload = () => resolve(i);
+              i.onerror = () => resolve(null);
+              i.src = dataUrl;
+            });
+            if (img && (img.naturalWidth || img.width) > 2) return img;
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Image con crossOrigin anonymous y comprobación en micro-canvas de seguridad
+    try {
+      const img = await new Promise<HTMLImageElement | null>((resolve) => {
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => resolve(null), 3500);
+        i.onload = () => {
+          clearTimeout(timer);
+          resolve(i);
+        };
+        i.onerror = () => {
+          clearTimeout(timer);
+          resolve(null);
+        };
+        i.src = src;
+      });
+
+      if (img && (img.naturalWidth || img.width) > 2) {
+        const testCanvas = document.createElement('canvas');
+        testCanvas.width = 1;
+        testCanvas.height = 1;
+        const testCtx = testCanvas.getContext('2d');
+        if (testCtx) {
+          testCtx.drawImage(img, 0, 0, 1, 1);
+          try {
+            testCanvas.toDataURL(); // Verifica si se puede exportar sin SecurityError
+            return img;
+          } catch {
+            // Tainted, descartar esta fuente
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+/**
+ * Dibuja un libro con portada real, textura artesanal de lomo 3D, cantos de páginas
+ * y reflejos satinados idénticos a los mostrados en la estantería de la app.
+ */
+function drawBookCoverOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  book: Book,
+  coverImg: HTMLImageElement | null,
+  bx: number,
+  by: number,
+  bw: number,
+  bh: number,
+  isDarkCard: boolean,
+  paletteIdx: number = 0
+) {
+  const clothPalettes = [
+    ['#7a2231', '#4a1320'], // burdeos
+    ['#24523b', '#12301f'], // bosque
+    ['#23406e', '#122241'], // marino
+    ['#8a5a22', '#553413'], // ocre
+    ['#3b4252', '#1e222c'], // pizarra
+    ['#5b2f5e', '#321a35']  // ciruela
+  ];
+
+  // 1. Sombra de contacto realista sobre la balda o fondo
+  ctx.save();
+  ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.45)';
+  ctx.beginPath();
+  ctx.ellipse(bx + bw / 2, by + bh + 2, bw * 0.44, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 2. Cantos de las páginas asomando a la derecha (estilo encuadernación artesanal)
+  ctx.save();
+  ctx.fillStyle = '#dccfae';
+  ctx.fillRect(bx + bw, by + 3, 2, bh - 6);
+  ctx.fillStyle = '#b6a784';
+  ctx.fillRect(bx + bw + 2, by + 5, 2, bh - 10);
+  ctx.fillStyle = '#d3c5a2';
+  ctx.fillRect(bx + bw + 4, by + 7, 2, bh - 14);
+  ctx.fillStyle = '#8e8062';
+  ctx.fillRect(bx + bw + 6, by + 9, 2, bh - 18);
+  ctx.restore();
+
+  // 3. Tapa dura del libro recortada con esquinas exteriores redondeadas
+  ctx.save();
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(bx, by, bw, bh, [3, 6, 6, 3]);
+  } else {
+    ctx.rect(bx, by, bw, bh);
+  }
+  ctx.clip();
+
+  if (coverImg && (coverImg.naturalWidth || coverImg.width) > 2) {
+    // Portada real dibujada proporcionalmente con recorte central (object-fit: cover)
+    const imgW = coverImg.naturalWidth || coverImg.width;
+    const imgH = coverImg.naturalHeight || coverImg.height;
+    const scale = Math.max(bw / imgW, bh / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const drawX = bx + (bw - drawW) / 2;
+    const drawY = by + (bh - drawH) / 2;
+    ctx.drawImage(coverImg, drawX, drawY, drawW, drawH);
+  } else {
+    // Si no tiene imagen de portada, cubierta editorial de tela estampada
+    const clothColors = clothPalettes[paletteIdx % clothPalettes.length];
+    const bookGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+    bookGrad.addColorStop(0, clothColors[0]);
+    bookGrad.addColorStop(1, clothColors[1]);
+    ctx.fillStyle = bookGrad;
+    ctx.fillRect(bx, by, bw, bh);
+
+    // Marco dorado interior grabado
+    ctx.strokeStyle = 'rgba(236, 213, 150, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx + 14, by + 12, bw - 22, bh - 24);
+    ctx.strokeStyle = 'rgba(236, 213, 150, 0.2)';
+    ctx.strokeRect(bx + 17, by + 15, bw - 28, bh - 30);
+
+    // Título y autor estampados en oro
+    ctx.fillStyle = '#fce7b0';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    const shortTitle = book.nombre.length > 24 ? book.nombre.slice(0, 22) + '...' : book.nombre;
+    ctx.fillText(shortTitle, bx + bw / 2 + 5, by + bh * 0.35, bw - 28);
+
+    ctx.fillStyle = '#ecd596';
+    ctx.font = 'italic 12px Georgia, serif';
+    const shortAuthor = (book.autor || '').length > 20 ? (book.autor || '').slice(0, 18) + '...' : (book.autor || '');
+    ctx.fillText(shortAuthor, bx + bw / 2 + 5, by + bh * 0.52, bw - 28);
+  }
+
+  // 4. Textura 3D del lomo y articulación de bisagra a la izquierda (idéntica a CSS .book-cover::before)
+  const spineW = Math.max(18, Math.round(bw * 0.15));
+  const spineGrad = ctx.createLinearGradient(bx, by, bx + spineW, by);
+  spineGrad.addColorStop(0, 'rgba(0, 0, 0, 0.42)');
+  spineGrad.addColorStop(0.12, 'rgba(0, 0, 0, 0.42)');
+  spineGrad.addColorStop(0.25, 'rgba(255, 255, 255, 0.24)');
+  spineGrad.addColorStop(0.45, 'rgba(255, 255, 255, 0.05)');
+  spineGrad.addColorStop(0.65, 'rgba(0, 0, 0, 0.5)');
+  spineGrad.addColorStop(0.85, 'rgba(255, 255, 255, 0.14)');
+  spineGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = spineGrad;
+  ctx.fillRect(bx, by, spineW, bh);
+
+  // 5. Brillo satinado diagonal (barniz de la cubierta)
+  const shineGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+  shineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+  shineGrad.addColorStop(0.35, 'transparent');
+  shineGrad.addColorStop(0.7, 'transparent');
+  shineGrad.addColorStop(1, 'rgba(0, 0, 0, 0.22)');
+  ctx.fillStyle = shineGrad;
+  ctx.fillRect(bx, by, bw, bh);
+
+  // 6. Oscurecimiento en la parte inferior para dar peso 3D
+  const bottomShadow = ctx.createLinearGradient(bx, by + bh * 0.72, bx, by + bh);
+  bottomShadow.addColorStop(0, 'transparent');
+  bottomShadow.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+  ctx.fillStyle = bottomShadow;
+  ctx.fillRect(bx, by + bh * 0.72, bw, bh * 0.28);
+
+  // 7. Borde interior sutil
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bx, by, bw, bh);
+
+  ctx.restore();
+}
+
 export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
   isOpen,
   onClose,
@@ -183,6 +403,13 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         ctx.fillText(c.sub, x + cardW / 2, y + 144);
       });
 
+      // Pre-cargar portadas reales de forma segura (sin riesgo de canvas tainting)
+      const showcaseBooks = stats.completedBooks.slice(0, 6);
+      const [topFavImg, ...showcaseImgs] = await Promise.all([
+        topFavorite ? loadSafeCoverImage(topFavorite) : Promise.resolve(null),
+        ...showcaseBooks.map((b) => loadSafeCoverImage(b))
+      ]);
+
       // 4. Bloque destacado: Obra más querida y género predilecto
       const blockY = 710;
       const blockW = 1050;
@@ -191,24 +418,82 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
       ctx.strokeStyle = isDarkCard ? 'rgba(16, 185, 129, 0.3)' : 'rgba(5, 150, 105, 0.35)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(75, blockY, blockW, blockH, 22);
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(75, blockY, blockW, blockH, 22);
+      } else {
+        ctx.rect(75, blockY, blockW, blockH);
+      }
       ctx.fill();
       ctx.stroke();
 
-      ctx.textAlign = 'left';
-      ctx.fillStyle = isDarkCard ? '#34d399' : '#047857';
-      ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText('✦ OBRA MÁS DESTACADA DEL AÑO', 110, blockY + 50);
+      if (topFavorite) {
+        // Portada del libro con textura realista 3D a la izquierda
+        const favBookW = 108;
+        const favBookH = 162;
+        const favBookX = 105;
+        const favBookY = blockY + (blockH - favBookH) / 2;
+        drawBookCoverOnCanvas(ctx, topFavorite, topFavImg, favBookX, favBookY, favBookW, favBookH, isDarkCard, 0);
 
-      ctx.fillStyle = isDarkCard ? '#ffffff' : '#1c1917';
-      ctx.font = 'bold 36px Georgia, serif';
-      const favTitle = topFavorite ? topFavorite.nombre : 'Sin lecturas finalizadas';
-      ctx.fillText(favTitle.length > 38 ? favTitle.slice(0, 36) + '...' : favTitle, 110, blockY + 105);
+        // Textos a la derecha del libro
+        const textStartX = favBookX + favBookW + 28;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = isDarkCard ? '#34d399' : '#047857';
+        ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('✦ OBRA MÁS DESTACADA DEL AÑO', textStartX, blockY + 48);
 
-      ctx.fillStyle = isDarkCard ? '#cbd5e1' : '#44403c';
-      ctx.font = 'italic 22px Georgia, serif';
-      const favAuthor = topFavorite ? `por ${topFavorite.autor || 'Autor anónimo'}` : 'Añade libros leídos para ver tu top';
-      ctx.fillText(favAuthor, 110, blockY + 145);
+        ctx.fillStyle = isDarkCard ? '#ffffff' : '#1c1917';
+        ctx.font = 'bold 34px Georgia, serif';
+        const favTitle = topFavorite.nombre.length > 28 ? topFavorite.nombre.slice(0, 26) + '...' : topFavorite.nombre;
+        ctx.fillText(favTitle, textStartX, blockY + 95);
+
+        ctx.fillStyle = isDarkCard ? '#cbd5e1' : '#44403c';
+        ctx.font = 'italic 20px Georgia, serif';
+        const favAuthor = `por ${topFavorite.autor || 'Autor anónimo'}`;
+        ctx.fillText(favAuthor, textStartX, blockY + 132);
+
+        // Estrellas y badge de género
+        let badgeX = textStartX;
+        if (topFavorite.puntuacion) {
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText('⭐'.repeat(topFavorite.puntuacion), badgeX, blockY + 172);
+          badgeX += topFavorite.puntuacion * 24 + 14;
+        }
+
+        if (topFavorite.genero) {
+          ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          const genreText = topFavorite.genero;
+          const genreMetrics = ctx.measureText(genreText);
+          const genreW = genreMetrics.width + 20;
+          const genreH = 26;
+          const genreY = blockY + 152;
+
+          ctx.fillStyle = isDarkCard ? 'rgba(16, 185, 129, 0.2)' : 'rgba(5, 150, 105, 0.15)';
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(badgeX, genreY, genreW, genreH, 8);
+          } else {
+            ctx.rect(badgeX, genreY, genreW, genreH);
+          }
+          ctx.fill();
+
+          ctx.fillStyle = isDarkCard ? '#6ee7b7' : '#047857';
+          ctx.fillText(genreText, badgeX + 10, genreY + 18);
+        }
+      } else {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = isDarkCard ? '#34d399' : '#047857';
+        ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('✦ OBRA MÁS DESTACADA DEL AÑO', 110, blockY + 50);
+
+        ctx.fillStyle = isDarkCard ? '#ffffff' : '#1c1917';
+        ctx.font = 'bold 36px Georgia, serif';
+        ctx.fillText('Sin lecturas finalizadas', 110, blockY + 105);
+
+        ctx.fillStyle = isDarkCard ? '#cbd5e1' : '#44403c';
+        ctx.font = 'italic 22px Georgia, serif';
+        ctx.fillText('Añade libros leídos para ver tu top', 110, blockY + 145);
+      }
 
       if (stats.topGenre) {
         ctx.textAlign = 'right';
@@ -220,14 +505,13 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         ctx.fillText(stats.topGenre, 1080, blockY + 95);
       }
 
-      // 5. Mosaico de libros leídos estilo estantería física
+      // 5. Mosaico de libros leídos estilo estantería física con texturas reales
       const shelfY = 930;
       ctx.textAlign = 'left';
       ctx.fillStyle = isDarkCard ? '#f59e0b' : '#b45309';
       ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.fillText('ESTANTERÍA DEL AÑO', 75, shelfY - 18);
 
-      const showcaseBooks = stats.completedBooks.slice(0, 6);
       const bookSlotW = 155;
       const bookSlotH = 225;
       const gap = 24;
@@ -275,86 +559,20 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
       ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.fillText(`NEXUS LIBRARY · MEMORIAS ${stats.year}`, plankX + plankW / 2, plankY + 22);
 
-      const clothPalettes = [
-        ['#7a2231', '#4a1320'], // burdeos
-        ['#24523b', '#12301f'], // bosque
-        ['#23406e', '#122241'], // marino
-        ['#8a5a22', '#553413'], // ocre
-        ['#3b4252', '#1e222c'], // pizarra
-        ['#5b2f5e', '#321a35']  // ciruela
-      ];
-
+      // Dibujar cada libro con su portada real y acabado 3D
       showcaseBooks.forEach((b, idx) => {
         const bx = 75 + idx * (bookSlotW + gap);
-
-        // 1. Sombra de contacto del libro sobre la balda
-        ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(bx + bookSlotW / 2, plankY + 1, bookSlotW * 0.44, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Cantos de las páginas asomando a la derecha (estilo encuadernación artesanal)
-        ctx.fillStyle = '#dccfae';
-        ctx.fillRect(bx + bookSlotW, shelfY + 3, 2, bookSlotH - 6);
-        ctx.fillStyle = '#b6a784';
-        ctx.fillRect(bx + bookSlotW + 2, shelfY + 5, 2, bookSlotH - 10);
-        ctx.fillStyle = '#8e8062';
-        ctx.fillRect(bx + bookSlotW + 4, shelfY + 8, 2, bookSlotH - 16);
-
-        // 3. Tapa dura del libro (forma con lomo recto y esquinas exteriores redondeadas)
-        const clothColors = clothPalettes[idx % clothPalettes.length];
-        const bookGrad = ctx.createLinearGradient(bx, shelfY, bx + bookSlotW, shelfY + bookSlotH);
-        bookGrad.addColorStop(0, clothColors[0]);
-        bookGrad.addColorStop(1, clothColors[1]);
-        ctx.fillStyle = bookGrad;
-
-        ctx.beginPath();
-        ctx.roundRect(bx, shelfY, bookSlotW, bookSlotH, [2, 6, 6, 2]);
-        ctx.fill();
-
-        // 4. Marco dorado editorial grabado en la tela
-        ctx.strokeStyle = 'rgba(236, 213, 150, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 18, shelfY + 12, bookSlotW - 28, bookSlotH - 24);
-        ctx.strokeStyle = 'rgba(236, 213, 150, 0.2)';
-        ctx.strokeRect(bx + 21, shelfY + 15, bookSlotW - 34, bookSlotH - 30);
-
-        // 5. Relieve del lomo y articulación de bisagra a la izquierda
-        const spineGrad = ctx.createLinearGradient(bx, shelfY, bx + 22, shelfY);
-        spineGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
-        spineGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.18)');
-        spineGrad.addColorStop(0.45, 'rgba(0, 0, 0, 0.55)');
-        spineGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.12)');
-        spineGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = spineGrad;
-        ctx.fillRect(bx, shelfY, 22, bookSlotH);
-
-        // 6. Brillo satinado diagonal (barniz de la cubierta)
-        const shineGrad = ctx.createLinearGradient(bx, shelfY, bx + bookSlotW, shelfY + bookSlotH);
-        shineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-        shineGrad.addColorStop(0.35, 'transparent');
-        ctx.fillStyle = shineGrad;
-        ctx.beginPath();
-        ctx.roundRect(bx, shelfY, bookSlotW, bookSlotH, [2, 6, 6, 2]);
-        ctx.fill();
-
-        // 7. Texto del libro estampado en oro
-        ctx.fillStyle = '#fce7b0';
-        ctx.font = 'bold 15px Georgia, serif';
-        ctx.textAlign = 'center';
-        const shortTitle = b.nombre.length > 26 ? b.nombre.slice(0, 24) + '...' : b.nombre;
-        ctx.fillText(shortTitle, bx + bookSlotW / 2 + 5, shelfY + 70, bookSlotW - 32);
-
-        ctx.fillStyle = '#ecd596';
-        ctx.font = 'italic 12px Georgia, serif';
-        const shortAuthor = (b.autor || '').length > 20 ? (b.autor || '').slice(0, 18) + '...' : (b.autor || '');
-        ctx.fillText(shortAuthor, bx + bookSlotW / 2 + 5, shelfY + 105, bookSlotW - 32);
-
-        if (b.puntuacion) {
-          ctx.fillStyle = '#fbbf24';
-          ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('⭐'.repeat(b.puntuacion), bx + bookSlotW / 2 + 5, shelfY + 185);
-        }
+        drawBookCoverOnCanvas(
+          ctx,
+          b,
+          showcaseImgs[idx],
+          bx,
+          shelfY,
+          bookSlotW,
+          bookSlotH,
+          isDarkCard,
+          idx
+        );
       });
 
       // 6. Pie
