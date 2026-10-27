@@ -200,8 +200,13 @@ export const App: React.FC = () => {
   );
 
   useEffect(() => {
-    setCollectionsCount(collectionService.getCollections(currentUser?.id).length);
-  }, [currentUser?.id, activeSection]);
+    const update = () => {
+      setCollectionsCount(collectionService.getCollections(currentUser?.id).length);
+    };
+    update();
+    const unsub = collectionService.subscribe(update);
+    return unsub;
+  }, [currentUser?.id]);
   const [authLoading, setAuthLoading] = useState(true);
   const [offlineGuestMode, setOfflineGuestMode] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncMigrationResult | null>(null);
@@ -916,6 +921,7 @@ export const App: React.FC = () => {
         onOpenImport={() => setIsImportOpen(true)}
         onLeaveGuestMode={() => setOfflineGuestMode(false)}
         metrics={metrics}
+        collectionsCount={collectionsCount}
         sagasCount={sagas.length}
         hasUser={Boolean(currentUser)}
         userEmail={currentUser?.email}

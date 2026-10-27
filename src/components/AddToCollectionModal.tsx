@@ -12,12 +12,9 @@ import {
   Coffee,
   Compass,
   Gift,
-  BookMarked,
-  UserCheck,
-  Clock,
-  ArrowRight
+  BookMarked
 } from 'lucide-react';
-import { Book, CustomCollection, LentRecord } from '../types/models';
+import { Book, CustomCollection } from '../types/models';
 import { collectionService } from '../services/collectionService';
 import { BookCover } from './BookCover';
 
@@ -27,7 +24,6 @@ interface AddToCollectionModalProps {
   book: Book;
   currentUserId?: string;
   onShowToast?: (message: string) => void;
-  onOpenLendModal?: () => void;
   onCollectionsChanged?: () => void;
 }
 
@@ -48,11 +44,9 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
   book,
   currentUserId,
   onShowToast,
-  onOpenLendModal,
   onCollectionsChanged
 }) => {
   const [collections, setCollections] = useState<CustomCollection[]>([]);
-  const [activeLent, setActiveLent] = useState<LentRecord | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newShelfName, setNewShelfName] = useState('');
   const [newShelfIcon, setNewShelfIcon] = useState('Bookmark');
@@ -61,8 +55,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
     if (!isOpen) return;
     const all = collectionService.getCollections(currentUserId);
     setCollections(all);
-    const lent = collectionService.getActiveLentRecordForBook(book.id, currentUserId);
-    setActiveLent(lent);
+
   }, [isOpen, book.id, currentUserId]);
 
   if (!isOpen) return null;
@@ -102,15 +95,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
     onShowToast?.(`Colección «${created.nombre}» creada y libro añadido.`);
   };
 
-  const handleMarkReturned = () => {
-    if (!activeLent) return;
-    collectionService.returnBook(activeLent.id, undefined, currentUserId);
-    setActiveLent(null);
-    onCollectionsChanged?.();
-    onShowToast?.(`«${book.nombre}» marcado como devuelto.`);
-  };
-
-  return (
+    return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
@@ -297,80 +282,6 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
                 );
               })}
             </div>
-          )}
-        </div>
-
-        {/* ─── Sección Especial: Préstamo de libro físico ─── */}
-        <div className="border-t border-amber-900/15 dark:border-[#222B3D] pt-3.5 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-serif font-bold text-stone-800 dark:text-slate-200 flex items-center gap-1.5">
-              <UserCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Control de Préstamos</span>
-            </span>
-            {activeLent && (
-              <span className="text-[10px] uppercase font-bold text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30">
-                En préstamo
-              </span>
-            )}
-          </div>
-
-          {activeLent ? (
-            <div className="p-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/5 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-stone-600 dark:text-slate-400 block text-[11px]">
-                    Prestado a:
-                  </span>
-                  <span className="font-bold text-stone-900 dark:text-white text-sm">
-                    {activeLent.borrowerName}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-stone-500 dark:text-slate-400 block text-[10px]">
-                    Desde:
-                  </span>
-                  <span className="font-mono text-stone-700 dark:text-slate-300 text-xs">
-                    {activeLent.borrowDate}
-                  </span>
-                </div>
-              </div>
-
-              {activeLent.notes && (
-                <p className="text-[11px] italic text-stone-600 dark:text-slate-400 border-t border-rose-500/20 pt-1.5">
-                  «{activeLent.notes}»
-                </p>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={handleMarkReturned}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Marcar como devuelto</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenLendModal?.();
-              }}
-              className="w-full flex items-center justify-between p-3 rounded-2xl border border-dashed border-amber-900/20 dark:border-slate-700 hover:border-amber-600 text-left transition group"
-            >
-              <div>
-                <span className="text-xs font-bold text-stone-800 dark:text-slate-200 block group-hover:text-amber-700 dark:group-hover:text-amber-400">
-                  ¿Has prestado este libro físico?
-                </span>
-                <span className="text-[11px] text-stone-500 dark:text-slate-400 block">
-                  Apunta a quién y la fecha para no perder el rastro de tu ejemplar.
-                </span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-amber-600 group-hover:translate-x-1 transition-transform shrink-0" />
-            </button>
           )}
         </div>
 

@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Bookmark,
   Rows3,
   Grid,
   List,
   Plus,
+  Check,
   Edit2,
   Trash2,
   BookOpen,
@@ -20,22 +21,16 @@ import {
   Coffee,
   Compass,
   Gift,
-  UserCheck,
-  Calendar,
-  AlertCircle,
-  Check,
-  Clock,
   ChevronRight,
-  FolderPlus,
   X
 } from 'lucide-react';
-import { Book, CustomCollection, LentRecord } from '../types/models';
+import { Book, CustomCollection } from '../types/models';
 import { collectionService } from '../services/collectionService';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { BookCard } from './BookCard';
 import { formatStars, ReadingStatus } from '../constants/catalogs';
-import { LentBookModal } from './LentBookModal';
+
 import '../book-shelf.css';
 
 interface CollectionsScreenProps {
@@ -77,14 +72,10 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
   onDeleteBook,
   onQuickStatusChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'shelves' | 'lent'>('shelves');
-  const [collections, setCollections] = useState<CustomCollection[]>(() =>
+    const [collections, setCollections] = useState<CustomCollection[]>(() =>
     collectionService.getCollections(currentUserId)
   );
-  const [lentRecords, setLentRecords] = useState<LentRecord[]>(() =>
-    collectionService.getLentRecords(currentUserId)
-  );
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+    const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [shelfViewMode, setShelfViewMode] = useState<'shelf' | 'grid' | 'list'>('shelf');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -95,14 +86,16 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
   const [modalDesc, setModalDesc] = useState('');
   const [modalIcon, setModalIcon] = useState('Bookmark');
 
-  const [isLendModalOpen, setIsLendModalOpen] = useState(false);
-  const [isBookPickerOpen, setIsBookPickerOpen] = useState(false);
+    const [isBookPickerOpen, setIsBookPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
 
   const refreshData = () => {
     setCollections(collectionService.getCollections(currentUserId));
-    setLentRecords(collectionService.getLentRecords(currentUserId));
   };
+
+  useEffect(() => {
+    return collectionService.subscribe(refreshData);
+  }, [currentUserId]);
 
   const activeCollection = useMemo(() => {
     if (!selectedCollectionId) return null;
@@ -132,16 +125,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
     onOpenBookDetail?.(target);
   };
 
-  // Libros prestados activos e históricos
-  const activeLentRecords = useMemo(() => {
-    return lentRecords.filter((r) => !r.returned);
-  }, [lentRecords]);
-
-  const returnedLentRecords = useMemo(() => {
-    return lentRecords.filter((r) => r.returned);
-  }, [lentRecords]);
-
-  const booksMap = useMemo(() => {
+    const booksMap = useMemo(() => {
     return new Map(books.map((b) => [b.id, b]));
   }, [books]);
 
@@ -240,60 +224,21 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
       {/* ─── Cabecera Principal ─── */}
       {!activeCollection && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#242E42] pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-600/30">
-              <Bookmark className="w-5 h-5" />
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-600/30">
+                <Bookmark className="w-5 h-5" />
+              </div>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
+                Colecciones & Estanterías
+              </h1>
             </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
-              Colecciones & Estanterías
-            </h1>
-          </div>
-          <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-            Organiza tus obras en baldas temáticas personalizadas y lleva el registro de libros prestados
-          </p>
-        </div>
-
-        {/* Acciones superiores */}
-        <div className="flex items-center gap-2">
-          {/* Selector de pestañas */}
-          <div className="inline-flex items-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('shelves');
-                setSelectedCollectionId(null);
-              }}
-              className={
-                'rounded-lg px-3 py-1 font-semibold transition ' +
-                (activeTab === 'shelves'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-stone-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300')
-              }
-            >
-              Estanterías ({collections.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('lent');
-                setSelectedCollectionId(null);
-              }}
-              className={
-                'rounded-lg px-3 py-1 font-semibold transition relative ' +
-                (activeTab === 'lent'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-stone-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300')
-              }
-            >
-              Libros Prestados ({activeLentRecords.length})
-              {activeLentRecords.length > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block ml-1.5 align-middle" />
-              )}
-            </button>
+            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+              Organiza tus obras en baldas y estanterías temáticas personalizadas
+            </p>
           </div>
 
-          {activeTab === 'shelves' ? (
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleOpenCreate()}
@@ -302,25 +247,9 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
               <Plus className="w-4 h-4" />
               <span>Nueva Estantería</span>
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsLendModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition active:scale-95"
-            >
-              <UserCheck className="w-4 h-4" />
-              <span>Prestar Libro</span>
-            </button>
-          )}
+          </div>
         </div>
-      </div>
       )}
-
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {/* ─── PESTAÑA 1: ESTANTERÍAS PERSONALIZADAS ─── */}
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {activeTab === 'shelves' && (
-        <>
           {/* Caso A: Vista detalle de una estantería seleccionada */}
           {activeCollection ? (
             <div className="space-y-4 sm:space-y-6">
@@ -822,191 +751,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
               )}
             </div>
           )}
-        </>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {/* ─── PESTAÑA 2: LIBRO DE PRÉSTAMOS (LENDING LEDGER) ─── */}
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {activeTab === 'lent' && (
-        <div className="space-y-8">
-          {/* Préstamos Activos */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#222B3D] pb-2">
-              <div>
-                <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                  <span>Libros Actualmente Prestados</span>
-                </h2>
-                <p className="text-xs text-stone-600 dark:text-slate-400">
-                  Ejemplares físicos que están en manos de amigos, familiares o conocidos
-                </p>
-              </div>
-              <span className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-500/15 px-2.5 py-1 rounded-xl">
-                {activeLentRecords.length} en préstamo
-              </span>
-            </div>
-
-            {activeLentRecords.length === 0 ? (
-              <div className="py-12 text-center rounded-3xl border border-dashed border-amber-900/20 dark:border-slate-800 p-6 space-y-2.5">
-                <Check className="w-8 h-8 text-emerald-500 mx-auto" />
-                <h3 className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-                  No tienes ningún libro prestado ahora mismo
-                </h3>
-                <p className="text-xs text-stone-500 dark:text-slate-400 max-w-sm mx-auto">
-                  Todos tus libros físicos están a salvo en tus estanterías. Si le dejas uno a alguien, puedes anotarlo aquí.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIsLendModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>Anotar un préstamo</span>
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeLentRecords.map((r) => {
-                  const lentBook = booksMap.get(r.bookId);
-                  const daysElapsed = Math.floor(
-                    (new Date().getTime() - new Date(r.borrowDate).getTime()) / (1000 * 60 * 60 * 24)
-                  );
-                  const isLongLoan = daysElapsed > 30;
-
-                  return (
-                    <div
-                      key={r.id}
-                      className="p-4 rounded-3xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] space-y-3 shadow-sm hover:shadow-md transition"
-                    >
-                      <div className="flex items-start gap-3.5">
-                        <div
-                          className="w-14 shrink-0 cursor-pointer"
-                          onClick={() => lentBook && onOpenBookDetail?.(lentBook)}
-                        >
-                          <BookCover
-                            nombre={lentBook ? lentBook.nombre : 'Obra'}
-                            autor={lentBook ? lentBook.autor : ''}
-                            portadaUrl={lentBook?.portadaUrl}
-                            portadaFallbackUrl={lentBook?.portadaFallbackUrl}
-                            portadaDataUrl={lentBook?.portadaDataUrl}
-                            size="sm"
-                            variant="book"
-                          />
-                        </div>
-
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <span className="text-[10px] uppercase font-bold text-rose-700 dark:text-rose-400 tracking-wider">
-                            Prestado a:
-                          </span>
-                          <h3 className="font-serif font-bold text-base text-stone-900 dark:text-white truncate">
-                            {r.borrowerName}
-                          </h3>
-                          <p className="text-xs font-semibold text-stone-800 dark:text-slate-200 truncate">
-                            «{lentBook ? lentBook.nombre : 'Libro desconocido'}»
-                          </p>
-                          <p className="text-[11px] text-stone-500 dark:text-slate-400 truncate">
-                            {lentBook?.autor}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Detalles del préstamo */}
-                      <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-slate-800/50 border border-amber-900/10 dark:border-slate-700/50 text-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-stone-600 dark:text-slate-400">Fecha del préstamo:</span>
-                          <span className="font-mono font-bold text-stone-800 dark:text-slate-200">
-                            {r.borrowDate}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-stone-600 dark:text-slate-400">Tiempo prestado:</span>
-                          <span
-                            className={
-                              'font-bold ' +
-                              (isLongLoan ? 'text-rose-600 dark:text-rose-400' : 'text-amber-800 dark:text-amber-400')
-                            }
-                          >
-                            {daysElapsed} {daysElapsed === 1 ? 'día' : 'días'}
-                            {isLongLoan && ' (¡recuérdale pedirlo!)'}
-                          </span>
-                        </div>
-                        {r.expectedReturnDate && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-stone-600 dark:text-slate-400">Devolución esperada:</span>
-                            <span className="font-mono text-stone-700 dark:text-slate-300">
-                              {r.expectedReturnDate}
-                            </span>
-                          </div>
-                        )}
-                        {r.notes && (
-                          <p className="text-[11px] italic text-stone-600 dark:text-slate-400 border-t border-amber-900/10 dark:border-slate-700 pt-1">
-                            «{r.notes}»
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Acciones */}
-                      <div className="flex items-center justify-end gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteLentRecord(r.id)}
-                          className="px-2.5 py-1.5 rounded-xl text-stone-400 hover:text-rose-600 text-xs transition"
-                          title="Eliminar este apunte"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMarkReturned(r.id, lentBook?.nombre || 'Libro')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition active:scale-95"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Marcar como devuelto</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Historial de Devoluciones */}
-          {returnedLentRecords.length > 0 && (
-            <div className="space-y-3 pt-6 border-t border-amber-900/15 dark:border-[#222B3D]">
-              <h3 className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-                Historial de Libros Devueltos ({returnedLentRecords.length})
-              </h3>
-              <div className="rounded-2xl border border-amber-900/15 dark:border-[#222B3D] divide-y divide-amber-900/10 dark:divide-slate-800 bg-white/50 dark:bg-[#141A26]/60 overflow-hidden text-xs">
-                {returnedLentRecords.map((r) => {
-                  const b = booksMap.get(r.bookId);
-                  return (
-                    <div key={r.id} className="p-3 flex items-center justify-between gap-3">
-                      <div>
-                        <span className="font-serif font-bold text-stone-900 dark:text-white">
-                          «{b ? b.nombre : 'Libro'}»
-                        </span>
-                        <span className="text-stone-500 dark:text-slate-400 block text-[11px]">
-                          Prestado a {r.borrowerName} del {r.borrowDate} al {r.returnedDate || 'Recuperado'}
-                        </span>
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        <Check className="w-3 h-3" /> Devuelto
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {/* ─── MODAL: CREAR / EDITAR ESTANTERÍA ─── */}
-      {/* ══════════════════════════════════════════════════════════════ */}
-      {isCreateModalOpen && (
+        {isCreateModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
           onClick={() => setIsCreateModalOpen(false)}
@@ -1232,16 +977,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
       )}
 
       {/* ─── Modal de Registro de Préstamo ─── */}
-      {isLendModalOpen && (
-        <LentBookModal
-          isOpen={isLendModalOpen}
-          onClose={() => setIsLendModalOpen(false)}
-          allBooks={books}
-          currentUserId={currentUserId}
-          onShowToast={onShowToast}
-          onLentChanged={refreshData}
-        />
-      )}
+      
     </div>
   );
 };

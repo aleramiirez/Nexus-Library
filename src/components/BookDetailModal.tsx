@@ -21,10 +21,9 @@ import {
   Sliders
 } from 'lucide-react';
 import '../book-detail.css';
-import { Book, StarRating, CustomCollection, LentRecord } from '../types/models';
+import { Book, StarRating, CustomCollection } from '../types/models';
 import { collectionService } from '../services/collectionService';
 import { AddToCollectionModal } from './AddToCollectionModal';
-import { LentBookModal } from './LentBookModal';
 import { BookCover } from './BookCover';
 import { formatStars, READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
 import { RecommendBookModal } from './RecommendBookModal';
@@ -161,15 +160,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 }) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
   const [isAddToCollectionOpen, setIsAddToCollectionOpen] = useState(false);
-  const [isLendModalOpen, setIsLendModalOpen] = useState(false);
-  const [bookCollections, setBookCollections] = useState<CustomCollection[]>([]);
-  const [activeLentRecord, setActiveLentRecord] = useState<LentRecord | null>(null);
-
-  useEffect(() => {
+    const [bookCollections, setBookCollections] = useState<CustomCollection[]>([]);
+    useEffect(() => {
     if (!book) return;
     setBookCollections(collectionService.getCollectionsForBook(book.id, currentUserId));
-    setActiveLentRecord(collectionService.getActiveLentRecordForBook(book.id, currentUserId));
-  }, [book, currentUserId]);
+      }, [book, currentUserId]);
   const [isClosing, setIsClosing] = useState(false);
   const [animDone, setAnimDone] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'synopsis'>('details');

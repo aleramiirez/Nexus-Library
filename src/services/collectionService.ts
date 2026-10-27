@@ -4,6 +4,27 @@ const COLLECTIONS_KEY_PREFIX = 'nexus_custom_collections_';
 const LENT_KEY_PREFIX = 'nexus_lent_records_';
 
 class CollectionService {
+  private listeners: Set<() => void> = new Set();
+
+  public subscribe(cb: () => void): () => void {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  }
+
+  private notify(): void {
+    this.listeners.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.error('Error in collectionService listener:', err);
+      }
+    });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexus_collections_updated'));
+    }
+  }
   private getCollectionsStorageKey(userId?: string): string {
     return `${COLLECTIONS_KEY_PREFIX}${userId && userId.trim() ? userId.trim() : 'local'}`;
   }
@@ -42,6 +63,7 @@ class CollectionService {
     if (typeof window === 'undefined' || !window.localStorage) return;
     try {
       localStorage.setItem(this.getCollectionsStorageKey(userId), JSON.stringify(collections));
+      this.notify();
     } catch (e) {
       console.error('Error saving collections to localStorage:', e);
     }
