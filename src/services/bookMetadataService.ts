@@ -1840,7 +1840,190 @@ export const bookMetadataService = {
       return candAuthor.includes(targetAuthor) || targetAuthor.includes(candAuthor);
     });
 
-    return verified || candidates[0];
+    const best = verified || candidates[0];
+    if (best && (!best.sinopsis || best.sinopsis.trim().length === 0)) {
+      try {
+        const syn = await this.fetchSynopsisForBook({
+          nombre: input.nombre,
+          autor: input.autor || best.autor,
+          isbn: input.isbn || best.isbn
+        });
+        if (syn) {
+          best.sinopsis = syn;
+        }
+      } catch {
+        // Fallback without synopsis
+      }
+    }
+
+    return best;
+  },
+
+  async fetchSynopsisForBook(
+    input: {
+      nombre: string;
+      autor?: string;
+      isbn?: string;
+    },
+    signal?: AbortSignal
+  ): Promise<string> {
+    const title = input.nombre.trim();
+    if (!title) return '';
+    const author = (input.autor || '').trim();
+    const cleanIsbn = input.isbn ? extractCleanIsbn(input.isbn) : null;
+
+    // 1. Curated list check
+    const normalizedInputTitle = normalizeText(title);
+    for (const categoryBooks of Object.values(CURATED_CATEGORY_BOOKS)) {
+      const match = categoryBooks.find(
+        (b) =>
+          normalizeText(b.nombre) === normalizedInputTitle &&
+          Boolean(b.sinopsis && b.sinopsis.trim().length > 0)
+      );
+      if (match?.sinopsis) {
+        return match.sinopsis.trim();
+      }
+    }
+
+    // 2. Try Spanish Wikipedia (high quality, natural synopsis in Spanish)
+    try {
+      const wikiQueries = [
+        `"${title}" libro`,
+        `"${title}" novela`,
+        `"${title}"`,
+        `${title} libro`
+      ];
+
+      for (const q of wikiQueries) {
+        if (signal?.aborted) break;
+        const searchUrl =
+          'https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=' +
+          encodeURIComponent(q) +
+          '&utf8=&format=json&origin=*&srlimit=4';
+
+        const searchRes = await fetchWithTimeout(
+          searchUrl,
+          {
+            signal,
+            headers: {
+              'User-Agent': 'NexusLibrary/1.0 (biblioteca@nexus.local)'
+            }
+          },
+          3500
+        );
+
+        if (!searchRes.ok) continue;
+        const searchData = (await searchRes.json()) as {
+          query?: { search?: Array<{ title?: string }> };
+        };
+
+        const hits = searchData.query?.search || [];
+        for (const hit of hits) {
+          if (!hit.title || hit.title.toLowerCase().includes('desambiguación')) continue;
+
+          const sumUrl =
+            'https://es.wikipedia.org/api/rest_v1/page/summary/' +
+            encodeURIComponent(hit.title);
+
+          const sumRes = await fetchWithTimeout(
+            sumUrl,
+            {
+              signal,
+              headers: {
+                'User-Agent': 'NexusLibrary/1.0 (biblioteca@nexus.local)'
+              }
+            },
+            3500
+          );
+
+          if (!sumRes.ok) continue;
+          const sum = (await sumRes.json()) as {
+            type?: string;
+            description?: string;
+            extract?: string;
+          };
+
+          if (sum.type === 'disambiguation' || !sum.extract) continue;
+
+          const desc = (sum.description || '').toLowerCase();
+          const ext = sum.extract.toLowerCase();
+
+          const isPerson =
+            desc.includes('escritor') ||
+            desc.includes('autor') ||
+            desc.includes('periodista') ||
+            desc.includes('político') ||
+            ext.startsWith('fue un') ||
+            ext.startsWith('es un escritor');
+
+          const isBook =
+            desc.includes('novela') ||
+            desc.includes('libro') ||
+            desc.includes('obra') ||
+            desc.includes('trilogía') ||
+            desc.includes('saga') ||
+            ext.includes('novela') ||
+            ext.includes('libro') ||
+            ext.includes('obra literaria') ||
+            ext.includes('publicad');
+
+          if (!isPerson && isBook && sum.extract.length > 50) {
+            return sum.extract.trim();
+          }
+        }
+      }
+    } catch {
+      // Continue to next provider
+    }
+
+    // 3. Try Open Library works
+    try {
+      const olQuery = cleanIsbn ? `isbn=${cleanIsbn}` : [title, author].filter(Boolean).join(' ');
+      const olSearchUrl =
+        'https://openlibrary.org/search.json?q=' +
+        encodeURIComponent(olQuery) +
+        '&fields=key,title,author_name&limit=4';
+
+      const olSearchRes = await fetchWithTimeout(olSearchUrl, { signal }, 4000);
+      if (olSearchRes.ok) {
+        const olData = (await olSearchRes.json()) as {
+          docs?: Array<{ key?: string; title?: string }>;
+        };
+
+        for (const doc of olData.docs || []) {
+          if (!doc.key) continue;
+          const workUrl = 'https://openlibrary.org' + doc.key + '.json';
+          const workRes = await fetchWithTimeout(workUrl, { signal }, 4000);
+          if (workRes.ok) {
+            const workData = (await workRes.json()) as {
+              description?: string | { type?: string; value?: string };
+            };
+
+            const rawDesc =
+              typeof workData.description === 'string'
+                ? workData.description
+                : workData.description?.value;
+
+            if (rawDesc && typeof rawDesc === 'string') {
+              const cleanDesc = rawDesc
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/[*_#`]/g, '')
+                .replace(/---+/g, '')
+                .replace(/\r\n/g, '\n')
+                .trim();
+
+              if (cleanDesc.length > 35) {
+                return cleanDesc;
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Continue to next provider
+    }
+
+    return '';
   },
 
   async fetchSubjectBooks(

@@ -211,8 +211,8 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
           isbn: book.isbn
         });
 
-        if (match) {
-          if (mode === 'covers') {
+        if (mode === 'covers') {
+          if (match) {
             const hasNewCover = Boolean(match.portadaUrl || match.portadaFallbackUrl);
             if (hasNewCover) {
               await updateBookPartialRecord(book.id, {
@@ -233,29 +233,39 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
               failedCount++;
             }
           } else {
-            // Mode 'synopsis'
-            const hasNewSynopsis = Boolean(match.sinopsis && match.sinopsis.trim().length > 0);
-            if (hasNewSynopsis) {
-              await updateBookPartialRecord(book.id, {
-                sinopsis: match.sinopsis,
-                portadaUrl: book.portadaUrl || match.portadaUrl,
-                portadaFallbackUrl: book.portadaFallbackUrl || match.portadaFallbackUrl,
-                isbn: book.isbn || match.isbn,
-                paginas: book.paginas ?? match.paginas,
-                fechaPublicacion: book.fechaPublicacion ?? match.fechaPublicacion,
-                editorial: book.editorial || match.editorial,
-                idioma: book.idioma || match.idioma,
-                genero: book.genero || match.suggestedGenre,
-                subgeneros:
-                  book.subgeneros.length > 0 ? book.subgeneros : match.suggestedSubgenres
-              });
-              updatedCount++;
-            } else {
-              failedCount++;
-            }
+            failedCount++;
           }
         } else {
-          failedCount++;
+          // Mode 'synopsis'
+          let newSynopsis = match?.sinopsis?.trim() || '';
+          if (!newSynopsis) {
+            newSynopsis = (
+              await bookMetadataService.fetchSynopsisForBook({
+                nombre: book.nombre,
+                autor: book.autor,
+                isbn: book.isbn
+              })
+            ).trim();
+          }
+
+          if (newSynopsis.length > 0) {
+            await updateBookPartialRecord(book.id, {
+              sinopsis: newSynopsis,
+              portadaUrl: book.portadaUrl || match?.portadaUrl,
+              portadaFallbackUrl: book.portadaFallbackUrl || match?.portadaFallbackUrl,
+              isbn: book.isbn || match?.isbn,
+              paginas: book.paginas ?? match?.paginas,
+              fechaPublicacion: book.fechaPublicacion ?? match?.fechaPublicacion,
+              editorial: book.editorial || match?.editorial,
+              idioma: book.idioma || match?.idioma,
+              genero: book.genero || match?.suggestedGenre,
+              subgeneros:
+                book.subgeneros.length > 0 ? book.subgeneros : (match?.suggestedSubgenres || [])
+            });
+            updatedCount++;
+          } else {
+            failedCount++;
+          }
         }
       } catch {
         failedCount++;

@@ -14,13 +14,16 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating } from '../types/models';
 import { BookCover } from './BookCover';
 import { READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
 import { RecommendBookModal } from './RecommendBookModal';
+import { bookMetadataService } from '../services/bookMetadataService';
+import { updateBookPartialRecord } from '../db/database';
 
 export interface BookDetailModalProps {
   book: Book | null;
@@ -135,6 +138,49 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState<'details' | 'synopsis'>('details');
   const [isFlippingPage, setIsFlippingPage] = useState(false);
   const [flipDirection, setFlipDirection] = useState<'forward' | 'backward'>('forward');
+  const [isFetchingSynopsis, setIsFetchingSynopsis] = useState(false);
+  const [localSynopsis, setLocalSynopsis] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalSynopsis(null);
+  }, [book?.id]);
+
+  const currentSynopsis = (localSynopsis !== null ? localSynopsis : book?.sinopsis) || '';
+
+  const handleAutoFetchSynopsis = useCallback(async () => {
+    if (!book || isFetchingSynopsis) return;
+    setIsFetchingSynopsis(true);
+    try {
+      const synopsis = await bookMetadataService.fetchSynopsisForBook({
+        nombre: book.nombre,
+        autor: book.autor,
+        isbn: book.isbn
+      });
+
+      if (synopsis && synopsis.trim().length > 0) {
+        const clean = synopsis.trim();
+        setLocalSynopsis(clean);
+        await updateBookPartialRecord(book.id, {
+          sinopsis: clean
+        });
+        if (onShowToast) {
+          onShowToast('Sinopsis autocompletada y guardada con éxito.');
+        }
+      } else {
+        if (onShowToast) {
+          onShowToast('No se encontró una sinopsis disponible en los registros abiertos.');
+        }
+      }
+    } catch (err) {
+      console.error('Error al autocompletar la sinopsis:', err);
+      if (onShowToast) {
+        onShowToast('No fue posible autocompletar la sinopsis en este momento.');
+      }
+    } finally {
+      setIsFetchingSynopsis(false);
+    }
+  }, [book, isFetchingSynopsis, onShowToast]);
+
   const flipTimerRef = useRef<number | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -378,26 +424,42 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </p>
                     </div>
 
-                    {book.sinopsis ? (
+                    {currentSynopsis ? (
                       <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 shadow-sm">
                         <p className="font-serif text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line first-letter:float-left first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-2.5 first-letter:leading-none">
-                          {book.sinopsis}
+                          {currentSynopsis}
                         </p>
                       </div>
                     ) : (
-                      <div className="py-8 px-4 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2">
+                      <div className="py-8 px-4 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
                         <BookOpen className="w-8 h-8 text-amber-700/60 dark:text-amber-400/60 mx-auto" />
                         <p className="font-serif text-sm text-stone-700 dark:text-slate-300">
                           Esta edición no incluye una sinopsis registrada.
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => onEdit(book)}
-                          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 text-slate-950 font-bold"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Escribir sinopsis</span>
-                        </button>
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleAutoFetchSynopsis}
+                            disabled={isFetchingSynopsis}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm disabled:opacity-50"
+                          >
+                            {isFetchingSynopsis ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(book)}
+                            disabled={isFetchingSynopsis}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-stone-800 dark:text-slate-200 transition"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Escribir manual</span>
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -553,7 +615,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         Leer sinopsis de la obra
                       </span>
                       <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                        {book.sinopsis
+                        {currentSynopsis
                           ? 'Pasa de página para ver el argumento'
                           : 'Sin sinopsis registrada'}
                       </span>
@@ -1113,7 +1175,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               Leer sinopsis de la obra
                             </span>
                             <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                              {book.sinopsis
+                              {currentSynopsis
                                 ? 'Pasa la página para descubrir la trama y el argumento'
                                 : 'Sin sinopsis registrada todavía (pulsa para consultar)'}
                             </span>
@@ -1151,10 +1213,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </div>
                       </div>
 
-                      {book.sinopsis ? (
+                      {currentSynopsis ? (
                         <div className="py-2">
                           <p className="font-serif text-[15px] sm:text-base leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line tracking-normal first-letter:float-left first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-3 first-letter:leading-none">
-                            {book.sinopsis}
+                            {currentSynopsis}
                           </p>
                         </div>
                       ) : (
@@ -1164,16 +1226,32 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             Esta obra no incluye sinopsis registrada todavía
                           </h3>
                           <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
-                            Puedes editar la ficha del libro para redactar el argumento o completar sus datos desde el catálogo online.
+                            Puedes buscar y autocompletar el argumento automáticamente desde los registros bibliográficos abiertos o redactarlo a mano.
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => onEdit(book)}
-                            className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Escribir sinopsis</span>
-                          </button>
+                          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                            <button
+                              type="button"
+                              onClick={handleAutoFetchSynopsis}
+                              disabled={isFetchingSynopsis}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm disabled:opacity-50 cursor-pointer"
+                            >
+                              {isFetchingSynopsis ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-3.5 h-3.5" />
+                              )}
+                              <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onEdit(book)}
+                              disabled={isFetchingSynopsis}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-750 text-stone-800 dark:text-slate-200 transition shadow-sm cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Escribir manual</span>
+                            </button>
+                          </div>
                         </div>
                       )}
 
