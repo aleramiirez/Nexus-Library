@@ -271,39 +271,47 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-3 overflow-x-auto pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {stats.completedBooks.slice(0, 8).map((book) => (
-                <div
-                  key={book.id}
-                  onClick={() => onOpenBookDetail?.(book)}
-                  data-book-id={book.id}
-                  className="group flex-shrink-0 w-20 sm:w-24 cursor-pointer text-left space-y-1 active:scale-95 transition"
-                  title={`${book.nombre} (por ${book.autor})`}
-                >
-                  <div className="relative rounded-lg overflow-hidden shadow-md group-hover:shadow-xl group-hover:-translate-y-1 transition duration-300">
-                    <BookCover
-                      nombre={book.nombre}
-                      autor={book.autor}
-                      portadaUrl={book.portadaUrl}
-                      portadaFallbackUrl={book.portadaFallbackUrl}
-                      portadaDataUrl={book.portadaDataUrl}
-                      size="sm"
-                      variant="book"
-                    />
-                    {book.puntuacion && (
-                      <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/80 backdrop-blur-sm text-[9px] font-bold text-amber-300">
-                        {book.puntuacion}★
-                      </span>
-                    )}
+            <div className="bookcase relative">
+              <div className="flex items-end gap-3 sm:gap-4 overflow-x-auto pt-2 pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {stats.completedBooks.slice(0, 8).map((book) => (
+                  <div
+                    key={book.id}
+                    onClick={() => onOpenBookDetail?.(book)}
+                    data-book-id={book.id}
+                    className="group flex-shrink-0 w-20 sm:w-24 cursor-pointer text-left space-y-1.5 active:scale-95 transition"
+                    title={`${book.nombre} (por ${book.autor})`}
+                  >
+                    <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
+                      {/* Sombra de contacto sobre la balda */}
+                      <div className="absolute -bottom-1.5 left-1 right-1 h-2.5 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
+                      <BookCover
+                        nombre={book.nombre}
+                        autor={book.autor}
+                        portadaUrl={book.portadaUrl}
+                        portadaFallbackUrl={book.portadaFallbackUrl}
+                        portadaDataUrl={book.portadaDataUrl}
+                        size="sm"
+                        variant="book"
+                      />
+                      {book.puntuacion && (
+                        <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/85 backdrop-blur-sm text-[9px] font-bold text-amber-300 z-10 border border-amber-500/20">
+                          {book.puntuacion}★
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate group-hover:text-amber-700 dark:group-hover:text-amber-400">
+                      {book.nombre}
+                    </p>
+                    <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
+                      {book.fechaFin ? book.fechaFin.slice(5) : 'Leído'}
+                    </p>
                   </div>
-                  <p className="font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate group-hover:text-amber-700 dark:group-hover:text-amber-400">
-                    {book.nombre}
-                  </p>
-                  <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
-                    {book.fechaFin ? book.fechaFin.slice(5) : 'Leído'}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
+              {/* Balda de apoyo estilo estantería */}
+              <div className="shelf-plank -mx-2 mt-0" aria-hidden="true">
+                <div className="shelf-plank-top !h-2.5" />
+              </div>
             </div>
           </div>
         )}
@@ -465,7 +473,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                     data-book-id={b.id}
                     className="cursor-pointer group text-left space-y-1 active:scale-95 transition"
                   >
-                    <div className="rounded-lg overflow-hidden shadow group-hover:shadow-lg transition">
+                    <div className="relative transition-transform duration-300 group-hover:-translate-y-1.5">
+                      <div className="absolute -bottom-1.5 left-1 right-1 h-2 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
                       <BookCover
                         nombre={b.nombre}
                         autor={b.autor}
@@ -514,7 +523,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 onClick={() => onOpenBookDetail?.(stats.longestBook!)}
                 className="cursor-pointer p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-3.5"
               >
-                <div className="w-12 shrink-0 shadow rounded overflow-hidden">
+                <div className="w-12 shrink-0 relative transition-transform duration-300 hover:scale-105">
+                  <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
                   <BookCover
                     nombre={stats.longestBook.nombre}
                     autor={stats.longestBook.autor}
@@ -547,7 +557,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 onClick={() => onOpenBookDetail?.(stats.shortestBook!)}
                 className="cursor-pointer p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-3.5"
               >
-                <div className="w-12 shrink-0 shadow rounded overflow-hidden">
+                <div className="w-12 shrink-0 relative transition-transform duration-300 hover:scale-105">
+                  <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
                   <BookCover
                     nombre={stats.shortestBook.nombre}
                     autor={stats.shortestBook.autor}
@@ -603,7 +614,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                   onClick={() => onOpenBookDetail?.(b)}
                   className="cursor-pointer p-2.5 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-2.5"
                 >
-                  <div className="w-10 shrink-0 shadow rounded overflow-hidden">
+                  <div className="w-10 shrink-0 relative transition-transform duration-300 hover:scale-105">
+                    <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
                     <BookCover
                       nombre={b.nombre}
                       autor={b.autor}

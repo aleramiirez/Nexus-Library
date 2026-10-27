@@ -220,48 +220,140 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         ctx.fillText(stats.topGenre, 1080, blockY + 95);
       }
 
-      // 5. Mosaico de libros leídos
-      const shelfY = 960;
+      // 5. Mosaico de libros leídos estilo estantería física
+      const shelfY = 930;
       ctx.textAlign = 'left';
       ctx.fillStyle = isDarkCard ? '#f59e0b' : '#b45309';
       ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText('ESTANTERÍA DEL AÑO', 75, shelfY - 15);
+      ctx.fillText('ESTANTERÍA DEL AÑO', 75, shelfY - 18);
 
       const showcaseBooks = stats.completedBooks.slice(0, 6);
       const bookSlotW = 155;
-      const bookSlotH = 230;
+      const bookSlotH = 225;
       const gap = 24;
+
+      // Balda de madera artesanal bajo los libros
+      const plankY = shelfY + bookSlotH;
+      const plankW = 1050;
+      const plankX = 75;
+
+      // Sombra proyectada por la balda
+      ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.65)' : 'rgba(70, 40, 10, 0.35)';
+      ctx.fillRect(plankX, plankY + 22, plankW, 12);
+
+      // Superficie superior de la balda
+      const plankTopGrad = ctx.createLinearGradient(plankX, plankY, plankX, plankY + 12);
+      if (isDarkCard) {
+        plankTopGrad.addColorStop(0, '#8a6040');
+        plankTopGrad.addColorStop(0.5, '#62412b');
+        plankTopGrad.addColorStop(1, '#4a2f1e');
+      } else {
+        plankTopGrad.addColorStop(0, '#efd5a6');
+        plankTopGrad.addColorStop(0.5, '#dbb67f');
+        plankTopGrad.addColorStop(1, '#c4965c');
+      }
+      ctx.fillStyle = plankTopGrad;
+      ctx.fillRect(plankX, plankY, plankW, 12);
+
+      // Canto frontal de la balda
+      const plankFrontGrad = ctx.createLinearGradient(plankX, plankY + 12, plankX, plankY + 26);
+      if (isDarkCard) {
+        plankFrontGrad.addColorStop(0, '#62412b');
+        plankFrontGrad.addColorStop(0.6, '#4a2f1e');
+        plankFrontGrad.addColorStop(1, '#33200f');
+      } else {
+        plankFrontGrad.addColorStop(0, '#dbb67f');
+        plankFrontGrad.addColorStop(0.6, '#c4965c');
+        plankFrontGrad.addColorStop(1, '#a47843');
+      }
+      ctx.fillStyle = plankFrontGrad;
+      ctx.fillRect(plankX, plankY + 12, plankW, 14);
+
+      // Placa central de latón en la balda
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isDarkCard ? 'rgba(251, 191, 36, 0.6)' : 'rgba(120, 53, 15, 0.7)';
+      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(`NEXUS LIBRARY · MEMORIAS ${stats.year}`, plankX + plankW / 2, plankY + 22);
+
+      const clothPalettes = [
+        ['#7a2231', '#4a1320'], // burdeos
+        ['#24523b', '#12301f'], // bosque
+        ['#23406e', '#122241'], // marino
+        ['#8a5a22', '#553413'], // ocre
+        ['#3b4252', '#1e222c'], // pizarra
+        ['#5b2f5e', '#321a35']  // ciruela
+      ];
 
       showcaseBooks.forEach((b, idx) => {
         const bx = 75 + idx * (bookSlotW + gap);
-        ctx.fillStyle = isDarkCard
-          ? idx % 2 === 0 ? '#1f293d' : '#2b2116'
-          : idx % 2 === 0 ? '#f4ead4' : '#ebdcc0';
-        ctx.strokeStyle = isDarkCard ? 'rgba(217, 119, 6, 0.5)' : 'rgba(180, 83, 9, 0.4)';
-        ctx.lineWidth = 1.5;
+
+        // 1. Sombra de contacto del libro sobre la balda
+        ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.4)';
         ctx.beginPath();
-        ctx.roundRect(bx, shelfY, bookSlotW, bookSlotH, 8);
+        ctx.ellipse(bx + bookSlotW / 2, plankY + 1, bookSlotW * 0.44, 4, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
 
-        ctx.fillStyle = isDarkCard ? 'rgba(245, 158, 11, 0.2)' : 'rgba(180, 83, 9, 0.15)';
-        ctx.fillRect(bx, shelfY, 14, bookSlotH);
+        // 2. Cantos de las páginas asomando a la derecha (estilo encuadernación artesanal)
+        ctx.fillStyle = '#dccfae';
+        ctx.fillRect(bx + bookSlotW, shelfY + 3, 2, bookSlotH - 6);
+        ctx.fillStyle = '#b6a784';
+        ctx.fillRect(bx + bookSlotW + 2, shelfY + 5, 2, bookSlotH - 10);
+        ctx.fillStyle = '#8e8062';
+        ctx.fillRect(bx + bookSlotW + 4, shelfY + 8, 2, bookSlotH - 16);
 
-        ctx.fillStyle = isDarkCard ? '#f8fafc' : '#1c1917';
+        // 3. Tapa dura del libro (forma con lomo recto y esquinas exteriores redondeadas)
+        const clothColors = clothPalettes[idx % clothPalettes.length];
+        const bookGrad = ctx.createLinearGradient(bx, shelfY, bx + bookSlotW, shelfY + bookSlotH);
+        bookGrad.addColorStop(0, clothColors[0]);
+        bookGrad.addColorStop(1, clothColors[1]);
+        ctx.fillStyle = bookGrad;
+
+        ctx.beginPath();
+        ctx.roundRect(bx, shelfY, bookSlotW, bookSlotH, [2, 6, 6, 2]);
+        ctx.fill();
+
+        // 4. Marco dorado editorial grabado en la tela
+        ctx.strokeStyle = 'rgba(236, 213, 150, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 18, shelfY + 12, bookSlotW - 28, bookSlotH - 24);
+        ctx.strokeStyle = 'rgba(236, 213, 150, 0.2)';
+        ctx.strokeRect(bx + 21, shelfY + 15, bookSlotW - 34, bookSlotH - 30);
+
+        // 5. Relieve del lomo y articulación de bisagra a la izquierda
+        const spineGrad = ctx.createLinearGradient(bx, shelfY, bx + 22, shelfY);
+        spineGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+        spineGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.18)');
+        spineGrad.addColorStop(0.45, 'rgba(0, 0, 0, 0.55)');
+        spineGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.12)');
+        spineGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = spineGrad;
+        ctx.fillRect(bx, shelfY, 22, bookSlotH);
+
+        // 6. Brillo satinado diagonal (barniz de la cubierta)
+        const shineGrad = ctx.createLinearGradient(bx, shelfY, bx + bookSlotW, shelfY + bookSlotH);
+        shineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+        shineGrad.addColorStop(0.35, 'transparent');
+        ctx.fillStyle = shineGrad;
+        ctx.beginPath();
+        ctx.roundRect(bx, shelfY, bookSlotW, bookSlotH, [2, 6, 6, 2]);
+        ctx.fill();
+
+        // 7. Texto del libro estampado en oro
+        ctx.fillStyle = '#fce7b0';
         ctx.font = 'bold 15px Georgia, serif';
         ctx.textAlign = 'center';
-        const shortTitle = b.nombre.length > 28 ? b.nombre.slice(0, 26) + '...' : b.nombre;
-        ctx.fillText(shortTitle, bx + bookSlotW / 2 + 5, shelfY + 60, bookSlotW - 25);
+        const shortTitle = b.nombre.length > 26 ? b.nombre.slice(0, 24) + '...' : b.nombre;
+        ctx.fillText(shortTitle, bx + bookSlotW / 2 + 5, shelfY + 70, bookSlotW - 32);
 
-        ctx.fillStyle = isDarkCard ? '#94a3b8' : '#57534e';
+        ctx.fillStyle = '#ecd596';
         ctx.font = 'italic 12px Georgia, serif';
         const shortAuthor = (b.autor || '').length > 20 ? (b.autor || '').slice(0, 18) + '...' : (b.autor || '');
-        ctx.fillText(shortAuthor, bx + bookSlotW / 2 + 5, shelfY + 95, bookSlotW - 25);
+        ctx.fillText(shortAuthor, bx + bookSlotW / 2 + 5, shelfY + 105, bookSlotW - 32);
 
         if (b.puntuacion) {
-          ctx.fillStyle = isDarkCard ? '#fbbf24' : '#b45309';
+          ctx.fillStyle = '#fbbf24';
           ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('⭐'.repeat(b.puntuacion), bx + bookSlotW / 2 + 5, shelfY + 195);
+          ctx.fillText('⭐'.repeat(b.puntuacion), bx + bookSlotW / 2 + 5, shelfY + 185);
         }
       });
 
@@ -558,7 +650,8 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
                   : 'border-emerald-600/35 bg-emerald-500/15 shadow-sm')
               }
             >
-              <div className="w-16 shrink-0 shadow-lg rounded-lg overflow-hidden">
+              <div className="w-16 shrink-0 relative transition-transform duration-300 hover:scale-105">
+                <div className="absolute -bottom-1.5 left-1 right-1 h-2 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
                 <BookCover
                   nombre={topFavorite.nombre}
                   autor={topFavorite.autor}
@@ -620,10 +713,10 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
             </div>
           ) : null}
 
-          {/* Balda visual de libros leídos */}
+          {/* Balda visual de libros leídos estilo estantería física */}
           {stats.completedBooks.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
                 <span
                   className={
                     'text-xs font-serif italic ' +
@@ -645,20 +738,40 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {stats.completedBooks.slice(0, 6).map((b) => (
-                  <div key={b.id} className="relative group rounded-lg overflow-hidden shadow">
-                    <BookCover
-                      nombre={b.nombre}
-                      autor={b.autor}
-                      portadaUrl={b.portadaUrl}
-                      portadaFallbackUrl={b.portadaFallbackUrl}
-                      portadaDataUrl={b.portadaDataUrl}
-                      size="sm"
-                      variant="book"
-                    />
+
+              {/* Mueble / balda física con los libros apoyados */}
+              <div className="bookcase relative pt-3.5 px-3 sm:px-4 rounded-2xl bg-amber-950/5 dark:bg-black/30 border border-amber-900/15 dark:border-amber-500/10 shadow-inner">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4 items-end pb-1">
+                  {stats.completedBooks.slice(0, 6).map((b) => (
+                    <div
+                      key={b.id}
+                      className="group relative cursor-pointer transition-transform duration-300 hover:-translate-y-2 active:scale-95"
+                      title={`${b.nombre} (por ${b.autor})`}
+                    >
+                      {/* Sombra de contacto realista sobre la balda */}
+                      <div className="absolute -bottom-1.5 left-1 right-1 h-2.5 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
+                      <BookCover
+                        nombre={b.nombre}
+                        autor={b.autor}
+                        portadaUrl={b.portadaUrl}
+                        portadaFallbackUrl={b.portadaFallbackUrl}
+                        portadaDataUrl={b.portadaDataUrl}
+                        size="sm"
+                        variant="book"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Balda de madera con veta, relieve y placa central */}
+                <div className="shelf-plank -mx-3 sm:-mx-4 mt-0.5" aria-hidden="true">
+                  <div className="shelf-plank-top" />
+                  <div className="shelf-plank-front flex items-center justify-center">
+                    <span className="text-[9px] font-serif tracking-widest text-amber-900/70 dark:text-amber-200/60 uppercase font-bold py-0.5">
+                      Nexus Library · Memorias {stats.year}
+                    </span>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           )}
