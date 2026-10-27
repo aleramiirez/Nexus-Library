@@ -830,7 +830,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                       const val = parseInt(e.target.value, 10);
                       setGoalModalValue(isNaN(val) ? 1 : Math.max(1, Math.min(500, val)));
                     }}
-                    className="w-28 text-center font-serif text-5xl font-black text-amber-800 dark:text-amber-400 bg-transparent border-b-2 border-amber-600/40 focus:border-amber-500 focus:outline-none"
+                    className="w-28 text-center font-serif text-5xl font-black text-amber-800 dark:text-amber-400 bg-transparent border-b-2 border-amber-600/40 focus:border-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="text-xs uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 mt-1">
                     libros en el año
@@ -845,22 +845,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 >
                   <Plus className="w-5 h-5" />
                 </button>
-              </div>
-
-              {/* Botones de ajuste fino */}
-              <div className="flex items-center gap-1.5 pt-1">
-                {[-5, -1, 1, 5].map((delta) => (
-                  <button
-                    key={delta}
-                    type="button"
-                    onClick={() =>
-                      setGoalModalValue((v) => Math.max(1, Math.min(500, v + delta)))
-                    }
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-amber-900/15 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-300 hover:border-amber-500 transition"
-                  >
-                    {delta > 0 ? `+${delta}` : delta}
-                  </button>
-                ))}
               </div>
             </div>
 
