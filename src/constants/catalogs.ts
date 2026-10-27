@@ -330,6 +330,37 @@ export function normalizeText(value: string): string {
     .trim();
 }
 
+export function stripEmojis(str: string): string {
+  return str.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\uFE0F\u200D\u2600-\u27BF]/gu, ' ');
+}
+
+export function matchesSubgenreSearch(subgenre: string, query: string): boolean {
+  if (!query || !query.trim()) return true;
+  const rawQ = query.trim().toLowerCase();
+  const rawSub = subgenre.toLowerCase();
+
+  // 1. Coincidencia directa insensible a mayúsculas/minúsculas
+  if (rawSub.includes(rawQ)) return true;
+
+  // 2. Coincidencia de texto normalizado (sin tildes, sin emojis, sin puntuación)
+  const normQ = normalizeText(query);
+  const normSub = normalizeText(subgenre);
+  if (normSub.includes(normQ)) return true;
+
+  // 3. Coincidencia por palabras individuales (p. ej. "space opera", "novela negra")
+  const tokens = normQ.split(' ').filter(Boolean);
+  if (tokens.length > 0 && tokens.every((token) => normSub.includes(token))) {
+    return true;
+  }
+
+  // 4. Coincidencia de texto eliminando emojis explícitamente
+  const cleanSub = stripEmojis(rawSub).trim();
+  const cleanQ = stripEmojis(rawQ).trim();
+  if (cleanSub && cleanQ && cleanSub.includes(cleanQ)) return true;
+
+  return false;
+}
+
 export function matchExactOrNormalizedGenre(input: string): Genre | '' {
   if (!input) return '';
   const trimmed = input.trim();

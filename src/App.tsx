@@ -518,10 +518,19 @@ export const App: React.FC = () => {
 
     const matches = books.filter((book) => {
       if (q) {
-        const inTitle = book.nombre.toLowerCase().includes(q);
-        const inAuthor = book.autor.toLowerCase().includes(q);
+        const normQ = normalizeText(q);
+        const inTitle = book.nombre.toLowerCase().includes(q) || (normQ && normalizeText(book.nombre).includes(normQ));
+        const inAuthor = book.autor.toLowerCase().includes(q) || (normQ && normalizeText(book.autor).includes(normQ));
         const inIsbn = book.isbn.toLowerCase().includes(q);
-        if (!inTitle && !inAuthor && !inIsbn) return false;
+        const inGenre = book.genero
+          ? book.genero.toLowerCase().includes(q) || (normQ && normalizeText(book.genero).includes(normQ))
+          : false;
+        const inSubgenres =
+          Array.isArray(book.subgeneros) &&
+          book.subgeneros.some(
+            (s) => s.toLowerCase().includes(q) || (normQ && normalizeText(s).includes(normQ))
+          );
+        if (!inTitle && !inAuthor && !inIsbn && !inGenre && !inSubgenres) return false;
       }
       if (filters.genero && book.genero !== filters.genero) return false;
       if (filters.subgenero) {

@@ -36,7 +36,8 @@ import {
   SUBGENRES,
   Subgenre,
   getRecommendedSubgenres,
-  normalizeText
+  normalizeText,
+  matchesSubgenreSearch
 } from '../constants/catalogs';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
@@ -440,32 +441,38 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       (sub, idx, arr) => arr.findIndex((x) => normalizeText(x) === normalizeText(sub)) === idx
     );
 
-    let list: Subgenre[] = [];
+    // 1. Si el usuario escribe en el buscador rápido, buscar en TODOS los subgéneros
+    // de forma totalmente insensible a emojis, mayúsculas, minúsculas y tildes
+    if (subgenreFilterText.trim()) {
+      const q = subgenreFilterText.trim();
+      const allMatching = dedupedAll.filter((s) => matchesSubgenreSearch(s, q));
 
+      // Si hay un género seleccionado, priorizar en los primeros puestos los del género actual
+      if (genero) {
+        const recNormSet = new Set(recommendedForGenre.map((s) => normalizeText(s)));
+        const primary = allMatching.filter((s) => recNormSet.has(normalizeText(s)));
+        const secondary = allMatching.filter((s) => !recNormSet.has(normalizeText(s)));
+        return [...primary, ...secondary];
+      }
+      return allMatching;
+    }
+
+    // 2. Si no hay búsqueda por texto y hay género seleccionado sin toggle "todos"
     if (genero && !showAllSubgenres) {
-      // 1. Recomendados para este género
       const recSet = new Set(recommendedForGenre.map((s) => normalizeText(s)));
       const baseList = [...recommendedForGenre];
 
-      // 2. Incluir cualquier subgénero que el libro ya tenga seleccionado para que nunca desaparezca
+      // Incluir cualquier subgénero que el libro ya tenga seleccionado para que nunca desaparezca
       subgeneros.forEach((selectedSub) => {
         if (!recSet.has(normalizeText(selectedSub))) {
           baseList.push(selectedSub);
           recSet.add(normalizeText(selectedSub));
         }
       });
-      list = baseList;
-    } else {
-      list = dedupedAll;
+      return baseList;
     }
 
-    // 3. Filtrar por texto si el usuario escribe en el buscador rápido
-    if (subgenreFilterText.trim()) {
-      const q = normalizeText(subgenreFilterText);
-      list = list.filter((s) => normalizeText(s).includes(q));
-    }
-
-    return list;
+    return dedupedAll;
   }, [genero, showAllSubgenres, recommendedForGenre, subgeneros, subgenreFilterText]);
 
   const isSubgenreActive = (sub: Subgenre) => {
@@ -717,9 +724,17 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
               <label className="text-xs font-semibold">
                 Subgéneros (Selección múltiple: {subgeneros.length} seleccionados)
               </label>
-              {genero && !showAllSubgenres && !subgenreFilterText.trim() && (
+              {subgenreFilterText.trim() ? (
+                <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 mt-0.5">
+                  🔍 {displayedSubgenres.length} subgénero{displayedSubgenres.length === 1 ? '' : 's'} encontrado{displayedSubgenres.length === 1 ? '' : 's'}
+                </p>
+              ) : genero && !showAllSubgenres ? (
                 <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 mt-0.5">
                   ✨ Recomendados para este género
+                </p>
+              ) : (
+                <p className="text-[11px] font-medium text-stone-500 dark:text-slate-400 mt-0.5">
+                  Explorando todos los subgéneros
                 </p>
               )}
             </div>
@@ -792,7 +807,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
               })
             ) : (
               <p className="text-xs text-stone-500 dark:text-slate-400 italic py-2 px-1">
-                No se encontraron subgéneros que coincidan con la búsqueda.
+                No se encontraron subgéneros para "{subgenreFilterText}".
               </p>
             )}
           </div>
