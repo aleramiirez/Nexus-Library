@@ -69,6 +69,7 @@ interface SettingsScreenProps {
   sagas: Saga[];
   initialTab?: SettingsTab;
   onOpenEpubImport?: () => void;
+  onNavigateToLibrary?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -85,7 +86,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   books,
   sagas,
   initialTab = 'appearance',
-  onOpenEpubImport
+  onOpenEpubImport,
+  onNavigateToLibrary
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [, startTransition] = useTransition();
@@ -1368,6 +1370,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           books={books}
           sagas={sagas}
           onClose={() => setBatchModalConfig(null)}
+          onNavigateToLibrary={onNavigateToLibrary}
           onCompleted={(updated, total) => {
             setFeedback({
               type: 'success',

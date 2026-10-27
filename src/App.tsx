@@ -2258,6 +2258,7 @@ export const App: React.FC = () => {
                   setInitialEpubFiles(undefined);
                   setIsEpubImportOpen(true);
                 }}
+                onNavigateToLibrary={() => handleNavigate('library')}
               />
             </React.Suspense>
           )}

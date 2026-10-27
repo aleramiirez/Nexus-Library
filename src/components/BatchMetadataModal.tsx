@@ -30,6 +30,7 @@ export interface BatchMetadataModalProps {
   sagas?: Saga[];
   onClose: () => void;
   onCompleted?: (updatedCount: number, totalProcessed: number) => void;
+  onNavigateToLibrary?: () => void;
 }
 
 export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
@@ -38,7 +39,8 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
   books,
   sagas = [],
   onClose,
-  onCompleted
+  onCompleted,
+  onNavigateToLibrary
 }) => {
   const [filterMode, setFilterMode] = useState<'missing_only' | 'all'>('missing_only');
   const [searchQuery, setSearchQuery] = useState('');
@@ -433,7 +435,12 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  if (onNavigateToLibrary) {
+                    onNavigateToLibrary();
+                  }
+                }}
                 className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-md"
               >
                 Cerrar y ver biblioteca
