@@ -356,11 +356,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={handleTurnToDetails}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold border border-amber-600/40 bg-amber-500/25 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                        className="inline-flex items-center justify-center p-1.5 rounded-xl border border-amber-600/40 bg-amber-500/25 text-amber-950 dark:text-amber-200 active:scale-95 transition"
                         title="Volver a la ficha técnica"
+                        aria-label="Volver a la ficha técnica"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
-                        <span>Ficha</span>
                       </button>
                     )}
 
@@ -466,10 +466,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     <button
                       type="button"
                       onClick={handleTurnToDetails}
-                      className="w-full py-2.5 px-4 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5"
+                      title="Volver a la ficha del libro"
+                      aria-label="Volver a la ficha del libro"
+                      className="w-full py-2.5 px-4 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-amber-950 dark:text-amber-200 flex items-center justify-center transition"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      <span>Volver a la ficha del libro</span>
                     </button>
                   </div>
                 ) : (
@@ -961,11 +962,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           <button
                             type="button"
                             onClick={handleTurnToDetails}
-                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-200 font-bold"
+                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-200 font-bold px-2.5"
                             title="Volver a la ficha técnica (←)"
+                            aria-label="Volver a la ficha técnica"
                           >
                             <ChevronLeft className="w-3.5 h-3.5" />
-                            <span>Ver ficha</span>
                           </button>
                         )}
 
@@ -1259,10 +1260,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         <button
                           type="button"
                           onClick={handleTurnToDetails}
-                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] dark:hover:bg-[#222C3F] text-xs font-bold text-amber-950 dark:text-amber-200 transition shadow-sm"
+                          title="Volver a la ficha técnica (←)"
+                          aria-label="Volver a la ficha técnica"
+                          className="inline-flex items-center justify-center p-2.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] dark:hover:bg-[#222C3F] text-amber-950 dark:text-amber-200 transition shadow-sm cursor-pointer"
                         >
                           <ChevronLeft className="w-4 h-4" />
-                          <span>Volver a la ficha técnica</span>
                         </button>
                         <span className="text-[11px] text-stone-500 dark:text-slate-500 italic">
                           Pulsa ← o flecha izquierda para volver
