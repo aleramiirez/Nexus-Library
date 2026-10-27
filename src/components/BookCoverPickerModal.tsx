@@ -499,14 +499,15 @@ export const BookCoverPickerModal: React.FC<BookCoverPickerModalProps> = ({
                     type="button"
                     onClick={() => handleExecuteSearch()}
                     disabled={isSearching || searchQuery.trim().length < 2}
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 transition flex items-center gap-1.5 shrink-0"
+                    title="Buscar portadas"
+                    aria-label="Buscar portadas"
+                    className="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-stone-950 transition flex items-center justify-center shrink-0 shadow-sm"
                   >
                     {isSearching ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Search className="w-4 h-4" />
                     )}
-                    <span>Buscar</span>
                   </button>
                 </div>
 

@@ -1291,15 +1291,15 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   type="button"
                   onClick={() => ebookInputRef.current?.click()}
                   disabled={isParsingFile}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-amber-600/45 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition shadow-sm disabled:opacity-50"
-                  title="Sube uno o varios archivos .epub o .fb2 para rellenar los datos automáticamente"
+                  className="w-8 h-8 rounded-xl border border-amber-600/45 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition shadow-sm disabled:opacity-50 flex items-center justify-center shrink-0"
+                  title="Rellenar datos desde archivo (.epub, .fb2, .pdf)"
+                  aria-label="Rellenar datos desde archivo .epub"
                 >
                   {isParsingFile ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700 dark:text-amber-400" />
                   ) : (
-                    <FileUp className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                    <FileUp className="w-4 h-4 text-amber-700 dark:text-amber-400" />
                   )}
-                  <span>{isParsingFile ? 'Leyendo archivo...' : 'Rellenar desde archivo (.epub)'}</span>
                 </button>
               </div>
             </div>
