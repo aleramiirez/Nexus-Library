@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   Loader2,
@@ -34,7 +34,9 @@ import {
   ReadingStatus,
   STAR_OPTIONS,
   SUBGENRES,
-  Subgenre
+  Subgenre,
+  getRecommendedSubgenres,
+  normalizeText
 } from '../constants/catalogs';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
@@ -100,6 +102,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [autor, setAutor] = useState('');
   const [genero, setGenero] = useState<Genre | ''>('');
   const [subgeneros, setSubgeneros] = useState<Subgenre[]>([]);
+  const [subgenreFilterText, setSubgenreFilterText] = useState('');
+  const [showAllSubgenres, setShowAllSubgenres] = useState(false);
   const [fechaPublicacion, setFechaPublicacion] = useState<string>('');
   const [paginas, setPaginas] = useState<string>('');
   const [puntuacion, setPuntuacion] = useState<StarRating>(null);
@@ -425,10 +429,59 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     );
   };
 
-  const toggleSubgenre = (sub: Subgenre) => {
-    setSubgeneros((prev) =>
-      prev.includes(sub) ? prev.filter((item) => item !== sub) : [...prev, sub]
+  const recommendedForGenre = useMemo(() => {
+    if (!genero) return [];
+    return getRecommendedSubgenres(genero);
+  }, [genero]);
+
+  const displayedSubgenres = useMemo(() => {
+    // Lista deduplicada por texto normalizado
+    const dedupedAll = SUBGENRES.filter(
+      (sub, idx, arr) => arr.findIndex((x) => normalizeText(x) === normalizeText(sub)) === idx
     );
+
+    let list: Subgenre[] = [];
+
+    if (genero && !showAllSubgenres) {
+      // 1. Recomendados para este género
+      const recSet = new Set(recommendedForGenre.map((s) => normalizeText(s)));
+      const baseList = [...recommendedForGenre];
+
+      // 2. Incluir cualquier subgénero que el libro ya tenga seleccionado para que nunca desaparezca
+      subgeneros.forEach((selectedSub) => {
+        if (!recSet.has(normalizeText(selectedSub))) {
+          baseList.push(selectedSub);
+          recSet.add(normalizeText(selectedSub));
+        }
+      });
+      list = baseList;
+    } else {
+      list = dedupedAll;
+    }
+
+    // 3. Filtrar por texto si el usuario escribe en el buscador rápido
+    if (subgenreFilterText.trim()) {
+      const q = normalizeText(subgenreFilterText);
+      list = list.filter((s) => normalizeText(s).includes(q));
+    }
+
+    return list;
+  }, [genero, showAllSubgenres, recommendedForGenre, subgeneros, subgenreFilterText]);
+
+  const isSubgenreActive = (sub: Subgenre) => {
+    const normSub = normalizeText(sub);
+    return subgeneros.some((item) => item === sub || normalizeText(item) === normSub);
+  };
+
+  const toggleSubgenre = (sub: Subgenre) => {
+    const normSub = normalizeText(sub);
+    setSubgeneros((prev) => {
+      const exists = prev.some((item) => item === sub || normalizeText(item) === normSub);
+      if (exists) {
+        return prev.filter((item) => item !== sub && normalizeText(item) !== normSub);
+      }
+      return [...prev, sub];
+    });
   };
 
   const tabIndex = TABS.findIndex((t) => t.id === activeTab);
@@ -659,39 +712,89 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
         {/* Subgenres */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold">
-              Subgéneros (Selección múltiple: {subgeneros.length} seleccionados)
-            </label>
-            {subgeneros.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setSubgeneros([])}
-                className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
-              >
-                Limpiar subgéneros
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5">
-            {SUBGENRES.map((sub) => {
-              const active = subgeneros.includes(sub);
-              return (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <div>
+              <label className="text-xs font-semibold">
+                Subgéneros (Selección múltiple: {subgeneros.length} seleccionados)
+              </label>
+              {genero && !showAllSubgenres && !subgenreFilterText.trim() && (
+                <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 mt-0.5">
+                  ✨ Recomendados para este género
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {genero && (
                 <button
-                  key={sub}
                   type="button"
-                  onClick={() => toggleSubgenre(sub)}
-                  className={
-                    'px-2.5 py-1 rounded-full text-xs border transition ' +
-                    (active
-                      ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-medium'
-                      : 'border-amber-900/20 dark:border-[#253044] text-stone-600 dark:text-slate-400 hover:border-amber-600/50 dark:hover:border-slate-500')
-                  }
+                  onClick={() => setShowAllSubgenres((prev) => !prev)}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-amber-900/20 dark:border-slate-700 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 transition"
                 >
-                  {sub}
+                  {showAllSubgenres ? 'Ver solo recomendados' : 'Mostrar todos los subgéneros'}
                 </button>
-              );
-            })}
+              )}
+
+              {subgeneros.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSubgeneros([])}
+                  className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
+                >
+                  Limpiar subgéneros
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Buscador / Filtro Rápido */}
+          <div className="mb-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={subgenreFilterText}
+                onChange={(e) => setSubgenreFilterText(e.target.value)}
+                placeholder="Filtrar subgéneros..."
+                className="w-full rounded-xl border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 px-3 py-1.5 text-xs text-stone-800 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              />
+              {subgenreFilterText && (
+                <button
+                  type="button"
+                  onClick={() => setSubgenreFilterText('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-xs px-1"
+                  title="Borrar búsqueda"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5 scroll-smooth">
+            {displayedSubgenres.length > 0 ? (
+              displayedSubgenres.map((sub) => {
+                const active = isSubgenreActive(sub);
+                return (
+                  <button
+                    key={sub}
+                    type="button"
+                    onClick={() => toggleSubgenre(sub)}
+                    className={
+                      'px-2.5 py-1 rounded-full text-xs border transition ' +
+                      (active
+                        ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-900 dark:text-amber-200 font-medium ring-1 ring-amber-500/30'
+                        : 'border-amber-900/20 dark:border-[#253044] text-stone-600 dark:text-slate-400 hover:border-amber-600/50 dark:hover:border-slate-500')
+                    }
+                  >
+                    {sub}
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-xs text-stone-500 dark:text-slate-400 italic py-2 px-1">
+                No se encontraron subgéneros que coincidan con la búsqueda.
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -77,7 +77,9 @@ import {
   ReadingStatus,
   STAR_OPTIONS,
   SUBGENRES,
-  Subgenre
+  Subgenre,
+  getRecommendedSubgenres,
+  normalizeText
 } from './constants/catalogs';
 import { BookCard } from './components/BookCard';
 import { BookCover } from './components/BookCover';
@@ -522,7 +524,13 @@ export const App: React.FC = () => {
         if (!inTitle && !inAuthor && !inIsbn) return false;
       }
       if (filters.genero && book.genero !== filters.genero) return false;
-      if (filters.subgenero && !book.subgeneros.includes(filters.subgenero)) return false;
+      if (filters.subgenero) {
+        const normFilter = normalizeText(filters.subgenero);
+        const hasSub = book.subgeneros.some(
+          (s) => s === filters.subgenero || normalizeText(s) === normFilter
+        );
+        if (!hasSub) return false;
+      }
       if (filters.progreso && book.progreso !== filters.progreso) return false;
       if (filters.sagaId) {
         if (filters.sagaId === '__none__' && book.sagaId !== null) return false;
@@ -1457,11 +1465,48 @@ export const App: React.FC = () => {
                         className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
                       >
                         <option value="">Todos los subgéneros</option>
-                        {SUBGENRES.map((sub) => (
-                          <option key={sub} value={sub}>
-                            {sub}
-                          </option>
-                        ))}
+                        {filters.genero ? (
+                          <>
+                            {(() => {
+                              const recommended = getRecommendedSubgenres(filters.genero);
+                              const recNormSet = new Set(recommended.map((s) => normalizeText(s)));
+                              const otherSubgenres = SUBGENRES.filter(
+                                (s, idx, arr) =>
+                                  !recNormSet.has(normalizeText(s)) &&
+                                  arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
+                              );
+                              return (
+                                <>
+                                  <optgroup label="Recomendados para este género">
+                                    {recommended.map((sub) => (
+                                      <option key={sub} value={sub}>
+                                        {sub}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                  {otherSubgenres.length > 0 && (
+                                    <optgroup label="Otros subgéneros">
+                                      {otherSubgenres.map((sub) => (
+                                        <option key={sub} value={sub}>
+                                          {sub}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </>
+                        ) : (
+                          SUBGENRES.filter(
+                            (s, idx, arr) =>
+                              arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
+                          ).map((sub) => (
+                            <option key={sub} value={sub}>
+                              {sub}
+                            </option>
+                          ))
+                        )}
                       </select>
                     </div>
 

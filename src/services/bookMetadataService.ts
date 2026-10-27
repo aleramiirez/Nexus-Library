@@ -1,5 +1,13 @@
 import { BibliographicCandidate, Book } from '../types/models';
-import { inferCatalogFromCategories, normalizeText, Genre } from '../constants/catalogs';
+import {
+  inferCatalogFromCategories,
+  inferGenreAndSubgenres,
+  normalizeText,
+  Genre,
+  Subgenre
+} from '../constants/catalogs';
+
+export { inferCatalogFromCategories, inferGenreAndSubgenres };
 import {
   buildOpenLibraryIdCover,
   buildOpenLibraryIsbnCover,
@@ -2150,11 +2158,18 @@ export const bookMetadataService = {
     const genreToSubjectMap: Record<string, string> = {
       '✨ Fantasía': 'fantasy',
       '🔭 Ciencia Ficción & Distopía': 'science_fiction',
+      '🕵️ Misterio, Thriller & Novela Negra': 'mystery_and_detective_stories',
       '🔪 Terror & Suspense': 'horror',
-      '🏛️ Clásicos': 'classic_literature',
-      '🏇 Aventuras': 'adventure',
+      '🏰 Novela Histórica': 'historical_fiction',
       '❤️ Romance & Drama': 'romance',
-      '📚 No Ficción': 'history'
+      '🏇 Aventuras': 'adventure',
+      '🖋️ Ficción Contemporánea & Literaria': 'contemporary_fiction',
+      '🏛️ Clásicos': 'classic_literature',
+      '📚 No Ficción': 'nonfiction',
+      '🧠 Ensayo, Filosofía & Ciencia': 'philosophy',
+      '🌱 Desarrollo Personal & Negocios': 'self_help',
+      '🎨 Cómic, Manga & Novela Gráfica': 'graphic_novels',
+      '🎭 Poesía, Teatro & Relatos': 'poetry'
     };
 
     const affinityCandidates: BibliographicCandidate[] = [];
