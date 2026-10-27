@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Target, Trophy, ChevronRight, TrendingUp, Flame } from 'lucide-react';
 import { Book } from '../types/models';
 import { readingChallengeService } from '../services/readingChallengeService';
@@ -18,10 +18,15 @@ export const ReadingChallengeDashboardWidget: React.FC<ReadingChallengeDashboard
   onOpenBookDetail
 }) => {
   const currentYear = new Date().getFullYear();
+  const [goalTick, setGoalTick] = useState(0);
+
+  useEffect(() => {
+    return readingChallengeService.subscribe(() => setGoalTick((t) => t + 1));
+  }, []);
 
   const stats = useMemo(() => {
     return readingChallengeService.calculateStats(books, currentYear, currentUserId);
-  }, [books, currentYear, currentUserId]);
+  }, [books, currentYear, currentUserId, goalTick]);
 
   return (
     <div className="rounded-2xl border border-amber-700/30 dark:border-amber-500/25 bg-gradient-to-br from-[#f8f0de] via-[#fbf6ea] to-[#f2dfbe] dark:from-[#111724] dark:via-[#151D2A] dark:to-[#0E131C] p-5 sm:p-6 shadow-md hover:shadow-lg transition-all duration-300">

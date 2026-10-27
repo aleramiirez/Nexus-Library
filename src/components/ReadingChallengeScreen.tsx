@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Trophy,
   Sparkles,
@@ -57,6 +57,11 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   );
 
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(currentYear);
+  const [goalTick, setGoalTick] = useState(0);
+
+  useEffect(() => {
+    return readingChallengeService.subscribe(() => setGoalTick((t) => t + 1));
+  }, []);
   const [goalsByYear, setGoalsByYear] = useState<Record<string, number>>({});
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalModalValue, setGoalModalValue] = useState<number>(10);
@@ -75,7 +80,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       currentUserId,
       currentGoalOverride
     );
-  }, [books, selectedYear, currentUserId, currentGoalOverride]);
+  }, [books, selectedYear, currentUserId, currentGoalOverride, goalTick]);
 
   const handleOpenGoalModal = () => {
     setGoalModalValue(stats.targetGoal);

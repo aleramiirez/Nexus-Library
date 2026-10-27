@@ -1,3 +1,4 @@
+import { supabase } from './supabaseClient';
 import { Book, StarRating } from '../types/models';
 import { GENRES } from '../constants/catalogs';
 
@@ -111,16 +112,63 @@ function getBookCompletionMonth(book: Book): number | null {
   return null;
 }
 
+const CHALLENGE_GLOBAL_BACKUP_PREFIX = 'nexus_challenge_goal_global_';
+
 class ReadingChallengeService {
+  private listeners: Set<() => void> = new Set();
+
+  public subscribe(cb: () => void): () => void {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  }
+
+  private notify(): void {
+    this.listeners.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.error('Error in readingChallengeService listener:', err);
+      }
+    });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexus_challenge_goal_updated'));
+    }
+  }
+
   private getStorageKey(year: number, userId?: string): string {
     const uid = userId && userId.trim() ? userId.trim() : 'local';
     return `nexus_challenge_goal_${year}_${uid}`;
   }
 
+  private getGlobalBackupKey(year: number): string {
+    return `${CHALLENGE_GLOBAL_BACKUP_PREFIX}${year}`;
+  }
+
   public getGoal(year: number, userId?: string): number {
-    if (typeof window === 'undefined' || !window.localStorage) return 12;
+    if (typeof window === 'undefined' || !window.localStorage) return 10;
     const key = this.getStorageKey(year, userId);
-    const raw = localStorage.getItem(key);
+    let raw = localStorage.getItem(key);
+
+    // Si tiene userId pero la clave específica está vacía, buscamos en 'local' o en el backup global
+    if (!raw && userId && userId.trim()) {
+      const localRaw = localStorage.getItem(this.getStorageKey(year, 'local'));
+      const globalRaw = localStorage.getItem(this.getGlobalBackupKey(year));
+      const fallbackRaw = localRaw || globalRaw;
+      if (fallbackRaw) {
+        raw = fallbackRaw;
+        try {
+          localStorage.setItem(key, fallbackRaw);
+        } catch {}
+      }
+    }
+
+    // Si aún no hay datos, buscar en el backup global de la máquina
+    if (!raw) {
+      raw = localStorage.getItem(this.getGlobalBackupKey(year));
+    }
+
     if (raw) {
       const parsed = parseInt(raw, 10);
       if (!isNaN(parsed) && parsed > 0 && parsed <= 500) {
@@ -133,9 +181,77 @@ class ReadingChallengeService {
 
   public setGoal(year: number, target: number, userId?: string): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    const key = this.getStorageKey(year, userId);
     const safeTarget = Math.max(1, Math.min(500, Math.round(target)));
-    localStorage.setItem(key, String(safeTarget));
+    const strVal = String(safeTarget);
+
+    const userKey = this.getStorageKey(year, userId);
+    localStorage.setItem(userKey, strVal);
+    // Guardar también en 'local' y en el backup global para que no se pierda al cambiar de sesión/rama
+    localStorage.setItem(this.getStorageKey(year, 'local'), strVal);
+    localStorage.setItem(this.getGlobalBackupKey(year), strVal);
+
+    this.notify();
+
+    // Sincronizar en la nube con Supabase Auth user_metadata
+    this.syncToCloud(year, safeTarget, userId).catch(() => {});
+  }
+
+  public async syncToCloud(year: number, target: number, userId?: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (userId && user.id !== userId) return;
+
+      const currentGoals = user.user_metadata?.reading_goals || {};
+      const updatedGoals = {
+        ...currentGoals,
+        [String(year)]: target
+      };
+
+      await supabase.auth.updateUser({
+        data: {
+          reading_goals: updatedGoals
+        }
+      });
+    } catch (e) {
+      console.warn('Could not sync reading goal to Supabase:', e);
+    }
+  }
+
+  public async syncFromCloud(userId?: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (userId && user.id !== userId) return;
+
+      const remoteGoals = user.user_metadata?.reading_goals;
+      if (remoteGoals && typeof remoteGoals === 'object') {
+        let changed = false;
+        for (const [yStr, goalVal] of Object.entries(remoteGoals)) {
+          const yNum = parseInt(yStr, 10);
+          const gNum = typeof goalVal === 'number' ? goalVal : parseInt(String(goalVal), 10);
+          if (!isNaN(yNum) && !isNaN(gNum) && gNum > 0) {
+            const userKey = this.getStorageKey(yNum, user.id);
+            const strVal = String(gNum);
+            localStorage.setItem(userKey, strVal);
+            localStorage.setItem(this.getStorageKey(yNum, 'local'), strVal);
+            localStorage.setItem(this.getGlobalBackupKey(yNum), strVal);
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.notify();
+        }
+      } else {
+        const currentYear = new Date().getFullYear();
+        const currentGoal = this.getGoal(currentYear, user.id);
+        this.syncToCloud(currentYear, currentGoal, user.id).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Could not sync reading goals from Supabase:', e);
+    }
   }
 
   public getAvailableYears(books: Book[]): number[] {

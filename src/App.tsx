@@ -121,6 +121,7 @@ const CollectionsScreen = React.lazy(() =>
   import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
 );
 import { collectionService } from './services/collectionService';
+import { readingChallengeService } from './services/readingChallengeService';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -363,6 +364,7 @@ export const App: React.FC = () => {
             if (mounted && prof) setCurrentUserProfile(prof);
           });
           collectionService.syncFromCloud(user.id).catch(() => {});
+          readingChallengeService.syncFromCloud(user.id).catch(() => {});
           await runCloudSync();
         } else {
           const settings = await fetchSupabaseAuthSettings();
@@ -427,6 +429,7 @@ export const App: React.FC = () => {
           if (mounted && prof) setCurrentUserProfile(prof);
         });
         collectionService.syncFromCloud(nextUser.id).catch(() => {});
+        readingChallengeService.syncFromCloud(nextUser.id).catch(() => {});
         runCloudSync();
       } else {
         setCurrentUserProfile(null);
