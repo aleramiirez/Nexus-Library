@@ -15,12 +15,15 @@ import {
   Sparkles,
   ChevronRight,
   ChevronLeft,
-  Loader2
+  Loader2,
+  Check,
+  Plus,
+  Sliders
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating } from '../types/models';
 import { BookCover } from './BookCover';
-import { READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
+import { formatStars, READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
 import { RecommendBookModal } from './RecommendBookModal';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { updateBookPartialRecord } from '../db/database';
@@ -28,13 +31,19 @@ import { updateBookPartialRecord } from '../db/database';
 export interface BookDetailModalProps {
   book: Book | null;
   onClose: () => void;
-  onEdit: (book: Book) => void;
-  onDelete: (book: Book) => void;
-  onStatusChange: (bookId: string, status: ReadingStatus) => void;
-  onRatingChange: (bookId: string, rating: StarRating) => void;
+  onEdit?: (book: Book) => void;
+  onDelete?: (book: Book) => void;
+  onStatusChange?: (bookId: string, status: ReadingStatus) => void;
+  onRatingChange?: (bookId: string, rating: StarRating) => void;
   onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
   currentUserId?: string;
   onShowToast?: (message: string) => void;
+  readOnly?: boolean;
+  onAddToLibrary?: (book: Book) => void;
+  onCustomize?: (book: Book) => void;
+  isAlreadyInLibrary?: boolean;
+  recommendationReason?: string;
+  readerName?: string;
 }
 
 export interface BookFlipValues {
@@ -61,19 +70,28 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
 
   const safeId = bookId.replace(/"/g, '\\"');
   const findVisible = (selector: string): Element | null => {
-    const list = document.querySelectorAll(selector);
-    for (let i = 0; i < list.length; i++) {
-      const r = list[i].getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) return list[i];
+    try {
+      const list = document.querySelectorAll(selector);
+      for (let i = 0; i < list.length; i++) {
+        const r = list[i].getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return list[i];
+      }
+    } catch {
+      return null;
     }
     return null;
   };
 
-  const sourceEl =
-    findVisible(`[data-book-id="${safeId}"] .book-cover`) ||
-    findVisible(`[data-book-id="${safeId}"]`) ||
-    document.querySelector(`[data-book-id="${safeId}"] .book-cover`) ||
-    document.querySelector(`[data-book-id="${safeId}"]`);
+  let sourceEl: Element | null = null;
+  try {
+    sourceEl =
+      findVisible(`[data-book-id="${safeId}"] .book-cover`) ||
+      findVisible(`[data-book-id="${safeId}"]`) ||
+      document.querySelector(`[data-book-id="${safeId}"] .book-cover`) ||
+      document.querySelector(`[data-book-id="${safeId}"]`);
+  } catch {
+    sourceEl = null;
+  }
 
   if (!sourceEl) return fallback;
 
@@ -130,7 +148,13 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onRatingChange,
   onDatesChange,
   currentUserId,
-  onShowToast
+  onShowToast,
+  readOnly = false,
+  onAddToLibrary,
+  onCustomize,
+  isAlreadyInLibrary = false,
+  recommendationReason,
+  readerName
 }) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -160,9 +184,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       if (synopsis && synopsis.trim().length > 0) {
         const clean = synopsis.trim();
         setLocalSynopsis(clean);
-        await updateBookPartialRecord(book.id, {
-          sinopsis: clean
-        });
+        if (!readOnly) {
+          await updateBookPartialRecord(book.id, {
+            sinopsis: clean
+          });
+        }
         if (onShowToast) {
           onShowToast('Sinopsis autocompletada y guardada con éxito.');
         }
@@ -364,36 +390,74 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => setIsRecommendOpen(true)}
-                      className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-semibold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
-                      title="Recomendar este libro"
-                      aria-label="Recomendar este libro"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                      <span className="hidden sm:inline">Recomendar</span>
-                    </button>
+                    {!readOnly && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setIsRecommendOpen(true)}
+                          className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-semibold border border-amber-600/40 bg-amber-500/20 text-amber-950 dark:text-amber-200 active:scale-95 transition"
+                          title="Recomendar este libro"
+                          aria-label="Recomendar este libro"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                          <span className="hidden sm:inline">Recomendar</span>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onEdit(book)}
-                      className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] text-stone-800 dark:text-slate-200 active:scale-95 transition"
-                      title="Editar ficha"
-                      aria-label="Editar ficha"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
+                        {onEdit && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit(book)}
+                            className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                            title="Editar ficha"
+                            aria-label="Editar ficha"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
 
-                    <button
-                      type="button"
-                      onClick={() => onDelete(book)}
-                      className="p-1.5 rounded-xl border border-rose-500/35 bg-rose-500/15 text-rose-800 dark:text-rose-300 active:scale-95 transition"
-                      title="Eliminar libro"
-                      aria-label="Eliminar libro"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                        {onDelete && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(book)}
+                            className="p-1.5 rounded-xl border border-rose-500/35 bg-rose-500/15 text-rose-800 dark:text-rose-300 active:scale-95 transition"
+                            title="Eliminar libro"
+                            aria-label="Eliminar libro"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {readOnly && onAddToLibrary && (
+                      isAlreadyInLibrary ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold border border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">
+                          <Check className="w-3.5 h-3.5 shrink-0" />
+                          <span className="hidden sm:inline">En biblioteca</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onAddToLibrary(book)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border border-amber-600/50 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm active:scale-95 transition"
+                        >
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
+                          <span>Añadir</span>
+                        </button>
+                      )
+                    )}
+
+                    {readOnly && onCustomize && !isAlreadyInLibrary && (
+                      <button
+                        type="button"
+                        onClick={() => onCustomize(book)}
+                        className="p-1.5 rounded-xl border border-amber-600/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 active:scale-95 transition"
+                        title="Personalizar datos antes de guardar"
+                        aria-label="Personalizar libro"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -450,15 +514,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             )}
                             <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => onEdit(book)}
-                            disabled={isFetchingSynopsis}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-stone-800 dark:text-slate-200 transition"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Escribir manual</span>
-                          </button>
+                          {!readOnly && onEdit && (
+                            <button
+                              type="button"
+                              onClick={() => onEdit(book)}
+                              disabled={isFetchingSynopsis}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-stone-800 dark:text-slate-200 transition"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Escribir manual</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -548,58 +614,106 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 )}
 
                 {/* Estado de Lectura + Puntuación Personal */}
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#0f141f]/90 p-3.5 space-y-3">
-                  <div>
-                    <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
-                      Estado de lectura
-                    </span>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {READING_STATUSES.map((status) => (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() => onStatusChange(book.id, status)}
-                          className={
-                            'py-2 px-2.5 rounded-xl text-xs font-medium border text-center active:scale-[0.98] transition ' +
-                            (book.progreso === status
-                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
-                              : 'border-amber-900/20 dark:border-[#263147] bg-[#fbf6ea] dark:bg-[#171F2E] text-stone-700 dark:text-slate-300')
-                          }
-                        >
-                          {status}
-                        </button>
-                      ))}
-                    </div>
+                {readOnly ? (
+                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#0f141f]/90 p-3.5 space-y-2.5">
+                    {readerName && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold">
+                            Valoración de {readerName}
+                          </span>
+                          <span className="text-xs text-amber-700 dark:text-amber-400 font-bold">
+                            {book.puntuacion
+                              ? `${formatStars(book.puntuacion)} (${book.puntuacion}/5)`
+                              : 'Sin valorar'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
+                          <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold">
+                            Estado de lectura
+                          </span>
+                          <span className="text-xs font-semibold text-stone-800 dark:text-slate-200">
+                            {book.progreso}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {recommendationReason && (
+                      <div>
+                        <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-amber-800 dark:text-amber-300 mb-1">
+                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          Por qué te gustará
+                        </span>
+                        <p className="text-xs text-stone-800 dark:text-slate-200 font-serif leading-snug">
+                          {recommendationReason}
+                        </p>
+                      </div>
+                    )}
+                    {!readerName && !recommendationReason && (
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-slate-400 font-semibold block mb-0.5">
+                          Catálogo NEXUS
+                        </span>
+                        <p className="text-xs text-stone-700 dark:text-slate-300 font-serif italic">
+                          {book.genero ? `Género: ${book.genero}` : 'Ficha de obra recomendada'}
+                        </p>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#0f141f]/90 p-3.5 space-y-3">
+                    <div>
+                      <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                        Estado de lectura
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {READING_STATUSES.map((status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => onStatusChange?.(book.id, status)}
+                            className={
+                              'py-2 px-2.5 rounded-xl text-xs font-medium border text-center active:scale-[0.98] transition ' +
+                              (book.progreso === status
+                                ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
+                                : 'border-amber-900/20 dark:border-[#263147] bg-[#fbf6ea] dark:bg-[#171F2E] text-stone-700 dark:text-slate-300')
+                            }
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                  <div className="pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
-                    <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
-                      Puntuación personal
-                    </span>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {STAR_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() =>
-                            onRatingChange(
-                              book.id,
-                              book.puntuacion === opt.value ? null : opt.value
-                            )
-                          }
-                          className={
-                            'py-1.5 rounded-xl text-xs border text-center active:scale-95 transition ' +
-                            (book.puntuacion === opt.value
-                              ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
-                              : 'border-amber-900/15 dark:border-[#263147] bg-[#fbf6ea]/70 dark:bg-[#171F2E]/70 text-stone-600 dark:text-slate-400')
-                          }
-                        >
-                          {opt.value} ⭐
-                        </button>
-                      ))}
+                    <div className="pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
+                      <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                        Puntuación personal
+                      </span>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {STAR_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() =>
+                              onRatingChange?.(
+                                book.id,
+                                book.puntuacion === opt.value ? null : opt.value
+                              )
+                            }
+                            className={
+                              'py-1.5 rounded-xl text-xs border text-center active:scale-95 transition ' +
+                              (book.puntuacion === opt.value
+                                ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
+                                : 'border-amber-900/15 dark:border-[#263147] bg-[#fbf6ea]/70 dark:bg-[#171F2E]/70 text-stone-600 dark:text-slate-400')
+                            }
+                          >
+                            {opt.value} ⭐
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Botón para pasar página a la Sinopsis en móvil */}
                 <button
@@ -629,83 +743,85 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 </button>
 
                 {/* Registro de Lectura (Fechas y Lectura Virtual) */}
-                <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-3.5 space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1.5">
-                    <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                      Registro de Lectura
-                    </span>
-                    <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
-                      NEXUS
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
-                        Fecha Inicio
-                      </label>
-                      {onDatesChange ? (
-                        <input
-                          type="date"
-                          value={book.fechaInicio || ''}
-                          onChange={(e) =>
-                            onDatesChange(book.id, e.target.value, book.fechaFin)
-                          }
-                          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                        />
-                      ) : (
-                        <span className="font-semibold text-xs block">
-                          {book.fechaInicio || '—'}
-                        </span>
-                      )}
+                {(!readOnly || Boolean(book.fechaInicio || book.fechaFin || book.lecturaVirtual)) && (
+                  <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-3.5 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1.5">
+                      <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                        Registro de Lectura
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
+                        NEXUS
+                      </span>
                     </div>
 
-                    <div>
-                      <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
-                        Fecha Fin
-                      </label>
-                      {onDatesChange ? (
-                        <input
-                          type="date"
-                          value={book.fechaFin || ''}
-                          onChange={(e) =>
-                            onDatesChange(book.id, book.fechaInicio, e.target.value)
-                          }
-                          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                        />
-                      ) : (
-                        <span className="font-semibold text-xs block">
-                          {book.fechaFin || '—'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    {(book.fechaInicio || book.fechaFin || !readOnly) && (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                            Fecha Inicio
+                          </label>
+                          {!readOnly && onDatesChange ? (
+                            <input
+                              type="date"
+                              value={book.fechaInicio || ''}
+                              onChange={(e) =>
+                                onDatesChange(book.id, e.target.value, book.fechaFin)
+                              }
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                            />
+                          ) : (
+                            <span className="font-semibold text-xs block">
+                              {book.fechaInicio || '—'}
+                            </span>
+                          )}
+                        </div>
 
-                  <div className="pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-stone-600 dark:text-slate-400 shrink-0">
-                      Lectura Virtual
-                    </span>
-                    {book.lecturaVirtual ? (
-                      isUrl ? (
-                        <a
-                          href={book.lecturaVirtual}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate"
-                        >
-                          Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="font-medium text-xs truncate">
-                          {book.lecturaVirtual}
+                        <div>
+                          <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                            Fecha Fin
+                          </label>
+                          {!readOnly && onDatesChange ? (
+                            <input
+                              type="date"
+                              value={book.fechaFin || ''}
+                              onChange={(e) =>
+                                onDatesChange(book.id, book.fechaInicio, e.target.value)
+                              }
+                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                            />
+                          ) : (
+                            <span className="font-semibold text-xs block">
+                              {book.fechaFin || '—'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {book.lecturaVirtual && (
+                      <div className="pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-stone-600 dark:text-slate-400 shrink-0">
+                          Lectura Virtual
                         </span>
-                      )
-                    ) : (
-                      <span className="text-stone-400 dark:text-slate-500">—</span>
+                        {isUrl ? (
+                          <a
+                            href={book.lecturaVirtual}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate"
+                          >
+                            Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="font-medium text-xs truncate">
+                            {book.lecturaVirtual}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
+                )}
 
                 {/* Tabla Bibliográfica Compacta */}
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/50 dark:bg-[#101520]/60 p-3.5 grid grid-cols-2 gap-3 text-xs">
@@ -813,9 +929,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         {/* Encabezado superior sutil de folio (Verso) */}
                         <div className="w-full flex items-center justify-between text-[11px] font-serif italic text-amber-900/75 dark:text-amber-400/80 border-b border-amber-900/15 dark:border-[#242E42] pb-1 mb-2">
                           <span>fol. I</span>
-                          <span className="flex items-center gap-1.5 font-medium tracking-wide">
+                          <span className="flex items-center gap-1.5 font-medium tracking-wide truncate">
                             <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                            Ex-Libris · Ficha Bibliográfica
+                            {readerName ? `Ex-Libris · ${readerName}` : 'Ex-Libris · Ficha Bibliográfica'}
                           </span>
                         </div>
 
@@ -833,111 +949,182 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           />
                         </div>
 
-                        {/* Puntuación Personal (Estrellas) */}
-                        <div className="mt-2 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0">
-                          <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-1">
-                            Puntuación Personal
-                          </p>
-                          <div className="flex items-center justify-center gap-1 flex-wrap">
-                            {STAR_OPTIONS.map((opt) => (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() =>
-                                  onRatingChange(
-                                    book.id,
-                                    book.puntuacion === opt.value ? null : opt.value
-                                  )
-                                }
-                                className={
-                                  'px-2 py-0.5 rounded-lg text-xs border transition ' +
-                                  (book.puntuacion === opt.value
-                                    ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
-                                    : 'border-transparent hover:bg-amber-900/10 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-400')
-                                }
-                              >
-                                {opt.value} ⭐
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Sello / Ficha de Registro de Lectura Clásica (Fechas y Lectura Virtual) */}
-                        <div className="mt-2 w-full rounded-xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-2.5 space-y-1.5 text-xs shrink-0 shadow-sm">
-                          <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1">
-                            <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 text-[11px]">
-                              <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                              Registro de Lectura
-                            </span>
-                            <span className="text-[9px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
-                              NEXUS
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
-                                Inicio
-                              </label>
-                              {onDatesChange ? (
-                                <input
-                                  type="date"
-                                  value={book.fechaInicio || ''}
-                                  onChange={(e) =>
-                                    onDatesChange(book.id, e.target.value, book.fechaFin)
-                                  }
-                                  className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                                />
-                              ) : (
-                                <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
-                                  {book.fechaInicio || '—'}
-                                </span>
-                              )}
+                        {!readOnly ? (
+                          <>
+                            {/* Puntuación Personal (Estrellas) */}
+                            <div className="mt-2 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0">
+                              <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-1">
+                                Puntuación Personal
+                              </p>
+                              <div className="flex items-center justify-center gap-1 flex-wrap">
+                                {STAR_OPTIONS.map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() =>
+                                      onRatingChange?.(
+                                        book.id,
+                                        book.puntuacion === opt.value ? null : opt.value
+                                      )
+                                    }
+                                    className={
+                                      'px-2 py-0.5 rounded-lg text-xs border transition ' +
+                                      (book.puntuacion === opt.value
+                                        ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
+                                        : 'border-transparent hover:bg-amber-900/10 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-400')
+                                    }
+                                  >
+                                    {opt.value} ⭐
+                                  </button>
+                                ))}
+                              </div>
                             </div>
 
-                            <div>
-                              <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
-                                Fin
-                              </label>
-                              {onDatesChange ? (
-                                <input
-                                  type="date"
-                                  value={book.fechaFin || ''}
-                                  onChange={(e) =>
-                                    onDatesChange(book.id, book.fechaInicio, e.target.value)
-                                  }
-                                  className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                                />
-                              ) : (
-                                <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
-                                  {book.fechaFin || '—'}
+                            {/* Sello / Ficha de Registro de Lectura Clásica (Fechas y Lectura Virtual) */}
+                            <div className="mt-2 w-full rounded-xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-2.5 space-y-1.5 text-xs shrink-0 shadow-sm">
+                              <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1">
+                                <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 text-[11px]">
+                                  <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                                  Registro de Lectura
                                 </span>
-                              )}
-                            </div>
-                          </div>
+                                <span className="text-[9px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
+                                  NEXUS
+                                </span>
+                              </div>
 
-                          {book.lecturaVirtual && (
-                            <div className="pt-1 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
-                              <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
-                                Lectura Virtual
-                              </span>
-                              {isUrl ? (
-                                <a
-                                  href={book.lecturaVirtual}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate text-[11px]"
-                                >
-                                  Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
-                                </a>
-                              ) : (
-                                <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
-                                  {book.lecturaVirtual}
-                                </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
+                                    Inicio
+                                  </label>
+                                  {onDatesChange ? (
+                                    <input
+                                      type="date"
+                                      value={book.fechaInicio || ''}
+                                      onChange={(e) =>
+                                        onDatesChange(book.id, e.target.value, book.fechaFin)
+                                      }
+                                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                                    />
+                                  ) : (
+                                    <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
+                                      {book.fechaInicio || '—'}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
+                                    Fin
+                                  </label>
+                                  {onDatesChange ? (
+                                    <input
+                                      type="date"
+                                      value={book.fechaFin || ''}
+                                      onChange={(e) =>
+                                        onDatesChange(book.id, book.fechaInicio, e.target.value)
+                                      }
+                                      className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
+                                    />
+                                  ) : (
+                                    <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
+                                      {book.fechaFin || '—'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {book.lecturaVirtual && (
+                                <div className="pt-1 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
+                                  <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
+                                    Lectura Virtual
+                                  </span>
+                                  {isUrl ? (
+                                    <a
+                                      href={book.lecturaVirtual}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate text-[11px]"
+                                    >
+                                      Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
+                                    </a>
+                                  ) : (
+                                    <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
+                                      {book.lecturaVirtual}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
-                        </div>
+                          </>
+                        ) : (
+                          <>
+                            {readerName ? (
+                              <>
+                                <div className="mt-2 w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0">
+                                  <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-0.5">
+                                    Valoración de {readerName}
+                                  </p>
+                                  <div className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-bold">
+                                    {book.puntuacion
+                                      ? `${formatStars(book.puntuacion)} (${book.puntuacion}/5)`
+                                      : 'Sin valorar'}
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 w-full rounded-xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-2 text-center text-xs shrink-0 shadow-sm">
+                                  <span className="text-[10px] uppercase font-semibold text-stone-500 dark:text-slate-400 block mb-1">
+                                    Estado en su estantería
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full border border-amber-600/35 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
+                                    {book.progreso}
+                                  </span>
+                                </div>
+                              </>
+                            ) : recommendationReason ? (
+                              <div className="mt-2 w-full rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#f4ead4]/80 dark:bg-[#141A26] p-2.5 text-center shrink-0 shadow-sm">
+                                <span className="flex items-center justify-center gap-1 text-[10px] uppercase font-bold text-amber-800 dark:text-amber-300 mb-1">
+                                  <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                  Por qué te gustará
+                                </span>
+                                <p className="text-xs text-stone-800 dark:text-slate-200 font-serif leading-snug">
+                                  {recommendationReason}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="mt-2 w-full rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#f4ead4]/60 dark:bg-[#101520]/60 p-2.5 text-center shrink-0">
+                                <span className="text-[10px] uppercase font-mono tracking-wider text-amber-800 dark:text-amber-400 block mb-0.5">
+                                  Catálogo NEXUS
+                                </span>
+                                <p className="text-xs text-stone-700 dark:text-slate-300 font-serif italic">
+                                  {book.genero ? `Género: ${book.genero}` : 'Ficha de obra recomendada'}
+                                </p>
+                              </div>
+                            )}
+
+                            {book.lecturaVirtual && (
+                              <div className="mt-1.5 w-full pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
+                                <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
+                                  Lectura Virtual
+                                </span>
+                                {isUrl ? (
+                                  <a
+                                    href={book.lecturaVirtual}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate text-[11px]"
+                                  >
+                                    Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
+                                    {book.lecturaVirtual}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -968,35 +1155,73 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </button>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => setIsRecommendOpen(true)}
-                          className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200"
-                          title="Recomendar este libro a un amigo"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          <span className="hidden xl:inline">Recomendar</span>
-                        </button>
+                        {!readOnly && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setIsRecommendOpen(true)}
+                              className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200"
+                              title="Recomendar este libro a un amigo"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                              <span className="hidden xl:inline">Recomendar</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => onEdit(book)}
-                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
-                          title="Editar ficha del libro"
-                          aria-label="Editar ficha"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                            {onEdit && (
+                              <button
+                                type="button"
+                                onClick={() => onEdit(book)}
+                                className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
+                                title="Editar ficha del libro"
+                                aria-label="Editar ficha"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
 
-                        <button
-                          type="button"
-                          onClick={() => onDelete(book)}
-                          className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 px-2.5"
-                          title="Eliminar libro"
-                          aria-label="Eliminar libro"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                            {onDelete && (
+                              <button
+                                type="button"
+                                onClick={() => onDelete(book)}
+                                className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 px-2.5"
+                                title="Eliminar libro"
+                                aria-label="Eliminar libro"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        {readOnly && onAddToLibrary && (
+                          isAlreadyInLibrary ? (
+                            <span className="open-book-ribbon-tab border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold px-3">
+                              <Check className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">En tu biblioteca</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onAddToLibrary(book)}
+                              className="open-book-ribbon-tab border-amber-600/50 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 shadow-sm transition active:scale-95"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Añadir a Por Leer</span>
+                            </button>
+                          )
+                        )}
+
+                        {readOnly && onCustomize && !isAlreadyInLibrary && (
+                          <button
+                            type="button"
+                            onClick={() => onCustomize(book)}
+                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 font-semibold px-2.5 transition active:scale-95"
+                            title="Personalizar datos antes de guardar"
+                          >
+                            <Sliders className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Personalizar</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -1047,28 +1272,30 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                       {/* Estado de lectura y Géneros */}
                       <div className="space-y-3">
-                        <div>
-                          <span className="block text-[11px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
-                            Estado de lectura
-                          </span>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {READING_STATUSES.map((status) => (
-                              <button
-                                key={status}
-                                type="button"
-                                onClick={() => onStatusChange(book.id, status)}
-                                className={
-                                  'py-2 px-2.5 rounded-lg text-xs font-medium border text-center transition ' +
-                                  (book.progreso === status
-                                    ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
-                                    : 'border-amber-900/20 dark:border-[#263147] bg-[#f4ead4]/70 dark:bg-[#1A2232]/80 text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-slate-500')
-                                }
-                              >
-                                {status}
-                              </button>
-                            ))}
+                        {!readOnly && (
+                          <div>
+                            <span className="block text-[11px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                              Estado de lectura
+                            </span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {READING_STATUSES.map((status) => (
+                                <button
+                                  key={status}
+                                  type="button"
+                                  onClick={() => onStatusChange?.(book.id, status)}
+                                  className={
+                                    'py-2 px-2.5 rounded-lg text-xs font-medium border text-center transition ' +
+                                    (book.progreso === status
+                                      ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
+                                      : 'border-amber-900/20 dark:border-[#263147] bg-[#f4ead4]/70 dark:bg-[#1A2232]/80 text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-slate-500')
+                                  }
+                                >
+                                  {status}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
                           {book.genero ? (
@@ -1241,15 +1468,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               )}
                               <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => onEdit(book)}
-                              disabled={isFetchingSynopsis}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-750 text-stone-800 dark:text-slate-200 transition shadow-sm cursor-pointer"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Escribir manual</span>
-                            </button>
+                            {!readOnly && onEdit && (
+                              <button
+                                type="button"
+                                onClick={() => onEdit(book)}
+                                disabled={isFetchingSynopsis}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-750 text-stone-800 dark:text-slate-200 transition shadow-sm cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Escribir manual</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
