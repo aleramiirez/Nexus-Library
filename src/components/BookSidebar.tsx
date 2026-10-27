@@ -6,6 +6,7 @@ import {
   Compass,
   Layers,
   BarChart3,
+  Trophy,
   Settings,
   BookMarked,
   BookmarkCheck,
@@ -298,8 +299,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             />
             <NavItem
               id="stats"
-              label="Estadísticas"
-              icon={BarChart3}
+              label="Reto & Estadísticas"
+              icon={Trophy}
               active={activeSection === 'stats'}
               onSelect={handleSelectSection}
             />

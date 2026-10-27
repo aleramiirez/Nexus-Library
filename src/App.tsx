@@ -6,6 +6,7 @@ import {
   Library,
   Layers,
   BarChart3,
+  Trophy,
   Compass,
   Plus,
   Search,
@@ -109,6 +110,10 @@ const DiscoverBooksScreen = React.lazy(() =>
 const SettingsScreen = React.lazy(() =>
   import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen }))
 );
+const ReadingChallengeScreen = React.lazy(() =>
+  import('./components/ReadingChallengeScreen').then((m) => ({ default: m.ReadingChallengeScreen }))
+);
+import { ReadingChallengeDashboardWidget } from './components/ReadingChallengeDashboardWidget';
 const BookInboxModal = React.lazy(() =>
   import('./components/BookInboxModal').then((m) => ({ default: m.BookInboxModal }))
 );
@@ -2090,148 +2095,24 @@ export const App: React.FC = () => {
           )}
 
           {activeSection === 'stats' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold">Estadísticas de la Colección</h1>
-                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-                  Calculadas exclusivamente a partir de los registros reales almacenados en tu
-                  biblioteca.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
-                  <span className="text-xs text-stone-600 dark:text-slate-400">Libros Leídos</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mt-1">
-                    {metrics.read}
-                  </p>
+            <React.Suspense
+              fallback={
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                  <span className="font-serif text-sm">Cargando reto & estadísticas...</span>
                 </div>
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
-                  <span className="text-xs text-stone-600 dark:text-slate-400">Libros Pendientes</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-400 mt-1">
-                    {metrics.pendingTotal}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
-                  <span className="text-xs text-stone-600 dark:text-slate-400">
-                    Valoración Media ({metrics.ratedCount} puntuados)
-                  </span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1">
-                    {metrics.avgRating !== null ? metrics.avgRating.toFixed(2) + ' ⭐' : '—'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
-                  <span className="text-xs text-stone-600 dark:text-slate-400">Páginas Totales Registradas</span>
-                  <p className="font-serif text-2xl sm:text-3xl font-bold mt-1">
-                    {metrics.totalPages.toLocaleString('es-ES')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
-                  <h2 className="font-serif text-xl font-bold">Distribución por Géneros</h2>
-                  {GENRES.map((g) => {
-                    const count = books.filter((b) => b.genero === g).length;
-                    const pct = books.length > 0 ? Math.round((count / books.length) * 100) : 0;
-                    return (
-                      <div key={g} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span>{g}</span>
-                          <span className="text-stone-600 dark:text-slate-400">
-                            {count} ({pct}%)
-                          </span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full bg-amber-500 dark:bg-amber-400"
-                            style={{ width: String(pct) + '%' }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="space-y-6">
-                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
-                    <h2 className="font-serif text-xl font-bold">Distribución por Estados</h2>
-                    {READING_STATUSES.map((st) => {
-                      const count = books.filter((b) => b.progreso === st).length;
-                      const pct = books.length > 0 ? Math.round((count / books.length) * 100) : 0;
-                      return (
-                        <div key={st} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span>{st}</span>
-                            <span className="text-stone-600 dark:text-slate-400">
-                              {count} ({pct}%)
-                            </span>
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                            <div
-                              className="h-full bg-emerald-600 dark:bg-emerald-400"
-                              style={{ width: String(pct) + '%' }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
-                    <h2 className="font-serif text-xl font-bold">
-                      Autores con Más Libros en tu Colección
-                    </h2>
-                    {topAuthors.length === 0 ? (
-                      <p className="text-xs text-stone-500 dark:text-slate-400">
-                        No hay autores registrados todavía.
-                      </p>
-                    ) : (
-                      <div className="divide-y divide-amber-900/15 dark:divide-[#222B3C] text-xs">
-                        {topAuthors.map(([authorName, count]) => (
-                          <div
-                            key={authorName}
-                            className="py-2 flex items-center justify-between"
-                          >
-                            <span className="font-medium">{authorName}</span>
-                            <span className="rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 font-semibold">
-                              {count} {count === 1 ? 'libro' : 'libros'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-3 shadow-sm">
-                <h2 className="font-serif text-xl font-bold">
-                  Progreso de Lectura de las Sagas (Sobre Volúmenes Registrados)
-                </h2>
-                {sagasWithBooks.length === 0 ? (
-                  <p className="text-xs text-stone-500 dark:text-slate-400">No hay sagas registradas.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {sagasWithBooks.map((item) => (
-                      <div
-                        key={item.saga.id}
-                        className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-transparent p-3.5 space-y-1.5"
-                      >
-                        <div className="flex flex-wrap justify-between gap-x-2 gap-y-0.5 text-xs font-semibold">
-                          <span>{item.saga.nombre}</span>
-                          <span className="text-amber-800 dark:text-amber-400">
-                            {item.readCount} / {item.registeredCount} volúmenes registrados leídos (
-                            {item.progressPercent}%)
-                          </span>
-                        </div>
-                        <SagaProgressBar books={item.books} percent={item.progressPercent} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+              }
+            >
+              <ReadingChallengeScreen
+                books={books}
+                sagas={sagas}
+                currentUserId={currentUser?.id}
+                userName={currentUserProfile?.displayName || currentUserProfile?.username || guestAlias || 'Lector Nexus'}
+                onOpenBookDetail={handleOpenCardDetail}
+                onShowToast={showToast}
+                onUpdateBookDates={updateBookQuickDates}
+              />
+            </React.Suspense>
           )}
 
           {activeSection === 'settings' && (
@@ -2299,8 +2180,8 @@ export const App: React.FC = () => {
           },
           {
             id: 'stats' as NavigationSection,
-            label: 'Resumen',
-            icon: BarChart3,
+            label: 'Reto & Stats',
+            icon: Trophy,
             isActive: activeSection === 'stats'
           }
         ]).map((item) => {
