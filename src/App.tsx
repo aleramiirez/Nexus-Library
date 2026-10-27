@@ -1400,8 +1400,9 @@ export const App: React.FC = () => {
 
               {showFilters && (
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-4 space-y-3 shadow-sm">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
-                    <div className="md:col-span-4">
+                  {/* Fila 1: Filtros de Clasificación Temática */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div>
                       <select
                         value={filters.genero}
                         onChange={(e) =>
@@ -1418,7 +1419,7 @@ export const App: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="md:col-span-4">
+                    <div>
                       <select
                         value={filters.subgenero}
                         onChange={(e) =>
@@ -1435,7 +1436,26 @@ export const App: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="md:col-span-4">
+                    <div className="sm:col-span-2 lg:col-span-1">
+                      <select
+                        value={filters.sagaId}
+                        onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
+                      >
+                        <option value="">Todas las sagas</option>
+                        <option value="__none__">Libros independientes (Sin saga)</option>
+                        {sagas.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            Saga: {s.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Fila 2: Estado, Puntuación, Ordenación y Limpiar */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1 items-center">
+                    <div className="lg:col-span-3">
                       <select
                         value={filters.progreso}
                         onChange={(e) =>
@@ -1454,10 +1474,8 @@ export const App: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-1">
-                    <div className="md:col-span-3">
+                    <div className="lg:col-span-3">
                       <select
                         value={filters.puntuacion === null ? '' : String(filters.puntuacion)}
                         onChange={(e) => {
@@ -1484,29 +1502,13 @@ export const App: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className="md:col-span-4">
-                      <select
-                        value={filters.sagaId}
-                        onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Todas las sagas</option>
-                        <option value="__none__">Libros independientes (Sin saga)</option>
-                        {sagas.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            Saga: {s.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="md:col-span-3 flex items-center gap-1.5">
+                    <div className="lg:col-span-4 flex items-center gap-1.5 min-w-0">
                       <select
                         value={filters.sortBy}
                         onChange={(e) =>
                           setFilters((f) => ({ ...f, sortBy: e.target.value as SortField }))
                         }
-                        className="flex-1 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
+                        className="flex-1 min-w-0 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100 truncate"
                       >
                         <option value="createdAt">Ordenar: Fecha incorporación</option>
                         <option value="nombre">Ordenar: Título</option>
@@ -1524,19 +1526,20 @@ export const App: React.FC = () => {
                           }))
                         }
                         title="Invertir orden ascendente/descendente"
-                        className="p-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] text-stone-700 dark:text-slate-200 hover:border-amber-500"
+                        className="p-2 shrink-0 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] text-stone-700 dark:text-slate-200 hover:border-amber-500 transition"
                       >
                         <ArrowUpDown className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="md:col-span-2 flex justify-end">
+                    <div className="lg:col-span-2 flex justify-end">
                       <button
                         type="button"
                         onClick={() => setFilters(initialFilters)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-900/25 dark:border-[#283246] hover:border-amber-500 px-3 py-2 text-xs text-stone-700 dark:text-slate-300 transition"
+                        className="w-full inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-amber-900/25 dark:border-[#283246] hover:border-amber-500 px-3 py-2 text-xs text-stone-700 dark:text-slate-300 transition"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" /> Limpiar filtros
+                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                        <span>Limpiar filtros</span>
                       </button>
                     </div>
                   </div>
