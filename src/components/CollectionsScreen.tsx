@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   Bookmark,
+  Rows3,
+  Grid,
+  List,
   Plus,
   Edit2,
   Trash2,
@@ -29,14 +32,21 @@ import {
 import { Book, CustomCollection, LentRecord } from '../types/models';
 import { collectionService } from '../services/collectionService';
 import { BookCover } from './BookCover';
+import { BookShelf } from './BookShelf';
+import { BookCard } from './BookCard';
+import { formatStars, ReadingStatus } from '../constants/catalogs';
 import { LentBookModal } from './LentBookModal';
 import '../book-shelf.css';
 
 interface CollectionsScreenProps {
   books: Book[];
   currentUserId?: string;
-  onOpenBookDetail?: (book: Book) => void;
-  onShowToast?: (message: string) => void;
+  onOpenBookDetail?: (bookOrId: Book | string) => void;
+  openedBookId?: string | null;
+  onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  onEditBook?: (book: Book) => void;
+  onDeleteBook?: (book: Book) => void;
+  onQuickStatusChange?: (bookId: string, status: ReadingStatus) => void;
 }
 
 const AVAILABLE_ICONS: Record<string, React.ElementType> = {
@@ -61,7 +71,11 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
   books,
   currentUserId,
   onOpenBookDetail,
-  onShowToast
+  openedBookId,
+  onShowToast,
+  onEditBook,
+  onDeleteBook,
+  onQuickStatusChange
 }) => {
   const [activeTab, setActiveTab] = useState<'shelves' | 'lent'>('shelves');
   const [collections, setCollections] = useState<CustomCollection[]>(() =>
@@ -95,22 +109,28 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
     return collections.find((c) => c.id === selectedCollectionId) || null;
   }, [collections, selectedCollectionId]);
 
-  const activeCollectionBooks = useMemo(() => {
+  const colBooks = useMemo(() => {
     if (!activeCollection) return [];
     const bookMap = new Map(books.map((b) => [b.id, b]));
-    const matched = activeCollection.bookIds
+    return activeCollection.bookIds
       .map((id) => bookMap.get(id))
       .filter((b): b is Book => Boolean(b));
+  }, [activeCollection, books]);
 
-    if (!searchQuery.trim()) return matched;
+  const activeCollectionBooks = useMemo(() => {
+    if (!searchQuery.trim()) return colBooks;
     const q = searchQuery.toLowerCase().trim();
-    return matched.filter(
+    return colBooks.filter(
       (b) =>
         b.nombre.toLowerCase().includes(q) ||
         b.autor.toLowerCase().includes(q) ||
         (b.genero && b.genero.toLowerCase().includes(q))
     );
-  }, [activeCollection, books, searchQuery]);
+  }, [colBooks, searchQuery]);
+
+  const handleBookOpen = (target: Book | string) => {
+    onOpenBookDetail?.(target);
+  };
 
   // Libros prestados activos e históricos
   const activeLentRecords = useMemo(() => {
@@ -218,7 +238,8 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       {/* ─── Cabecera Principal ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#242E42] pb-4">
+      {!activeCollection && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#242E42] pb-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-600/30">
@@ -293,6 +314,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
           )}
         </div>
       </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* ─── PESTAÑA 1: ESTANTERÍAS PERSONALIZADAS ─── */}
@@ -301,94 +323,104 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
         <>
           {/* Caso A: Vista detalle de una estantería seleccionada */}
           {activeCollection ? (
-            <div className="space-y-6">
-              {/* Barra superior de navegación de la estantería */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26]">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Barra superior de pestañas de estanterías (scroll horizontal) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCollectionId(null);
+                    setSearchQuery('');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white text-xs font-semibold whitespace-nowrap transition shadow-xs"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Todas las estanterías</span>
+                </button>
+                {collections.map((col) => {
+                  const isCurrent = col.id === activeCollection.id;
+                  return (
+                    <button
+                      key={col.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCollectionId(col.id);
+                        setSearchQuery('');
+                      }}
+                      className={
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ' +
+                        (isCurrent
+                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                          : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea]/80 dark:bg-[#141A26] text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: col.color || '#d97706' }}
+                      />
+                      <span>{col.nombre}</span>
+                      <span className="opacity-70 text-[10px]">({col.bookIds.length})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Cabecera idéntica a Mi Biblioteca */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-3.5 sm:pb-4">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setSelectedCollectionId(null)}
-                    className="p-2 rounded-xl border border-amber-900/20 dark:border-slate-700 hover:border-amber-600 text-stone-700 dark:text-slate-300 hover:text-amber-700 transition"
+                    onClick={() => {
+                      setSelectedCollectionId(null);
+                      setSearchQuery('');
+                    }}
+                    className="p-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-400 transition shadow-sm"
                     title="Volver a todas las estanterías"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-white">
+                      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
                         {activeCollection.nombre}
-                      </h2>
+                      </h1>
                       <button
                         type="button"
                         onClick={(e) => handleOpenEdit(activeCollection, e)}
-                        className="p-1 text-stone-400 hover:text-amber-600 transition"
+                        className="p-1.5 text-stone-400 hover:text-amber-600 dark:hover:text-amber-400 transition"
                         title="Editar nombre y descripción"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
                     </div>
-                    {activeCollection.descripcion && (
-                      <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-                        {activeCollection.descripcion}
-                      </p>
-                    )}
+                    <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
+                      Mostrando <strong>{activeCollectionBooks.length}</strong> de{' '}
+                      <strong>{colBooks.length}</strong> {colBooks.length === 1 ? 'libro' : 'libros'} en esta estantería
+                      {activeCollection.descripcion ? ` · ${activeCollection.descripcion}` : ''}
+                    </p>
                   </div>
                 </div>
 
-                {/* Controles de la estantería: Búsqueda, Modos de vista y Añadir libros */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2">
+                  <div className="relative w-full sm:w-44 md:w-52 lg:w-60">
+                    <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
-                      placeholder="Buscar en esta estantería..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 rounded-xl border border-amber-900/15 dark:border-slate-700 bg-white/70 dark:bg-slate-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-amber-500 w-48 sm:w-56"
+                      placeholder="Buscar en esta estantería..."
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2.5 sm:py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
                     />
-                  </div>
-
-                  {/* Selector de modo de vista: Shelf / Grid / List */}
-                  <div className="inline-flex rounded-xl border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-900 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setShelfViewMode('shelf')}
-                      className={
-                        'p-1.5 rounded-lg transition ' +
-                        (shelfViewMode === 'shelf'
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white')
-                      }
-                      title="Vista Balda de madera"
-                    >
-                      <ShelfIcon className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShelfViewMode('grid')}
-                      className={
-                        'p-1.5 rounded-lg transition ' +
-                        (shelfViewMode === 'grid'
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white')
-                      }
-                      title="Vista Cuadrícula"
-                    >
-                      <LayoutGrid className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShelfViewMode('list')}
-                      className={
-                        'p-1.5 rounded-lg transition ' +
-                        (shelfViewMode === 'list'
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'text-stone-500 hover:text-stone-800 dark:hover:text-white')
-                      }
-                      title="Vista Lista"
-                    >
-                      <ListIcon className="w-3.5 h-3.5" />
-                    </button>
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        aria-label="Limpiar búsqueda"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   <button
@@ -397,18 +429,59 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                       setPickerSearch('');
                       setIsBookPickerOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 text-xs shadow-md transition shrink-0"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Añadir libros</span>
+                    <Plus className="w-4 h-4" /> <span>Añadir libros</span>
                   </button>
+
+                  <div className="inline-flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setShelfViewMode('shelf')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
+                        (shelfViewMode === 'shelf'
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                      title="Vista de estantería visual"
+                    >
+                      <Rows3 className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Estantería</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShelfViewMode('grid')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
+                        (shelfViewMode === 'grid'
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                      title="Vista de cuadrícula de portadas"
+                    >
+                      <Grid className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Cuadrícula</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShelfViewMode('list')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
+                        (shelfViewMode === 'list'
+                          ? 'bg-amber-500 text-slate-950 font-semibold shadow-sm'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                      title="Vista de lista compacta"
+                    >
+                      <List className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Lista</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Contenido de libros de la estantería */}
-              {activeCollectionBooks.length === 0 ? (
-                <div className="py-16 text-center rounded-3xl border border-dashed border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea]/40 dark:bg-[#141A26]/40 p-8 space-y-3">
-                  <Bookmark className="w-10 h-10 text-amber-600/50 mx-auto" />
+              {colBooks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-12 text-center space-y-3">
+                  <Bookmark className="w-10 h-10 text-amber-600/50 dark:text-amber-400/50 mx-auto" />
                   <h3 className="font-serif text-lg font-bold text-stone-800 dark:text-slate-200">
                     Esta estantería aún no tiene libros
                   </h3>
@@ -427,152 +500,176 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                     <span>Seleccionar libros de la biblioteca</span>
                   </button>
                 </div>
-              ) : shelfViewMode === 'shelf' ? (
-                /* ─── Modo Balda de Madera ─── */
-                <div className="bookcase rounded-3xl border border-amber-900/20 dark:border-amber-500/15 bg-amber-950/5 dark:bg-black/30 p-4 sm:p-6 shadow-inner space-y-8">
-                  {/* Partir libros en baldas de hasta 6 obras */}
-                  {Array.from({ length: Math.ceil(activeCollectionBooks.length / 6) }).map((_, rowIdx) => {
-                    const rowBooks = activeCollectionBooks.slice(rowIdx * 6, (rowIdx + 1) * 6);
-                    return (
-                      <div key={rowIdx} className="space-y-0">
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-6 items-end pb-1 px-2">
-                          {rowBooks.map((b) => (
-                            <div
-                              key={b.id}
-                              onClick={() => onOpenBookDetail?.(b)}
-                              className="group relative cursor-pointer text-left space-y-1.5 transition-transform duration-300 hover:-translate-y-2 active:scale-95"
-                              title={`${b.nombre} (por ${b.autor})`}
-                            >
-                              {/* Sombra de contacto sobre la balda */}
-                              <div className="absolute -bottom-1.5 left-1 right-1 h-3 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
-                              <BookCover
-                                nombre={b.nombre}
-                                autor={b.autor}
-                                portadaUrl={b.portadaUrl}
-                                portadaFallbackUrl={b.portadaFallbackUrl}
-                                portadaDataUrl={b.portadaDataUrl}
-                                size="sm"
-                                variant="book"
-                              />
-
-                              {/* Botón rápido para retirar de la colección al pasar el ratón */}
-                              <button
-                                type="button"
-                                onClick={(e) => handleRemoveBook(b.id, b.nombre, e)}
-                                className="absolute -top-2 -right-2 p-1 rounded-full bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition shadow hover:scale-110 z-10"
-                                title="Quitar de esta estantería"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-
-                              <p className="font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate group-hover:text-amber-700 dark:group-hover:text-amber-400">
-                                {b.nombre}
-                              </p>
-                              <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
-                                {b.autor}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Balda de madera auténtica */}
-                        <div className="shelf-plank -mx-2 mt-1" aria-hidden="true">
-                          <div className="shelf-plank-top" />
-                          <div className="shelf-plank-front flex items-center justify-center">
-                            <span className="text-[9px] font-serif tracking-widest text-amber-900/60 dark:text-amber-200/50 uppercase font-bold py-0.5">
-                              {activeCollection.nombre} · Balda {rowIdx + 1}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+              ) : activeCollectionBooks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-10 text-center space-y-2">
+                  <p className="font-serif text-base text-stone-700 dark:text-slate-300">
+                    No se encontraron libros que coincidan con «{searchQuery}»
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                  >
+                    Limpiar búsqueda
+                  </button>
                 </div>
+              ) : shelfViewMode === 'shelf' ? (
+                /* ─── Modo Balda de Madera (BookShelf auténtico idéntico a Mi Biblioteca) ─── */
+                <BookShelf
+                  books={activeCollectionBooks}
+                  onOpenDetail={handleBookOpen}
+                  openedBookId={openedBookId}
+                />
               ) : shelfViewMode === 'grid' ? (
-                /* ─── Modo Cuadrícula ─── */
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                  {activeCollectionBooks.map((b) => (
-                    <div
-                      key={b.id}
-                      onClick={() => onOpenBookDetail?.(b)}
-                      className="group relative cursor-pointer text-left space-y-1.5 transition-transform duration-300 hover:-translate-y-1.5 active:scale-95"
-                    >
-                      <div className="relative">
-                        <div className="absolute -bottom-1.5 left-1 right-1 h-2.5 bg-black/40 blur-[2px] rounded-full pointer-events-none" />
-                        <BookCover
-                          nombre={b.nombre}
-                          autor={b.autor}
-                          portadaUrl={b.portadaUrl}
-                          portadaFallbackUrl={b.portadaFallbackUrl}
-                          portadaDataUrl={b.portadaDataUrl}
-                          size="sm"
-                          variant="book"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => handleRemoveBook(b.id, b.nombre, e)}
-                          className="absolute -top-1.5 -right-1.5 p-1 rounded-full bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition shadow hover:scale-110 z-10"
-                          title="Quitar de esta estantería"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      <h4 className="font-serif text-xs font-semibold truncate text-stone-900 dark:text-white group-hover:text-amber-600">
-                        {b.nombre}
-                      </h4>
-                      <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
-                        {b.autor}
-                      </p>
+                /* ─── Modo Cuadrícula (BookCard idéntico a Mi Biblioteca) ─── */
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+                  {activeCollectionBooks.map((book) => (
+                    <div key={book.id} className="relative group/card">
+                      <BookCard
+                        book={book}
+                        onOpenDetail={() => handleBookOpen(book.id)}
+                        onEdit={onEditBook}
+                        onDelete={onDeleteBook}
+                        onQuickStatusChange={onQuickStatusChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveBook(book.id, book.nombre, e)}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white opacity-0 group-hover/card:opacity-100 transition shadow hover:scale-110 z-10"
+                        title={`Quitar «${book.nombre}» de esta estantería`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                /* ─── Modo Lista ─── */
-                <div className="rounded-2xl border border-amber-900/15 dark:border-[#222B3D] divide-y divide-amber-900/10 dark:divide-slate-800 overflow-hidden bg-white/60 dark:bg-[#141A26]/80">
-                  {activeCollectionBooks.map((b) => (
-                    <div
-                      key={b.id}
-                      onClick={() => onOpenBookDetail?.(b)}
-                      className="p-3 flex items-center justify-between gap-3 hover:bg-amber-500/5 cursor-pointer transition"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 shrink-0">
+                /* ─── Modo Lista (Tabla idéntica a Mi Biblioteca) ─── */
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] overflow-hidden shadow-sm">
+                  <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
+                    {activeCollectionBooks.map((book) => (
+                      <li
+                        key={book.id}
+                        data-book-id={book.id}
+                        onClick={() => handleBookOpen(book.id)}
+                        className="flex items-center gap-3 p-3 active:bg-[#f4ead4] dark:active:bg-[#192131] cursor-pointer"
+                      >
+                        <div className="w-11 shrink-0">
                           <BookCover
-                            nombre={b.nombre}
-                            autor={b.autor}
-                            portadaUrl={b.portadaUrl}
-                            portadaFallbackUrl={b.portadaFallbackUrl}
-                            portadaDataUrl={b.portadaDataUrl}
+                            nombre={book.nombre}
+                            autor={book.autor}
+                            portadaUrl={book.portadaUrl}
+                            portadaFallbackUrl={book.portadaFallbackUrl}
+                            portadaDataUrl={book.portadaDataUrl}
                             size="sm"
-                            variant="book"
                           />
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="font-serif font-bold text-xs sm:text-sm truncate text-stone-900 dark:text-white">
-                            {b.nombre}
-                          </h4>
-                          <p className="text-[11px] text-stone-500 dark:text-slate-400 truncate">
-                            {b.autor} {b.genero ? `· ${b.genero}` : ''}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-serif font-bold text-sm leading-snug line-clamp-2">{book.nombre}</p>
+                          <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate">
+                            {book.autor || '—'}
+                            {book.sagaNombre ? ' · ' + book.sagaNombre + (book.volumen ? ' #' + String(book.volumen) : '') : ''}
                           </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="inline-flex items-center whitespace-nowrap rounded-full border border-amber-900/25 dark:border-slate-700 bg-[#efe3c8] dark:bg-slate-800/80 px-2 py-0.5 text-[10px] font-medium text-stone-800 dark:text-slate-200">
+                              {book.progreso}
+                            </span>
+                            {book.puntuacion && (
+                              <span className="text-[10px] tracking-tighter whitespace-nowrap">{formatStars(book.puntuacion)}</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-xs font-medium text-stone-600 dark:text-slate-400">
-                          {b.progreso}
-                        </span>
                         <button
                           type="button"
-                          onClick={(e) => handleRemoveBook(b.id, b.nombre, e)}
-                          className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 transition"
+                          onClick={(e) => handleRemoveBook(book.id, book.nombre, e)}
+                          className="p-1.5 text-stone-400 hover:text-rose-600 transition"
                           title="Quitar de esta estantería"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      </div>
-                    </div>
-                  ))}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#f0e5cc] dark:bg-[#101520] text-stone-700 dark:text-slate-400 border-b border-amber-900/20 dark:border-[#242E42]">
+                        <tr>
+                          <th className="p-3">Portada</th>
+                          <th className="p-3">Título y Autor</th>
+                          <th className="p-3">Género</th>
+                          <th className="p-3">Saga</th>
+                          <th className="p-3">Año / Págs.</th>
+                          <th className="p-3">Puntuación</th>
+                          <th className="p-3">Estado</th>
+                          <th className="p-3 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-amber-900/10 dark:divide-[#20293A]">
+                        {activeCollectionBooks.map((book) => (
+                          <tr
+                            key={book.id}
+                            data-book-id={book.id}
+                            onClick={() => handleBookOpen(book.id)}
+                            className="group hover:bg-[#f4ead4] dark:hover:bg-[#192131] cursor-pointer transition"
+                          >
+                            <td className="p-3 w-14">
+                              <div className="w-11">
+                                <BookCover
+                                  nombre={book.nombre}
+                                  autor={book.autor}
+                                  portadaUrl={book.portadaUrl}
+                                  portadaFallbackUrl={book.portadaFallbackUrl}
+                                  portadaDataUrl={book.portadaDataUrl}
+                                  size="sm"
+                                />
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className="font-serif font-bold text-base text-left group-hover:text-amber-700 dark:group-hover:text-amber-400 block transition">
+                                {book.nombre}
+                              </span>
+                              <span className="text-stone-600 dark:text-slate-400">{book.autor || '—'}</span>
+                            </td>
+                            <td className="p-3">{book.genero || '—'}</td>
+                            <td className="p-3">
+                              {book.sagaNombre ? (
+                                <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2 py-0.5 font-medium">
+                                  {book.sagaNombre}{' '}
+                                  {book.volumen ? '#' + String(book.volumen) : ''}
+                                </span>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                            <td className="p-3 text-stone-600 dark:text-slate-400">
+                              {[
+                                book.fechaPublicacion,
+                                book.paginas ? String(book.paginas) + ' p.' : null
+                              ]
+                                .filter(Boolean)
+                                .join(' · ') || '—'}
+                            </td>
+                            <td className="p-3 whitespace-nowrap">{formatStars(book.puntuacion) || '—'}</td>
+                            <td className="p-3 whitespace-nowrap">
+                              <span className="inline-flex items-center whitespace-nowrap rounded-full border border-amber-900/25 dark:border-slate-700 bg-[#efe3c8] dark:bg-slate-800/80 px-2.5 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200">
+                                {book.progreso}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveBook(book.id, book.nombre, e)}
+                                className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 transition"
+                                title="Quitar de esta estantería"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

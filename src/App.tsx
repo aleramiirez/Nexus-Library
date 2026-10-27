@@ -1761,8 +1761,15 @@ export const App: React.FC = () => {
               <CollectionsScreen
                 books={books}
                 currentUserId={currentUser?.id}
-                onOpenBookDetail={handleOpenCardDetail}
+                onOpenBookDetail={(target) => {
+                  const id = typeof target === 'string' ? target : target.id;
+                  setDetailBookId(id);
+                }}
+                openedBookId={detailBookId}
                 onShowToast={showToast}
+                onEditBook={handleOpenEditBook}
+                onDeleteBook={(b) => setBookToDelete(b)}
+                onQuickStatusChange={updateBookQuickStatus}
               />
             </React.Suspense>
           )}
