@@ -28,8 +28,11 @@ import {
   BookOpen,
   Save,
   FileUp,
-  AlertCircle
+  AlertCircle,
+  Image as ImageIcon,
+  FileText
 } from 'lucide-react';
+import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -99,11 +102,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  // Estados de enriquecimiento de portadas
-  const [isEnriching, setIsEnriching] = useState(false);
-  const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(
-    null
-  );
+  // Estado para el modal de completado en lote (portadas y sinopsis)
+  const [batchModalConfig, setBatchModalConfig] = useState<{
+    isOpen: boolean;
+    mode: BatchMetadataMode;
+  } | null>(null);
 
   // Estados de almacenamiento persistente
   const [isPersisted, setIsPersisted] = useState<boolean | null>(null);
@@ -219,59 +222,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, []);
 
-  const booksMissingCovers = books.filter((b) => !b.portadaUrl);
+  const booksMissingCovers = books.filter((b) => !b.portadaUrl && !b.portadaDataUrl);
   const booksWithCoversCount = books.length - booksMissingCovers.length;
   const coverPercentage =
     books.length > 0 ? Math.round((booksWithCoversCount / books.length) * 100) : 100;
 
-  /* ─────────────────── Enriquecimiento de Portadas ─────────────────── */
-  const handleEnrichMissingCovers = async () => {
-    if (booksMissingCovers.length === 0 || isEnriching) return;
-    setIsEnriching(true);
-    setFeedback(null);
-    let updatedCount = 0;
-    const batch = booksMissingCovers;
-    setEnrichProgress({ current: 0, total: batch.length });
-
-    for (let i = 0; i < batch.length; i++) {
-      const book = batch[i];
-      setEnrichProgress({ current: i + 1, total: batch.length });
-      try {
-        const match = await bookMetadataService.findBestMatchForBook({
-          nombre: book.nombre,
-          autor: book.autor,
-          isbn: book.isbn
-        });
-
-        if (match) {
-          await updateBookPartialRecord(book.id, {
-            portadaUrl: book.portadaUrl || match.portadaUrl,
-            portadaFallbackUrl: book.portadaFallbackUrl || match.portadaFallbackUrl,
-            isbn: book.isbn || match.isbn,
-            paginas: book.paginas ?? match.paginas,
-            fechaPublicacion: book.fechaPublicacion ?? match.fechaPublicacion,
-            editorial: book.editorial || match.editorial,
-            idioma: book.idioma || match.idioma,
-            sinopsis: book.sinopsis || match.sinopsis,
-            genero: book.genero || match.suggestedGenre,
-            subgeneros:
-              book.subgeneros.length > 0 ? book.subgeneros : match.suggestedSubgenres
-          });
-          updatedCount++;
-        }
-      } catch {
-        // Continuar con el siguiente libro
-      }
-      await new Promise((r) => setTimeout(r, 300));
-    }
-
-    setEnrichProgress(null);
-    setIsEnriching(false);
-    setFeedback({
-      type: 'success',
-      text: `¡Catálogo completado! Se han actualizado portadas y datos bibliográficos en ${updatedCount} de ${batch.length} libros.`
-    });
-  };
+  const booksMissingSynopsis = books.filter((b) => !b.sinopsis || b.sinopsis.trim().length === 0);
+  const booksWithSynopsisCount = books.length - booksMissingSynopsis.length;
+  const synopsisPercentage =
+    books.length > 0 ? Math.round((booksWithSynopsisCount / books.length) * 100) : 100;
 
   /* ─────────────────── Protección de almacenamiento en el equipo ─────────────────── */
   const handleRequestStorage = async () => {
@@ -379,9 +338,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  const progressPct = enrichProgress
-    ? `${Math.round((enrichProgress.current / enrichProgress.total) * 100)}%`
-    : '0%';
+
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -1038,72 +995,109 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </p>
             </div>
 
-            {/* Tarjeta de métricas de portadas */}
-            <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <span className="text-xs text-stone-600 dark:text-slate-400">
-                    Estado de las portadas en tu biblioteca
-                  </span>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="font-serif text-2xl font-bold text-amber-800 dark:text-amber-300">
-                      {booksWithCoversCount} de {books.length} libros con portada
+            {/* Grid con las dos tarjetas asistidas: Portadas y Sinopsis */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tarjeta 1: Portadas de Libros */}
+              <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col justify-between gap-4 shadow-sm">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
+                      <ImageIcon className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                      Portadas de Libros
                     </span>
                     <span className="rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold px-2 py-0.5">
                       {coverPercentage}%
                     </span>
                   </div>
+
+                  <div>
+                    <span className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300">
+                      {booksWithCoversCount} de {books.length}
+                    </span>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                      libros con portada registrada
+                    </p>
+                  </div>
+
+                  {/* Barra de progreso */}
+                  <div className="space-y-1.5">
+                    <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 dark:bg-amber-400 transition-all duration-500"
+                        style={{ width: `${coverPercentage}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-stone-500 dark:text-slate-400">
+                      <span>{booksWithCoversCount} con portada</span>
+                      <span>{booksMissingCovers.length} sin portada</span>
+                    </div>
+                  </div>
                 </div>
 
                 <button
                   type="button"
-                  disabled={isEnriching || booksMissingCovers.length === 0}
-                  onClick={handleEnrichMissingCovers}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md self-start sm:self-auto"
+                  onClick={() => setBatchModalConfig({ isOpen: true, mode: 'covers' })}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-sm"
                 >
-                  {isEnriching ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  {isEnriching
-                    ? 'Buscando portadas...'
-                    : booksMissingCovers.length === 0
-                    ? 'Todas las portadas al día'
-                    : `Completar portadas que faltan (${booksMissingCovers.length})`}
+                  <Sparkles className="w-4 h-4" />
+                  <span>
+                    {booksMissingCovers.length === 0
+                      ? 'Revisar portadas del catálogo'
+                      : `Completar portadas (${booksMissingCovers.length} faltantes)`}
+                  </span>
                 </button>
               </div>
 
-              {/* Barra de progreso de cubiertas */}
-              <div className="space-y-1.5">
-                <div className="w-full h-2.5 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 dark:bg-amber-400 transition-all duration-500"
-                    style={{ width: `${coverPercentage}%` }}
-                  />
-                </div>
-              </div>
+              {/* Tarjeta 2: Sinopsis & Argumentos */}
+              <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col justify-between gap-4 shadow-sm">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
+                      <FileText className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                      Sinopsis & Argumentos
+                    </span>
+                    <span className="rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold px-2 py-0.5">
+                      {synopsisPercentage}%
+                    </span>
+                  </div>
 
-              {/* Barra durante el proceso de autocompletado */}
-              {enrichProgress && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-2">
-                  <div className="flex justify-between text-xs text-amber-900 dark:text-amber-300 font-semibold">
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Consultando catálogos de libros...
+                  <div>
+                    <span className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-300">
+                      {booksWithSynopsisCount} de {books.length}
                     </span>
-                    <span>
-                      {enrichProgress.current} de {enrichProgress.total} libros procesados
-                    </span>
+                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-0.5">
+                      libros con sinopsis registrada
+                    </p>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
-                    <div
-                      className="h-full bg-amber-500 dark:bg-amber-400 transition-all"
-                      style={{ width: progressPct }}
-                    />
+
+                  {/* Barra de progreso */}
+                  <div className="space-y-1.5">
+                    <div className="w-full h-2 rounded-full bg-amber-900/15 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 dark:bg-amber-400 transition-all duration-500"
+                        style={{ width: `${synopsisPercentage}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-stone-500 dark:text-slate-400">
+                      <span>{booksWithSynopsisCount} con sinopsis</span>
+                      <span>{booksMissingSynopsis.length} sin sinopsis</span>
+                    </div>
                   </div>
                 </div>
-              )}
+
+                <button
+                  type="button"
+                  onClick={() => setBatchModalConfig({ isOpen: true, mode: 'synopsis' })}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-sm"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>
+                    {booksMissingSynopsis.length === 0
+                      ? 'Revisar sinopsis del catálogo'
+                      : `Completar sinopsis (${booksMissingSynopsis.length} faltantes)`}
+                  </span>
+                </button>
+              </div>
             </div>
 
 
@@ -1365,6 +1359,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>,
           document.body
         )}
+
+      {/* Modal de completado de metadatos en lote (portadas o sinopsis) */}
+      {batchModalConfig?.isOpen && (
+        <BatchMetadataModal
+          isOpen={batchModalConfig.isOpen}
+          mode={batchModalConfig.mode}
+          books={books}
+          sagas={sagas}
+          onClose={() => setBatchModalConfig(null)}
+          onCompleted={(updated, total) => {
+            setFeedback({
+              type: 'success',
+              text: `¡Catálogo actualizado! Se completaron con éxito los datos de ${updated} de ${total} libros procesados.`
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
