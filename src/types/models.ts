@@ -101,6 +101,8 @@ export interface BackupPayload {
   exportedAt: string;
   books: Book[];
   sagas: Saga[];
+  collections?: CustomCollection[];
+  lentRecords?: LentRecord[];
 }
 
 export type ProfileVisibility = 'public' | 'friends' | 'private';
@@ -159,3 +161,28 @@ export interface BookRecommendation {
 
 
 
+
+
+export interface CustomCollection {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  icono?: string;
+  color?: string;
+  bookIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LentRecord {
+  id: string;
+  bookId: string;
+  borrowerName: string;
+  borrowDate: string;
+  expectedReturnDate?: string;
+  returned: boolean;
+  returnedDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}

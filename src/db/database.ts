@@ -1,3 +1,4 @@
+import { collectionService } from '../services/collectionService';
 import Dexie, { Table } from 'dexie';
 import { BackupPayload, Book, Saga } from '../types/models';
 import { normalizeText } from '../constants/catalogs';
@@ -1044,6 +1045,13 @@ export async function restoreBackupPayload(
     await db.books.put(cleanBook);
     currentBooks.push(cleanBook);
     addedBooks++;
+  }
+
+  if (backup.collections || backup.lentRecords) {
+    collectionService.importData(
+      { collections: backup.collections, lentRecords: backup.lentRecords },
+      user ? user.id : undefined
+    );
   }
 
   return { addedBooks, skippedDuplicates };

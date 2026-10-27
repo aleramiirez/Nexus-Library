@@ -117,6 +117,10 @@ import { ReadingChallengeDashboardWidget } from './components/ReadingChallengeDa
 const BookInboxModal = React.lazy(() =>
   import('./components/BookInboxModal').then((m) => ({ default: m.BookInboxModal }))
 );
+const CollectionsScreen = React.lazy(() =>
+  import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
+);
+import { collectionService } from './services/collectionService';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -191,6 +195,13 @@ export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [guestAlias, setGuestAlias] = useState<string>(() => profileService.getGuestAlias());
+  const [collectionsCount, setCollectionsCount] = useState<number>(() =>
+    collectionService.getCollections(currentUser?.id).length
+  );
+
+  useEffect(() => {
+    setCollectionsCount(collectionService.getCollections(currentUser?.id).length);
+  }, [currentUser?.id, activeSection]);
   const [authLoading, setAuthLoading] = useState(true);
   const [offlineGuestMode, setOfflineGuestMode] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncMigrationResult | null>(null);
@@ -660,6 +671,8 @@ export const App: React.FC = () => {
     const bookTitle = bookToDelete.nombre;
     try {
       await deleteBookRecord(bookToDelete.id);
+      collectionService.removeBookFromAllCollections(bookToDelete.id, currentUser?.id);
+      collectionService.removeBookLentRecords(bookToDelete.id, currentUser?.id);
       if (detailBookId === bookToDelete.id) setDetailBookId(null);
       setBookToDelete(null);
       showToast(`Se ha eliminado "${bookTitle}" de tu biblioteca.`, 'info');
@@ -1735,6 +1748,24 @@ export const App: React.FC = () => {
               'Estantería: Libros Leídos',
               'Lecturas completadas en tu biblioteca'
             )}
+
+          {activeSection === 'collections' && (
+            <React.Suspense
+              fallback={
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                  <span className="font-serif text-sm">Cargando colecciones & estanterías...</span>
+                </div>
+              }
+            >
+              <CollectionsScreen
+                books={books}
+                currentUserId={currentUser?.id}
+                onOpenBookDetail={handleOpenCardDetail}
+                onShowToast={showToast}
+              />
+            </React.Suspense>
+          )}
 
           {activeSection === 'sagas' && (
             <div className="space-y-6">

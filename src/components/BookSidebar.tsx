@@ -8,6 +8,7 @@ import {
   BarChart3,
   Trophy,
   Settings,
+  Bookmark,
   BookMarked,
   BookmarkCheck,
   Clock,
@@ -27,6 +28,7 @@ export type NavigationSection =
   | 'shelf-reading'
   | 'shelf-paused'
   | 'shelf-read'
+  | 'collections'
   | 'sagas'
   | 'stats'
   | 'settings';
@@ -40,6 +42,7 @@ interface BookSidebarProps {
   onOpenImport?: () => void;
   onLeaveGuestMode: () => void;
   metrics: { total: number; reading: number; unread: number; paused: number; read: number };
+  collectionsCount?: number;
   sagasCount: number;
   hasUser: boolean;
   userEmail?: string | null;
@@ -122,6 +125,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   onOpenAuth,
   onLeaveGuestMode,
   metrics,
+  collectionsCount = 0,
   sagasCount,
   hasUser,
   userEmail,
@@ -289,6 +293,14 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             />
 
             <Chapter>Colección y Análisis</Chapter>
+            <NavItem
+              id="collections"
+              label="Colecciones"
+              icon={Bookmark}
+              count={collectionsCount}
+              active={activeSection === 'collections'}
+              onSelect={handleSelectSection}
+            />
             <NavItem
               id="sagas"
               label="Sagas"

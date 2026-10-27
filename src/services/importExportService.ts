@@ -1,3 +1,4 @@
+import { collectionService } from './collectionService';
 import { BackupPayload, Book, Saga } from '../types/models';
 import { normalizeText } from '../constants/catalogs';
 
@@ -33,13 +34,16 @@ export function isDuplicateBook(
   return { duplicate: false };
 }
 
-export function exportLibraryToJson(books: Book[], sagas: Saga[]): string {
+export function exportLibraryToJson(books: Book[], sagas: Saga[], userId?: string): string {
+  const { collections, lentRecords } = collectionService.exportData(userId);
   const payload: BackupPayload = {
     app: 'NEXUS_LIBRARY',
     version: 2,
     exportedAt: new Date().toISOString(),
     books,
-    sagas
+    sagas,
+    collections,
+    lentRecords
   };
   return JSON.stringify(payload, null, 2);
 }
