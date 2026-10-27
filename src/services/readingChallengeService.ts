@@ -127,8 +127,8 @@ class ReadingChallengeService {
         return parsed;
       }
     }
-    // Meta por defecto sugerida
-    return 12;
+    // Meta por defecto sugerida (accesible y realista)
+    return 10;
   }
 
   public setGoal(year: number, target: number, userId?: string): void {

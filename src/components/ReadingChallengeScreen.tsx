@@ -59,7 +59,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(currentYear);
   const [goalsByYear, setGoalsByYear] = useState<Record<string, number>>({});
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
-  const [goalModalValue, setGoalModalValue] = useState<number>(12);
+  const [goalModalValue, setGoalModalValue] = useState<number>(10);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthCadence | null>(null);
 
@@ -854,12 +854,12 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
+                  { value: 3, label: '3', sub: 'Pausado / Tomos' },
+                  { value: 6, label: '6', sub: '1 cada 2 meses' },
+                  { value: 10, label: '10', sub: 'Ritmo realista' },
                   { value: 12, label: '12', sub: '1 al mes' },
-                  { value: 24, label: '24', sub: '2 al mes' },
-                  { value: 36, label: '36', sub: '3 al mes' },
-                  { value: 52, label: '52', sub: '1 por sem.' },
-                  { value: 75, label: '75', sub: 'Gran lector' },
-                  { value: 100, label: '100', sub: 'Centuria' }
+                  { value: 18, label: '18', sub: 'Lector constante' },
+                  { value: 24, label: '24', sub: '2 al mes' }
                 ].map((preset) => {
                   const isSelected = goalModalValue === preset.value;
                   return (
@@ -884,9 +884,13 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             {/* Resumen de cadencia estimada */}
             <div className="rounded-2xl border border-amber-900/15 dark:border-[#222C3D] bg-amber-500/5 dark:bg-slate-800/40 p-3.5 space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-stone-600 dark:text-slate-400">Ritmo mensual estimado:</span>
+                <span className="text-stone-600 dark:text-slate-400">Ritmo estimado:</span>
                 <span className="font-bold text-amber-900 dark:text-amber-300">
-                  {(goalModalValue / 12).toFixed(1)} libros/mes
+                  {goalModalValue < 12
+                    ? `1 libro cada ~${(12 / goalModalValue).toFixed(1).replace('.0', '')} meses`
+                    : goalModalValue === 12
+                      ? '1 libro al mes'
+                      : `${(goalModalValue / 12).toFixed(1)} libros/mes`}
                 </span>
               </div>
               <div className="flex items-center justify-between">
