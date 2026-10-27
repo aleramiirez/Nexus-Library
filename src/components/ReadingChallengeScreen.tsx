@@ -14,7 +14,10 @@ import {
   Flame,
   ChevronRight,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Minus,
+  X
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
 import {
@@ -31,6 +34,7 @@ interface ReadingChallengeScreenProps {
   sagas?: Saga[];
   currentUserId?: string;
   userName?: string;
+  darkMode?: boolean;
   onOpenBookDetail?: (book: Book) => void;
   onShowToast?: (message: string) => void;
   onUpdateBookDates?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
@@ -41,6 +45,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   sagas = [],
   currentUserId,
   userName = 'Lector Nexus',
+  darkMode = false,
   onOpenBookDetail,
   onShowToast,
   onUpdateBookDates
@@ -52,30 +57,46 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   );
 
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(currentYear);
-  const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [goalInputValue, setGoalInputValue] = useState<string>('');
+  const [goalsByYear, setGoalsByYear] = useState<Record<string, number>>({});
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [goalModalValue, setGoalModalValue] = useState<number>(12);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthCadence | null>(null);
 
-  // Recalcular estadísticas del año seleccionado
-  const stats: YearReadingStats = useMemo(() => {
-    return readingChallengeService.calculateStats(books, selectedYear, currentUserId);
-  }, [books, selectedYear, currentUserId]);
+  // Meta sobreescrita en memoria para respuesta reactiva instantánea (0ms)
+  const activeYearNum = selectedYear === 'all' ? currentYear : selectedYear;
+  const currentGoalOverride = goalsByYear[String(activeYearNum)];
 
-  const handleStartEditGoal = () => {
-    setGoalInputValue(String(stats.targetGoal));
-    setIsEditingGoal(true);
+  // Recalcular estadísticas del año seleccionado (reactivo instantáneamente)
+  const stats: YearReadingStats = useMemo(() => {
+    return readingChallengeService.calculateStats(
+      books,
+      selectedYear,
+      currentUserId,
+      currentGoalOverride
+    );
+  }, [books, selectedYear, currentUserId, currentGoalOverride]);
+
+  const handleOpenGoalModal = () => {
+    setGoalModalValue(stats.targetGoal);
+    setIsGoalModalOpen(true);
   };
 
-  const handleSaveGoal = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const val = parseInt(goalInputValue.trim(), 10);
-    if (!isNaN(val) && val > 0 && val <= 500) {
-      const yearToSet = selectedYear === 'all' ? currentYear : selectedYear;
-      readingChallengeService.setGoal(yearToSet, val, currentUserId);
-      setIsEditingGoal(false);
-      onShowToast?.(`Meta para ${yearToSet} actualizada a ${val} libros.`);
-    }
+  const handleSaveGoal = (targetValue?: number) => {
+    const finalValue = Math.max(1, Math.min(500, targetValue ?? goalModalValue));
+    const yearToSet = selectedYear === 'all' ? currentYear : selectedYear;
+    
+    // 1. Guardar de forma persistente
+    readingChallengeService.setGoal(yearToSet, finalValue, currentUserId);
+    
+    // 2. Actualizar estado reactivo local para re-renderizado instantáneo a 0ms
+    setGoalsByYear((prev) => ({
+      ...prev,
+      [String(yearToSet)]: finalValue
+    }));
+    
+    setIsGoalModalOpen(false);
+    onShowToast?.(`Meta para ${yearToSet} establecida en ${finalValue} libros.`);
   };
 
   const maxMonthBooks = useMemo(() => {
@@ -175,43 +196,15 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 </span>
               </h2>
 
-              {!isEditingGoal ? (
-                <button
-                  type="button"
-                  onClick={handleStartEditGoal}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 dark:text-amber-400 hover:underline"
-                  title="Modificar objetivo anual"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>Editar meta</span>
-                </button>
-              ) : (
-                <form onSubmit={handleSaveGoal} className="flex items-center gap-1.5">
-                  <input
-                    type="number"
-                    min="1"
-                    max="500"
-                    value={goalInputValue}
-                    onChange={(e) => setGoalInputValue(e.target.value)}
-                    className="w-16 rounded-lg border border-amber-600 bg-white dark:bg-slate-800 px-2 py-0.5 text-xs font-bold text-stone-900 dark:text-white focus:outline-none"
-                    autoFocus
-                  />
-                  <button
-                    type="submit"
-                    className="p-1 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400"
-                    title="Guardar"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingGoal(false)}
-                    className="text-xs text-stone-500 hover:text-stone-800 dark:hover:text-white px-1"
-                  >
-                    Cancelar
-                  </button>
-                </form>
-              )}
+              <button
+                type="button"
+                onClick={handleOpenGoalModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-amber-800/25 dark:border-amber-400/30 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-900 dark:text-amber-300 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                title="Modificar objetivo de lectura"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Modificar meta</span>
+              </button>
             </div>
 
             {/* Mensaje de Ritmo y Cadencia */}
@@ -761,6 +754,171 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         </section>
       )}
 
+      {/* ─── Modal para Modificar Meta Anual ─── */}
+      {isGoalModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsGoalModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-3xl border border-amber-900/30 dark:border-amber-500/20 bg-[#fdfbf7] dark:bg-[#121722] text-stone-900 dark:text-white p-6 sm:p-7 shadow-2xl space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabecera */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/25">
+                  <Target className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-white">
+                    Modificar Meta de Lectura
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                    {selectedYear === 'all'
+                      ? `Objetivo anual para el año en curso (${currentYear})`
+                      : `Año ${selectedYear}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGoalModalOpen(false)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition"
+                title="Cerrar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stepper Principal */}
+            <div className="flex flex-col items-center justify-center py-2 space-y-3">
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setGoalModalValue((v) => Math.max(1, v - 1))}
+                  className="w-12 h-12 rounded-2xl border border-amber-900/20 dark:border-slate-700 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 flex items-center justify-center font-bold text-xl transition active:scale-90"
+                  title="Restar 1 libro"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+
+                <div className="flex flex-col items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={goalModalValue}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setGoalModalValue(isNaN(val) ? 1 : Math.max(1, Math.min(500, val)));
+                    }}
+                    className="w-28 text-center font-serif text-5xl font-black text-amber-800 dark:text-amber-400 bg-transparent border-b-2 border-amber-600/40 focus:border-amber-500 focus:outline-none"
+                  />
+                  <span className="text-xs uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 mt-1">
+                    libros en el año
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setGoalModalValue((v) => Math.min(500, v + 1))}
+                  className="w-12 h-12 rounded-2xl border border-amber-900/20 dark:border-slate-700 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 flex items-center justify-center font-bold text-xl transition active:scale-90"
+                  title="Sumar 1 libro"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Botones de ajuste fino */}
+              <div className="flex items-center gap-1.5 pt-1">
+                {[-5, -1, 1, 5].map((delta) => (
+                  <button
+                    key={delta}
+                    type="button"
+                    onClick={() =>
+                      setGoalModalValue((v) => Math.max(1, Math.min(500, v + delta)))
+                    }
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-amber-900/15 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-300 hover:border-amber-500 transition"
+                  >
+                    {delta > 0 ? `+${delta}` : delta}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Presets habituales */}
+            <div className="space-y-2">
+              <label className="text-[11px] uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 block">
+                Metas recomendadas
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 12, label: '12', sub: '1 al mes' },
+                  { value: 24, label: '24', sub: '2 al mes' },
+                  { value: 36, label: '36', sub: '3 al mes' },
+                  { value: 52, label: '52', sub: '1 por sem.' },
+                  { value: 75, label: '75', sub: 'Gran lector' },
+                  { value: 100, label: '100', sub: 'Centuria' }
+                ].map((preset) => {
+                  const isSelected = goalModalValue === preset.value;
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => setGoalModalValue(preset.value)}
+                      className={`p-2.5 rounded-xl border text-center transition ${
+                        isSelected
+                          ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-300 font-bold shadow-xs ring-1 ring-amber-500'
+                          : 'border-amber-900/15 dark:border-slate-800 bg-white/60 dark:bg-slate-800/60 text-stone-700 dark:text-slate-300 hover:border-amber-500/50'
+                      }`}
+                    >
+                      <div className="text-sm font-bold">{preset.label}</div>
+                      <div className="text-[10px] opacity-75">{preset.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Resumen de cadencia estimada */}
+            <div className="rounded-2xl border border-amber-900/15 dark:border-[#222C3D] bg-amber-500/5 dark:bg-slate-800/40 p-3.5 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 dark:text-slate-400">Ritmo mensual estimado:</span>
+                <span className="font-bold text-amber-900 dark:text-amber-300">
+                  {(goalModalValue / 12).toFixed(1)} libros/mes
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 dark:text-slate-400">Progreso actual:</span>
+                <span className="font-bold text-stone-800 dark:text-slate-200">
+                  {stats.completedCount} / {goalModalValue} ({Math.min(100, Math.round((stats.completedCount / Math.max(1, goalModalValue)) * 100))}%)
+                </span>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsGoalModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-slate-700 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveGoal()}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition active:scale-95"
+              >
+                <Check className="w-4 h-4" />
+                <span>Guardar meta</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── Modal Nexus Wrapped / Memoria Literaria ─── */}
       {isWrappedOpen && (
         <ReadingWrappedModal
@@ -769,6 +927,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           stats={stats}
           userName={userName}
           onShowToast={onShowToast}
+          darkMode={darkMode}
         />
       )}
     </div>

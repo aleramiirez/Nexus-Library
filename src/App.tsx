@@ -2108,6 +2108,7 @@ export const App: React.FC = () => {
                 sagas={sagas}
                 currentUserId={currentUser?.id}
                 userName={currentUserProfile?.displayName || currentUserProfile?.username || guestAlias || 'Lector Nexus'}
+                darkMode={darkMode}
                 onOpenBookDetail={handleOpenCardDetail}
                 onShowToast={showToast}
                 onUpdateBookDates={updateBookQuickDates}

@@ -158,14 +158,22 @@ class ReadingChallengeService {
   public calculateStats(
     books: Book[],
     selectedYear: number | 'all',
-    userId?: string
+    userId?: string,
+    targetGoalOverride?: number
   ): YearReadingStats {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const targetGoal =
-      selectedYear === 'all'
-        ? this.getGoal(currentYear, userId) * 2
-        : this.getGoal(selectedYear, userId);
+    const activeYearNum = typeof selectedYear === 'number' ? selectedYear : currentYear;
+
+    let targetGoal: number;
+    if (typeof targetGoalOverride === 'number' && targetGoalOverride > 0) {
+      targetGoal = targetGoalOverride;
+    } else {
+      targetGoal =
+        selectedYear === 'all'
+          ? this.getGoal(currentYear, userId) * 2
+          : this.getGoal(activeYearNum, userId);
+    }
 
     // 1. Filtrar libros leídos
     const readBooks = books.filter((b) => b.progreso === '✅ Leído');
@@ -199,7 +207,6 @@ class ReadingChallengeService {
     const percentage = targetGoal > 0 ? Math.round((completedCount / targetGoal) * 100) : 0;
 
     // 3. Ritmo y cadencia respecto al día del año
-    const activeYearNum = typeof selectedYear === 'number' ? selectedYear : currentYear;
     const daysInYear = isLeapYear(activeYearNum) ? 366 : 365;
     const currentDayOfYear =
       activeYearNum === currentYear
