@@ -16,12 +16,18 @@ import {
   MessageSquareHeart,
   Calendar,
   History,
-  CheckCircle2
+  CheckCircle2,
+  Bell
 } from 'lucide-react';
 import { BookRecommendation, Friendship, Book } from '../types/models';
 import { recommendationInboxService } from '../services/recommendationInboxService';
 import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
+import {
+  getPushSubscriptionStatus,
+  subscribeUserToPush,
+  PushSubscriptionStatus
+} from '../services/pushNotificationService';
 
 interface BookInboxModalProps {
   isOpen: boolean;
@@ -30,6 +36,7 @@ interface BookInboxModalProps {
   onAddBookToLibrary: (bookData: BookRecommendation['bookData']) => Promise<void>;
   onShowToast?: (message: string) => void;
   onInboxUpdated?: () => void;
+  initialTab?: 'recommendations' | 'friend_requests';
 }
 
 export const BookInboxModal: React.FC<BookInboxModalProps> = ({
@@ -38,9 +45,10 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   currentUserId,
   onAddBookToLibrary,
   onShowToast,
-  onInboxUpdated
+  onInboxUpdated,
+  initialTab = 'recommendations'
 }) => {
-  const [activeTab, setActiveTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
+  const [activeTab, setActiveTab] = useState<'recommendations' | 'friend_requests'>(initialTab);
   const [recsView, setRecsView] = useState<'pending' | 'history'>('pending');
   const [recommendations, setRecommendations] = useState<BookRecommendation[]>([]);
   const [pendingRequests, setPendingRequests] = useState<{ received: Friendship[]; sent: Friendship[] }>({
@@ -51,6 +59,45 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   const [addingRecId, setAddingRecId] = useState<string | null>(null);
   const [respondingFriendshipId, setRespondingFriendshipId] = useState<string | null>(null);
   const [cancellingFriendshipId, setCancellingFriendshipId] = useState<string | null>(null);
+  const [pushStatus, setPushStatus] = useState<PushSubscriptionStatus | null>(null);
+  const [isPushBannerDismissed, setIsPushBannerDismissed] = useState(false);
+  const [isActivatingPush, setIsActivatingPush] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (isOpen) {
+      getPushSubscriptionStatus()
+        .then(setPushStatus)
+        .catch(() => null);
+    }
+  }, [isOpen]);
+
+  const handleActivatePushFromBanner = async () => {
+    if (!currentUserId) {
+      onShowToast?.('Inicia sesión para activar las notificaciones Push.');
+      return;
+    }
+    setIsActivatingPush(true);
+    try {
+      const res = await subscribeUserToPush(currentUserId);
+      if (res.success) {
+        onShowToast?.(res.message || '¡Notificaciones activadas!');
+        const status = await getPushSubscriptionStatus();
+        setPushStatus(status);
+      } else {
+        onShowToast?.(res.error || 'No se pudieron activar las notificaciones.');
+      }
+    } catch {
+      onShowToast?.('Error al solicitar permiso de notificaciones.');
+    } finally {
+      setIsActivatingPush(false);
+    }
+  };
 
   const handleCancelSentRequest = async (friendshipId: string) => {
     setCancellingFriendshipId(friendshipId);
@@ -196,6 +243,45 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Barra discreta para invitar a activar notificaciones Push */}
+        {pushStatus &&
+          !pushStatus.isSubscribed &&
+          !isPushBannerDismissed &&
+          pushStatus.permission !== 'denied' && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-amber-500/15 border-b border-amber-600/25 text-xs text-amber-950 dark:text-amber-200 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base shrink-0">🔔</span>
+                <span className="truncate sm:whitespace-normal">
+                  Activa las notificaciones para enterarte al instante cuando tus amigos te recomienden un libro o te pidan amistad.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleActivatePushFromBanner}
+                  disabled={isActivatingPush}
+                  className="rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 text-[11px] transition shadow-xs disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                >
+                  {isActivatingPush ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Bell className="w-3 h-3" />
+                  )}
+                  <span>{isActivatingPush ? 'Activando...' : 'Activar'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPushBannerDismissed(true)}
+                  className="p-1 rounded text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white transition cursor-pointer"
+                  title="Ocultar aviso"
+                  aria-label="Ocultar aviso"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
         {/* Pestañas del Buzón */}
         <div className="flex items-center gap-2 px-5 pt-3 border-b border-amber-900/15 dark:border-[#242E42] bg-[#f8f1e3]/60 dark:bg-[#121824] shrink-0">

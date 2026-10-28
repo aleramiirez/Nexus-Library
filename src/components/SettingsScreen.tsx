@@ -36,7 +36,10 @@ import {
   Share,
   PlusSquare,
   WifiOff,
-  Flame
+  Flame,
+  Bell,
+  BellOff,
+  BellRing
 } from 'lucide-react';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
 import { User } from '@supabase/supabase-js';
@@ -57,6 +60,12 @@ import {
 import { bookMetadataService } from '../services/bookMetadataService';
 import { profileService } from '../services/profileService';
 import { pwaInstallService, PwaInstallState } from '../services/pwaInstallService';
+import {
+  getPushSubscriptionStatus,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+  PushSubscriptionStatus
+} from '../services/pushNotificationService';
 
 export type SettingsTab = 'appearance' | 'account' | 'metadata' | 'backup' | 'app';
 
@@ -136,6 +145,72 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         type: 'success',
         text: '¡Instalación completada! Nexus Library se ha añadido a tu dispositivo.'
       });
+    }
+  };
+
+  // Estados de Notificaciones Push
+  const [pushStatus, setPushStatus] = useState<PushSubscriptionStatus | null>(null);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+
+  const refreshPushStatus = useCallback(async () => {
+    try {
+      const status = await getPushSubscriptionStatus();
+      setPushStatus(status);
+    } catch {
+      // Silencioso
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshPushStatus();
+  }, [refreshPushStatus, currentUser]);
+
+  const handleTogglePushNotifications = async () => {
+    if (!currentUser?.id) {
+      setFeedback({
+        type: 'error',
+        text: 'Inicia sesión con tu cuenta para configurar las notificaciones Push.'
+      });
+      return;
+    }
+
+    setIsPushLoading(true);
+    try {
+      if (pushStatus?.isSubscribed) {
+        const res = await unsubscribeUserFromPush(currentUser.id);
+        if (res.success) {
+          setFeedback({
+            type: 'success',
+            text: res.message || 'Notificaciones Push desactivadas en este dispositivo.'
+          });
+        } else {
+          setFeedback({
+            type: 'error',
+            text: res.error || 'No se pudieron desactivar las notificaciones.'
+          });
+        }
+      } else {
+        const res = await subscribeUserToPush(currentUser.id);
+        if (res.success) {
+          setFeedback({
+            type: 'success',
+            text: res.message || '¡Notificaciones Push activadas con éxito en este dispositivo!'
+          });
+        } else {
+          setFeedback({
+            type: 'error',
+            text: res.error || 'No se pudieron activar las notificaciones.'
+          });
+        }
+      }
+      await refreshPushStatus();
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Error al modificar las notificaciones Push.'
+      });
+    } finally {
+      setIsPushLoading(false);
     }
   };
 
@@ -1439,6 +1514,109 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
               </div>
             ) : null}
+
+            {/* Tarjeta de Notificaciones Push en este dispositivo */}
+            <div className="rounded-2xl border border-amber-900/15 dark:border-[#222B3C] bg-white/70 dark:bg-[#111623] p-5 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#20293B] pb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0 mt-0.5">
+                    <BellRing className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
+                      Notificaciones Push en este dispositivo
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+                      Recibe alertas instantáneas en tu móvil u ordenador cuando un amigo te envíe una solicitud de amistad o te recomiende un libro, incluso con la aplicación cerrada.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Badge de estado actual */}
+                {pushStatus?.isSubscribed ? (
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold shrink-0 self-start sm:self-auto">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    Activas
+                  </div>
+                ) : pushStatus?.permission === 'denied' ? (
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-800 dark:text-rose-300 px-3.5 py-1.5 text-xs font-semibold shrink-0 self-start sm:self-auto">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                    Bloqueadas
+                  </div>
+                ) : !pushStatus?.supported ? (
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold shrink-0 self-start sm:self-auto">
+                    <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    No Soportadas
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-stone-500/15 border border-stone-500/30 text-stone-700 dark:text-stone-300 px-3.5 py-1.5 text-xs font-semibold shrink-0 self-start sm:self-auto">
+                    <BellOff className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+                    Inactivas
+                  </div>
+                )}
+              </div>
+
+              {/* Aviso específico para iPhone / iPad si corresponde */}
+              {pushStatus?.isIos && !pushStatus.isIosStandalone && (
+                <div className="rounded-xl border border-amber-600/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-xs text-amber-950 dark:text-amber-200">
+                  <Smartphone className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Aviso para iPhone e iPad (iOS / iPadOS):</p>
+                    <p className="leading-relaxed opacity-90">
+                      Apple requiere que añadas primero la web a tu Pantalla de Inicio (toca el botón Compartir <Share className="w-3.5 h-3.5 inline mx-0.5" /> y selecciona <strong>"Añadir a pantalla de inicio"</strong>) para poder recibir notificaciones Push con la aplicación cerrada.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {pushStatus?.permission === 'denied' && (
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 flex items-start gap-3 text-xs text-rose-950 dark:text-rose-200">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-bold">Permiso de notificaciones bloqueado</p>
+                    <p className="leading-relaxed opacity-90">
+                      Has bloqueado los permisos de notificación en este navegador. Para activarlas, abre la configuración de permisos del sitio en tu navegador y selecciona "Permitir notificaciones".
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Botón de acción */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                <p className="text-xs text-stone-500 dark:text-slate-400">
+                  {pushStatus?.isSubscribed
+                    ? 'Este navegador está suscrito y listo para recibir alertas cuando te envíen solicitudes o recomendaciones.'
+                    : 'Puedes activar o desactivar las notificaciones de forma independiente en cada uno de tus dispositivos.'}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleTogglePushNotifications}
+                  disabled={isPushLoading || !pushStatus?.supported}
+                  className={
+                    'inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-2.5 text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer shrink-0 ' +
+                    (pushStatus?.isSubscribed
+                      ? 'border border-amber-900/20 dark:border-[#2A344A] bg-stone-200/60 dark:bg-[#1A2232] text-stone-800 dark:text-slate-200 hover:bg-rose-500/15 hover:text-rose-700 dark:hover:text-rose-300'
+                      : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-slate-950 shadow-md shadow-amber-900/15')
+                  }
+                >
+                  {isPushLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : pushStatus?.isSubscribed ? (
+                    <BellOff className="w-4 h-4" />
+                  ) : (
+                    <Bell className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isPushLoading
+                      ? 'Actualizando...'
+                      : pushStatus?.isSubscribed
+                      ? 'Desactivar en este dispositivo'
+                      : 'Activar Notificaciones Push'}
+                  </span>
+                </button>
+              </div>
+            </div>
 
             {/* Guía paso a paso por plataforma */}
             <div className="space-y-4 pt-2">

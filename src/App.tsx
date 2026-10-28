@@ -34,9 +34,12 @@ import {
   Settings,
   Mail,
   FileUp,
-  X
+  X,
+  Sparkles,
+  Users
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
+import { triggerBackgroundFallbackNotification } from './services/pushNotificationService';
 import {
   assignBookToSagaRecord,
   db,
@@ -230,7 +233,34 @@ export const App: React.FC = () => {
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
 
   const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [inboxInitialTab, setInboxInitialTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+
+  // Estado para el Banner Flotante In-App de Notificaciones en vivo
+  interface InAppBannerData {
+    id: string;
+    title: string;
+    body: string;
+    avatarUrl?: string;
+    tab: 'recommendations' | 'friend_requests';
+  }
+  const [inAppBanner, setInAppBanner] = useState<InAppBannerData | null>(null);
+  const inAppBannerTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showInAppBanner = React.useCallback(
+    (banner: InAppBannerData) => {
+      if (inAppBannerTimeoutRef.current) {
+        clearTimeout(inAppBannerTimeoutRef.current);
+        inAppBannerTimeoutRef.current = null;
+      }
+      setInAppBanner(banner);
+      inAppBannerTimeoutRef.current = setTimeout(() => {
+        setInAppBanner((curr) => (curr?.id === banner.id ? null : curr));
+      }, 7500);
+    },
+    []
+  );
+
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
@@ -281,6 +311,180 @@ export const App: React.FC = () => {
     const interval = setInterval(refreshInboxCount, 45000);
     return () => clearInterval(interval);
   }, [refreshInboxCount, currentUser?.id]);
+
+  // Manejo de apertura de buzón desde URL query param (?openInbox=...) y mensajes del Service Worker
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const openInboxParam = params.get('openInbox');
+      if (openInboxParam === 'friend_requests' || openInboxParam === 'recommendations') {
+        setInboxInitialTab(openInboxParam);
+        setIsInboxOpen(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('openInbox');
+        window.history.replaceState(
+          {},
+          document.title,
+          url.pathname + (url.search ? url.search : '') + url.hash
+        );
+      }
+    }
+
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      const handleSwMessage = (event: MessageEvent) => {
+        const data = event.data;
+        if (!data) return;
+
+        if (data.type === 'OPEN_INBOX') {
+          const tab = data.tab === 'friend_requests' ? 'friend_requests' : 'recommendations';
+          setInboxInitialTab(tab);
+          setIsInboxOpen(true);
+        } else if (data.type === 'PUSH_RECEIVED_FOREGROUND') {
+          const payload = data.payload || {};
+          const tab = payload.tab === 'friend_requests' ? 'friend_requests' : 'recommendations';
+          showInAppBanner({
+            id: `sw-${Date.now()}`,
+            title: payload.title || 'Nueva notificación',
+            body: payload.body || 'Tienes una novedad en tu buzón literario.',
+            tab
+          });
+          refreshInboxCount();
+        }
+      };
+
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+
+      const handleCustomOpenInbox = (e: Event) => {
+        const customEvent = e as CustomEvent<{ tab?: 'recommendations' | 'friend_requests' }>;
+        const tab = customEvent.detail?.tab === 'friend_requests' ? 'friend_requests' : 'recommendations';
+        setInboxInitialTab(tab);
+        setIsInboxOpen(true);
+      };
+      window.addEventListener('nexus:open-inbox', handleCustomOpenInbox);
+
+      return () => {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+        window.removeEventListener('nexus:open-inbox', handleCustomOpenInbox);
+      };
+    }
+  }, [refreshInboxCount, showInAppBanner]);
+
+  // Escucha Realtime de Supabase para solicitudes de amistad y recomendaciones en vivo
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const channel = supabase
+      .channel(`inbox-realtime-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'friendships',
+          filter: `addressee_id=eq.${currentUser.id}`
+        },
+        async (payload) => {
+          const newRecord = payload.new as { id?: string; requester_id?: string; status?: string } | null;
+          if (newRecord?.status === 'pending') {
+            refreshInboxCount();
+            let senderName = 'Un usuario';
+            let avatarUrl = '';
+            try {
+              if (newRecord.requester_id) {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('username, display_name, avatar_url')
+                  .eq('id', newRecord.requester_id)
+                  .maybeSingle();
+                if (profile) {
+                  senderName = profile.display_name || profile.username || 'Un usuario';
+                  avatarUrl = profile.avatar_url || '';
+                }
+              }
+            } catch {
+              // Silencioso
+            }
+
+            const title = '¡Nueva solicitud de amistad!';
+            const body = `${senderName} quiere conectar contigo en Nexus Library.`;
+
+            showInAppBanner({
+              id: `req-${newRecord?.id || Date.now()}`,
+              title,
+              body,
+              avatarUrl,
+              tab: 'friend_requests'
+            });
+
+            triggerBackgroundFallbackNotification({
+              title,
+              body,
+              tag: `req-${newRecord?.id}`,
+              data: { tab: 'friend_requests' }
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'book_recommendations',
+          filter: `receiver_id=eq.${currentUser.id}`
+        },
+        async (payload) => {
+          const newRecord = payload.new as {
+            id?: string;
+            sender_id?: string;
+            book_data?: { nombre?: string };
+          } | null;
+          refreshInboxCount();
+
+          let senderName = 'Un amigo';
+          let avatarUrl = '';
+          try {
+            if (newRecord?.sender_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('username, display_name, avatar_url')
+                .eq('id', newRecord.sender_id)
+                .maybeSingle();
+              if (profile) {
+                senderName = profile.display_name || profile.username || 'Un amigo';
+                avatarUrl = profile.avatar_url || '';
+              }
+            }
+          } catch {
+            // Silencioso
+          }
+
+          const bookTitle = newRecord?.book_data?.nombre || 'un libro';
+          const title = '¡Te han recomendado un libro!';
+          const body = `${senderName} te ha recomendado "${bookTitle}".`;
+
+          showInAppBanner({
+            id: `rec-${newRecord?.id || Date.now()}`,
+            title,
+            body,
+            avatarUrl,
+            tab: 'recommendations'
+          });
+
+          triggerBackgroundFallbackNotification({
+            title,
+            body,
+            tag: `rec-${newRecord?.id}`,
+            data: { tab: 'recommendations' }
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id, refreshInboxCount, showInAppBanner]);
 
   const isAnyModalOpen = Boolean(
     mobileMenuOpen ||
@@ -2497,6 +2701,7 @@ export const App: React.FC = () => {
           <BookInboxModal
             isOpen={isInboxOpen}
             currentUserId={currentUser?.id}
+            initialTab={inboxInitialTab}
             onClose={() => {
               setIsInboxOpen(false);
               refreshInboxCount();
@@ -2618,6 +2823,85 @@ export const App: React.FC = () => {
         isOpen={isInstallModalOpen}
         onClose={() => setIsInstallModalOpen(false)}
       />
+
+      {/* ─── Banner Flotante In-App estilo Instagram / Notificación Nativa ─── */}
+      {inAppBanner &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed top-3 sm:top-5 right-3 sm:right-6 left-3 sm:left-auto z-[9999] max-w-md animate-in slide-in-from-top-4 fade-in duration-300"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="relative flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl bg-[#131722]/95 dark:bg-[#111623]/95 text-white border border-amber-500/35 shadow-2xl backdrop-blur-md">
+              {/* Avatar o Icono */}
+              <div className="relative shrink-0">
+                {inAppBanner.avatarUrl ? (
+                  <img
+                    src={inAppBanner.avatarUrl}
+                    alt="Remitente"
+                    className="w-11 h-11 rounded-full object-cover border border-amber-500/40"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-bold font-serif shadow-sm">
+                    {inAppBanner.tab === 'friend_requests' ? (
+                      <Users className="w-5 h-5 text-slate-950" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-slate-950" />
+                    )}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 border-2 border-[#131722] flex items-center justify-center text-[9px] text-slate-950 font-black">
+                  ✦
+                </span>
+              </div>
+
+              {/* Textos */}
+              <div className="flex-1 min-w-0 pr-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-serif font-bold text-xs sm:text-sm text-amber-300 truncate">
+                    {inAppBanner.title}
+                  </h4>
+                  <span className="text-[10px] text-slate-400 shrink-0">Ahora</span>
+                </div>
+                <p className="text-xs text-slate-200 mt-0.5 line-clamp-2 leading-relaxed">
+                  {inAppBanner.body}
+                </p>
+                <div className="mt-2.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInboxInitialTab(inAppBanner.tab);
+                      setIsInboxOpen(true);
+                      setInAppBanner(null);
+                    }}
+                    className="rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1 text-xs transition shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    Abrir buzón
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInAppBanner(null)}
+                    className="rounded-lg text-slate-400 hover:text-white px-2 py-1 text-xs transition cursor-pointer"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón cerrar */}
+              <button
+                type="button"
+                onClick={() => setInAppBanner(null)}
+                className="self-start text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+                aria-label="Cerrar notificación"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {toast && (
         <div
