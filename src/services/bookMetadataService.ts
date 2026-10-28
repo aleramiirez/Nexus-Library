@@ -1787,6 +1787,66 @@ export const CURATED_CATEGORY_BOOKS: Record<string, BibliographicCandidate[]> = 
   ]
 };
 
+export function isLikelyEnglish(text: string): boolean {
+  if (!text || text.trim().length === 0) return false;
+  const sample = ' ' + text.toLowerCase().slice(0, 600) + ' ';
+  const englishWords = [
+    ' the ', ' and ', ' of ', ' to ', ' in ', ' is ', ' that ', ' for ',
+    ' with ', ' as ', ' this ', ' after ', ' from ', ' by ', ' at ',
+    ' his ', ' her ', ' has ', ' have ', ' book ', ' story ', ' novel ',
+    ' about ', ' when ', ' who ', ' were ', ' was ', ' their ', ' he ',
+    ' she ', ' which ', ' but ', ' they '
+  ];
+  let matches = 0;
+  for (const w of englishWords) {
+    if (sample.includes(w)) {
+      matches++;
+    }
+  }
+  return matches >= 3;
+}
+
+export function cleanSynopsisText(text: string): string {
+  if (!text) return '';
+  return text
+    // Eliminar notas de pie de página y fuentes de markdown (ej. [1]: https://... o [Source][1])
+    .replace(/\[\d+\]:\s*https?:\/\/\S+/gi, '')
+    .replace(/\[source\]:\s*https?:\/\/\S+/gi, '')
+    .replace(/\[(?:source|\d+)\]\[\d+\]/gi, '')
+    .replace(/\[(?:source|\d+)\]/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    // Eliminar enlaces markdown [Texto](url) -> Texto
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[*_#`]/g, '')
+    .replace(/---+/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export async function translateToSpanish(text: string, signal?: AbortSignal): Promise<string> {
+  const cleaned = cleanSynopsisText(text);
+  if (!cleaned) return '';
+  try {
+    const toTranslate = cleaned.slice(0, 3000);
+    const url =
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=es&dt=t&q=' +
+      encodeURIComponent(toTranslate);
+    const res = await fetchWithTimeout(url, { signal }, 4500);
+    if (!res.ok) return cleaned;
+    const data = await res.json();
+    if (Array.isArray(data) && Array.isArray(data[0])) {
+      const translated = data[0].map((chunk: any) => chunk[0] || '').join('');
+      if (translated && translated.trim().length > 20) {
+        return cleanSynopsisText(translated);
+      }
+    }
+  } catch (err) {
+    console.warn('Auto-traducción al español no disponible:', err);
+  }
+  return cleaned;
+}
+
 export const bookMetadataService = {
   async searchBooks(query: string, signal?: AbortSignal): Promise<BibliographicCandidate[]> {
     const trimmed = query.trim();
@@ -1889,18 +1949,18 @@ export const bookMetadataService = {
           Boolean(b.sinopsis && b.sinopsis.trim().length > 0)
       );
       if (match?.sinopsis) {
-        return match.sinopsis.trim();
+        return cleanSynopsisText(match.sinopsis);
       }
     }
 
     // 2. Try Spanish Wikipedia (high quality, natural synopsis in Spanish)
     try {
       const wikiQueries = [
-        `"${title}" libro`,
-        `"${title}" novela`,
-        `"${title}"`,
-        `${title} libro`
-      ];
+        `${title} libro`,
+        title,
+        author ? `${title} ${author}` : '',
+        `${title} novela`
+      ].filter(Boolean);
 
       for (const q of wikiQueries) {
         if (signal?.aborted) break;
@@ -1975,8 +2035,12 @@ export const bookMetadataService = {
             ext.includes('obra literaria') ||
             ext.includes('publicad');
 
-          if (!isPerson && isBook && sum.extract.length > 50) {
-            return sum.extract.trim();
+          const extClean = cleanSynopsisText(sum.extract);
+          if (!isPerson && isBook && extClean.length > 50) {
+            if (isLikelyEnglish(extClean)) {
+              return await translateToSpanish(extClean, signal);
+            }
+            return extClean;
           }
         }
       }
@@ -2013,14 +2077,11 @@ export const bookMetadataService = {
                 : workData.description?.value;
 
             if (rawDesc && typeof rawDesc === 'string') {
-              const cleanDesc = rawDesc
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                .replace(/[*_#`]/g, '')
-                .replace(/---+/g, '')
-                .replace(/\r\n/g, '\n')
-                .trim();
-
+              let cleanDesc = cleanSynopsisText(rawDesc);
               if (cleanDesc.length > 35) {
+                if (isLikelyEnglish(cleanDesc)) {
+                  cleanDesc = await translateToSpanish(cleanDesc, signal);
+                }
                 return cleanDesc;
               }
             }

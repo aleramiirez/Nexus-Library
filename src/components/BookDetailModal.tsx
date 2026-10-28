@@ -18,7 +18,8 @@ import {
   Loader2,
   Check,
   Plus,
-  Sliders
+  Sliders,
+  Languages
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating, CustomCollection } from '../types/models';
@@ -29,7 +30,11 @@ import { formatStars, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs'
 import { READING_STATUS_META } from '../constants/readingStatusMeta';
 import { ReadingStatusControl } from './ReadingStatusControl';
 import { RecommendBookModal } from './RecommendBookModal';
-import { bookMetadataService } from '../services/bookMetadataService';
+import {
+  bookMetadataService,
+  isLikelyEnglish,
+  translateToSpanish
+} from '../services/bookMetadataService';
 import {
   updateBookPartialRecord,
   updateBookQuickStatus,
@@ -234,7 +239,37 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     } finally {
       setIsFetchingSynopsis(false);
     }
-  }, [book, isFetchingSynopsis, onShowToast]);
+  }, [book, isFetchingSynopsis, onShowToast, readOnly]);
+
+  const [isTranslatingSynopsis, setIsTranslatingSynopsis] = useState(false);
+
+  const isCurrentSynopsisEnglish = useMemo(() => {
+    return isLikelyEnglish(currentSynopsis);
+  }, [currentSynopsis]);
+
+  const handleTranslateCurrentSynopsis = useCallback(async () => {
+    if (!currentSynopsis || isTranslatingSynopsis) return;
+    setIsTranslatingSynopsis(true);
+    try {
+      const translated = await translateToSpanish(currentSynopsis);
+      if (translated && translated !== currentSynopsis) {
+        setLocalSynopsis(translated);
+        if (book && !readOnly) {
+          await updateBookPartialRecord(book.id, {
+            sinopsis: translated
+          });
+        }
+        onShowToast?.('Sinopsis traducida al español y guardada con éxito.');
+      } else {
+        onShowToast?.('No se pudo traducir la sinopsis en este momento.');
+      }
+    } catch (err) {
+      console.error('Error al traducir la sinopsis:', err);
+      onShowToast?.('Ocurrió un error al traducir la sinopsis.');
+    } finally {
+      setIsTranslatingSynopsis(false);
+    }
+  }, [currentSynopsis, isTranslatingSynopsis, book, readOnly, onShowToast]);
 
   const flipTimerRef = useRef<number | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -588,10 +623,39 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </div>
 
                     {currentSynopsis ? (
-                      <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 shadow-sm">
-                        <p className="font-serif text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line first-letter:float-left first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-2.5 first-letter:leading-none">
-                          {currentSynopsis}
-                        </p>
+                      <div className="space-y-3">
+                        {isCurrentSynopsisEnglish && (
+                          <div className="p-3 rounded-xl border border-amber-600/35 bg-amber-500/15 flex items-center justify-between gap-2.5 text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0 text-amber-950 dark:text-amber-200">
+                              <Languages className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                              <span className="font-semibold truncate">Sinopsis en inglés detectada</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleTranslateCurrentSynopsis}
+                              disabled={isTranslatingSynopsis}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0 transition"
+                            >
+                              {isTranslatingSynopsis ? 'Traduciendo...' : 'Traducir al español'}
+                            </button>
+                          </div>
+                        )}
+                        <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 shadow-sm">
+                          <p className="font-serif text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line first-letter:float-left first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-2.5 first-letter:leading-none">
+                            {currentSynopsis}
+                          </p>
+                        </div>
+                        <div className="flex justify-end pt-0.5">
+                          <button
+                            type="button"
+                            onClick={handleAutoFetchSynopsis}
+                            disabled={isFetchingSynopsis}
+                            className="inline-flex items-center gap-1 text-[11px] text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            <span>{isFetchingSynopsis ? 'Buscando...' : 'Actualizar sinopsis'}</span>
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="py-8 px-4 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
@@ -1513,10 +1577,40 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
 
                       {currentSynopsis ? (
-                        <div className="py-2">
+                        <div className="py-2 space-y-3.5">
+                          {isCurrentSynopsisEnglish && (
+                            <div className="p-3 sm:p-3.5 rounded-xl border border-amber-600/35 bg-amber-500/15 flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2 min-w-0 text-amber-950 dark:text-amber-200">
+                                <Languages className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                                <span className="font-medium truncate">
+                                  Sinopsis en inglés detectada. ¿Deseas traducirla al español?
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleTranslateCurrentSynopsis}
+                                disabled={isTranslatingSynopsis}
+                                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0 active:scale-95 transition shadow-xs disabled:opacity-50"
+                              >
+                                {isTranslatingSynopsis ? 'Traduciendo...' : 'Traducir al español'}
+                              </button>
+                            </div>
+                          )}
                           <p className="font-serif text-[15px] sm:text-base leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line tracking-normal first-letter:float-left first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-3 first-letter:leading-none">
                             {currentSynopsis}
                           </p>
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
+                            <button
+                              type="button"
+                              onClick={handleAutoFetchSynopsis}
+                              disabled={isFetchingSynopsis}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300 transition"
+                              title="Volver a buscar sinopsis en registros abiertos"
+                            >
+                              {isFetchingSynopsis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                              <span>{isFetchingSynopsis ? 'Actualizando...' : 'Actualizar sinopsis'}</span>
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="py-12 px-6 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
