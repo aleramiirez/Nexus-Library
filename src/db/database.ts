@@ -742,6 +742,37 @@ export async function updateBookQuickStatus(
   await db.books.put(updatedBook);
 }
 
+export interface BookStatusSnapshot {
+  progreso: Book['progreso'];
+  fechaInicio: string;
+  fechaFin: string;
+  tiempoLectura: string;
+}
+
+export async function restoreBookStatusSnapshot(
+  bookId: string,
+  snapshot: BookStatusSnapshot
+): Promise<void> {
+  const book = await db.books.get(bookId);
+  if (!book) return;
+
+  const updatedBook: Book = {
+    ...book,
+    progreso: snapshot.progreso,
+    fechaInicio: snapshot.fechaInicio,
+    fechaFin: snapshot.fechaFin,
+    tiempoLectura: snapshot.tiempoLectura,
+    updatedAt: new Date().toISOString()
+  };
+
+  const user = await getActiveUser();
+  if (user) {
+    await upsertBookToSupabase(user.id, updatedBook);
+  }
+
+  await db.books.put(updatedBook);
+}
+
 export async function updateBookQuickDates(
   bookId: string,
   fechaInicio: string,

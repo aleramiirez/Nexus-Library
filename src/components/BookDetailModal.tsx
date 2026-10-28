@@ -25,10 +25,18 @@ import { Book, StarRating, CustomCollection } from '../types/models';
 import { collectionService } from '../services/collectionService';
 import { AddToCollectionModal } from './AddToCollectionModal';
 import { BookCover } from './BookCover';
-import { formatStars, READING_STATUSES, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
+import { formatStars, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
+import { READING_STATUS_META } from '../constants/readingStatusMeta';
+import { ReadingStatusControl } from './ReadingStatusControl';
 import { RecommendBookModal } from './RecommendBookModal';
 import { bookMetadataService } from '../services/bookMetadataService';
-import { updateBookPartialRecord } from '../db/database';
+import {
+  updateBookPartialRecord,
+  updateBookQuickStatus,
+  restoreBookStatusSnapshot,
+  BookStatusSnapshot,
+  getTodayLocalDateString
+} from '../db/database';
 
 export interface BookDetailModalProps {
   book: Book | null;
@@ -39,7 +47,10 @@ export interface BookDetailModalProps {
   onRatingChange?: (bookId: string, rating: StarRating) => void;
   onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
   currentUserId?: string;
-  onShowToast?: (message: string) => void;
+  onShowToast?: (
+    message: string,
+    optionsOrType?: 'success' | 'error' | 'info' | { type?: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void }; duration?: number }
+  ) => void;
   readOnly?: boolean;
   onAddToLibrary?: (book: Book) => void;
   onCustomize?: (book: Book) => void;
@@ -322,6 +333,72 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     [isClosing, onClose]
   );
 
+  const statusHints = useMemo(() => {
+    const hints: Partial<Record<ReadingStatus, string>> = {};
+    if (!book?.fechaInicio) {
+      hints['⏳ Leyendo'] = 'Se guardará la fecha de inicio';
+    }
+    if (!book?.fechaFin) {
+      hints['✅ Leído'] = 'Se guardará la fecha de fin';
+    }
+    return hints;
+  }, [book?.fechaInicio, book?.fechaFin]);
+
+  const handleReadingStatusChange = useCallback(
+    async (nextStatus: ReadingStatus) => {
+      if (!book || book.progreso === nextStatus) return;
+
+      const snapshot: BookStatusSnapshot = {
+        progreso: book.progreso,
+        fechaInicio: book.fechaInicio,
+        fechaFin: book.fechaFin,
+        tiempoLectura: book.tiempoLectura
+      };
+
+      const today = getTodayLocalDateString();
+      const willTouchFechaInicio = nextStatus === '⏳ Leyendo' && !book.fechaInicio;
+      const willTouchFechaFin = nextStatus === '✅ Leído' && !book.fechaFin;
+
+      if (onStatusChange) {
+        onStatusChange(book.id, nextStatus);
+      } else {
+        await updateBookQuickStatus(book.id, nextStatus);
+      }
+
+      const formatDisplayDate = (isoDate: string) => {
+        const parts = isoDate.split('-');
+        if (parts.length === 3) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return isoDate;
+      };
+
+      const nextMeta = READING_STATUS_META[nextStatus];
+      let message = `Estado cambiado a ${nextMeta.label}`;
+      if (willTouchFechaFin) {
+        message = `Marcado como Leído · fecha de fin: ${formatDisplayDate(today)}`;
+      } else if (willTouchFechaInicio) {
+        message = `Marcado como Leyendo · fecha de inicio: ${formatDisplayDate(today)}`;
+      }
+
+      onShowToast?.(message, {
+        type: 'info',
+        duration: 6000,
+        action: {
+          label: 'Deshacer',
+          onClick: async () => {
+            await restoreBookStatusSnapshot(book.id, snapshot);
+            onShowToast?.(
+              `Estado restaurado a ${READING_STATUS_META[snapshot.progreso].label}`,
+              { type: 'info' }
+            );
+          }
+        }
+      });
+    },
+    [book, onStatusChange, onShowToast]
+  );
+
   useEffect(() => {
     if (!book) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -337,7 +414,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       }
       if (e.key === 'Escape') {
         if (isRecommendOpen) return;
-        if (typeof document !== 'undefined' && document.getElementById('delete-dialog-title')) {
+        if (
+          typeof document !== 'undefined' &&
+          (document.getElementById('delete-dialog-title') ||
+            document.querySelector('[data-reading-status-menu]'))
+        ) {
           return;
         }
         e.stopPropagation();
@@ -680,30 +761,18 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#0f141f]/90 p-3.5 space-y-3">
-                    <div>
-                      <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-serif italic text-stone-700 dark:text-slate-300">
                         Estado de lectura
                       </span>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {READING_STATUSES.map((status) => (
-                          <button
-                            key={status}
-                            type="button"
-                            onClick={() => onStatusChange?.(book.id, status)}
-                            className={
-                              'py-2 px-2.5 rounded-xl text-xs font-medium border text-center active:scale-[0.98] transition ' +
-                              (book.progreso === status
-                                ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
-                                : 'border-amber-900/20 dark:border-[#263147] bg-[#fbf6ea] dark:bg-[#171F2E] text-stone-700 dark:text-slate-300')
-                            }
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
+                      <ReadingStatusControl
+                        value={book.progreso}
+                        onChange={handleReadingStatusChange}
+                        hints={statusHints}
+                      />
                     </div>
 
-                    <div className="pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
+                    <div className="pt-2.5 border-t border-amber-900/15 dark:border-[#232D42]">
                       <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
                         Puntuación personal
                       </span>
@@ -1294,51 +1363,32 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
 
                       {/* Estado de lectura y Géneros */}
-                      <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
                         {!readOnly && (
-                          <div>
-                            <span className="block text-[10.5px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1">
-                              Estado de lectura
-                            </span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-                              {READING_STATUSES.map((status) => (
-                                <button
-                                  key={status}
-                                  type="button"
-                                  onClick={() => onStatusChange?.(book.id, status)}
-                                  className={
-                                    'py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition ' +
-                                    (book.progreso === status
-                                      ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
-                                      : 'border-amber-900/20 dark:border-[#263147] bg-[#f4ead4]/70 dark:bg-[#1A2232]/80 text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-slate-500')
-                                  }
-                                >
-                                  {status}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+                          <ReadingStatusControl
+                            value={book.progreso}
+                            onChange={handleReadingStatusChange}
+                            hints={statusHints}
+                          />
                         )}
 
-                        <div className="flex flex-wrap gap-1.5 items-center">
-                          {book.genero ? (
-                            <span className="rounded-lg bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-300">
-                              {book.genero}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-stone-500 dark:text-slate-500 italic">
-                              Sin género asignado
-                            </span>
-                          )}
-                          {book.subgeneros.map((sub) => (
-                            <span
-                              key={sub}
-                              className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-0.5 text-xs text-stone-700 dark:text-slate-300"
-                            >
-                              {sub}
-                            </span>
-                          ))}
-                        </div>
+                        {book.genero ? (
+                          <span className="rounded-full bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-1 text-xs font-semibold text-amber-950 dark:text-amber-300">
+                            {book.genero}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-stone-500 dark:text-slate-500 italic">
+                            Sin género asignado
+                          </span>
+                        )}
+                        {book.subgeneros.map((sub) => (
+                          <span
+                            key={sub}
+                            className="rounded-full bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-1 text-xs text-stone-700 dark:text-slate-300"
+                          >
+                            {sub}
+                          </span>
+                        ))}
                       </div>
 
                       {/* Tabla Bibliográfica Clásica con líneas divisorias finas */}

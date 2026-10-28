@@ -231,14 +231,36 @@ export const App: React.FC = () => {
 
   const [isInboxOpen, setIsInboxOpen] = useState(false);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    action?: { label: string; onClick: () => void };
+  } | null>(null);
+  const toastTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showToast = React.useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast((curr) => (curr?.message === message ? null : curr));
-    }, 4500);
-  }, []);
+  const showToast = React.useCallback(
+    (
+      message: string,
+      optionsOrType: 'success' | 'error' | 'info' | { type?: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void }; duration?: number } = 'info'
+    ) => {
+      const opts = typeof optionsOrType === 'string' ? { type: optionsOrType } : optionsOrType;
+      const type = opts.type ?? 'info';
+      const action = opts.action;
+      const duration = opts.duration ?? 4500;
+
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = null;
+      }
+
+      setToast({ message, type, action });
+
+      toastTimeoutRef.current = setTimeout(() => {
+        setToast((curr) => (curr?.message === message ? null : curr));
+      }, duration);
+    },
+    []
+  );
 
   const refreshInboxCount = React.useCallback(async () => {
     if (!currentUser?.id) {
@@ -2598,12 +2620,28 @@ export const App: React.FC = () => {
       />
 
       {toast && (
-        <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200"
+        >
           <span>{toast.message}</span>
+          {toast.action && (
+            <button
+              type="button"
+              onClick={() => {
+                toast.action?.onClick();
+                setToast(null);
+              }}
+              className="ml-2 px-2.5 py-1 rounded-lg text-xs font-sans font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 active:scale-95 transition"
+            >
+              {toast.action.label}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="text-stone-400 hover:text-white ml-2 text-xs"
+            className="text-stone-400 hover:text-white ml-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded p-0.5"
             aria-label="Cerrar notificación"
           >
             ✕
