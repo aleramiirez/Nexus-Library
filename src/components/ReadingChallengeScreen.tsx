@@ -40,6 +40,30 @@ interface ReadingChallengeScreenProps {
   onUpdateBookDates?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
 }
 
+function formatReadingDates(fechaInicio?: string, fechaFin?: string): string {
+  const formatDM = (iso?: string): string => {
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length < 3) return iso;
+    const [, month, day] = parts;
+    return `${day}/${month}`;
+  };
+
+  const start = formatDM(fechaInicio);
+  const end = formatDM(fechaFin);
+
+  if (start && end) {
+    return `${start} - ${end}`;
+  }
+  if (end) {
+    return end;
+  }
+  if (start) {
+    return start;
+  }
+  return 'Leído';
+}
+
 export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   books,
   sagas = [],
@@ -267,55 +291,55 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         {/* Tira visual de obras leídas recientemente en este año */}
         {stats.completedBooks.length > 0 && (
           <div className="mt-6 pt-5 border-t border-amber-900/15 dark:border-[#242E42]">
-            <div className="flex items-center justify-between mb-3 text-xs">
-              <span className="font-serif italic font-semibold text-stone-700 dark:text-slate-300">
+            <div className="flex items-center justify-between mb-3.5 text-xs">
+              <span className="font-serif italic font-semibold text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 Últimas obras terminadas en {selectedYear === 'all' ? 'tu colección' : selectedYear}:
               </span>
-              <span className="text-stone-500 dark:text-slate-400">
+              <span className="text-stone-500 dark:text-slate-400 text-[11px] font-medium">
                 Mostrando {Math.min(8, stats.completedBooks.length)} de {stats.completedBooks.length}
               </span>
             </div>
 
-            <div className="bookcase relative">
-              <div className="flex items-end gap-3 sm:gap-4 overflow-x-auto pt-2 pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {stats.completedBooks.slice(0, 8).map((book) => (
-                  <div
-                    key={book.id}
-                    onClick={() => onOpenBookDetail?.(book)}
-                    data-book-id={book.id}
-                    className="group flex-shrink-0 w-20 sm:w-24 cursor-pointer text-left space-y-1.5 active:scale-95 transition"
-                    title={`${book.nombre} (por ${book.autor})`}
-                  >
-                    <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
-                      {/* Sombra de contacto sobre la balda */}
-                      <div className="absolute -bottom-1.5 left-1 right-1 h-2.5 bg-black/45 blur-[2px] rounded-full pointer-events-none" />
-                      <BookCover
-                        nombre={book.nombre}
-                        autor={book.autor}
-                        portadaUrl={book.portadaUrl}
-                        portadaFallbackUrl={book.portadaFallbackUrl}
-                        portadaDataUrl={book.portadaDataUrl}
-                        size="sm"
-                        variant="book"
-                      />
-                      {book.puntuacion && (
-                        <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/85 backdrop-blur-sm text-[9px] font-bold text-amber-300 z-10 border border-amber-500/20">
-                          {book.puntuacion}★
-                        </span>
-                      )}
+            <div className="rounded-2xl border border-amber-900/10 dark:border-[#253044]/70 bg-gradient-to-b from-amber-950/[0.02] to-amber-950/[0.05] dark:from-black/20 dark:to-black/35 p-3.5 sm:p-4">
+              <div className="flex items-start gap-3.5 sm:gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {stats.completedBooks.slice(0, 8).map((book) => {
+                  const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
+                  return (
+                    <div
+                      key={book.id}
+                      onClick={() => onOpenBookDetail?.(book)}
+                      data-book-id={book.id}
+                      className="group flex-shrink-0 w-20 sm:w-24 cursor-pointer text-left flex flex-col items-center space-y-1.5 active:scale-95 transition"
+                      title={`${book.nombre} (por ${book.autor}) — ${datesLabel}`}
+                    >
+                      <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
+                        {/* Sombra de contacto suave sobre el fondo */}
+                        <div className="absolute -bottom-1.5 left-1.5 right-1.5 h-2 bg-black/30 dark:bg-black/60 blur-[3px] rounded-full pointer-events-none" />
+                        <BookCover
+                          nombre={book.nombre}
+                          autor={book.autor}
+                          portadaUrl={book.portadaUrl}
+                          portadaFallbackUrl={book.portadaFallbackUrl}
+                          portadaDataUrl={book.portadaDataUrl}
+                          size="sm"
+                          variant="book"
+                        />
+                        {book.puntuacion && (
+                          <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/85 backdrop-blur-sm text-[9px] font-bold text-amber-300 z-10 border border-amber-500/20">
+                            {book.puntuacion}★
+                          </span>
+                        )}
+                      </div>
+                      <p className="w-full font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate text-center group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+                        {book.nombre}
+                      </p>
+                      <span className="inline-flex items-center text-[10px] font-medium text-amber-900/80 dark:text-amber-300/80 bg-amber-500/10 dark:bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-600/15 dark:border-amber-400/15 truncate max-w-full">
+                        {datesLabel}
+                      </span>
                     </div>
-                    <p className="font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate group-hover:text-amber-700 dark:group-hover:text-amber-400">
-                      {book.nombre}
-                    </p>
-                    <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
-                      {book.fechaFin ? book.fechaFin.slice(5) : 'Leído'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              {/* Balda de apoyo estilo estantería */}
-              <div className="shelf-plank -mx-2 mt-0" aria-hidden="true">
-                <div className="shelf-plank-top !h-2.5" />
+                  );
+                })}
               </div>
             </div>
           </div>
