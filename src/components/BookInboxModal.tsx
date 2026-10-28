@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Inbox,
@@ -14,7 +14,9 @@ import {
   Clock,
   Loader2,
   MessageSquareHeart,
-  Calendar
+  Calendar,
+  History,
+  CheckCircle2
 } from 'lucide-react';
 import { BookRecommendation, Friendship, Book } from '../types/models';
 import { recommendationInboxService } from '../services/recommendationInboxService';
@@ -39,6 +41,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   onInboxUpdated
 }) => {
   const [activeTab, setActiveTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
+  const [recsView, setRecsView] = useState<'pending' | 'history'>('pending');
   const [recommendations, setRecommendations] = useState<BookRecommendation[]>([]);
   const [pendingRequests, setPendingRequests] = useState<{ received: Friendship[]; sent: Friendship[] }>({
     received: [],
@@ -47,6 +50,15 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [addingRecId, setAddingRecId] = useState<string | null>(null);
   const [respondingFriendshipId, setRespondingFriendshipId] = useState<string | null>(null);
+
+  const pendingRecs = useMemo(
+    () => recommendations.filter((r) => r.status !== 'accepted' && r.status !== 'dismissed'),
+    [recommendations]
+  );
+  const historyRecs = useMemo(
+    () => recommendations.filter((r) => r.status === 'accepted'),
+    [recommendations]
+  );
 
   const loadData = async () => {
     if (!currentUserId) {
@@ -179,9 +191,9 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Recomendaciones de Amigos</span>
-            {recommendations.length > 0 && (
+            {pendingRecs.length > 0 && (
               <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
-                {recommendations.length}
+                {pendingRecs.length}
               </span>
             )}
           </button>
@@ -215,113 +227,199 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
             </div>
           ) : activeTab === 'recommendations' ? (
             /* Vista 1: Recomendaciones Recibidas */
-            recommendations.length === 0 ? (
-              <div className="py-16 text-center space-y-2">
-                <Inbox className="w-10 h-10 mx-auto text-amber-600/50 dark:text-amber-400/50" />
-                <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
-                  Tu buzón literario está al día
-                </h4>
-                <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                  Cuando tus amigos te recomienden lecturas con dedicatorias personales, aparecerán aquí para que puedas añadirlas con un clic.
-                </p>
+            <div className="space-y-4">
+              {/* Barra superior de pestañas secundarias: Pendientes e Historial */}
+              <div className="flex items-center justify-between gap-2 border-b border-amber-900/10 dark:border-[#20293C] pb-3">
+                <div className="inline-flex rounded-xl p-1 bg-amber-900/10 dark:bg-[#101520] border border-amber-900/15 dark:border-[#20293C] text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setRecsView('pending')}
+                    className={
+                      'px-3 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 ' +
+                      (recsView === 'pending'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                    }
+                  >
+                    <span>Pendientes</span>
+                    {pendingRecs.length > 0 && (
+                      <span
+                        className={
+                          'px-1.5 py-0.2 rounded-full text-[10px] font-bold ' +
+                          (recsView === 'pending'
+                            ? 'bg-slate-950 text-amber-400'
+                            : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+                        }
+                      >
+                        {pendingRecs.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRecsView('history')}
+                    className={
+                      'px-3 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 ' +
+                      (recsView === 'history'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                    }
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>Historial</span>
+                    {historyRecs.length > 0 && (
+                      <span
+                        className={
+                          'px-1.5 py-0.2 rounded-full text-[10px] font-bold ' +
+                          (recsView === 'history'
+                            ? 'bg-slate-950 text-amber-400'
+                            : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+                        }
+                      >
+                        {historyRecs.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {recsView === 'pending' && historyRecs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setRecsView('history')}
+                    className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>Ver historial ({historyRecs.length})</span>
+                  </button>
+                )}
+                {recsView === 'history' && (
+                  <button
+                    type="button"
+                    onClick={() => setRecsView('pending')}
+                    className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>Volver a pendientes</span>
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="space-y-4">
-                {recommendations.map((rec) => {
-                  const isAdding = addingRecId === rec.id;
-                  const isAccepted = rec.status === 'accepted';
-                  const sender = rec.senderProfile;
 
-                  return (
-                    <article
-                      key={rec.id}
-                      className="rounded-2xl border border-amber-900/15 dark:border-[#253044] bg-[#fffcf5] dark:bg-[#0E131E] p-4 sm:p-5 shadow-sm space-y-3.5 hover:border-amber-600/40 transition"
-                    >
-                      {/* Remitente y fecha */}
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xs flex items-center justify-center shrink-0">
-                            {sender ? sender.displayName.charAt(0).toUpperCase() : '?'}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold text-stone-900 dark:text-slate-100 truncate block">
-                              {sender ? sender.displayName : 'Un amigo lector'}
-                            </span>
-                            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono block">
-                              @{sender?.username || 'amigo'}
-                            </span>
-                          </div>
-                        </div>
+              {recsView === 'pending' ? (
+                /* Subvista: Pendientes */
+                pendingRecs.length === 0 ? (
+                  <div className="py-14 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
+                      ¡Buzón al día!
+                    </h4>
+                    <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                      {historyRecs.length > 0
+                        ? 'Has gestionado todas las recomendaciones recibidas de tus amigos.'
+                        : 'Cuando tus amigos te recomienden lecturas con dedicatorias personales, aparecerán aquí para que puedas añadirlas con un clic.'}
+                    </p>
+                    {historyRecs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setRecsView('history')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/30 text-xs font-semibold transition"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        Ver historial de recomendaciones ({historyRecs.length})
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingRecs.map((rec) => {
+                      const isAdding = addingRecId === rec.id;
+                      const sender = rec.senderProfile;
 
-                        <span className="text-[10px] text-stone-500 dark:text-slate-500 flex items-center gap-1 shrink-0">
-                          <Clock className="w-3 h-3" />
-                          {new Date(rec.createdAt).toLocaleDateString(undefined, {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </span>
-                      </div>
-
-                      {/* Dedicatoria personal si existe */}
-                      {rec.note && (
-                        <div className="rounded-xl border border-amber-600/25 bg-amber-500/10 dark:bg-amber-500/15 p-3 text-xs flex items-start gap-2.5">
-                          <MessageSquareHeart className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                          <p className="italic text-stone-800 dark:text-amber-100 leading-relaxed font-serif">
-                            «{rec.note}»
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Libro recomendado */}
-                      <div className="flex items-start gap-3.5 rounded-xl border border-amber-900/10 dark:border-[#20293C] bg-[#fbf6ea]/70 dark:bg-[#141A26] p-3">
-                        <div className="w-14 sm:w-16 shrink-0 rounded overflow-hidden shadow">
-                          <BookCover
-                            nombre={rec.bookData.nombre}
-                            autor={rec.bookData.autor}
-                            portadaUrl={rec.bookData.portadaUrl}
-                            portadaFallbackUrl={rec.bookData.portadaFallbackUrl}
-                            size="sm"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 leading-snug">
-                            {rec.bookData.nombre}
-                          </h4>
-                          <p className="text-xs text-stone-600 dark:text-slate-400">
-                            {rec.bookData.autor}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
-                            {rec.bookData.fechaPublicacion && (
-                              <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
-                                {rec.bookData.fechaPublicacion}
-                              </span>
-                            )}
-                            {rec.bookData.genero && (
-                              <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2">
-                                {rec.bookData.genero.replace(/^[^\s]+\s/, '')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Acciones */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-900/10 dark:border-[#20293C]">
-                        <button
-                          type="button"
-                          onClick={() => handleDismissRec(rec.id)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 hover:text-rose-600 transition"
+                      return (
+                        <article
+                          key={rec.id}
+                          className="rounded-2xl border border-amber-900/15 dark:border-[#253044] bg-[#fffcf5] dark:bg-[#0E131E] p-4 sm:p-5 shadow-sm space-y-3.5 hover:border-amber-600/40 transition"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Descartar</span>
-                        </button>
+                          {/* Remitente y fecha */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xs flex items-center justify-center shrink-0">
+                                {sender ? sender.displayName.charAt(0).toUpperCase() : '?'}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-stone-900 dark:text-slate-100 truncate block">
+                                  {sender ? sender.displayName : 'Un amigo lector'}
+                                </span>
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono block">
+                                  @{sender?.username || 'amigo'}
+                                </span>
+                              </div>
+                            </div>
 
-                        <div>
-                          {isAccepted ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                              <Check className="w-3.5 h-3.5" /> Añadido a tu lista
+                            <span className="text-[10px] text-stone-500 dark:text-slate-500 flex items-center gap-1 shrink-0">
+                              <Clock className="w-3 h-3" />
+                              {new Date(rec.createdAt).toLocaleDateString(undefined, {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
                             </span>
-                          ) : (
+                          </div>
+
+                          {/* Dedicatoria personal si existe */}
+                          {rec.note && (
+                            <div className="rounded-xl border border-amber-600/25 bg-amber-500/10 dark:bg-amber-500/15 p-3 text-xs flex items-start gap-2.5">
+                              <MessageSquareHeart className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                              <p className="italic text-stone-800 dark:text-amber-100 leading-relaxed font-serif">
+                                «{rec.note}»
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Libro recomendado */}
+                          <div className="flex items-start gap-3.5 rounded-xl border border-amber-900/10 dark:border-[#20293C] bg-[#fbf6ea]/70 dark:bg-[#141A26] p-3">
+                            <div className="w-14 sm:w-16 shrink-0 rounded overflow-hidden shadow">
+                              <BookCover
+                                nombre={rec.bookData.nombre}
+                                autor={rec.bookData.autor}
+                                portadaUrl={rec.bookData.portadaUrl}
+                                portadaFallbackUrl={rec.bookData.portadaFallbackUrl}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 leading-snug">
+                                {rec.bookData.nombre}
+                              </h4>
+                              <p className="text-xs text-stone-600 dark:text-slate-400">
+                                {rec.bookData.autor}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                                {rec.bookData.fechaPublicacion && (
+                                  <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
+                                    {rec.bookData.fechaPublicacion}
+                                  </span>
+                                )}
+                                {rec.bookData.genero && (
+                                  <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2">
+                                    {rec.bookData.genero.replace(/^[^\s]+\s/, '')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Acciones */}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-900/10 dark:border-[#20293C]">
+                            <button
+                              type="button"
+                              onClick={() => handleDismissRec(rec.id)}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500 hover:text-rose-600 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Descartar</span>
+                            </button>
+
                             <button
                               type="button"
                               disabled={isAdding}
@@ -335,14 +433,134 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                               )}
                               <span>Añadir a Por Leer</span>
                             </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                /* Subvista: Historial de Recomendaciones Aceptadas */
+                historyRecs.length === 0 ? (
+                  <div className="py-14 text-center space-y-2">
+                    <History className="w-10 h-10 mx-auto text-amber-600/40 dark:text-amber-400/40" />
+                    <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
+                      Sin historial de recomendaciones
+                    </h4>
+                    <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                      Cuando aceptes las recomendaciones que te envíen tus amigos, quedarán archivadas aquí para que recuerdes quién te las envió y su dedicatoria.
+                    </p>
+                    {pendingRecs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setRecsView('pending')}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold shadow-xs transition"
+                      >
+                        Ver pendientes ({pendingRecs.length})
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {historyRecs.map((rec) => {
+                      const sender = rec.senderProfile;
+
+                      return (
+                        <article
+                          key={rec.id}
+                          className="rounded-2xl border border-amber-900/15 dark:border-[#253044] bg-[#fffcf5]/80 dark:bg-[#0E131E]/80 p-4 sm:p-5 shadow-sm space-y-3.5"
+                        >
+                          {/* Remitente y fecha */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/80 to-amber-700/80 text-slate-950 font-serif font-bold text-xs flex items-center justify-center shrink-0">
+                                {sender ? sender.displayName.charAt(0).toUpperCase() : '?'}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-stone-900 dark:text-slate-100 truncate block">
+                                  {sender ? sender.displayName : 'Un amigo lector'}
+                                </span>
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono block">
+                                  @{sender?.username || 'amigo'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="text-[10px] text-stone-500 dark:text-slate-500 flex items-center gap-1 shrink-0">
+                              <Clock className="w-3 h-3" />
+                              {new Date(rec.createdAt).toLocaleDateString(undefined, {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
+                            </span>
+                          </div>
+
+                          {/* Dedicatoria personal si existe */}
+                          {rec.note && (
+                            <div className="rounded-xl border border-amber-600/20 bg-amber-500/5 dark:bg-amber-500/10 p-3 text-xs flex items-start gap-2.5">
+                              <MessageSquareHeart className="w-4 h-4 text-amber-600/80 dark:text-amber-400/80 shrink-0 mt-0.5" />
+                              <p className="italic text-stone-700 dark:text-amber-100/90 leading-relaxed font-serif">
+                                «{rec.note}»
+                              </p>
+                            </div>
                           )}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )
+
+                          {/* Libro recomendado */}
+                          <div className="flex items-start gap-3.5 rounded-xl border border-amber-900/10 dark:border-[#20293C] bg-[#fbf6ea]/60 dark:bg-[#141A26]/60 p-3">
+                            <div className="w-14 sm:w-16 shrink-0 rounded overflow-hidden shadow">
+                              <BookCover
+                                nombre={rec.bookData.nombre}
+                                autor={rec.bookData.autor}
+                                portadaUrl={rec.bookData.portadaUrl}
+                                portadaFallbackUrl={rec.bookData.portadaFallbackUrl}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 leading-snug">
+                                {rec.bookData.nombre}
+                              </h4>
+                              <p className="text-xs text-stone-600 dark:text-slate-400">
+                                {rec.bookData.autor}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                                {rec.bookData.fechaPublicacion && (
+                                  <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
+                                    {rec.bookData.fechaPublicacion}
+                                  </span>
+                                )}
+                                {rec.bookData.genero && (
+                                  <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2">
+                                    {rec.bookData.genero.replace(/^[^\s]+\s/, '')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Acciones del historial */}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-900/10 dark:border-[#20293C]">
+                            <button
+                              type="button"
+                              onClick={() => handleDismissRec(rec.id)}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-400 hover:text-rose-600 transition"
+                              title="Eliminar de tu historial"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Eliminar del historial</span>
+                            </button>
+
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                              <Check className="w-3.5 h-3.5" /> En tu biblioteca
+                            </span>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )
+              )}
+            </div>
           ) : (
             /* Vista 2: Solicitudes de Amistad */
             <div className="space-y-5">
