@@ -2,6 +2,8 @@
   "name": "nexus-library",
   "private": true,
   "version": "1.0.0",
+  "author": "Alejandro Ramírez",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

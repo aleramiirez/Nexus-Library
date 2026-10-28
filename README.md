@@ -33,3 +33,12 @@ npm run preview
 - **Identidad de usuario y autenticación**:
   - Al abrir la aplicación se presenta la pantalla de inicio de sesión y registro con correo y contraseña (`AuthScreen`).
   - Al autenticarse, `syncAndMigrateWithSupabase()` migra las sagas y libros locales de IndexedDB/Dexie hacia Supabase evitando duplicados (por ID, ISBN o título+autor), verifica la escritura en el servidor y mantiene la copia local en IndexedDB sincronizada.
+
+## 5. Licencia y Derechos de Autor
+
+Copyright © 2026 **Alejandro Ramírez**. Todos los derechos reservados.
+
+Este software es propiedad intelectual exclusiva de Alejandro Ramírez. El código fuente se comparte en este repositorio únicamente con fines de muestra técnica, consulta educativa y portfolio personal.
+
+Queda estrictamente prohibida la copia, modificación, distribución, republicación, despliegue público o explotación comercial de este software (total o parcial) sin la autorización previa, expresa y por escrito del autor. Para más detalles, consulta el archivo [LICENSE](LICENSE).
+
