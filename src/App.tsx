@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useDeferredValue } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -198,6 +198,8 @@ export const App: React.FC = () => {
   const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const lastAuthUserIdRef = useRef<string | null | undefined>(undefined);
+  const lastAuthUserIsAnonRef = useRef<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [guestAlias, setGuestAlias] = useState<string>(() => profileService.getGuestAlias());
   const [collectionsCount, setCollectionsCount] = useState<number>(() =>
@@ -364,6 +366,8 @@ export const App: React.FC = () => {
 
         if (data.session?.user) {
           const user = data.session.user;
+          lastAuthUserIdRef.current = user.id;
+          lastAuthUserIsAnonRef.current = Boolean(user.is_anonymous);
           setCurrentUser(user);
           const cached = profileService.getCachedProfile(user.id);
           if (cached) setCurrentUserProfile(cached);
@@ -379,6 +383,8 @@ export const App: React.FC = () => {
           if (mounted && settings.anonymousEnabled) {
             const { data: anonData } = await supabase.auth.signInAnonymously();
             if (mounted && anonData.user) {
+              lastAuthUserIdRef.current = anonData.user.id;
+              lastAuthUserIsAnonRef.current = true;
               setCurrentUser(anonData.user);
               setAuthLoading(false);
               await runCloudSync();
@@ -386,11 +392,17 @@ export const App: React.FC = () => {
             }
           }
           if (mounted) {
+            lastAuthUserIdRef.current = null;
+            lastAuthUserIsAnonRef.current = false;
             setAuthLoading(false);
           }
         }
       } catch {
-        if (mounted) setAuthLoading(false);
+        if (mounted) {
+          lastAuthUserIdRef.current = null;
+          lastAuthUserIsAnonRef.current = false;
+          setAuthLoading(false);
+        }
       }
     };
 
@@ -408,38 +420,84 @@ export const App: React.FC = () => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
       const nextUser = session?.user ?? null;
-      setCurrentUser(nextUser);
-      setIsAuthModalOpen(false);
+      const nextUserId = nextUser?.id ?? null;
+      const nextIsAnon = Boolean(nextUser?.is_anonymous);
+
+      const prevUserId = lastAuthUserIdRef.current;
+      const prevIsAnon = lastAuthUserIsAnonRef.current;
+      const isInitialEvent = prevUserId === undefined;
 
       // Evento de recuperación de contraseña disparado por Supabase al hacer clic en el enlace del email
       if (_event === 'PASSWORD_RECOVERY') {
         setIsRecoveryMode(true);
       }
 
-      // Al iniciar sesión o cerrar sesión, restablecer la navegación a la pantalla de Inicio
-      if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
-        if (_event === 'SIGNED_OUT') {
-          setIsRecoveryMode(false);
-        }
+      // Al cerrar sesión, restablecer la navegación a la pantalla de Inicio
+      if (_event === 'SIGNED_OUT') {
+        lastAuthUserIdRef.current = null;
+        lastAuthUserIsAnonRef.current = false;
+        setCurrentUser(null);
+        setCurrentUserProfile(null);
+        setSyncResult(null);
+        setIsRecoveryMode(false);
         setActiveSection('dashboard');
         if (typeof window !== 'undefined') {
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
           document.documentElement.scrollTop = 0;
           document.body.scrollTop = 0;
         }
+        return;
       }
 
-      if (nextUser) {
-        setOfflineGuestMode(false);
-        const cached = profileService.getCachedProfile(nextUser.id);
-        if (cached) setCurrentUserProfile(cached);
-        profileService.fetchUserProfile(nextUser.id, nextUser.email).then((prof) => {
-          if (mounted && prof) setCurrentUserProfile(prof);
-        });
-        collectionService.syncFromCloud(nextUser.id).catch(() => {});
-        readingChallengeService.syncFromCloud(nextUser.id).catch(() => {});
-        runCloudSync();
-      } else {
+      if (_event === 'SIGNED_IN') {
+        // Un inicio de sesión genuino ocurre cuando cambia de usuario (o pasa de anónimo/invitado a cuenta real)
+        const isRealNewSignIn =
+          !isInitialEvent &&
+          nextUserId !== null &&
+          (prevUserId !== nextUserId || (prevIsAnon && !nextIsAnon));
+
+        lastAuthUserIdRef.current = nextUserId;
+        lastAuthUserIsAnonRef.current = nextIsAnon;
+        setCurrentUser(nextUser);
+
+        // Si es un inicio de sesión nuevo y explícito, cerrar el modal de login y llevar a Inicio
+        if (isRealNewSignIn) {
+          setIsAuthModalOpen(false);
+          setActiveSection('dashboard');
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+          }
+        }
+
+        // Si fue solo un re-enfoque de pestaña o revalidación de token (mismo usuario),
+        // preservamos intacta la pantalla actual, el scroll y los modales abiertos.
+        if (nextUser) {
+          setOfflineGuestMode(false);
+          const cached = profileService.getCachedProfile(nextUser.id);
+          if (cached) setCurrentUserProfile(cached);
+          profileService.fetchUserProfile(nextUser.id, nextUser.email).then((prof) => {
+            if (mounted && prof) setCurrentUserProfile(prof);
+          });
+          // Solo lanzar sincronización pesada en inicio de sesión real
+          if (isRealNewSignIn) {
+            collectionService.syncFromCloud(nextUser.id).catch(() => {});
+            readingChallengeService.syncFromCloud(nextUser.id).catch(() => {});
+            runCloudSync();
+          }
+        } else {
+          setCurrentUserProfile(null);
+          setSyncResult(null);
+        }
+        return;
+      }
+
+      // Otros eventos (TOKEN_REFRESHED, USER_UPDATED, etc.)
+      lastAuthUserIdRef.current = nextUserId;
+      lastAuthUserIsAnonRef.current = nextIsAnon;
+      setCurrentUser(nextUser);
+      if (!nextUser) {
         setCurrentUserProfile(null);
         setSyncResult(null);
       }

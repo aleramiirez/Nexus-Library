@@ -100,6 +100,16 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
   const rect = sourceEl.getBoundingClientRect();
   if (rect.width === 0 && rect.height === 0) return fallback;
 
+  // Si la tarjeta o libro de origen está fuera de los límites visibles de la pantalla,
+  // usar la animación fallback centrada para evitar que la animación salga disparada hacia fuera del viewport
+  const isOutOfViewport =
+    rect.bottom < -60 ||
+    rect.top > window.innerHeight + 60 ||
+    rect.right < -60 ||
+    rect.left > window.innerWidth + 60;
+
+  if (isOutOfViewport) return fallback;
+
   const stageWidth = Math.min(window.innerWidth - 48, 1024);
   const closedBookWidth = stageWidth * 0.5;
 
