@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useDeferredValue, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue, useRef, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -249,8 +249,22 @@ export const App: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
-  const handleOpenBookDetail = React.useCallback((id: string) => setDetailBookId(id), []);
-  const handleOpenCardDetail = React.useCallback((b: Book) => setDetailBookId(b.id), []);
+  const handleOpenBookDetail = React.useCallback(
+    (id: string) => {
+      startTransition(() => {
+        setDetailBookId(id);
+      });
+    },
+    []
+  );
+  const handleOpenCardDetail = React.useCallback(
+    (b: Book) => {
+      startTransition(() => {
+        setDetailBookId(b.id);
+      });
+    },
+    []
+  );
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
@@ -1614,7 +1628,7 @@ export const App: React.FC = () => {
                           <div
                             key={book.id}
                             data-book-id={book.id}
-                            onClick={() => setDetailBookId(book.id)}
+                            onClick={() => handleOpenBookDetail(book.id)}
                             className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f5ecdc]/90 dark:bg-[#0e131d]/90 hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300 shadow-sm"
                           >
                             <div className="w-16 shrink-0">
@@ -2107,7 +2121,7 @@ export const App: React.FC = () => {
                       <li
                         key={book.id}
                         data-book-id={book.id}
-                        onClick={() => setDetailBookId(book.id)}
+                        onClick={() => handleOpenBookDetail(book.id)}
                         className="flex items-center gap-3 p-3 active:bg-[#f4ead4] dark:active:bg-[#192131] cursor-pointer"
                       >
                         <div className="w-11 shrink-0">
@@ -2156,7 +2170,7 @@ export const App: React.FC = () => {
                           <tr
                             key={book.id}
                             data-book-id={book.id}
-                            onClick={() => setDetailBookId(book.id)}
+                            onClick={() => handleOpenBookDetail(book.id)}
                             className="group hover:bg-[#f4ead4] dark:hover:bg-[#192131] cursor-pointer transition"
                           >
                             <td className="p-3 w-14">
@@ -2273,7 +2287,7 @@ export const App: React.FC = () => {
                 currentUserId={currentUser?.id}
                 onOpenBookDetail={(target) => {
                   const id = typeof target === 'string' ? target : target.id;
-                  setDetailBookId(id);
+                  handleOpenBookDetail(id);
                 }}
                 openedBookId={detailBookId}
                 onShowToast={showToast}
@@ -2609,7 +2623,7 @@ export const App: React.FC = () => {
                             <div
                               key={book.id}
                               data-book-id={book.id}
-                              onClick={() => setDetailBookId(book.id)}
+                              onClick={() => handleOpenBookDetail(book.id)}
                               className="group cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-500/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
                             >
                               <div>

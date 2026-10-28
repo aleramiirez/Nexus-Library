@@ -86,32 +86,19 @@ export function getBookFlipValues(bookId?: string | null): BookFlipValues {
     return fallback;
   }
 
-  // En móvil usamos animación nativa tipo bottom-sheet sin cálculo 3D FLIP
-  if (window.innerWidth < 768) {
+  // En móvil o usuarios con preferencia de movimiento reducido usamos animación nativa sin cálculo FLIP
+  if (
+    window.innerWidth < 768 ||
+    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  ) {
     return fallback;
   }
 
-  const safeId = bookId.replace(/"/g, '\\"');
-  const findVisible = (selector: string): Element | null => {
-    try {
-      const list = document.querySelectorAll(selector);
-      for (let i = 0; i < list.length; i++) {
-        const r = list[i].getBoundingClientRect();
-        if (r.width > 0 && r.height > 0) return list[i];
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  };
-
   let sourceEl: Element | null = null;
   try {
-    sourceEl =
-      findVisible(`[data-book-id="${safeId}"] .book-cover`) ||
-      findVisible(`[data-book-id="${safeId}"]`) ||
-      document.querySelector(`[data-book-id="${safeId}"] .book-cover`) ||
-      document.querySelector(`[data-book-id="${safeId}"]`);
+    const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(bookId) : bookId.replace(/"/g, '\\"');
+    const container = document.querySelector(`[data-book-id="${escapedId}"]`);
+    sourceEl = container ? (container.querySelector('.book-cover') || container) : null;
   } catch {
     sourceEl = null;
   }

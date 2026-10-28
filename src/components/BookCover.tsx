@@ -26,11 +26,20 @@ export const preloadBookCover = (book: {
   const src = [book.portadaDataUrl, book.portadaUrl, book.portadaFallbackUrl].find((u) =>
     Boolean(u && u.trim())
   );
-  if (!src || preloadedUrls.has(src)) return;
+  if (!src || preloadedUrls.has(src) || src.startsWith('data:')) return;
   preloadedUrls.add(src);
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = src;
+
+  // Defer image loading to idle time so it never blocks click or pointer events
+  const schedule =
+    typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? (cb: () => void) => (window as any).requestIdleCallback(cb, { timeout: 1200 })
+      : (cb: () => void) => setTimeout(cb, 60);
+
+  schedule(() => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+  });
 };
 
 // Telas de encuadernación para libros sin portada (color estable según título/autor)
