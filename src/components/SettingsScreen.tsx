@@ -46,6 +46,7 @@ import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
   clearLocalCacheOnSignOut,
+  importCsvBooks,
   requestPersistentStorage,
   restoreBackupPayload,
   SyncMigrationResult,
@@ -55,7 +56,8 @@ import { supabase } from '../services/supabaseClient';
 import {
   exportLibraryToCsv,
   exportLibraryToJson,
-  parseBackupJson
+  parseBackupJson,
+  parseGoodreadsOrStorygraphCsv
 } from '../services/importExportService';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { profileService } from '../services/profileService';
@@ -428,6 +430,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setFeedback({
         type: 'error',
         text: err instanceof Error ? err.message : 'El archivo de copia seleccionado no es válido o está dañado.'
+      });
+    }
+    e.target.value = '';
+  };
+
+  const handleImportCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFeedback(null);
+    try {
+      const text = await file.text();
+      const parsed = parseGoodreadsOrStorygraphCsv(text);
+      const sourceName =
+        parsed.source === 'goodreads'
+          ? 'Goodreads'
+          : parsed.source === 'storygraph'
+          ? 'StoryGraph'
+          : 'CSV';
+
+      const { addedBooks, skippedDuplicates, sagasCreated } = await importCsvBooks(parsed.books);
+
+      setFeedback({
+        type: 'success',
+        text: `¡Importación desde ${sourceName} completada con éxito! Se añadieron ${addedBooks} libros y ${sagasCreated} sagas (${skippedDuplicates} registros omitidos por ya estar en tu biblioteca). Las portadas disponibles se vincularon automáticamente.`
+      });
+    } catch (err: unknown) {
+      setFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'No se pudo procesar el archivo CSV seleccionado.'
       });
     }
     e.target.value = '';
@@ -1372,6 +1403,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 >
                   <Download className="w-4 h-4" /> Exportar a Excel / CSV
                 </button>
+              </div>
+            </div>
+
+            {/* Importación desde Goodreads o StoryGraph */}
+            <div className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-gradient-to-br from-[#f8f0dc] via-[#f4ead4] to-[#ede0c4] dark:from-[#171F2F] dark:via-[#141A26] dark:to-[#101520] p-5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h3 className="font-serif text-base font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+                    Migrar desde Goodreads o StoryGraph
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                    Importa tu archivo <code>goodreads_library_export.csv</code>. Traspasaremos todos tus libros, puntuaciones con estrellas, estados de lectura, fechas y reseñas personales agrupando tus sagas automáticamente.
+                  </p>
+                </div>
+                <label className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition cursor-pointer shrink-0 active:scale-95">
+                  <Upload className="w-4 h-4" /> Importar CSV de Goodreads
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleImportCsvFile}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </div>
 

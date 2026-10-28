@@ -24,6 +24,8 @@ export interface Book {
   idioma: string;
   edicion: string;
   sinopsis: string;
+  notasPersonales?: string;
+  citas?: string[];
   portadaUrl: string;
   portadaFallbackUrl: string;
   portadaDataUrl?: string;
@@ -51,6 +53,8 @@ export interface BibliographicCandidate {
   idioma: string;
   edicion: string;
   sinopsis: string;
+  notasPersonales?: string;
+  citas?: string[];
   portadaUrl: string;
   portadaFallbackUrl: string;
   rawCategories: string[];

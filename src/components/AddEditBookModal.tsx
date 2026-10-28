@@ -127,6 +127,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [idioma, setIdioma] = useState('');
   const [edicion, setEdicion] = useState('');
   const [sinopsis, setSinopsis] = useState('');
+  const [notasPersonales, setNotasPersonales] = useState('');
   const [portadaUrl, setPortadaUrl] = useState('');
   const [portadaFallbackUrl, setPortadaFallbackUrl] = useState('');
   const [customDataUrl, setCustomDataUrl] = useState<string | undefined>(undefined);
@@ -225,6 +226,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma(editingBook.idioma);
       setEdicion(editingBook.edicion);
       setSinopsis(editingBook.sinopsis);
+      setNotasPersonales(editingBook.notasPersonales || '');
       setPortadaUrl(editingBook.portadaUrl);
       setPortadaFallbackUrl(editingBook.portadaFallbackUrl);
       setCustomDataUrl(editingBook.portadaDataUrl);
@@ -261,6 +263,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma('');
       setEdicion('');
       setSinopsis('');
+      setNotasPersonales('');
       setPortadaUrl('');
       setPortadaFallbackUrl('');
       setCustomDataUrl(undefined);
@@ -567,6 +570,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           idioma: idioma.trim(),
           edicion: edicion.trim(),
           sinopsis: sinopsis.trim(),
+          notasPersonales: notasPersonales.trim(),
+          citas: editingBook?.citas || [],
           portadaUrl: portadaUrl.trim(),
           portadaFallbackUrl: portadaFallbackUrl.trim(),
           portadaDataUrl: cachedDataUrl
@@ -1352,6 +1357,18 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           rows={4}
           value={sinopsis}
           onChange={(e) => setSinopsis(e.target.value)}
+          className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5 text-xs focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
+        />
+      </div>
+
+      {/* Notas Personales y Reseña */}
+      <div>
+        <label className={labelCls}>Notas personales, reflexiones o reseña</label>
+        <textarea
+          rows={3}
+          value={notasPersonales}
+          onChange={(e) => setNotasPersonales(e.target.value)}
+          placeholder="Añade tus impresiones personales, reflexiones o reseña sobre este libro..."
           className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5 text-xs focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition"
         />
       </div>

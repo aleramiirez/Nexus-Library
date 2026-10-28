@@ -15,9 +15,11 @@ import { Book, Saga } from '../types/models';
 import {
   exportLibraryToCsv,
   exportLibraryToJson,
-  parseBackupJson
+  parseBackupJson,
+  parseGoodreadsOrStorygraphCsv
 } from '../services/importExportService';
 import {
+  importCsvBooks,
   restoreBackupPayload,
   updateBookPartialRecord
 } from '../db/database';
@@ -180,6 +182,44 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     e.target.value = '';
   };
 
+  const handleImportCsvFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatusMessage(null);
+    try {
+      const text = await file.text();
+      setIsProcessing(true);
+      const parsed = parseGoodreadsOrStorygraphCsv(text);
+
+      const sourceName =
+        parsed.source === 'goodreads'
+          ? 'Goodreads'
+          : parsed.source === 'storygraph'
+          ? 'StoryGraph'
+          : 'CSV';
+
+      const { addedBooks, skippedDuplicates, sagasCreated } = await importCsvBooks(
+        parsed.books
+      );
+
+      setIsProcessing(false);
+      setStatusMessage({
+        type: 'success',
+        text: `¡Importación desde ${sourceName} completada con éxito! Se añadieron ${addedBooks} libros y ${sagasCreated} sagas (${skippedDuplicates} registros omitidos por ya estar en tu biblioteca). Las portadas disponibles se vincularon automáticamente.`
+      });
+    } catch (err: unknown) {
+      setIsProcessing(false);
+      setStatusMessage({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'No se pudo procesar el archivo CSV seleccionado. Verifica que sea un archivo exportado válido.'
+      });
+    }
+    e.target.value = '';
+  };
+
   const progressPct = enrichProgress
     ? String(Math.round((enrichProgress.current / enrichProgress.total) * 100)) + '%'
     : '0%';
@@ -251,6 +291,34 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               </button>
             </div>
           )}
+
+          {/* Importación directa desde Goodreads y StoryGraph */}
+          <div className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-gradient-to-br from-[#f8f0dc] via-[#f4ead4] to-[#ede0c4] dark:from-[#171F2F] dark:via-[#141A26] dark:to-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1">
+              <h3 className="font-serif text-lg font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+                Importar desde Goodreads o StoryGraph (CSV)
+              </h3>
+              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                ¿Tienes tus lecturas en <strong>Goodreads</strong> o <strong>StoryGraph</strong>? Sube tu archivo{' '}
+                <code className="px-1.5 py-0.5 rounded bg-amber-900/10 dark:bg-amber-400/10 font-mono text-[11px] text-amber-900 dark:text-amber-200">
+                  goodreads_library_export.csv
+                </code>
+                . Traspasaremos todos tus libros, estados de lectura, puntuaciones (⭐), fechas, notas/reseñas personales y agruparemos tus sagas automáticamente.
+              </p>
+            </div>
+            <label className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition shrink-0 cursor-pointer active:scale-95">
+              <Upload className="w-4 h-4" />
+              <span>Importar CSV</span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleImportCsvFile}
+                className="hidden"
+                disabled={isProcessing}
+              />
+            </label>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#f4ead4] dark:bg-[#101520] p-4 flex flex-col justify-between">

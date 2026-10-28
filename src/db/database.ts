@@ -3,7 +3,7 @@ import Dexie, { Table } from 'dexie';
 import { BackupPayload, Book, Saga } from '../types/models';
 import { normalizeText } from '../constants/catalogs';
 import { getActiveUser, supabase } from '../services/supabaseClient';
-import { isDuplicateBook } from '../services/importExportService';
+import { isDuplicateBook, ParsedCsvBook } from '../services/importExportService';
 
 export class NexusLibraryDB extends Dexie {
   books!: Table<Book, string>;
@@ -1087,3 +1087,100 @@ export async function restoreBackupPayload(
 
   return { addedBooks, skippedDuplicates };
 }
+
+export async function importCsvBooks(
+  parsedBooks: ParsedCsvBook[]
+): Promise<{ addedBooks: number; skippedDuplicates: number; sagasCreated: number }> {
+  let addedBooks = 0;
+  let skippedDuplicates = 0;
+  let sagasCreated = 0;
+  const user = await getActiveUser();
+
+  const existingSagas = await db.sagas.toArray();
+  const sagaByNormName = new Map<string, Saga>(
+    existingSagas.map((s) => [normalizeText(s.nombre), s])
+  );
+
+  // Asegurar la existencia de sagas detectadas
+  for (const b of parsedBooks) {
+    if (b.sagaNombre && b.sagaNombre.trim()) {
+      const normName = normalizeText(b.sagaNombre);
+      if (!sagaByNormName.has(normName)) {
+        const createdSaga = await findOrCreateSagaByName(b.sagaNombre.trim());
+        if (createdSaga) {
+          sagaByNormName.set(normName, createdSaga);
+          sagasCreated++;
+        }
+      }
+    }
+  }
+
+  const currentBooks = await db.books.toArray();
+  const now = new Date().toISOString();
+
+  for (const b of parsedBooks) {
+    const dupCheck = isDuplicateBook(
+      { nombre: b.nombre, autor: b.autor, isbn: b.isbn },
+      currentBooks
+    );
+
+    if (dupCheck.duplicate) {
+      skippedDuplicates++;
+      continue;
+    }
+
+    let resolvedSagaId: string | null = null;
+    let resolvedSagaNombre = b.sagaNombre ? b.sagaNombre.trim() : '';
+
+    if (resolvedSagaNombre) {
+      const matched = sagaByNormName.get(normalizeText(resolvedSagaNombre));
+      if (matched) {
+        resolvedSagaId = matched.id;
+        resolvedSagaNombre = matched.nombre;
+      }
+    }
+
+    const validId = crypto.randomUUID();
+    const tiempoLectura = calculateReadingTimeLabel(b.fechaInicio, b.fechaFin);
+
+    const newBook: Book = {
+      id: validId,
+      nombre: b.nombre,
+      autor: b.autor,
+      genero: '',
+      subgeneros: [],
+      fechaPublicacion: b.fechaPublicacion,
+      paginas: b.paginas,
+      puntuacion: b.puntuacion,
+      progreso: b.progreso,
+      sagaId: resolvedSagaId,
+      sagaNombre: resolvedSagaNombre,
+      volumen: b.volumen,
+      fechaInicio: b.fechaInicio,
+      fechaFin: b.fechaFin,
+      lecturaVirtual: '',
+      tiempoLectura,
+      isbn: b.isbn,
+      editorial: b.editorial,
+      idioma: 'es',
+      edicion: '',
+      sinopsis: b.sinopsis,
+      notasPersonales: b.notasPersonales,
+      citas: [],
+      portadaUrl: b.portadaUrl,
+      portadaFallbackUrl: b.portadaFallbackUrl || '',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    if (user) {
+      await upsertBookToSupabase(user.id, newBook);
+    }
+    await db.books.put(newBook);
+    currentBooks.push(newBook);
+    addedBooks++;
+  }
+
+  return { addedBooks, skippedDuplicates, sagasCreated };
+}
+
