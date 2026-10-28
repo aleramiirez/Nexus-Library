@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Settings,
@@ -99,17 +99,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [, startTransition] = useTransition();
 
-  const handleTabChange = (tab: SettingsTab) => {
-    startTransition(() => {
-      setActiveTab(tab);
-    });
+  const handleTabChange = useCallback((tab: SettingsTab) => {
+    setActiveTab(tab);
     setFeedback(null);
     if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
     }
-  };
+  }, []);
 
   // Estado para el modal de completado en lote (portadas y sinopsis)
   const [batchModalConfig, setBatchModalConfig] = useState<{
@@ -252,15 +250,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, []);
 
-  const booksMissingCovers = books.filter((b) => !b.portadaUrl && !b.portadaDataUrl);
-  const booksWithCoversCount = books.length - booksMissingCovers.length;
-  const coverPercentage =
-    books.length > 0 ? Math.round((booksWithCoversCount / books.length) * 100) : 100;
-
-  const booksMissingSynopsis = books.filter((b) => !b.sinopsis || b.sinopsis.trim().length === 0);
-  const booksWithSynopsisCount = books.length - booksMissingSynopsis.length;
-  const synopsisPercentage =
-    books.length > 0 ? Math.round((booksWithSynopsisCount / books.length) * 100) : 100;
+  const {
+    booksMissingCovers,
+    booksWithCoversCount,
+    coverPercentage,
+    booksMissingSynopsis,
+    booksWithSynopsisCount,
+    synopsisPercentage
+  } = useMemo(() => {
+    const missingCovers = books.filter((b) => !b.portadaUrl && !b.portadaDataUrl);
+    const withCovers = books.length - missingCovers.length;
+    const cPct = books.length > 0 ? Math.round((withCovers / books.length) * 100) : 100;
+    const missingSyn = books.filter((b) => !b.sinopsis || b.sinopsis.trim().length === 0);
+    const withSyn = books.length - missingSyn.length;
+    const sPct = books.length > 0 ? Math.round((withSyn / books.length) * 100) : 100;
+    return {
+      booksMissingCovers: missingCovers,
+      booksWithCoversCount: withCovers,
+      coverPercentage: cPct,
+      booksMissingSynopsis: missingSyn,
+      booksWithSynopsisCount: withSyn,
+      synopsisPercentage: sPct
+    };
+  }, [books]);
 
   /* ─────────────────── Protección de almacenamiento en el equipo ─────────────────── */
   const handleRequestStorage = async () => {
@@ -400,7 +412,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Palette className="w-4 h-4 shrink-0" /> <span className="truncate">Apariencia</span>
+            <Palette className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Apariencia</span>
           </button>
 
           <button
@@ -413,9 +425,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Cloud className="w-4 h-4 shrink-0" /> <span className="truncate">Cuenta y Nube</span>
+            <Cloud className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Cuenta y Nube</span>
             {currentUser && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0 pointer-events-none" />
             )}
           </button>
 
@@ -429,9 +441,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Sparkles className="w-4 h-4 shrink-0" /> <span className="truncate">Catálogo</span>
+            <Sparkles className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Catálogo</span>
             {booksMissingCovers.length > 0 && (
-              <span className="rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.2 text-[10px] font-bold shrink-0">
+              <span className="rounded-full bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.2 text-[10px] font-bold shrink-0 pointer-events-none">
                 {booksMissingCovers.length}
               </span>
             )}
@@ -447,7 +459,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <HardDrive className="w-4 h-4 shrink-0" /> <span className="truncate">Copias</span>
+            <HardDrive className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Copias</span>
           </button>
 
           <button
@@ -460,9 +472,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
             }
           >
-            <Smartphone className="w-4 h-4 shrink-0" /> <span className="truncate">Instalar App</span>
+            <Smartphone className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Instalar App</span>
             {pwaState.isInstalled && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0 pointer-events-none" />
             )}
           </button>
         </div>
