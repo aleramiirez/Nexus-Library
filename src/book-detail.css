@@ -603,8 +603,8 @@ html.dark .open-book-left-inner {
   margin-bottom: 6px;
   border-radius: 9px 9px 0 0;
   background: linear-gradient(90deg, #fbf6ea 0%, #f8efdc 75%, #efe3c8 100%);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(140, 100, 40, 0.25) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 html.dark .open-book-left-paper {
@@ -713,8 +713,8 @@ html.dark .open-book-page-right {
   margin-bottom: 6px;
   border-radius: 0 0 9px 9px;
   background: linear-gradient(90deg, #efe3c8 0%, #f8efdc 12%, #fbf6ea 45%, #f6ecda 100%);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(140, 100, 40, 0.25) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 @media (min-width: 768px) {
@@ -730,12 +730,15 @@ html.dark .open-book-page-right {
 
 html.dark .open-book-right-paper {
   background: linear-gradient(90deg, #0e131d 0%, #121722 12%, #141A26 48%, #111722 100%);
-  scrollbar-color: rgba(229, 193, 88, 0.22) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .open-book-left-paper::-webkit-scrollbar,
 .open-book-right-paper::-webkit-scrollbar {
-  width: 5px;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .open-book-left-paper::-webkit-scrollbar-track,

@@ -932,7 +932,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                   {/* Cara Interior: Página Izquierda (Ex-Libris, Portada y Registro Personal) */}
                   <div className="open-book-left-inner flex-1 flex flex-col">
-                    <div className="open-book-left-paper flex-1 flex flex-col justify-start p-3 sm:p-4 md:pr-7 md:pl-6 md:pt-3.5 md:pb-3.5 md:max-h-[82dvh] md:overflow-hidden">
+                    <div className="open-book-left-paper flex-1 flex flex-col justify-start p-3 sm:p-4 md:pr-7 md:pl-6 md:pt-3.5 md:pb-3.5 md:max-h-[85dvh] md:overflow-hidden">
                       <div className="open-book-content flex flex-col items-center w-full">
                         {/* Encabezado superior sutil de folio (Verso) */}
                         <div className="w-full flex items-center justify-between text-[11px] font-serif italic text-amber-900/75 dark:text-amber-400/80 border-b border-amber-900/15 dark:border-[#242E42] pb-1 mb-2">
@@ -1143,10 +1143,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <div className="open-book-edge-right" aria-hidden="true" />
                   <div className="open-book-edge-bottom-right" aria-hidden="true" />
 
-                  <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-6 md:pl-8 md:pr-7 md:pt-0 md:pb-6 md:max-h-[82dvh] md:overflow-y-auto">
+                  <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-5 md:pl-8 md:pr-7 md:pt-0 md:pb-3.5 md:max-h-[85dvh] md:overflow-y-auto">
                     {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}
-                    <div className="flex items-start justify-between gap-2 mb-4">
-                      <span className="inline-block pt-3 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75 select-none truncate">
+                    <div className="flex items-start justify-between gap-2 mb-2 sm:mb-2.5">
+                      <span className="inline-block pt-2 text-[11px] font-serif italic text-amber-900/70 dark:text-amber-400/75 select-none truncate">
                         {activeTab === 'details' ? 'Catálogo Literario · fol. II' : 'Sinopsis Literaria · fol. III'}
                       </span>
 
@@ -1244,11 +1244,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     </div>
 
                     {activeTab === 'details' ? (
-                      <div className="open-book-content open-book-fade-content flex flex-col gap-4 sm:gap-5">
+                      <div className="open-book-content open-book-fade-content flex flex-col gap-2.5 sm:gap-3">
                       {/* Título, Autor, Saga y Divisor Ornamental */}
                       <div className="text-left">
                         {book.sagaNombre && (
-                          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-3 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-300 mb-2">
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:text-amber-300 mb-1.5">
                             <Layers className="w-3.5 h-3.5" />
                             <span>
                               Saga: {book.sagaNombre}
@@ -1259,17 +1259,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
                         <h2
                           id="detail-book-title"
-                          className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight tracking-tight"
+                          className="font-serif text-2xl sm:text-[27px] font-bold text-stone-900 dark:text-white leading-tight tracking-tight"
                         >
                           {book.nombre}
                         </h2>
 
-                        <p className="font-serif italic text-base sm:text-lg text-stone-700 dark:text-slate-300 mt-1">
+                        <p className="font-serif italic text-sm sm:text-base text-stone-700 dark:text-slate-300 mt-0.5">
                           {book.autor || 'Autor no especificado'}
                         </p>
 
                         {/* Divisor ornamental dorado con ✦ en el centro */}
-                        <div className="flex items-center gap-3 mt-3" aria-hidden="true">
+                        <div className="flex items-center gap-3 mt-2" aria-hidden="true">
                           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
                           <span className="text-amber-700 dark:text-amber-400 text-xs select-none">
                             ✦
@@ -1279,20 +1279,20 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
 
                       {/* Estado de lectura y Géneros */}
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {!readOnly && (
                           <div>
-                            <span className="block text-[11px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
+                            <span className="block text-[10.5px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1">
                               Estado de lectura
                             </span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
                               {READING_STATUSES.map((status) => (
                                 <button
                                   key={status}
                                   type="button"
                                   onClick={() => onStatusChange?.(book.id, status)}
                                   className={
-                                    'py-2 px-2.5 rounded-lg text-xs font-medium border text-center transition ' +
+                                    'py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition ' +
                                     (book.progreso === status
                                       ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-semibold shadow-sm'
                                       : 'border-amber-900/20 dark:border-[#263147] bg-[#f4ead4]/70 dark:bg-[#1A2232]/80 text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-slate-500')
@@ -1305,9 +1305,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </div>
                         )}
 
-                        <div className="flex flex-wrap gap-1.5 items-center pt-0.5">
+                        <div className="flex flex-wrap gap-1.5 items-center">
                           {book.genero ? (
-                            <span className="rounded-lg bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-1 text-xs font-semibold text-amber-950 dark:text-amber-300">
+                            <span className="rounded-lg bg-amber-500/15 border border-amber-600/35 dark:border-amber-500/35 px-2.5 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-300">
                               {book.genero}
                             </span>
                           ) : (
@@ -1318,7 +1318,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           {book.subgeneros.map((sub) => (
                             <span
                               key={sub}
-                              className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-1 text-xs text-stone-700 dark:text-slate-300"
+                              className="rounded-lg bg-[#f0e5cc]/80 dark:bg-[#1E2738] border border-amber-900/20 dark:border-[#2E3B52] px-2.5 py-0.5 text-xs text-stone-700 dark:text-slate-300"
                             >
                               {sub}
                             </span>
@@ -1329,8 +1329,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       {/* Tabla Bibliográfica Clásica con líneas divisorias finas */}
                       <div className="border-y border-amber-900/20 dark:border-slate-800 divide-y divide-amber-900/15 dark:divide-slate-800/90 text-xs">
                         <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
-                          <div className="py-2.5 pr-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 pr-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Año Publicación
                             </span>
@@ -1339,8 +1339,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="py-2.5 px-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 px-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Páginas
                             </span>
@@ -1349,8 +1349,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="py-2.5 pl-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 pl-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               ISBN
                             </span>
@@ -1361,8 +1361,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </div>
 
                         <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
-                          <div className="py-2.5 pr-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 pr-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Editorial
                             </span>
@@ -1371,8 +1371,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="py-2.5 px-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 px-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Idioma / Edición
                             </span>
@@ -1382,8 +1382,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             </p>
                           </div>
 
-                          <div className="py-2.5 pl-3">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                          <div className="py-1.5 sm:py-2 pl-2.5">
+                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Tiempo de Lectura
                             </span>
@@ -1398,10 +1398,10 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={handleTurnToSynopsis}
-                        className="group w-full mt-2 p-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 dark:hover:border-amber-400 text-left transition-all duration-300 shadow-sm flex items-center justify-between gap-3"
+                        className="group w-full mt-1.5 sm:mt-2 p-2.5 sm:p-3 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 dark:hover:border-amber-400 text-left transition-all duration-300 shadow-sm flex items-center justify-between gap-3 shrink-0"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2.5 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="p-2 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
                             <BookOpen className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
