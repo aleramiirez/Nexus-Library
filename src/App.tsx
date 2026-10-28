@@ -39,7 +39,7 @@ import {
   Users
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
-import { triggerBackgroundFallbackNotification } from './services/pushNotificationService';
+import { triggerBackgroundFallbackNotification, syncPushSubscriptionWithDatabase } from './services/pushNotificationService';
 import {
   assignBookToSagaRecord,
   db,
@@ -309,6 +309,9 @@ export const App: React.FC = () => {
     refreshInboxCount();
     if (!currentUser?.id) return;
     const interval = setInterval(refreshInboxCount, 45000);
+
+    // Auto-sincronizar la suscripción Push existente del navegador con la tabla en Supabase
+    syncPushSubscriptionWithDatabase(currentUser.id).catch(() => null);
 
     const onFocus = () => refreshInboxCount();
     const onVisibility = () => {

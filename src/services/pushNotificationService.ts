@@ -232,6 +232,44 @@ export async function subscribeUserToPush(
 }
 
 /**
+ * Asegura que la suscripción existente en el navegador esté registrada en la tabla push_subscriptions de Supabase
+ */
+export async function syncPushSubscriptionWithDatabase(userId: string): Promise<boolean> {
+  if (!userId || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return false;
+
+    const rawKey = subscription.getKey('p256dh');
+    const rawAuth = subscription.getKey('auth');
+    if (!rawKey || !rawAuth) return false;
+
+    const p256dh = btoa(String.fromCharCode(...new Uint8Array(rawKey)));
+    const auth = btoa(String.fromCharCode(...new Uint8Array(rawAuth)));
+
+    const { error } = await supabase.from('push_subscriptions').upsert(
+      {
+        user_id: userId,
+        endpoint: subscription.endpoint,
+        p256dh,
+        auth,
+        user_agent: navigator.userAgent || 'unknown',
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'endpoint' }
+    );
+
+    return !error;
+  } catch (err) {
+    console.warn('[PushService] Error syncPushSubscriptionWithDatabase:', err);
+    return false;
+  }
+}
+
+/**
  * Desactiva la suscripción Push en el navegador y la borra de Supabase
  */
 export async function unsubscribeUserFromPush(
