@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { mapRowToProfile } from './profileService';
+import { broadcastInboxNotification } from './pushNotificationService';
 import {
   Book,
   BibliographicCandidate,
@@ -98,12 +99,41 @@ export const recommendationInboxService = {
         return { success: false, message: 'No se pudo enviar la recomendación. Inténtalo de nuevo.' };
       }
 
+      // Notificar en tiempo real y vía push al destinatario
+      this.notifyRecommendation(senderId, receiverId, payload.nombre).catch(() => null);
+
       return {
         success: true,
         message: `¡Recomendación de «${payload.nombre}» enviada con éxito!`
       };
     } catch {
       return { success: false, message: 'Error de conexión al enviar la recomendación.' };
+    }
+  },
+
+  /**
+   * Helper interno para emitir la notificación instantánea al usuario destinatario
+   */
+  async notifyRecommendation(senderId: string, receiverId: string, bookTitle: string): Promise<void> {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', senderId)
+        .maybeSingle();
+
+      const senderName = profile?.display_name || profile?.username || 'Un amigo';
+      await broadcastInboxNotification({
+        recipientId: receiverId,
+        senderId,
+        type: 'recommendation',
+        title: '¡Te han recomendado un libro!',
+        body: `${senderName} te ha recomendado "${bookTitle}".`,
+        tab: 'recommendations',
+        avatarUrl: profile?.avatar_url || ''
+      });
+    } catch {
+      // Silencioso
     }
   },
 

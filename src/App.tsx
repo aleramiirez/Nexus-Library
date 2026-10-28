@@ -309,7 +309,21 @@ export const App: React.FC = () => {
     refreshInboxCount();
     if (!currentUser?.id) return;
     const interval = setInterval(refreshInboxCount, 45000);
-    return () => clearInterval(interval);
+
+    const onFocus = () => refreshInboxCount();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshInboxCount();
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [refreshInboxCount, currentUser?.id]);
 
   // Manejo de apertura de buzón desde URL query param (?openInbox=...) y mensajes del Service Worker
@@ -369,23 +383,61 @@ export const App: React.FC = () => {
     }
   }, [refreshInboxCount, showInAppBanner]);
 
-  // Escucha Realtime de Supabase para solicitudes de amistad y recomendaciones en vivo
+  // Escucha Realtime de Supabase (Broadcast instantáneo + Postgres Changes)
   useEffect(() => {
     if (!currentUser?.id) return;
 
     const channel = supabase
-      .channel(`inbox-realtime-${currentUser.id}`)
+      .channel('nexus-inbox-broadcast')
+      // 1. Escucha Broadcast instantáneo entre clientes (bypassea la BD para 0ms de latencia)
+      .on(
+        'broadcast',
+        { event: 'inbox_notification' },
+        (event) => {
+          const payload = event.payload as {
+            recipientId?: string;
+            type?: 'friend_request' | 'recommendation';
+            title?: string;
+            body?: string;
+            tab?: 'friend_requests' | 'recommendations';
+            avatarUrl?: string;
+          } | undefined;
+
+          if (payload?.recipientId === currentUser.id) {
+            refreshInboxCount();
+
+            const title = payload.title || 'Nueva novedad en tu buzón';
+            const body = payload.body || '';
+            const tab = payload.tab || 'recommendations';
+
+            showInAppBanner({
+              id: `bc-${Date.now()}`,
+              title,
+              body,
+              avatarUrl: payload.avatarUrl,
+              tab
+            });
+
+            triggerBackgroundFallbackNotification({
+              title,
+              body,
+              tag: `bc-${Date.now()}`,
+              data: { tab }
+            });
+          }
+        }
+      )
+      // 2. Escucha cambios en base de datos (Postgres Changes)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'friendships',
-          filter: `addressee_id=eq.${currentUser.id}`
+          table: 'friendships'
         },
         async (payload) => {
-          const newRecord = payload.new as { id?: string; requester_id?: string; status?: string } | null;
-          if (newRecord?.status === 'pending') {
+          const newRecord = payload.new as { id?: string; requester_id?: string; addressee_id?: string; status?: string } | null;
+          if (newRecord?.addressee_id === currentUser.id && newRecord?.status === 'pending') {
             refreshInboxCount();
             let senderName = 'Un usuario';
             let avatarUrl = '';
@@ -428,55 +480,58 @@ export const App: React.FC = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'book_recommendations',
-          filter: `receiver_id=eq.${currentUser.id}`
+          table: 'book_recommendations'
         },
         async (payload) => {
           const newRecord = payload.new as {
             id?: string;
+            receiver_id?: string;
             sender_id?: string;
             book_data?: { nombre?: string };
           } | null;
-          refreshInboxCount();
 
-          let senderName = 'Un amigo';
-          let avatarUrl = '';
-          try {
-            if (newRecord?.sender_id) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('username, display_name, avatar_url')
-                .eq('id', newRecord.sender_id)
-                .maybeSingle();
-              if (profile) {
-                senderName = profile.display_name || profile.username || 'Un amigo';
-                avatarUrl = profile.avatar_url || '';
+          if (newRecord?.receiver_id === currentUser.id) {
+            refreshInboxCount();
+
+            let senderName = 'Un amigo';
+            let avatarUrl = '';
+            try {
+              if (newRecord?.sender_id) {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('username, display_name, avatar_url')
+                  .eq('id', newRecord.sender_id)
+                  .maybeSingle();
+                if (profile) {
+                  senderName = profile.display_name || profile.username || 'Un amigo';
+                  avatarUrl = profile.avatar_url || '';
+                }
               }
+            } catch {
+              // Silencioso
             }
-          } catch {
-            // Silencioso
+
+            const bookTitle = newRecord?.book_data?.nombre || 'un libro';
+            const title = '¡Te han recomendado un libro!';
+            const body = `${senderName} te ha recomendado "${bookTitle}".`;
+
+            showInAppBanner({
+              id: `rec-${newRecord?.id || Date.now()}`,
+              title,
+              body,
+              avatarUrl,
+              tab: 'recommendations'
+            });
+
+            triggerBackgroundFallbackNotification({
+              title,
+              body,
+              tag: `rec-${newRecord?.id}`,
+              data: { tab: 'recommendations' }
+            });
           }
-
-          const bookTitle = newRecord?.book_data?.nombre || 'un libro';
-          const title = '¡Te han recomendado un libro!';
-          const body = `${senderName} te ha recomendado "${bookTitle}".`;
-
-          showInAppBanner({
-            id: `rec-${newRecord?.id || Date.now()}`,
-            title,
-            body,
-            avatarUrl,
-            tab: 'recommendations'
-          });
-
-          triggerBackgroundFallbackNotification({
-            title,
-            body,
-            tag: `rec-${newRecord?.id}`,
-            data: { tab: 'recommendations' }
-          });
         }
       )
       .subscribe();

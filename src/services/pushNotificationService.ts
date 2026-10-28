@@ -310,3 +310,45 @@ export function triggerBackgroundFallbackNotification(params: {
     // Algunos navegadores móviles bloquean new Notification fuera de un Service Worker
   }
 }
+
+/**
+ * Emite una notificación en tiempo real vía WebSocket Broadcast de Supabase
+ * hacia el usuario destinatario e intenta llamar a la Edge Function de Push.
+ */
+export async function broadcastInboxNotification(payload: {
+  recipientId: string;
+  senderId: string;
+  type: 'friend_request' | 'recommendation';
+  title: string;
+  body: string;
+  tab: 'friend_requests' | 'recommendations';
+  avatarUrl?: string;
+}): Promise<void> {
+  if (!payload.recipientId) return;
+
+  // 1. WebSocket Broadcast instantáneo entre navegadores/dispositivos
+  try {
+    const channel = supabase.channel('nexus-inbox-broadcast');
+    channel.send({
+      type: 'broadcast',
+      event: 'inbox_notification',
+      payload
+    });
+  } catch (err) {
+    console.warn('[PushService] Fallo al emitir broadcast:', err);
+  }
+
+  // 2. Intento de invocación a la Supabase Edge Function (Web Push para cuando la app está cerrada)
+  try {
+    await supabase.functions.invoke('send-push', {
+      body: {
+        userId: payload.recipientId,
+        title: payload.title,
+        body: payload.body,
+        tab: payload.tab
+      }
+    });
+  } catch {
+    // Silencioso si la Edge Function no está desplegada aún
+  }
+}

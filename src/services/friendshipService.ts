@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Friendship, FriendshipStatus, UserProfile } from '../types/models';
 import { mapRowToProfile, RawProfileRow } from './profileService';
+import { broadcastInboxNotification } from './pushNotificationService';
 
 interface RawFriendshipRow {
   id: string;
@@ -261,6 +262,10 @@ export const friendshipService = {
         if (reactivateErr) {
           return { success: false, message: 'No se pudo enviar la solicitud. Inténtalo más tarde.' };
         }
+
+        // Notificar en tiempo real y vía push al destinatario
+        this.notifyFriendRequest(requesterId, addresseeId).catch(() => null);
+
         return { success: true, message: 'Solicitud de amistad enviada con éxito.', friendshipId: existing.id };
       }
 
@@ -279,6 +284,9 @@ export const friendshipService = {
         return { success: false, message: 'No se pudo enviar la solicitud. Asegúrate de tener conexión.' };
       }
 
+      // Notificar en tiempo real y vía push al destinatario
+      this.notifyFriendRequest(requesterId, addresseeId).catch(() => null);
+
       return {
         success: true,
         message: 'Solicitud de amistad enviada con éxito.',
@@ -286,6 +294,32 @@ export const friendshipService = {
       };
     } catch {
       return { success: false, message: 'Error de red al conectar con el servidor.' };
+    }
+  },
+
+  /**
+   * Helper interno para emitir la notificación instantánea al usuario destinatario
+   */
+  async notifyFriendRequest(requesterId: string, addresseeId: string): Promise<void> {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', requesterId)
+        .maybeSingle();
+
+      const senderName = profile?.display_name || profile?.username || 'Un lector';
+      await broadcastInboxNotification({
+        recipientId: addresseeId,
+        senderId: requesterId,
+        type: 'friend_request',
+        title: '¡Nueva solicitud de amistad!',
+        body: `${senderName} quiere conectar contigo en Nexus Library.`,
+        tab: 'friend_requests',
+        avatarUrl: profile?.avatar_url || ''
+      });
+    } catch {
+      // Silencioso
     }
   },
 
