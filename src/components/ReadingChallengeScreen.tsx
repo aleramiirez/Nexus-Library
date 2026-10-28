@@ -324,7 +324,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
       {/* ─── Cuadrícula de 4 Métricas Clave ─── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-1">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
           <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
             <span className="text-xs uppercase font-medium">Libros Leídos</span>
             <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -337,7 +337,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </span>
         </div>
 
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-1">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
           <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
             <span className="text-xs uppercase font-medium">Páginas Devoradas</span>
             <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -350,7 +350,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </span>
         </div>
 
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-1">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
           <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
             <span className="text-xs uppercase font-medium">Tiempo Invertido</span>
             <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -363,7 +363,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </span>
         </div>
 
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-1">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
           <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
             <span className="text-xs uppercase font-medium">Valoración Media</span>
             <Star className="w-4 h-4 text-amber-500" />
@@ -378,7 +378,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       </section>
 
       {/* ─── Cadencia Mensual de Lectura (Gráfico 12 meses) ─── */}
-      <section className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-5">
+      <section className="rounded-2xl editorial-card-surface p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-900/15 dark:border-[#222B3C] pb-3">
           <div>
             <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
@@ -511,7 +511,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       {/* ─── Hitos & Obras Destacadas ─── */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Libro más extenso y más breve */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-4">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-4">
           <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-2.5">
             <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -600,7 +600,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         </div>
 
         {/* Favoritos y Mejor Valorados */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-4">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-4">
           <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-2.5">
             <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-500" />
@@ -655,7 +655,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       {/* ─── Desgloses: Géneros, Autores y Puntuaciones ─── */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Desglose por Género */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-3">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
           <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
             Géneros Más Leídos
           </h2>
@@ -684,7 +684,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         </div>
 
         {/* Autores más leídos */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-3">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
           <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
             Autores de Cabecera
           </h2>
@@ -705,7 +705,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         </div>
 
         {/* Desglose de estrellas */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm space-y-3">
+        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
           <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
             Distribución de Puntuaciones
           </h2>

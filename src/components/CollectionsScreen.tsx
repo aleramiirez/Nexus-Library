@@ -474,7 +474,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                 </div>
               ) : (
                 /* ─── Modo Lista (Tabla idéntica a Mi Biblioteca) ─── */
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] overflow-hidden shadow-sm">
+                <div className="rounded-2xl editorial-card-surface overflow-hidden">
                   <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
                     {activeCollectionBooks.map((book) => (
                       <li
@@ -657,7 +657,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                       <div
                         key={col.id}
                         onClick={() => setSelectedCollectionId(col.id)}
-                        className="group relative rounded-3xl border border-amber-900/20 dark:border-[#222B3D] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 shadow-sm hover:shadow-xl hover:border-amber-600/50 transition cursor-pointer flex flex-col justify-between space-y-4"
+                        className="group relative rounded-3xl editorial-card-surface editorial-card-interactive p-5 cursor-pointer flex flex-col justify-between space-y-4"
                       >
                         <div>
                           {/* Cabecera de la tarjeta */}

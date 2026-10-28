@@ -1163,7 +1163,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNavigate('library')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
+                  className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
                 >
                   <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
                   <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.total}</p>
@@ -1181,7 +1181,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-unread')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-500/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] transition-all duration-300"
+                  className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
                 >
                   <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
                   <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.unread}</p>
@@ -1189,7 +1189,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNavigate('shelf-paused')}
-                  className="rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#151B27] p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-rose-500/60 dark:hover:border-rose-400/60 hover:shadow-[0_10px_24px_-6px_rgba(244,63,94,0.16)] transition-all duration-300"
+                  className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
                 >
                   <span className="text-[11px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
                   <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.paused}</p>
@@ -1207,7 +1207,7 @@ export const App: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+                <div className="lg:col-span-8 rounded-2xl editorial-card-surface p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="font-serif text-xl font-bold flex items-center gap-2">
                       <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Leyendo Actualmente
@@ -1235,7 +1235,7 @@ export const App: React.FC = () => {
                             key={book.id}
                             data-book-id={book.id}
                             onClick={() => setDetailBookId(book.id)}
-                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300"
+                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f5ecdc]/90 dark:bg-[#0e131d]/90 hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300 shadow-sm"
                           >
                             <div className="w-16 shrink-0">
                               <BookCover
@@ -1265,7 +1265,7 @@ export const App: React.FC = () => {
                   )}
                 </div>
 
-                <div className="lg:col-span-4 rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 flex flex-col justify-between shadow-sm">
+                <div className="lg:col-span-4 rounded-2xl editorial-card-surface p-5 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-serif text-xl font-bold flex items-center gap-2">
@@ -1291,7 +1291,7 @@ export const App: React.FC = () => {
                           <div
                             key={item.saga.id}
                             onClick={() => handleNavigate('sagas')}
-                            className="group p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f4ebd6]/80 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(180,115,30,0.16)] transition-all duration-300"
+                            className="group p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f5ecdc]/90 dark:bg-[#0e131d]/90 hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(180,115,30,0.16)] transition-all duration-300 shadow-sm"
                           >
                             <div className="flex items-center justify-between text-xs font-semibold">
                               <span className="truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition">
@@ -1310,7 +1310,7 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 shadow-sm">
+              <div className="rounded-2xl editorial-card-surface p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-serif text-xl font-bold flex items-center gap-2">
                     <span className="text-amber-600 dark:text-amber-400">★</span> Favoritos
@@ -1510,7 +1510,7 @@ export const App: React.FC = () => {
               </div>
 
               {showFilters && (
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-4 space-y-3 shadow-sm">
+                <div className="rounded-2xl editorial-card-surface p-4 space-y-3">
                   {/* Fila 1: Filtros de Clasificación Temática */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
@@ -1721,7 +1721,7 @@ export const App: React.FC = () => {
                   ))}
                 </div>
               ) : viewMode === 'list' ? (
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] overflow-hidden shadow-sm">
+                <div className="rounded-2xl editorial-card-surface overflow-hidden">
                   <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
                     {filteredBooks.map((book) => (
                       <li
@@ -1998,7 +1998,7 @@ export const App: React.FC = () => {
                   {sagasWithBooks.map((item) => (
                     <section
                       key={item.saga.id}
-                      className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 space-y-4 shadow-md"
+                      className="rounded-2xl editorial-card-surface p-5 space-y-4"
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-3.5">
                         <div className="min-w-0 flex-1">

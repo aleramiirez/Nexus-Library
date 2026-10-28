@@ -515,7 +515,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 1: APARIENCIA ════════════════════ */}
       {activeTab === 'appearance' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
             <div>
               <h2 className="font-serif text-xl font-bold flex items-center gap-2">
                 <Palette className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Tema Visual de la
@@ -658,7 +658,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 2: CUENTA Y NUBE ════════════════════ */}
       {activeTab === 'account' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
               <div>
                 <h2 className="font-serif text-xl font-bold flex items-center gap-2">
@@ -1042,7 +1042,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 3: PORTADAS Y METADATOS ════════════════════ */}
       {activeTab === 'metadata' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-5">
+          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
             <div>
               <h2 className="font-serif text-xl font-bold flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Portadas y Datos de Libros
@@ -1219,7 +1219,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 4: COPIAS DE SEGURIDAD ════════════════════ */}
       {activeTab === 'backup' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-6">
+          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-6">
             <div>
               <h2 className="font-serif text-xl font-bold flex items-center gap-2">
                 <HardDrive className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Copias de Seguridad y
@@ -1344,7 +1344,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 5: INSTALACIÓN Y APP (PWA) ════════════════════ */}
       {activeTab === 'app' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-6">
+          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
               <div>
                 <h2 className="font-serif text-xl font-bold flex items-center gap-2">
