@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Friendship, FriendshipStatus, UserProfile } from '../types/models';
 import { mapRowToProfile, RawProfileRow } from './profileService';
-import { broadcastInboxNotification } from './pushNotificationService';
+import { broadcastInboxNotification, broadcastFriendshipSync } from './pushNotificationService';
 
 interface RawFriendshipRow {
   id: string;
@@ -324,6 +324,32 @@ export const friendshipService = {
   },
 
   /**
+   * Helper interno para emitir notificación push/inbox cuando una solicitud es aceptada
+   */
+  async notifyFriendAccepted(accepterId: string, requesterId: string): Promise<void> {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, display_name, avatar_url')
+        .eq('id', accepterId)
+        .maybeSingle();
+
+      const accepterName = profile?.display_name || profile?.username || 'Un lector';
+      await broadcastInboxNotification({
+        recipientId: requesterId,
+        senderId: accepterId,
+        type: 'friend_request',
+        title: '¡Solicitud de amistad aceptada!',
+        body: `¡${accepterName} y tú ya sois amigos de lectura en Nexus Library!`,
+        tab: 'friend_requests',
+        avatarUrl: profile?.avatar_url || ''
+      });
+    } catch {
+      // Silencioso
+    }
+  },
+
+  /**
    * Responder a una solicitud recibida (aceptar o rechazar)
    */
   async respondFriendRequest(
@@ -332,13 +358,22 @@ export const friendshipService = {
   ): Promise<{ success: boolean; message: string }> {
     try {
       const newStatus: FriendshipStatus = action === 'accept' ? 'accepted' : 'declined';
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('friendships')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', friendshipId);
+        .eq('id', friendshipId)
+        .select('requester_id, addressee_id')
+        .maybeSingle();
 
       if (error) {
         return { success: false, message: 'No se pudo responder a la solicitud.' };
+      }
+
+      if (updated) {
+        broadcastFriendshipSync(updated.requester_id, updated.addressee_id).catch(() => null);
+        if (action === 'accept') {
+          this.notifyFriendAccepted(updated.addressee_id, updated.requester_id).catch(() => null);
+        }
       }
 
       return {
@@ -355,10 +390,21 @@ export const friendshipService = {
    */
   async removeFriend(friendshipId: string): Promise<{ success: boolean; message: string }> {
     try {
-      const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+      const { data: deleted, error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', friendshipId)
+        .select('requester_id, addressee_id')
+        .maybeSingle();
+
       if (error) {
         return { success: false, message: 'No se pudo eliminar al amigo.' };
       }
+
+      if (deleted) {
+        broadcastFriendshipSync(deleted.requester_id, deleted.addressee_id).catch(() => null);
+      }
+
       return { success: true, message: 'Amigo eliminado de tu lista.' };
     } catch {
       return { success: false, message: 'Error de conexión al eliminar amigo.' };
@@ -370,10 +416,21 @@ export const friendshipService = {
    */
   async cancelFriendRequest(friendshipId: string): Promise<{ success: boolean; message: string }> {
     try {
-      const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+      const { data: deleted, error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', friendshipId)
+        .select('requester_id, addressee_id')
+        .maybeSingle();
+
       if (error) {
         return { success: false, message: 'No se pudo cancelar la solicitud de amistad.' };
       }
+
+      if (deleted) {
+        broadcastFriendshipSync(deleted.requester_id, deleted.addressee_id).catch(() => null);
+      }
+
       return { success: true, message: 'Solicitud de amistad cancelada con éxito.' };
     } catch {
       return { success: false, message: 'Error de conexión al cancelar la solicitud.' };

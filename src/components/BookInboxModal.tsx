@@ -110,6 +110,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
           sent: prev.sent.filter((f) => f.id !== friendshipId)
         }));
         onInboxUpdated?.();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
       onShowToast?.('Ocurrió un error al cancelar la solicitud.');
@@ -159,6 +160,14 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadData();
+
+      const handleFriendshipUpdated = () => {
+        loadData();
+      };
+      window.addEventListener('nexus:friendship-updated', handleFriendshipUpdated);
+      return () => {
+        window.removeEventListener('nexus:friendship-updated', handleFriendshipUpdated);
+      };
     }
   }, [isOpen, currentUserId]);
 
@@ -204,6 +213,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
           received: prev.received.filter((f) => f.id !== friendshipId)
         }));
         onInboxUpdated?.();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
       onShowToast?.('Ocurrió un error al responder a la solicitud.');

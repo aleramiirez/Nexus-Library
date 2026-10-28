@@ -30,6 +30,7 @@ import {
 import { Book, UserProfile, Friendship, FriendshipStatus, ProfileVisibility } from '../types/models';
 import { communityService } from '../services/communityService';
 import { friendshipService } from '../services/friendshipService';
+import { supabase } from '../services/supabaseClient';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { BookDetailModal } from './BookDetailModal';
@@ -68,8 +69,19 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [isLoadingReaders, setIsLoadingReaders] = useState(true);
   const [, startTransition] = useTransition();
 
-  // Subpestañas: Mis Amigos vs Explorar Lectores
-  const [communitySubTab, setCommunitySubTab] = useState<'friends' | 'explore'>('friends');
+  // Subpestañas: Mis Amigos vs Explorar Lectores con persistencia en localStorage y URL
+  const [communitySubTab, setCommunitySubTab] = useState<'friends' | 'explore'>(() => {
+    if (typeof window === 'undefined') return 'friends';
+    try {
+      const urlSubTab = new URLSearchParams(window.location.search).get('subtab');
+      if (urlSubTab === 'friends' || urlSubTab === 'explore') return urlSubTab;
+      const stored = localStorage.getItem('nexus_community_subtab');
+      if (stored === 'friends' || stored === 'explore') return stored;
+    } catch {
+      // ignorar
+    }
+    return 'friends';
+  });
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [friendshipMap, setFriendshipMap] = useState<
@@ -80,6 +92,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   // Lector seleccionado para ver su estantería
   const [selectedReader, setSelectedReader] = useState<UserProfile | null>(null);
+  const selectedReaderRef = useRef<UserProfile | null>(null);
+  useEffect(() => {
+    selectedReaderRef.current = selectedReader;
+  }, [selectedReader]);
+
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
@@ -118,7 +135,70 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   useEffect(() => {
     loadFriendsData();
+
+    const onFriendshipUpdated = () => {
+      loadFriendsData();
+      const curReader = selectedReaderRef.current;
+      if (curReader && currentUserId) {
+        communityService
+          .fetchUserPublicLibrary(curReader.id, currentUserId)
+          .then((data) => {
+            if (data) {
+              setSelectedReader(data.profile);
+              setReaderBooks(data.books);
+            }
+          })
+          .catch(() => null);
+      }
+    };
+    window.addEventListener('nexus:friendship-updated', onFriendshipUpdated);
+
+    let channel: any = null;
+    if (currentUserId) {
+      channel = supabase
+        .channel(`community-sync-${currentUserId}`)
+        .on('broadcast', { event: 'inbox_notification' }, (event) => {
+          if (event.payload?.recipientId === currentUserId || event.payload?.senderId === currentUserId) {
+            onFriendshipUpdated();
+          }
+        })
+        .on('broadcast', { event: 'friendship_sync' }, (event) => {
+          const payload = event.payload;
+          if (
+            payload?.userId1 === currentUserId ||
+            payload?.userId2 === currentUserId ||
+            payload?.requesterId === currentUserId ||
+            payload?.addresseeId === currentUserId
+          ) {
+            onFriendshipUpdated();
+          }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, () => {
+          onFriendshipUpdated();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      window.removeEventListener('nexus:friendship-updated', onFriendshipUpdated);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [currentUserId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus_community_subtab', communitySubTab);
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('subtab') !== communitySubTab) {
+        url.searchParams.set('subtab', communitySubTab);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      // ignorar
+    }
+  }, [communitySubTab]);
 
   const handleShelfFilterChange = (filter: 'all' | 'reading' | 'read' | 'unread') => {
     startTransition(() => {
@@ -146,6 +226,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   const handleSubTabChange = (tab: 'friends' | 'explore') => {
     setCommunitySubTab(tab);
+    try {
+      localStorage.setItem('nexus_community_subtab', tab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('subtab', tab);
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // ignorar
+    }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
@@ -172,6 +260,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           message: `Has dejado de ser amigo de ${friendToRemove.name}.`
         });
         setFriendToRemove(null);
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       } else {
         setToast({
           type: 'error',
@@ -208,7 +297,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           title: 'Solicitud enviada',
           message: `Solicitud de amistad enviada a ${targetName}.`
         });
-        loadFriendsData();
+        await loadFriendsData();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       } else {
         setToast({
           type: 'info',
@@ -227,6 +317,54 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     }
   };
 
+  const handleCancelFriendRequest = async (friendshipId: string, targetName: string) => {
+    setActionLoadingId(friendshipId);
+    try {
+      const res = await friendshipService.cancelFriendRequest(friendshipId);
+      setToast({
+        type: res.success ? 'info' : 'error',
+        title: res.success ? 'Solicitud cancelada' : 'Error',
+        message: res.message
+      });
+      if (res.success) {
+        await loadFriendsData();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
+      }
+    } catch {
+      setToast({
+        type: 'error',
+        title: 'Error de red',
+        message: 'No se pudo cancelar la solicitud.'
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeclineFriendRequest = async (friendshipId: string, targetName: string) => {
+    setActionLoadingId(friendshipId);
+    try {
+      const res = await friendshipService.respondFriendRequest(friendshipId, 'decline');
+      setToast({
+        type: res.success ? 'info' : 'error',
+        title: res.success ? 'Solicitud rechazada' : 'Error',
+        message: res.success ? `Has rechazado la solicitud de ${targetName}.` : res.message
+      });
+      if (res.success) {
+        await loadFriendsData();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
+      }
+    } catch {
+      setToast({
+        type: 'error',
+        title: 'Error de red',
+        message: 'No se pudo rechazar la solicitud.'
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleAcceptFriendRequest = async (friendshipId: string, targetName: string) => {
     setActionLoadingId(friendshipId);
     try {
@@ -237,7 +375,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         message: res.success ? `¡Ahora eres amigo de ${targetName}!` : res.message
       });
       if (res.success) {
-        loadFriendsData();
+        await loadFriendsData();
+        window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
       setToast({
@@ -585,31 +724,67 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               ) : currentUserId && currentUserId !== selectedReader.id ? (
                 friendshipMap[selectedReader.id]?.status === 'pending' ? (
                   friendshipMap[selectedReader.id].isRequester ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold px-3 py-1">
-                      <Clock className="w-3.5 h-3.5" /> Solicitud enviada
-                    </span>
+                    <div className="inline-flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold px-3 py-1">
+                        <Clock className="w-3.5 h-3.5" /> Solicitud enviada
+                      </span>
+                      <button
+                        type="button"
+                        disabled={Boolean(actionLoadingId)}
+                        onClick={() =>
+                          handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
+                        title="Cancelar solicitud de amistad"
+                      >
+                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <X className="w-3.5 h-3.5" />
+                        )}
+                        <span>Cancelar solicitud</span>
+                      </button>
+                    </div>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={Boolean(actionLoadingId)}
-                      onClick={() =>
-                        handleAcceptFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName)
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3 py-1 shadow-sm transition disabled:opacity-50"
-                    >
-                      {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <UserCheck className="w-3.5 h-3.5" />
-                      )}
-                      <span>Aceptar amistad</span>
-                    </button>
+                    <div className="inline-flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        disabled={Boolean(actionLoadingId)}
+                        onClick={() =>
+                          handleAcceptFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3 py-1 shadow-sm transition disabled:opacity-50"
+                      >
+                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <UserCheck className="w-3.5 h-3.5" />
+                        )}
+                        <span>Aceptar amistad</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Boolean(actionLoadingId)}
+                        onClick={() =>
+                          handleDeclineFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
+                        title="Rechazar solicitud de amistad"
+                      >
+                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <X className="w-3.5 h-3.5" />
+                        )}
+                        <span>Rechazar</span>
+                      </button>
+                    </div>
                   )
                 ) : (
                   <button
                     type="button"
                     disabled={Boolean(actionLoadingId)}
-                    onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName)}
+                    onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName || selectedReader.username)}
                     className="inline-flex items-center gap-1.5 rounded-full border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
                   >
                     {actionLoadingId === selectedReader.id ? (
@@ -742,9 +917,61 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         <span>Enviar solicitud de amistad</span>
                       </button>
                     ) : friendshipMap[selectedReader.id].status === 'pending' ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-3 py-1.5 rounded-xl font-medium">
-                        <Clock className="w-3.5 h-3.5" /> Solicitud pendiente de respuesta
-                      </span>
+                      friendshipMap[selectedReader.id].isRequester ? (
+                        <div className="inline-flex items-center gap-2 flex-wrap justify-center">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-3 py-1.5 rounded-xl font-medium">
+                            <Clock className="w-3.5 h-3.5" /> Solicitud enviada
+                          </span>
+                          <button
+                            type="button"
+                            disabled={Boolean(actionLoadingId)}
+                            onClick={() =>
+                              handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50"
+                          >
+                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <X className="w-3.5 h-3.5" />
+                            )}
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 flex-wrap justify-center">
+                          <button
+                            type="button"
+                            disabled={Boolean(actionLoadingId)}
+                            onClick={() =>
+                              handleAcceptFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                            }
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-sm"
+                          >
+                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserCheck className="w-4 h-4" />
+                            )}
+                            <span>Aceptar amistad</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={Boolean(actionLoadingId)}
+                            onClick={() =>
+                              handleDeclineFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
+                            }
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold text-xs transition"
+                          >
+                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <X className="w-4 h-4" />
+                            )}
+                            <span>Rechazar</span>
+                          </button>
+                        </div>
+                      )
                     ) : null}
                   </div>
                 )}
@@ -1201,22 +1428,52 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           <UserIcon className="w-3.5 h-3.5" /> Amigo
                         </span>
                       ) : isPendingSent ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
-                          <Clock className="w-3 h-3" /> Solicitud enviada
-                        </span>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                            <Clock className="w-3 h-3" /> Solicitud enviada
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-0.5 rounded-lg transition disabled:opacity-50"
+                            title="Cancelar solicitud enviada"
+                          >
+                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
                       ) : isPendingReceived ? (
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAcceptFriendRequest(fInfo.friendshipId, reader.displayName);
-                          }}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-1 rounded-lg shadow-sm transition disabled:opacity-50"
-                        >
-                          {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
-                          <span>Aceptar amistad</span>
-                        </button>
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-1 rounded-lg shadow-sm transition disabled:opacity-50"
+                          >
+                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
+                            <span>Aceptar</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeclineFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-lg transition disabled:opacity-50"
+                            title="Rechazar solicitud"
+                          >
+                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                            <span>Rechazar</span>
+                          </button>
+                        </div>
                       ) : (
                         <button
                           type="button"

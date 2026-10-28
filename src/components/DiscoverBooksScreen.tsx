@@ -62,8 +62,19 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   onAddBookFromCommunity,
   onOpenBookDetail
 }) => {
-  const [discoverTab, setDiscoverTab] = useState<'books' | 'community'>('books');
-  const [hasVisitedCommunity, setHasVisitedCommunity] = useState(false);
+  const [discoverTab, setDiscoverTab] = useState<'books' | 'community'>(() => {
+    if (typeof window === 'undefined') return 'books';
+    try {
+      const urlTab = new URLSearchParams(window.location.search).get('tab');
+      if (urlTab === 'books' || urlTab === 'community') return urlTab;
+      const stored = localStorage.getItem('nexus_discover_tab');
+      if (stored === 'books' || stored === 'community') return stored;
+    } catch {
+      // ignorar
+    }
+    return 'books';
+  });
+  const [hasVisitedCommunity, setHasVisitedCommunity] = useState(() => discoverTab === 'community');
   const [, startTransition] = useTransition();
 
   const handleTabChange = (tab: 'books' | 'community') => {
@@ -73,12 +84,33 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     startTransition(() => {
       setDiscoverTab(tab);
     });
+    try {
+      localStorage.setItem('nexus_discover_tab', tab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // ignorar
+    }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
     }
   };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus_discover_tab', discoverTab);
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('tab') !== discoverTab) {
+        url.searchParams.set('tab', discoverTab);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      // ignorar
+    }
+  }, [discoverTab]);
 
   const handleCategoryChange = (catId: string) => {
     startTransition(() => {

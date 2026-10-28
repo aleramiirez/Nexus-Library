@@ -45,3 +45,6 @@ Thumbs.db
 *.sql
 src/db/migrations/
 supabase/migrations/
+
+# Supabase CLI temp
+supabase/.temp/

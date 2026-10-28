@@ -140,17 +140,56 @@ const initialFilters: LibraryFilters = {
   sortOrder: 'desc'
 };
 
+const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
+  'dashboard',
+  'library',
+  'discover',
+  'shelf-unread',
+  'shelf-reading',
+  'shelf-paused',
+  'shelf-read',
+  'collections',
+  'sagas',
+  'stats',
+  'settings'
+]);
+
+const getInitialActiveSection = (): NavigationSection => {
+  if (typeof window === 'undefined') return 'dashboard';
+  try {
+    const urlParam = new URLSearchParams(window.location.search).get('section') as NavigationSection;
+    if (urlParam && VALID_NAVIGATION_SECTIONS.has(urlParam)) {
+      return urlParam;
+    }
+    const stored = localStorage.getItem('nexus_active_section') as NavigationSection;
+    if (stored && VALID_NAVIGATION_SECTIONS.has(stored)) {
+      return stored;
+    }
+  } catch {
+    // ignorar
+  }
+  return 'dashboard';
+};
+
 export const App: React.FC = () => {
   const books = useLiveQuery(() => db.books.toArray(), [], [] as Book[]);
   const sagas = useLiveQuery(() => db.sagas.toArray(), [], [] as Saga[]);
 
-  const [activeSection, setActiveSection] = useState<NavigationSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<NavigationSection>(getInitialActiveSection);
   const [, startTransition] = React.useTransition();
 
   const handleNavigate = (section: NavigationSection) => {
     startTransition(() => {
       setActiveSection(section);
     });
+    try {
+      localStorage.setItem('nexus_active_section', section);
+      const url = new URL(window.location.href);
+      url.searchParams.set('section', section);
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // ignorar
+    }
     setMobileMenuOpen(false);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -158,6 +197,36 @@ export const App: React.FC = () => {
       document.body.scrollTop = 0;
     }
   };
+
+  // Sincroniza activeSection con localStorage y URL para persistir tras F5
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus_active_section', activeSection);
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('section') !== activeSection) {
+        url.searchParams.set('section', activeSection);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      // ignorar
+    }
+  }, [activeSection]);
+
+  // Manejar navegación con botones de adelante/atrás del navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const urlParam = new URLSearchParams(window.location.search).get('section') as NavigationSection;
+        if (urlParam && VALID_NAVIGATION_SECTIONS.has(urlParam)) {
+          setActiveSection(urlParam);
+        }
+      } catch {
+        // ignorar
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Restablece el scroll a la parte superior al cambiar de pantalla
   useEffect(() => {
@@ -408,6 +477,7 @@ export const App: React.FC = () => {
 
           if (payload?.recipientId === currentUser.id) {
             refreshInboxCount();
+            window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
 
             const title = payload.title || 'Nueva novedad en tu buzón';
             const body = payload.body || '';
@@ -430,7 +500,30 @@ export const App: React.FC = () => {
           }
         }
       )
-      // 2. Escucha cambios en base de datos (Postgres Changes)
+      // 2. Escucha sincronización de amistades instantánea por WebSocket (aceptar, rechazar, cancelar, eliminar)
+      .on(
+        'broadcast',
+        { event: 'friendship_sync' },
+        (event) => {
+          const payload = event.payload as {
+            userId1?: string;
+            userId2?: string;
+            requesterId?: string;
+            addresseeId?: string;
+          } | undefined;
+
+          if (
+            payload?.userId1 === currentUser.id ||
+            payload?.userId2 === currentUser.id ||
+            payload?.requesterId === currentUser.id ||
+            payload?.addresseeId === currentUser.id
+          ) {
+            refreshInboxCount();
+            window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
+          }
+        }
+      )
+      // 3. Escucha cambios en base de datos (Postgres Changes)
       .on(
         'postgres_changes',
         {
@@ -439,6 +532,9 @@ export const App: React.FC = () => {
           table: 'friendships'
         },
         async (payload) => {
+          refreshInboxCount();
+          window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
+
           const newRecord = payload.new as { id?: string; requester_id?: string; addressee_id?: string; status?: string } | null;
           if (newRecord?.addressee_id === currentUser.id && newRecord?.status === 'pending') {
             refreshInboxCount();

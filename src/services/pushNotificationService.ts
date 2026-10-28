@@ -390,3 +390,28 @@ export async function broadcastInboxNotification(payload: {
     // Silencioso si la Edge Function no está desplegada aún
   }
 }
+
+/**
+ * Emite un evento broadcast por WebSocket a ambos usuarios involucrados en un cambio
+ * de amistad (aceptar, rechazar, cancelar, eliminar) para que las pantallas de ambos
+ * se sincronicen de forma instantánea sin necesidad de recargar la página.
+ */
+export async function broadcastFriendshipSync(userId1?: string, userId2?: string): Promise<void> {
+  if (!userId1 && !userId2) return;
+  try {
+    const channel = supabase.channel('nexus-inbox-broadcast');
+    channel.send({
+      type: 'broadcast',
+      event: 'friendship_sync',
+      payload: {
+        userId1,
+        userId2,
+        requesterId: userId1,
+        addresseeId: userId2,
+        timestamp: Date.now()
+      }
+    });
+  } catch (err) {
+    console.warn('[PushService] Fallo al emitir broadcast friendship_sync:', err);
+  }
+}
