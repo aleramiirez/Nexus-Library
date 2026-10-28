@@ -329,5 +329,20 @@ export const friendshipService = {
     } catch {
       return { success: false, message: 'Error de conexión al eliminar amigo.' };
     }
+  },
+
+  /**
+   * Cancelar una solicitud de amistad enviada pendiente
+   */
+  async cancelFriendRequest(friendshipId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+      if (error) {
+        return { success: false, message: 'No se pudo cancelar la solicitud de amistad.' };
+      }
+      return { success: true, message: 'Solicitud de amistad cancelada con éxito.' };
+    } catch {
+      return { success: false, message: 'Error de conexión al cancelar la solicitud.' };
+    }
   }
 };

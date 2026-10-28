@@ -50,6 +50,26 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [addingRecId, setAddingRecId] = useState<string | null>(null);
   const [respondingFriendshipId, setRespondingFriendshipId] = useState<string | null>(null);
+  const [cancellingFriendshipId, setCancellingFriendshipId] = useState<string | null>(null);
+
+  const handleCancelSentRequest = async (friendshipId: string) => {
+    setCancellingFriendshipId(friendshipId);
+    try {
+      const res = await friendshipService.cancelFriendRequest(friendshipId);
+      onShowToast?.(res.message);
+      if (res.success) {
+        setPendingRequests((prev) => ({
+          ...prev,
+          sent: prev.sent.filter((f) => f.id !== friendshipId)
+        }));
+        onInboxUpdated?.();
+      }
+    } catch {
+      onShowToast?.('Ocurrió un error al cancelar la solicitud.');
+    } finally {
+      setCancellingFriendshipId(null);
+    }
+  };
 
   const pendingRecs = useMemo(
     () => recommendations.filter((r) => r.status !== 'accepted' && r.status !== 'dismissed'),
@@ -634,6 +654,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                       <div className="space-y-2">
                         {pendingRequests.sent.map((req) => {
                           const p = req.friendProfile;
+                          const isCancelling = cancellingFriendshipId === req.id;
                           return (
                             <div
                               key={req.id}
@@ -650,9 +671,25 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                                   <span className="text-[10px] text-stone-500">(@{p?.username})</span>
                                 </div>
                               </div>
-                              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium shrink-0">
-                                Pendiente de respuesta
-                              </span>
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium hidden sm:inline">
+                                  Pendiente de respuesta
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={isCancelling}
+                                  onClick={() => handleCancelSentRequest(req.id)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-[11px] font-semibold transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                                  title="Cancelar solicitud de amistad"
+                                >
+                                  {isCancelling ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <X className="w-3 h-3" />
+                                  )}
+                                  <span>{isCancelling ? 'Cancelando...' : 'Cancelar'}</span>
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
