@@ -93,6 +93,7 @@ import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
 
 import { BookDetailModal } from './components/BookDetailModal';
+import { PwaInstallModal } from './components/PwaInstallModal';
 const AddEditBookModal = React.lazy(() =>
   import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
 );
@@ -186,6 +187,7 @@ export const App: React.FC = () => {
   const [isEpubImportOpen, setIsEpubImportOpen] = useState(false);
   const [initialEpubFiles, setInitialEpubFiles] = useState<File[] | undefined>(undefined);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const hash = window.location.hash || '';
@@ -263,6 +265,7 @@ export const App: React.FC = () => {
     isImportOpen ||
     isEpubImportOpen ||
     isAuthModalOpen ||
+    isInstallModalOpen ||
     bookToDelete ||
     sagaToDelete ||
     sagaFormOpen ||
@@ -304,6 +307,8 @@ export const App: React.FC = () => {
           setIsImportOpen(false);
         } else if (isAuthModalOpen) {
           setIsAuthModalOpen(false);
+        } else if (isInstallModalOpen) {
+          setIsInstallModalOpen(false);
         } else if (sagaFormOpen) {
           setSagaFormOpen(false);
           setEditingSaga(null);
@@ -324,6 +329,7 @@ export const App: React.FC = () => {
     isImportOpen,
     isEpubImportOpen,
     isAuthModalOpen,
+    isInstallModalOpen,
     sagaFormOpen,
     mobileMenuOpen,
     refreshInboxCount
@@ -955,6 +961,7 @@ export const App: React.FC = () => {
         onCloseMobile={() => setMobileMenuOpen(false)}
         inboxUnreadCount={inboxUnreadCount}
         onOpenInbox={() => setIsInboxOpen(true)}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
       />
 
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-amber-900/20 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -2526,6 +2533,11 @@ export const App: React.FC = () => {
           </div>,
           document.body
         )}
+
+      <PwaInstallModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+      />
 
       {toast && (
         <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200">

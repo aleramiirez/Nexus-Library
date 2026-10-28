@@ -30,7 +30,13 @@ import {
   FileUp,
   AlertCircle,
   Image as ImageIcon,
-  FileText
+  FileText,
+  Smartphone,
+  Laptop,
+  Share,
+  PlusSquare,
+  WifiOff,
+  Flame
 } from 'lucide-react';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
 import { User } from '@supabase/supabase-js';
@@ -50,8 +56,9 @@ import {
 } from '../services/importExportService';
 import { bookMetadataService } from '../services/bookMetadataService';
 import { profileService } from '../services/profileService';
+import { pwaInstallService, PwaInstallState } from '../services/pwaInstallService';
 
-export type SettingsTab = 'appearance' | 'account' | 'metadata' | 'backup';
+export type SettingsTab = 'appearance' | 'account' | 'metadata' | 'backup' | 'app';
 
 interface SettingsScreenProps {
   darkMode: boolean;
@@ -112,6 +119,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Estados de almacenamiento persistente
   const [isPersisted, setIsPersisted] = useState<boolean | null>(null);
+
+  // Estados de PWA / Instalación
+  const [pwaState, setPwaState] = useState<PwaInstallState>(() => pwaInstallService.getState());
+  const [isInstallingPwa, setIsInstallingPwa] = useState(false);
+
+  useEffect(() => {
+    const unsub = pwaInstallService.subscribe(setPwaState);
+    return unsub;
+  }, []);
+
+  const handleInstallPwa = async () => {
+    setIsInstallingPwa(true);
+    const result = await pwaInstallService.promptInstall();
+    setIsInstallingPwa(false);
+    if (result === 'accepted') {
+      setFeedback({
+        type: 'success',
+        text: '¡Instalación completada! Nexus Library se ha añadido a tu dispositivo.'
+      });
+    }
+  };
 
   // Estados de perfil de lector (Alias y Usuario)
   const [profileDisplayName, setProfileDisplayName] = useState(
@@ -420,6 +448,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             }
           >
             <HardDrive className="w-4 h-4 shrink-0" /> <span className="truncate">Copias</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabChange('app')}
+            className={
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              (activeTab === 'app'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+            }
+          >
+            <Smartphone className="w-4 h-4 shrink-0" /> <span className="truncate">Instalar App</span>
+            {pwaState.isInstalled && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+            )}
           </button>
         </div>
       </div>
@@ -1279,6 +1323,174 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <strong>{books.length} libros</strong> y <strong>{sagas.length} sagas</strong> guardados
                   para leer en cualquier momento, incluso sin conexión a internet.
                 </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════ TAB 5: INSTALACIÓN Y APP (PWA) ════════════════════ */}
+      {activeTab === 'app' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-5 sm:p-6 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
+              <div>
+                <h2 className="font-serif text-xl font-bold flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Instalación y Aplicación
+                </h2>
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+                  Usa Nexus Library en tu teléfono, tableta u ordenador como una app nativa independiente.
+                </p>
+              </div>
+
+              {pwaState.isInstalled ? (
+                <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Modo App Activo
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
+                  <Globe className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                  Navegador Web
+                </div>
+              )}
+            </div>
+
+            {/* Ventajas PWA */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <h3 className="font-serif font-bold text-sm text-stone-900 dark:text-white">
+                  Pantalla Completa
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
+                  Sin barras del navegador ni distracciones. Tu biblioteca luce exactamente como una app nativa.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                  <WifiOff className="w-4 h-4" />
+                </div>
+                <h3 className="font-serif font-bold text-sm text-stone-900 dark:text-white">
+                  Lectura Sin Conexión
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
+                  Tus libros, notas y estanterías están guardados en tu dispositivo para consultarlos sin internet.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                  <Flame className="w-4 h-4" />
+                </div>
+                <h3 className="font-serif font-bold text-sm text-stone-900 dark:text-white">
+                  Acceso en 1 Toque
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
+                  Directamente desde tu pantalla de inicio o dock, con arranque instantáneo y memoria eficiente.
+                </p>
+              </div>
+            </div>
+
+            {/* Acción principal de instalación */}
+            {pwaState.isInstalled ? (
+              <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 text-center space-y-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                <h3 className="font-serif text-base font-bold text-emerald-950 dark:text-emerald-200">
+                  Nexus Library ya está instalada en tu dispositivo
+                </h3>
+                <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 max-w-md mx-auto">
+                  Puedes abrirla en cualquier momento desde el icono de tu pantalla de inicio, escritorio o lista de aplicaciones.
+                </p>
+              </div>
+            ) : pwaState.canPrompt ? (
+              <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-amber-500/10 p-5 sm:p-6 text-center space-y-3">
+                <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
+                  ¿Listo para instalar Nexus Library?
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-slate-400 max-w-md mx-auto">
+                  Tu navegador permite instalar la aplicación con un solo clic, sin descargas pesadas ni tiendas de terceros.
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleInstallPwa}
+                    disabled={isInstallingPwa}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-bold px-6 py-3.5 text-sm shadow-lg shadow-amber-900/15 dark:shadow-amber-500/15 transition active:scale-95 disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isInstallingPwa ? 'Instalando...' : 'Instalar Nexus Library Ahora'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Guía paso a paso por plataforma */}
+            <div className="space-y-4 pt-2">
+              <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                <Info className="w-4 h-4 text-amber-700 dark:text-amber-400" /> Cómo instalarla según tu dispositivo
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* iOS Safari */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-4 space-y-3">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-stone-900 dark:text-white">
+                    <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>iPhone / iPad (Safari)</span>
+                  </div>
+                  <ol className="space-y-2 text-xs text-stone-600 dark:text-slate-400 list-decimal list-inside leading-relaxed">
+                    <li>
+                      Abre este enlace en <span className="font-semibold text-stone-800 dark:text-slate-200">Safari</span>.
+                    </li>
+                    <li>
+                      Pulsa el botón <span className="font-semibold inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"><Share className="w-3.5 h-3.5 inline" /> Compartir</span> en la barra inferior.
+                    </li>
+                    <li>
+                      Selecciona <span className="font-semibold text-stone-800 dark:text-slate-200 inline-flex items-center gap-1"><PlusSquare className="w-3.5 h-3.5 inline text-amber-700 dark:text-amber-400" /> «Añadir a pantalla de inicio»</span>.
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Android Chrome */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-4 space-y-3">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-stone-900 dark:text-white">
+                    <Smartphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Android (Chrome / Edge)</span>
+                  </div>
+                  <ol className="space-y-2 text-xs text-stone-600 dark:text-slate-400 list-decimal list-inside leading-relaxed">
+                    <li>
+                      Pulsa el menú de opciones <span className="font-bold text-stone-800 dark:text-slate-200">⋮</span> (arriba a la derecha).
+                    </li>
+                    <li>
+                      Elige <span className="font-semibold text-stone-800 dark:text-slate-200">«Instalar aplicación»</span> o <span className="font-semibold text-stone-800 dark:text-slate-200">«Añadir a pantalla de inicio»</span>.
+                    </li>
+                    <li>
+                      Confirma la instalación y aparecerá en tu cajón de apps.
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Desktop */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-4 space-y-3">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-stone-900 dark:text-white">
+                    <Laptop className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Ordenador (PC / Mac)</span>
+                  </div>
+                  <ol className="space-y-2 text-xs text-stone-600 dark:text-slate-400 list-decimal list-inside leading-relaxed">
+                    <li>
+                      En Chrome, Edge o Brave, mira al final de la barra de URL.
+                    </li>
+                    <li>
+                      Haz clic en el icono de instalación <span className="font-bold text-amber-700 dark:text-amber-400">⊕</span> o en Menú &gt; Instalar Nexus Library.
+                    </li>
+                    <li>
+                      La app se abrirá en su propia ventana sin pestañas.
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
           </div>

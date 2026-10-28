@@ -1,26 +1,44 @@
 {
-  "name": "Nexus Library",
+  "name": "Nexus Library — Biblioteca Personal",
   "short_name": "Nexus Library",
-  "description": "Biblioteca Digital Personal y gestor de lecturas y sagas",
+  "description": "Tu santuario de lectura personal. Gestiona libros, sagas, retos de lectura y estadísticas con estética Dark Academia.",
   "start_url": "/",
   "scope": "/",
+  "id": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0D1017",
   "theme_color": "#0D1017",
   "lang": "es",
+  "categories": ["books", "lifestyle", "productivity", "utilities"],
   "icons": [
     {
       "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mi Biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Ver mi colección de libros",
+      "url": "/?section=library",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Descubrir Libros",
+      "short_name": "Descubrir",
+      "description": "Buscar nuevos libros y novedades",
+      "url": "/?section=discover",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }
   ]
 }

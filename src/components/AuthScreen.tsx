@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Loader2,
   Library,
-  KeyRound
+  Compass,
+  BookOpen
 } from 'lucide-react';
 import {
   fetchSupabaseAuthSettings,
@@ -263,6 +264,30 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
           <div className="rounded-3xl border border-amber-900/25 dark:border-[#28334A] bg-gradient-to-b from-[#fbf6ea] to-[#f0e5cc] dark:from-[#161D2B] dark:to-[#101520] p-5 sm:p-8 shadow-2xl shadow-amber-950/15 dark:shadow-black/80 relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-amber-600 dark:via-amber-400 to-transparent opacity-80" />
 
+            {/* Tarjeta destacada de Acceso Inmediato (Onboarding sin fricción) */}
+            <div className="mb-6 rounded-2xl border border-amber-600/35 dark:border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5 p-4 text-left transition hover:border-amber-600/50 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 pr-1">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>¿Quieres probar la app al instante?</span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    Entra directo en tu navegador sin registro. Podrás crear tu cuenta luego para guardar en la nube.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={handleGuestAccess}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-bold px-3.5 py-2 text-xs shadow-md shadow-amber-900/15 transition"
+                >
+                  <span>Probar</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
             <div className="text-center mb-6">
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
                 {mode === 'login'
@@ -275,7 +300,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 {mode === 'login'
                   ? 'Accede con tu cuenta para sincronizar tu colección'
                   : mode === 'signup'
-                  ? 'Regístrate gratis para guardar tus libros en la nube'
+                  ? 'Regístrate gratis para respaldar tus libros en la nube'
                   : 'Introduce tu email y te enviaremos un enlace seguro'}
               </p>
             </div>
@@ -460,8 +485,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 <div className="w-full border-t border-amber-900/20 dark:border-[#222B3C]" />
               </div>
               <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                <span className="bg-[#f4ebd6] dark:bg-[#121824] px-3 text-stone-500 dark:text-slate-500">
-                  o si lo prefieres
+                <span className="bg-[#f0e5cc] dark:bg-[#101520] px-3 text-stone-500 dark:text-slate-400 font-semibold">
+                  o si prefieres no crear cuenta
                 </span>
               </div>
             </div>
@@ -470,9 +495,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               type="button"
               disabled={isLoading}
               onClick={handleGuestAccess}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5]/70 dark:bg-[#0B0E14]/60 hover:bg-amber-500/15 dark:hover:bg-[#1A2233] hover:border-amber-600/50 dark:hover:border-amber-500/40 text-stone-700 dark:text-slate-300 py-2.5 px-4 text-xs font-semibold transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-white/70 dark:bg-[#0B0E14]/60 hover:bg-amber-500/15 dark:hover:bg-[#1A2233] hover:border-amber-600/50 dark:hover:border-amber-500/40 text-stone-800 dark:text-slate-200 py-2.5 px-4 text-xs font-bold transition shadow-sm"
             >
-              Explorar en modo local en este navegador
+              <Compass className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+              <span>Explorar en modo local en este navegador</span>
             </button>
           </div>
         </div>

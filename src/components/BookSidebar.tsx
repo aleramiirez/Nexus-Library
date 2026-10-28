@@ -16,9 +16,12 @@ import {
   User as UserIcon,
   X,
   Mail,
+  Download,
+  Smartphone,
   type LucideIcon
 } from 'lucide-react';
 import { BookmarkMarker } from './BookmarkMarker';
+import { pwaInstallService } from '../services/pwaInstallService';
 
 export type NavigationSection =
   | 'dashboard'
@@ -54,6 +57,7 @@ interface BookSidebarProps {
   onCloseMobile?: () => void;
   inboxUnreadCount?: number;
   onOpenInbox?: () => void;
+  onOpenInstallModal?: () => void;
 }
 
 interface NavItemProps {
@@ -136,8 +140,18 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
   inboxUnreadCount = 0,
-  onOpenInbox
+  onOpenInbox,
+  onOpenInstallModal
 }) => {
+  const [isStandalone, setIsStandalone] = React.useState<boolean>(
+    () => pwaInstallService.getState().isStandalone
+  );
+
+  React.useEffect(() => {
+    const unsub = pwaInstallService.subscribe((state) => setIsStandalone(state.isStandalone));
+    return unsub;
+  }, []);
+
   const handleSelectSection = (id: NavigationSection) => {
     onNavigate(id);
     onCloseMobile?.();
@@ -320,6 +334,24 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
 
           {/* Pie de página unificado: Perfil y Ajustes */}
           <div className="p-3 pr-5 border-t border-amber-600/20">
+            {!isStandalone && onOpenInstallModal && (
+              <button
+                type="button"
+                onClick={onOpenInstallModal}
+                className="w-full mb-2 flex items-center justify-between gap-2 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 px-3 py-2 text-left transition group shadow-sm"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Download className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                  <span className="text-xs font-semibold text-amber-900 dark:text-amber-200 truncate">
+                    Instalar App
+                  </span>
+                </div>
+                <span className="rounded-md bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-bold shrink-0">
+                  PWA
+                </span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => handleSelectSection('settings')}
