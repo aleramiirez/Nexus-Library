@@ -456,8 +456,11 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         if (topFavorite.puntuacion) {
           ctx.fillStyle = '#fbbf24';
           ctx.font = '20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-          ctx.fillText('⭐'.repeat(topFavorite.puntuacion), badgeX, blockY + 172);
-          badgeX += topFavorite.puntuacion * 24 + 14;
+          const starsText = '⭐'.repeat(topFavorite.puntuacion);
+          ctx.fillText(starsText, badgeX, blockY + 172);
+          const starsMetrics = ctx.measureText(starsText);
+          const starsWidth = Math.max(starsMetrics.width, topFavorite.puntuacion * 30);
+          badgeX += starsWidth + 18;
         }
 
         if (topFavorite.genero) {
