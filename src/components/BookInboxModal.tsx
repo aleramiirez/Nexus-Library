@@ -268,18 +268,6 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                   >
                     <History className="w-3.5 h-3.5" />
                     <span>Historial</span>
-                    {historyRecs.length > 0 && (
-                      <span
-                        className={
-                          'px-1.5 py-0.2 rounded-full text-[10px] font-bold ' +
-                          (recsView === 'history'
-                            ? 'bg-slate-950 text-amber-400'
-                            : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
-                        }
-                      >
-                        {historyRecs.length}
-                      </span>
-                    )}
                   </button>
                 </div>
 
@@ -290,7 +278,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                     className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
                   >
                     <History className="w-3.5 h-3.5" />
-                    <span>Ver historial ({historyRecs.length})</span>
+                    <span>Ver historial</span>
                   </button>
                 )}
                 {recsView === 'history' && (
@@ -326,7 +314,7 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/30 text-xs font-semibold transition"
                       >
                         <History className="w-3.5 h-3.5" />
-                        Ver historial de recomendaciones ({historyRecs.length})
+                        Ver historial de recomendaciones
                       </button>
                     )}
                   </div>
