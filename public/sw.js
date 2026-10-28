@@ -1,5 +1,5 @@
 // Service Worker para Nexus Library (PWA + Push Notifications)
-const CACHE_NAME = 'nexus-library-v1.0.4';
+const CACHE_NAME = 'nexus-library-v1.0.5';
 
 // Recursos críticos estáticos que deben estar disponibles offline
 const PRECACHE_ASSETS = [
@@ -7,11 +7,17 @@ const PRECACHE_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/logo.svg',
+  '/logo.svg?v=2',
   '/logo.png',
+  '/logo.png?v=2',
   '/logo-192.png',
+  '/logo-192.png?v=2',
   '/logo-maskable.png',
+  '/logo-maskable.png?v=2',
   '/logo-maskable-192.png',
+  '/logo-maskable-192.png?v=2',
   '/apple-touch-icon.png',
+  '/apple-touch-icon.png?v=2',
   '/hero-library.jpg',
   '/banner-library.png',
   '/banner-library-light.png'

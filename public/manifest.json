@@ -13,25 +13,31 @@
   "categories": ["books", "lifestyle", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/logo-192.png",
+      "src": "/logo.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "/logo.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-maskable-192.png",
+      "src": "/logo-maskable-192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/logo-maskable.png",
+      "src": "/logo-maskable.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -43,14 +49,14 @@
       "short_name": "Biblioteca",
       "description": "Ver mi colección de libros",
       "url": "/?section=library",
-      "icons": [{ "src": "/logo-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo-192.png?v=2", "sizes": "192x192" }]
     },
     {
       "name": "Descubrir Libros",
       "short_name": "Descubrir",
       "description": "Buscar nuevos libros y novedades",
       "url": "/?section=discover",
-      "icons": [{ "src": "/logo-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/logo-192.png?v=2", "sizes": "192x192" }]
     }
   ]
 }
