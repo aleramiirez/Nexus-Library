@@ -302,7 +302,7 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 1200;
-      canvas.height = 1400;
+      canvas.height = 1540;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -310,33 +310,33 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
 
       // 1. Fondo de la tarjeta (adaptado al tema claro u oscuro)
       if (isDarkCard) {
-        const bgGrad = ctx.createLinearGradient(0, 0, 1200, 1400);
+        const bgGrad = ctx.createLinearGradient(0, 0, 1200, 1540);
         bgGrad.addColorStop(0, '#0c1017');
         bgGrad.addColorStop(0.5, '#141a26');
         bgGrad.addColorStop(1, '#090d14');
         ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, 1200, 1400);
+        ctx.fillRect(0, 0, 1200, 1540);
 
         ctx.strokeStyle = '#d97706';
         ctx.lineWidth = 4;
-        ctx.strokeRect(36, 36, 1200 - 72, 1400 - 72);
+        ctx.strokeRect(36, 36, 1200 - 72, 1540 - 72);
         ctx.strokeStyle = 'rgba(217, 119, 6, 0.35)';
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(46, 46, 1200 - 92, 1400 - 92);
+        ctx.strokeRect(46, 46, 1200 - 92, 1540 - 92);
       } else {
-        const bgGrad = ctx.createLinearGradient(0, 0, 1200, 1400);
+        const bgGrad = ctx.createLinearGradient(0, 0, 1200, 1540);
         bgGrad.addColorStop(0, '#fbf5e8');
         bgGrad.addColorStop(0.5, '#f6ebd4');
         bgGrad.addColorStop(1, '#eee0c4');
         ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, 1200, 1400);
+        ctx.fillRect(0, 0, 1200, 1540);
 
         ctx.strokeStyle = '#b45309';
         ctx.lineWidth = 4;
-        ctx.strokeRect(36, 36, 1200 - 72, 1400 - 72);
+        ctx.strokeRect(36, 36, 1200 - 72, 1540 - 72);
         ctx.strokeStyle = 'rgba(180, 83, 9, 0.35)';
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(46, 46, 1200 - 92, 1400 - 92);
+        ctx.strokeRect(46, 46, 1200 - 92, 1540 - 92);
       }
 
       // 2. Encabezado
@@ -506,12 +506,13 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
       }
 
       // 5. Mosaico de libros leídos estilo estantería física con texturas reales
-      const shelfY = 930;
+      const shelfTitleY = 965;
       ctx.textAlign = 'left';
       ctx.fillStyle = isDarkCard ? '#f59e0b' : '#b45309';
       ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText('ESTANTERÍA DEL AÑO', 75, shelfY - 18);
+      ctx.fillText('ESTANTERÍA DEL AÑO', 75, shelfTitleY);
 
+      const shelfY = 995;
       const bookSlotW = 155;
       const bookSlotH = 225;
       const gap = 24;
@@ -521,12 +522,8 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
       const plankW = 1050;
       const plankX = 75;
 
-      // Sombra proyectada por la balda
-      ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.65)' : 'rgba(70, 40, 10, 0.35)';
-      ctx.fillRect(plankX, plankY + 22, plankW, 12);
-
       // Superficie superior de la balda
-      const plankTopGrad = ctx.createLinearGradient(plankX, plankY, plankX, plankY + 12);
+      const plankTopGrad = ctx.createLinearGradient(plankX, plankY, plankX, plankY + 14);
       if (isDarkCard) {
         plankTopGrad.addColorStop(0, '#8a6040');
         plankTopGrad.addColorStop(0.5, '#62412b');
@@ -537,10 +534,10 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         plankTopGrad.addColorStop(1, '#c4965c');
       }
       ctx.fillStyle = plankTopGrad;
-      ctx.fillRect(plankX, plankY, plankW, 12);
+      ctx.fillRect(plankX, plankY, plankW, 14);
 
       // Canto frontal de la balda
-      const plankFrontGrad = ctx.createLinearGradient(plankX, plankY + 12, plankX, plankY + 26);
+      const plankFrontGrad = ctx.createLinearGradient(plankX, plankY + 14, plankX, plankY + 30);
       if (isDarkCard) {
         plankFrontGrad.addColorStop(0, '#62412b');
         plankFrontGrad.addColorStop(0.6, '#4a2f1e');
@@ -551,13 +548,17 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
         plankFrontGrad.addColorStop(1, '#a47843');
       }
       ctx.fillStyle = plankFrontGrad;
-      ctx.fillRect(plankX, plankY + 12, plankW, 14);
+      ctx.fillRect(plankX, plankY + 14, plankW, 16);
+
+      // Sombra proyectada por la balda debajo del canto frontal
+      ctx.fillStyle = isDarkCard ? 'rgba(0, 0, 0, 0.65)' : 'rgba(70, 40, 10, 0.35)';
+      ctx.fillRect(plankX, plankY + 30, plankW, 14);
 
       // Placa central de latón en la balda
       ctx.textAlign = 'center';
-      ctx.fillStyle = isDarkCard ? 'rgba(251, 191, 36, 0.6)' : 'rgba(120, 53, 15, 0.7)';
+      ctx.fillStyle = isDarkCard ? 'rgba(251, 191, 36, 0.75)' : 'rgba(120, 53, 15, 0.8)';
       ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(`NEXUS LIBRARY · MEMORIAS ${stats.year}`, plankX + plankW / 2, plankY + 22);
+      ctx.fillText(`NEXUS LIBRARY · MEMORIAS ${stats.year}`, plankX + plankW / 2, plankY + 25);
 
       // Dibujar cada libro con su portada real y acabado 3D
       showcaseBooks.forEach((b, idx) => {
@@ -579,7 +580,7 @@ export const ReadingWrappedModal: React.FC<ReadingWrappedModalProps> = ({
       ctx.textAlign = 'center';
       ctx.fillStyle = isDarkCard ? '#64748b' : '#78716c';
       ctx.font = '15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText('Biblioteca personal gestionada con NEXUS · nexus-library.app', 600, 1345);
+      ctx.fillText('Biblioteca personal gestionada con NEXUS · nexus-library.app', 600, 1460);
 
       // Generar descarga
       const dataUrl = canvas.toDataURL('image/png');
