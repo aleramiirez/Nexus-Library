@@ -439,6 +439,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                       {mode === 'login' && (
                         <button
                           type="button"
+                          tabIndex={-1}
                           onClick={() => {
                             setMode('forgot');
                             setFeedback(null);

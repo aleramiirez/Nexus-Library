@@ -84,7 +84,7 @@ const NavItem: React.FC<NavItemProps> = ({
     onClick={() => onSelect(id)}
     aria-current={active ? 'page' : undefined}
     className={
-      'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-2 rounded-md transition ' +
+      'book-item relative w-full flex items-center gap-2.5 pl-4 pr-3 py-1.5 rounded-md transition ' +
       (active
         ? 'book-item-active text-amber-800 dark:text-amber-300 font-semibold'
         : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100 hover:bg-amber-500/5')
@@ -92,7 +92,7 @@ const NavItem: React.FC<NavItemProps> = ({
   >
     {active && <BookmarkMarker />}
     <Icon className={'w-4 h-4 shrink-0 ' + iconClass} />
-    <span className="font-serif text-[15px] font-semibold tracking-wide whitespace-nowrap">
+    <span className="font-serif text-[14.5px] font-semibold tracking-wide whitespace-nowrap">
       {label}
     </span>
     {count !== undefined && (
@@ -101,15 +101,15 @@ const NavItem: React.FC<NavItemProps> = ({
           aria-hidden="true"
           className="flex-1 min-w-[10px] mx-1 border-b border-dotted border-current opacity-30 translate-y-[3px]"
         />
-        <span className="font-serif text-[15px] font-semibold tabular-nums">{count}</span>
+        <span className="font-serif text-[14.5px] font-semibold tabular-nums">{count}</span>
       </>
     )}
   </button>
 );
 
 const Chapter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex items-center gap-2 px-3 pt-5 pb-1.5">
-    <span className="font-serif italic text-[13px] text-amber-700 dark:text-amber-500/90 whitespace-nowrap">
+  <div className="flex items-center gap-2 px-3 pt-3.5 pb-1">
+    <span className="font-serif italic text-[12.5px] text-amber-700 dark:text-amber-500/90 whitespace-nowrap">
       {children}
     </span>
     <span className="h-px flex-1 bg-gradient-to-r from-amber-600/40 to-transparent" />
@@ -180,7 +180,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
 
         <div className="relative flex flex-col h-full pl-2">
           {/* Cabecera */}
-          <div className="px-5 pt-5 pb-4 flex items-center justify-between gap-2">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <img
                 src="/logo.svg"
@@ -198,6 +198,20 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
+              {!isStandalone && onOpenInstallModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenInstallModal();
+                    onCloseMobile?.();
+                  }}
+                  title="Instalar App en tu dispositivo"
+                  aria-label="Instalar App"
+                  className="p-2 rounded-lg border border-stone-300 dark:border-[#283246] text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:border-amber-500/40 hover:bg-amber-500/10 transition group"
+                >
+                  <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -233,15 +247,15 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
           </div>
 
           {/* Adorno */}
-          <div className="mx-6 mb-2 flex items-center gap-2 text-amber-600/70" aria-hidden="true">
+          <div className="mx-6 mb-1.5 flex items-center gap-2 text-amber-600/70" aria-hidden="true">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-600/50" />
             <span className="text-[9px]">◆</span>
             <span className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-600/50" />
           </div>
 
           {/* Índice */}
-          <nav className="flex-1 pl-3 pr-3 overflow-y-auto overflow-x-hidden" aria-label="Índice">
-            <p className="px-3 pt-2 pb-1.5 font-serif italic text-[11px] tracking-[0.3em] uppercase text-stone-400 dark:text-slate-500">
+          <nav className="flex-1 pl-3 pr-3 overflow-y-auto overflow-x-hidden no-scrollbar" aria-label="Índice">
+            <p className="px-3 pt-1.5 pb-1 font-serif italic text-[11px] tracking-[0.3em] uppercase text-stone-400 dark:text-slate-500">
               Índice
             </p>
 
@@ -333,31 +347,13 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
           </nav>
 
           {/* Pie de página unificado: Perfil y Ajustes */}
-          <div className="p-3 pr-5 border-t border-amber-600/20">
-            {!isStandalone && onOpenInstallModal && (
-              <button
-                type="button"
-                onClick={onOpenInstallModal}
-                className="w-full mb-2 flex items-center justify-between gap-2 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-amber-500/10 hover:bg-amber-500/20 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 px-3 py-2 text-left transition group shadow-sm"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Download className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
-                  <span className="text-xs font-semibold text-amber-900 dark:text-amber-200 truncate">
-                    Instalar App
-                  </span>
-                </div>
-                <span className="rounded-md bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-bold shrink-0">
-                  Gratis
-                </span>
-              </button>
-            )}
-
+          <div className="p-2.5 pr-4 border-t border-amber-600/20">
             <button
               type="button"
               onClick={() => handleSelectSection('settings')}
               aria-label="Ajustes de la biblioteca y cuenta"
               className={
-                'w-full flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition group ' +
+                'w-full flex items-center gap-2.5 rounded-xl border p-2 text-left transition group ' +
                 (activeSection === 'settings'
                   ? 'border-amber-600/70 bg-amber-500/20 shadow-sm'
                   : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5')

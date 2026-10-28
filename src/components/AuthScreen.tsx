@@ -403,6 +403,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                     {mode === 'login' && (
                       <button
                         type="button"
+                        tabIndex={-1}
                         onClick={() => {
                           setMode('forgot');
                           setFeedback(null);

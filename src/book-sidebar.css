@@ -9,6 +9,15 @@ html:not(.dark) .book-page {
   background: linear-gradient(90deg, #efe4cb, #f7f0df 70%, #e8dcc0);
 }
 
+/* Ocultar barra de scroll en el índice para preservar la estética de página de libro */
+.book-page nav::-webkit-scrollbar {
+  display: none;
+}
+.book-page nav {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Canto de las páginas (borde exterior izquierdo) */
 .book-edges {
   position: absolute;
