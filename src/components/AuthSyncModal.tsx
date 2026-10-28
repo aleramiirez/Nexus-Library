@@ -129,7 +129,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         if (data.user) {
           setFeedback({
             type: 'success',
-            text: 'Sesión iniciada correctamente. Sincronizando y verificando datos con Supabase...'
+            text: '¡Sesión iniciada correctamente! Sincronizando tu biblioteca...'
           });
           setPassword('');
         }
@@ -145,7 +145,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         if (data.session) {
           setFeedback({
             type: 'success',
-            text: 'Cuenta creada y sesión activa. Tus libros locales se están migrando a Supabase.'
+            text: '¡Cuenta creada con éxito! Tus libros se están sincronizando con tu cuenta.'
           });
           setPassword('');
         } else {
@@ -168,14 +168,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         if (error) throw error;
         setFeedback({
           type: 'success',
-          text: 'Solicitud de vinculación enviada. Tus libros y sagas permanecerán asociados a tu identificador de usuario actual.'
+          text: 'Tus libros y sagas se han vinculado correctamente a tu cuenta permanente.'
         });
         setPassword('');
       }
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
-        text: formatAuthErrorMessage(err, 'No se pudo completar la autenticación con Supabase.')
+        text: formatAuthErrorMessage(err, 'No se pudo completar el acceso. Comprueba tus datos e inténtalo de nuevo.')
       });
     } finally {
       setIsLoading(false);
@@ -190,14 +190,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       if (error) throw error;
       setFeedback({
         type: 'success',
-        text: 'Sesión anónima iniciada en Supabase. Puedes vincularla a un correo permanente cuando quieras.'
+        text: 'Sesión temporal iniciada. Podrás añadir tu correo en cualquier momento desde Ajustes.'
       });
     } catch (err: unknown) {
       setFeedback({
         type: 'error',
         text: formatAuthErrorMessage(
           err,
-          'Las sesiones anónimas no están habilitadas en este proyecto de Supabase.'
+          'El acceso sin correo no está disponible en este momento.'
         )
       });
     } finally {
@@ -315,11 +315,10 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                 >
                   <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5" />
-                    Vincular sesión anónima a cuenta permanente
+                    Guardar colección en una cuenta permanente
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400">
-                    Convierte tu usuario anónimo actual en una cuenta con correo y contraseña sin
-                    perder ninguno de los libros o sagas ya asociados a tu <code>user_id</code>.
+                    Añade tu correo y contraseña para respaldar tus libros y acceder a ellos desde cualquier dispositivo.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
@@ -346,7 +345,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs"
                   >
                     {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    Vincular cuenta permanente
+                    Guardar cuenta
                   </button>
                 </form>
               )}
@@ -366,10 +365,7 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
           ) : (
             <div className="space-y-4">
               <p className="text-xs text-stone-600 dark:text-slate-400 leading-relaxed">
-                Inicia sesión o crea una cuenta para activar la persistencia en la nube con{' '}
-                <strong>Supabase</strong>. Al autenticarte, los libros y sagas que tengas en
-                IndexedDB local se migrarán automáticamente a tu cuenta sin duplicados y sin borrar
-                tu copia local.
+                Inicia sesión o crea tu cuenta para guardar tu biblioteca en la nube. Tus libros y sagas se sincronizarán de forma segura para que puedas acceder a ellos desde cualquier lugar.
               </p>
 
               {mode === 'forgot' ? (
@@ -471,9 +467,9 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {mode === 'login'
-                    ? 'Entrar y sincronizar biblioteca'
+                    ? 'Entrar a mi biblioteca'
                     : mode === 'signup'
-                    ? 'Crear cuenta en Supabase'
+                    ? 'Crear mi cuenta'
                     : 'Enviar enlace de recuperación'}
                 </button>
               </form>
@@ -486,15 +482,15 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     onClick={handleAnonymousSignIn}
                     className="w-full rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 py-2 px-3 text-xs font-semibold transition"
                   >
-                    Continuar con sesión anónima en la nube
+                    Continuar como invitado
                   </button>
                 </div>
               ) : (
-                <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4] dark:bg-[#101520] p-3 text-[11px] text-stone-600 dark:text-slate-400 leading-relaxed">
-                  <strong>Nota sobre autenticación:</strong> Las sesiones anónimas están
-                  deshabilitadas actualmente en la configuración de este proyecto Supabase (
-                  <code>anonymous_users: false</code>). Inicia sesión con correo y contraseña para
-                  guardar tus libros bajo políticas RLS (<code>auth.uid() = user_id</code>).
+                <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ead4]/60 dark:bg-[#101520] p-3.5 text-xs text-stone-600 dark:text-slate-400 leading-relaxed flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                  <p>
+                    Tus lecturas y notas se guardan de forma privada en tu cuenta para que nunca pierdas tu colección.
+                  </p>
                 </div>
               )}
             </div>

@@ -498,7 +498,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-white/70 dark:bg-[#0B0E14]/60 hover:bg-amber-500/15 dark:hover:bg-[#1A2233] hover:border-amber-600/50 dark:hover:border-amber-500/40 text-stone-800 dark:text-slate-200 py-2.5 px-4 text-xs font-bold transition shadow-sm"
             >
               <Compass className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-              <span>Explorar en modo local en este navegador</span>
+              <span>Explorar biblioteca sin crear cuenta</span>
             </button>
           </div>
         </div>

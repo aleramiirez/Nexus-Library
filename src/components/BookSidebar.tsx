@@ -347,7 +347,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                   </span>
                 </div>
                 <span className="rounded-md bg-amber-600/20 text-amber-900 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-bold shrink-0">
-                  PWA
+                  Gratis
                 </span>
               </button>
             )}
@@ -377,7 +377,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                 <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
                   {hasUser
                     ? (userDisplayName || userEmail || 'Mi Cuenta')
-                    : (userDisplayName || 'Modo Local')}
+                    : (userDisplayName || 'Lector Invitado')}
                 </p>
                 <div className="flex items-center gap-1.5 text-[10px]">
                   {hasUser ? (
@@ -395,7 +395,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                       </>
                     )
                   ) : (
-                    <span className="text-stone-500 dark:text-slate-400">Sin cuenta · Ajustes</span>
+                    <span className="text-stone-500 dark:text-slate-400">Toca para crear cuenta</span>
                   )}
                 </div>
               </div>

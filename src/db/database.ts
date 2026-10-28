@@ -529,7 +529,7 @@ export async function syncAndMigrateWithSupabase(): Promise<SyncMigrationResult>
       migratedSagas: 0,
       totalRemoteBooks: 0,
       totalRemoteSagas: 0,
-      error: err instanceof Error ? err.message : 'Error al sincronizar con Supabase.'
+      error: err instanceof Error ? err.message : 'Error al sincronizar tu biblioteca en la nube.'
     };
   }
 }

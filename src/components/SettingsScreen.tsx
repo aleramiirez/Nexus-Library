@@ -185,7 +185,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     e.preventDefault();
     if (!currentUser) {
       onUpdateGuestAlias?.(profileDisplayName);
-      setFeedback({ type: 'success', text: 'Alias guardado localmente en este dispositivo.' });
+      setFeedback({ type: 'success', text: 'Nombre guardado en este dispositivo.' });
       return;
     }
 
@@ -677,7 +677,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               ) : (
                 <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Biblioteca local (este equipo)
+                  Guardado en este dispositivo
                 </div>
               )}
             </div>
@@ -703,7 +703,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
                     {currentUser
                       ? (userProfile?.displayName || currentUser.email)
-                      : (guestAlias ? `${guestAlias} (Modo Local)` : 'Lector en Modo Local')}
+                      : (guestAlias ? `${guestAlias} (Sin cuenta)` : 'Lector Invitado')}
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
                     {currentUser ? (
@@ -715,7 +715,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         currentUser.email
                       )
                     ) : (
-                      'Tus libros se guardan solo en la memoria de este navegador.'
+                      'Tus libros se guardan en este dispositivo. Crea una cuenta para acceder a ellos desde cualquier lugar.'
                     )}
                   </p>
                 </div>
