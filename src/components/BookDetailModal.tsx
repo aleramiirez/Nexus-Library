@@ -24,7 +24,8 @@ import {
   Quote,
   Copy,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  Share2
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating, CustomCollection } from '../types/models';
@@ -35,6 +36,7 @@ import { formatStars, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs'
 import { READING_STATUS_META } from '../constants/readingStatusMeta';
 import { ReadingStatusControl } from './ReadingStatusControl';
 import { RecommendBookModal } from './RecommendBookModal';
+import { ShareBookCardModal } from './ShareBookCardModal';
 import {
   bookMetadataService,
   isLikelyEnglish,
@@ -179,6 +181,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   readerName
 }) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+  const [isShareCardOpen, setIsShareCardOpen] = useState(false);
+  const [selectedQuoteForCard, setSelectedQuoteForCard] = useState('');
   const [isAddToCollectionOpen, setIsAddToCollectionOpen] = useState(false);
   const [bookCollections, setBookCollections] = useState<CustomCollection[]>([]);
   useEffect(() => {
@@ -540,7 +544,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
         }
       }
       if (e.key === 'Escape') {
-        if (isRecommendOpen) return;
+        if (isRecommendOpen || isShareCardOpen) return;
         if (
           typeof document !== 'undefined' &&
           (document.getElementById('delete-dialog-title') ||
@@ -554,7 +558,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [book, isRecommendOpen, handleRequestClose, activeTab, handleTurnToTab]);
+  }, [book, isRecommendOpen, isShareCardOpen, handleRequestClose, activeTab, handleTurnToTab]);
 
   if (!book) return null;
 
@@ -627,6 +631,20 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         >
                           <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                           <span className="hidden sm:inline">Recomendar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedQuoteForCard('');
+                            setIsShareCardOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-semibold border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                          title="Crear tarjeta editorial para redes sociales (Stories, X, WhatsApp)"
+                          aria-label="Crear tarjeta editorial para redes sociales"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                          <span className="hidden sm:inline">Tarjeta</span>
                         </button>
 
                         {onEdit && (
@@ -960,6 +978,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                 </blockquote>
 
                                 <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedQuoteForCard(quote);
+                                      setIsShareCardOpen(true);
+                                    }}
+                                    className="p-1 rounded-md text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                                    title="Crear tarjeta para redes con esta cita"
+                                  >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => handleCopyQuote(quote, idx)}
@@ -1695,6 +1724,20 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               <span className="hidden xl:inline">Recomendar</span>
                             </button>
 
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedQuoteForCard('');
+                                setIsShareCardOpen(true);
+                              }}
+                              className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-3 flex items-center gap-1.5"
+                              title="Crear tarjeta editorial para redes sociales (Stories, X, WhatsApp)"
+                              aria-label="Crear tarjeta para redes sociales"
+                            >
+                              <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                              <span className="hidden xl:inline">Tarjeta</span>
+                            </button>
+
                             {onEdit && (
                               <button
                                 type="button"
@@ -2079,6 +2122,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                   <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition">
                                     <button
                                       type="button"
+                                      onClick={() => {
+                                        setSelectedQuoteForCard(quote);
+                                        setIsShareCardOpen(true);
+                                      }}
+                                      className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-500/15 transition cursor-pointer"
+                                      title="Crear tarjeta para redes con esta cita"
+                                    >
+                                      <Share2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
                                       onClick={() => handleCopyQuote(quote, idx)}
                                       className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-500/15 transition cursor-pointer"
                                       title="Copiar cita con autor y título"
@@ -2267,6 +2321,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           book={book}
           currentUserId={currentUserId}
           onSuccess={onShowToast}
+        />
+      )}
+
+      {isShareCardOpen && book && (
+        <ShareBookCardModal
+          isOpen={isShareCardOpen}
+          onClose={() => setIsShareCardOpen(false)}
+          book={book}
+          initialQuote={selectedQuoteForCard}
+          onShowToast={onShowToast}
         />
       )}
     </>

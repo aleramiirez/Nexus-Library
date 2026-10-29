@@ -36,7 +36,8 @@ import {
   FileUp,
   X,
   Sparkles,
-  Users
+  Users,
+  Loader2
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { triggerBackgroundFallbackNotification, syncPushSubscriptionWithDatabase } from './services/pushNotificationService';
@@ -54,6 +55,12 @@ import {
   updateBookQuickStatus,
   upsertSaga
 } from './db/database';
+import {
+  loadSampleLibrary,
+  removeSampleLibrary,
+  convertSampleBooksToPermanent,
+  hasSampleBooks
+} from './services/sampleLibraryService';
 import {
   fetchSupabaseAuthSettings,
   supabase
@@ -374,6 +381,53 @@ export const App: React.FC = () => {
     },
     []
   );
+
+  const [isLoadingSample, setIsLoadingSample] = useState(false);
+  const [isRemovingSample, setIsRemovingSample] = useState(false);
+
+  const isSampleActive = useMemo(() => hasSampleBooks(books), [books]);
+
+  const handleLoadSampleBooks = React.useCallback(async () => {
+    setIsLoadingSample(true);
+    try {
+      const count = await loadSampleLibrary(currentUser?.id);
+      showToast(
+        `¡Biblioteca de muestra cargada! Se añadieron ${count} obras maestras con citas, portadas y sagas.`,
+        'success'
+      );
+    } catch {
+      showToast('No se pudieron cargar los libros de muestra', 'error');
+    } finally {
+      setIsLoadingSample(false);
+    }
+  }, [currentUser?.id, showToast]);
+
+  const handleRemoveSampleBooks = React.useCallback(async () => {
+    setIsRemovingSample(true);
+    try {
+      const count = await removeSampleLibrary(currentUser?.id);
+      showToast(
+        `Se eliminaron los ${count} libros de muestra. Tu biblioteca está lista para tus propios libros.`,
+        'info'
+      );
+    } catch {
+      showToast('Error al eliminar los libros de muestra', 'error');
+    } finally {
+      setIsRemovingSample(false);
+    }
+  }, [currentUser?.id, showToast]);
+
+  const handleKeepSampleBooks = React.useCallback(async () => {
+    try {
+      const count = await convertSampleBooksToPermanent(currentUser?.id);
+      showToast(
+        `¡Las ${count} obras de muestra ahora forman parte permanente de tu colección personal!`,
+        'success'
+      );
+    } catch {
+      showToast('Error al conservar los libros', 'error');
+    }
+  }, [currentUser?.id, showToast]);
 
   const refreshInboxCount = React.useCallback(async () => {
     if (!currentUser?.id) {
@@ -1719,14 +1773,36 @@ export const App: React.FC = () => {
                 </div>
 
                 {books.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center">
+                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-6 sm:p-8 text-center space-y-3">
                     <p className="font-serif text-lg text-stone-700 dark:text-slate-300">
                       Tu biblioteca está lista para recibir tus libros
                     </p>
-                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
-                      Pulsa «Añadir libro» para buscar cualquier edición por título, autor o ISBN
-                      con portada automática.
+                    <p className="text-xs text-stone-500 dark:text-slate-400 max-w-md mx-auto">
+                      Puedes añadir libros con portada automática, importar tu historial de Goodreads en 1 clic, o cargar libros clásicos para ver la estantería en acción.
                     </p>
+                    <div className="pt-1 flex flex-wrap items-center justify-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={handleLoadSampleBooks}
+                        disabled={isLoadingSample}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-50"
+                      >
+                        {isLoadingSample ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        )}
+                        <span>Cargar 4 libros de muestra</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsImportOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
+                      >
+                        <FileUp className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Importar CSV</span>
+                      </button>
+                    </div>
                   </div>
                 ) : books.filter((b) => b.puntuacion !== null).length === 0 ? (
                   <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center">
@@ -2088,7 +2164,85 @@ export const App: React.FC = () => {
                 </div>
               )}
 
-              {filteredBooks.length === 0 ? (
+              {isSampleActive && (
+                <div className="mb-4 p-3 sm:px-4 rounded-xl border border-amber-600/35 bg-amber-500/10 dark:bg-amber-500/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-amber-950 dark:text-amber-200 shadow-sm animate-fadeIn">
+                  <div className="flex items-center gap-2 text-center sm:text-left">
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>
+                      Estás explorando con <strong>4 obras maestras de muestra</strong> (con sagas, citas memorables y portadas HD).
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleRemoveSampleBooks}
+                      disabled={isRemovingSample}
+                      className="px-3 py-1.5 rounded-lg border border-amber-600/40 hover:bg-amber-500/20 text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
+                    >
+                      {isRemovingSample ? 'Limpiando...' : 'Limpiar muestra'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleKeepSampleBooks}
+                      className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 text-[11px] font-bold shadow-xs transition cursor-pointer"
+                    >
+                      Conservar en mi biblioteca
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {books.length === 0 ? (
+                <div className="rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#141b27]/95 p-6 sm:p-12 text-center shadow-md relative overflow-hidden animate-fadeIn">
+                  <div className="max-w-xl mx-auto space-y-4">
+                    <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-sm">
+                      <Sparkles className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100">
+                        Bienvenido a tu santuario literario
+                      </h3>
+                      <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 mt-2 leading-relaxed">
+                        Organiza tu biblioteca con portadas oficiales, seguimiento de sagas, estanterías visuales en 3D, diario de lectura y citas memorables.
+                      </p>
+                    </div>
+
+                    <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleLoadSampleBooks}
+                        disabled={isLoadingSample}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-98 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition cursor-pointer disabled:opacity-50"
+                      >
+                        {isLoadingSample ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        <span>Explorar con 4 libros de muestra</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsImportOpen(true)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 font-semibold text-xs sm:text-sm transition cursor-pointer"
+                      >
+                        <FileUp className="w-4 h-4 text-amber-600" />
+                        <span>Importar Goodreads / CSV</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleOpenCreateBook}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300 font-semibold text-xs sm:text-sm transition cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Añadir mi primer libro</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : filteredBooks.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-transparent p-12 text-center">
                   <p className="font-serif text-xl text-stone-600 dark:text-slate-300">
                     No se encontraron libros con los filtros actuales.
