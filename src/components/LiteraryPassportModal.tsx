@@ -68,7 +68,6 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
   const handleTabChange = (tab: PassportTab) => {
     setActiveTab(tab);
-    soundService.playPageTurn();
   };
 
   const handleSelectEntry = (entry: CountryPassportEntry) => {
@@ -189,7 +188,6 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       type="button"
                       onClick={() => {
                         setSelectedContinent(cont);
-                        soundService.playPageTurn();
                       }}
                       className={`px-3 py-1 rounded-xl text-xs font-serif font-semibold transition ${
                         selectedContinent === cont
