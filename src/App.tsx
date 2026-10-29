@@ -2975,7 +2975,10 @@ export const App: React.FC = () => {
           }}
           onOpenChallenge={() => {
             setCelebrationBook(null);
-            setActiveSection('stats');
+            setDetailBookId(null);
+            setIsAddEditOpen(false);
+            setEditingBook(null);
+            handleNavigate('stats');
           }}
           onShowToast={showToast}
         />
