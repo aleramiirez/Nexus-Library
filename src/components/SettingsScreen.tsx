@@ -68,6 +68,7 @@ import {
   unsubscribeUserFromPush,
   PushSubscriptionStatus
 } from '../services/pushNotificationService';
+import '../dashboard-panels.css';
 
 export type SettingsTab = 'appearance' | 'account' | 'metadata' | 'backup' | 'app';
 
@@ -512,10 +513,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('appearance')}
             className={
-              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'appearance'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Palette className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Apariencia</span>
@@ -525,10 +526,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('account')}
             className={
-              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'account'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Cloud className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Cuenta y Nube</span>
@@ -541,10 +542,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('metadata')}
             className={
-              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'metadata'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Sparkles className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Catálogo</span>
@@ -559,10 +560,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('backup')}
             className={
-              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'backup'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <HardDrive className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Copias</span>
@@ -572,10 +573,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             type="button"
             onClick={() => handleTabChange('app')}
             className={
-              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
+              'inline-flex items-center justify-center sm:justify-start gap-2 rounded-xl px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs font-semibold transition shadow-sm ' +
               (activeTab === 'app'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-amber-500/20'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Smartphone className="w-4 h-4 shrink-0 pointer-events-none" /> <span className="truncate pointer-events-none">Instalar App</span>

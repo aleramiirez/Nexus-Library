@@ -35,6 +35,7 @@ import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { BookDetailModal } from './BookDetailModal';
 import '../book-detail.css';
+import '../dashboard-panels.css';
 import { formatStars, ReadingStatus, READING_STATUSES } from '../constants/catalogs';
 import { formatFriendlyErrorMessage } from '../utils/errorUtils';
 
@@ -655,11 +656,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           <ArrowLeft className="w-4 h-4" /> Volver a buscar lectores
         </button>
 
-        {/* Cabecera del Lector */}
-        <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-5">
+        {/* Cabecera del Lector (Ficha de biblioteca) */}
+        <div className="catalog-card-panel relative pt-8 sm:pt-9 p-6 shadow-md space-y-5 mt-3">
+          <div className="catalog-brass-tab" aria-hidden="true">
+            Ficha de Lector · Comunidad
+          </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-2xl flex items-center justify-center shadow-md shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 font-serif font-bold text-2xl flex items-center justify-center shadow-md shrink-0 border border-amber-400/30">
                 {selectedReader.displayName
                   ? selectedReader.displayName.charAt(0).toUpperCase()
                   : selectedReader.username.charAt(0).toUpperCase()}
@@ -1161,16 +1165,16 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Selector de subpestañas */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => handleSubTabChange('friends')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (communitySubTab === 'friends'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Users className="w-4 h-4" />
@@ -1186,10 +1190,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             type="button"
             onClick={() => handleSubTabChange('explore')}
             className={
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ' +
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
               (communitySubTab === 'explore'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
           >
             <Search className="w-4 h-4" />
@@ -1252,11 +1256,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   <div
                     key={f.id}
                     onClick={() => handleSelectReader(profile)}
-                    className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
+                    className="community-reader-card group"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                        <div className="reader-avatar-stamp">
                           {profile.displayName.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -1320,13 +1324,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
 
             <div className="relative max-w-xl">
-              <Search className="w-4 h-4 text-stone-400 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar por nombre o @usuario (ej: @lector o María)..."
-                className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-white dark:bg-[#101520] pl-10 pr-9 py-2.5 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition shadow-sm"
               />
               {isLoadingReaders ? (
                 <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
@@ -1334,7 +1338,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="p-1 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 absolute right-2.5 top-1/2 -translate-y-1/2"
+                  className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -1374,11 +1378,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   <div
                     key={reader.id}
                     onClick={() => handleSelectReader(reader)}
-                    className="group cursor-pointer rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/90 dark:bg-[#141A26] p-5 hover:border-amber-500/60 hover:bg-[#fffcf5] dark:hover:bg-[#182030] transition shadow-sm hover:shadow-md flex flex-col justify-between gap-4"
+                    className="community-reader-card group"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-sm shrink-0">
+                        <div className="reader-avatar-stamp">
                           {reader.displayName
                             ? reader.displayName.charAt(0).toUpperCase()
                             : reader.username.charAt(0).toUpperCase()}
