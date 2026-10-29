@@ -105,6 +105,7 @@ import { DashboardSagasPanel } from './components/DashboardSagasPanel';
 import { DashboardFavoritesShelf } from './components/DashboardFavoritesShelf';
 import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
+import './dashboard-panels.css';
 
 import { BookDetailModal } from './components/BookDetailModal';
 import { PwaInstallModal } from './components/PwaInstallModal';
@@ -2049,8 +2050,9 @@ export const App: React.FC = () => {
               )}
 
               {books.length === 0 ? (
-                <div className="rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#141b27]/95 p-6 sm:p-12 text-center shadow-md relative overflow-hidden animate-fadeIn">
-                  <div className="max-w-xl mx-auto space-y-4">
+                <div className="catalog-card-panel relative mt-6 p-6 sm:p-12 text-center shadow-lg animate-fadeIn">
+                  <div className="catalog-brass-tab">Apertura de Biblioteca · Primeros Pasos</div>
+                  <div className="max-w-xl mx-auto space-y-4 pt-2">
                     <div className="inline-flex p-3 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-sm">
                       <Sparkles className="w-8 h-8" />
                     </div>
@@ -2731,16 +2733,16 @@ export const App: React.FC = () => {
               className={
                 'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition active:scale-95 ' +
                 (item.isActive
-                  ? 'text-[#8e2836] dark:text-amber-400 font-bold'
+                  ? 'text-amber-800 dark:text-amber-400 font-bold'
                   : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200')
               }
             >
               <span
                 className={
-                  'inline-flex items-center justify-center rounded-full px-3 py-0.5 transition-colors ' +
+                  'inline-flex items-center justify-center rounded-full px-3 py-1 transition-all ' +
                   (item.isActive
-                    ? 'bg-[#8e2836]/15 dark:bg-amber-500/20'
-                    : 'bg-transparent')
+                    ? 'bg-amber-600/15 dark:bg-amber-500/20 border border-amber-600/30 text-amber-900 dark:text-amber-300 shadow-xs'
+                    : 'bg-transparent border border-transparent')
                 }
               >
                 <Icon className="w-4 h-4" />

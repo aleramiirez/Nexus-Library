@@ -23,6 +23,7 @@ import { BookRecommendation, Friendship, Book } from '../types/models';
 import { recommendationInboxService } from '../services/recommendationInboxService';
 import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
+import '../dashboard-panels.css';
 import {
   getPushSubscriptionStatus,
   subscribeUserToPush,
@@ -239,18 +240,30 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
       >
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-5 py-3.5 bg-[#f0e5cc] dark:bg-[#101520] shrink-0">
-          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-semibold text-xs sm:text-sm">
-            <Inbox className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <h3 id="inbox-modal-title" className="font-serif font-bold text-stone-900 dark:text-white">
-              Buzón Literario
-            </h3>
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-800 dark:text-amber-300 shadow-xs shrink-0">
+              <Inbox className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 id="inbox-modal-title" className="font-serif font-bold text-base sm:text-lg text-stone-900 dark:text-white leading-tight">
+                  Buzón de Correspondencia
+                </h3>
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/25">
+                  Nexus
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-600 dark:text-slate-400">
+                Recomendaciones y solicitudes literarias de tu círculo
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

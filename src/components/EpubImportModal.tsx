@@ -23,6 +23,7 @@ import {
 } from '../services/epubParserService';
 import { isDuplicateBook } from '../services/importExportService';
 import { BookCover } from './BookCover';
+import '../dashboard-panels.css';
 
 interface EpubImportModalProps {
   isOpen: boolean;
@@ -273,7 +274,7 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
   };
 
   const inputCls =
-    'w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition';
+    'w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 shadow-inner focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition';
 
   return (
     <div
@@ -293,9 +294,14 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
               <FileUp className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-serif text-base sm:text-xl font-bold truncate">
-                Subir Archivos de Libros (.epub)
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif text-base sm:text-xl font-bold truncate">
+                  Bandeja de Recepción Bibliotecaria
+                </h2>
+                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/30">
+                  Importación Masiva
+                </span>
+              </div>
               <p className="text-xs text-stone-600 dark:text-slate-400 truncate">
                 Extrae automáticamente título, autor, portada original, sinopsis, ISBN y saga
               </p>
@@ -807,7 +813,7 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
         </div>
 
         {/* Barra de acciones inferior fija */}
-        <div className="px-4 sm:px-6 py-3.5 border-t border-amber-900/20 dark:border-[#242E42] bg-[#f0e5cc]/95 dark:bg-[#101520]/95 backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 pb-[max(14px,env(safe-area-inset-bottom))] border-t border-amber-900/20 dark:border-[#242E42] bg-[#f0e5cc]/95 dark:bg-[#101520]/95 backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-stone-600 dark:text-slate-400 flex items-center justify-between sm:justify-start gap-2">
             {isSaving ? (
               <span className="inline-flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold">
