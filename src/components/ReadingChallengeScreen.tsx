@@ -203,11 +203,13 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       </div>
 
       {/* ─── Hero Section: Ficha de Reto de Lectura Anual ─── */}
-      <section className="catalog-card-panel relative overflow-hidden pt-7 sm:pt-8 p-6 sm:p-8 shadow-xl">
+      <section className="catalog-card-panel relative pt-8 sm:pt-9 p-6 sm:p-8 shadow-xl mt-4">
         <div className="catalog-brass-tab" aria-hidden="true">
           Reto Anual {selectedYear === 'all' ? '· Histórico' : `· ${selectedYear}`}
         </div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 dark:bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 rounded-[18px] overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 dark:bg-amber-500/5 rounded-full blur-3xl" />
+        </div>
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-xl">
