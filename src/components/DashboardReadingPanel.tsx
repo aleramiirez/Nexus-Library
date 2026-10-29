@@ -67,7 +67,7 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
       <div className="dashboard-ribbon" aria-hidden="true" />
 
       {/* Cabecera */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6 pr-8">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6 pr-8 sm:pr-10">
         <h2 className="font-serif text-lg sm:text-xl font-bold flex items-center gap-2 text-stone-900 dark:text-stone-100">
           <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           <span>Leyendo actualmente</span>

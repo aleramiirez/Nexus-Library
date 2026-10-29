@@ -362,4 +362,42 @@ html.dark .dashboard-saga-chip {
     padding: 3px 14px;
     font-size: 12px;
   }
+
+  /* Ajustes móviles para la balda de favoritos */
+  .dashboard-shelf-niche {
+    --shelf-pad: 8px;
+    --shelf-gap: 10px;
+    border-radius: 8px;
+  }
+  .shelf-niche-back {
+    padding: 0 8px;
+  }
+  .shelf-niche-back::before,
+  .shelf-niche-back::after {
+    width: 8px;
+  }
+  .dashboard-shelf-niche .shelf-books {
+    padding: 16px var(--shelf-pad) 0;
+    gap: var(--shelf-gap);
+  }
+  .dashboard-shelf-niche .shelf-niche-front {
+    padding: 4px 0 6px;
+  }
+  .dashboard-shelf-niche .shelf-plates {
+    gap: var(--shelf-gap);
+    padding: 0 var(--shelf-pad);
+  }
+  .dashboard-shelf-niche .shelf-plate {
+    max-width: 100%;
+    padding: 2.5px 6px;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+  }
+  .dashboard-saga-chip {
+    top: 4px;
+    left: 4px;
+    padding: 1px 4px;
+    font-size: 8px;
+    max-width: 90%;
+  }
 }

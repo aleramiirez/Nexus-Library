@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Sparkles, FileUp, Loader2 } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover, preloadBookCover } from './BookCover';
@@ -30,6 +30,39 @@ export const DashboardFavoritesShelf: React.FC<DashboardFavoritesShelfProps> = (
 }) => {
   const shelfRef = useRef<HTMLDivElement>(null);
 
+  // Columnas dinámicas según el ancho de pantalla/contenedor
+  const [cols, setCols] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const w = window.innerWidth;
+      return w < 340 ? 2 : w < 640 ? 3 : w < 1024 ? 4 : 5;
+    }
+    return 5;
+  });
+
+  const updateCols = useCallback(() => {
+    const el = shelfRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    if (w < 100) return;
+    const nextCols = w < 300 ? 2 : w < 540 ? 3 : w < 840 ? 4 : 5;
+    setCols((prev) => (prev === nextCols ? prev : nextCols));
+  }, []);
+
+  useEffect(() => {
+    const el = shelfRef.current;
+    if (!el) return;
+    updateCols();
+
+    let prevW = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (!el || el.clientWidth === prevW) return;
+      prevW = el.clientWidth;
+      updateCols();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateCols]);
+
   const setPlateActive = (bookId: string, active: boolean) => {
     const container = shelfRef.current;
     if (!container) return;
@@ -41,6 +74,20 @@ export const DashboardFavoritesShelf: React.FC<DashboardFavoritesShelfProps> = (
   };
 
   const displayedBooks = favoriteBooks.slice(0, 5);
+
+  // Agrupar libros en filas para que CADA fila tenga su balda de madera y placas directamente debajo
+  const rows = useMemo(() => {
+    const result: Book[][] = [];
+    for (let i = 0; i < displayedBooks.length; i += cols) {
+      result.push(displayedBooks.slice(i, i + cols));
+    }
+    return result;
+  }, [displayedBooks, cols]);
+
+  const gridStyle = useMemo(
+    () => ({ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }),
+    [cols]
+  );
 
   return (
     <div className="library-paper-panel">
@@ -111,83 +158,85 @@ export const DashboardFavoritesShelf: React.FC<DashboardFavoritesShelfProps> = (
           </button>
         </div>
       ) : (
-        /* Balda de madera empotrada con los libros y placas de latón */
+        /* Balda de madera empotrada con los libros y placas de latón organizados por baldas */
         <div className="dashboard-shelf-niche" ref={shelfRef}>
           {/* Moldura superior de madera */}
           <div className="shelf-niche-cornice" aria-hidden="true" />
 
           {/* Cuerpo de madera con fondo de lamas y laterales */}
           <div className="shelf-niche-back">
-            <div className="shelf-row">
-              {/* Libros apoyados sobre la balda */}
-              <div className="shelf-books grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
-                {displayedBooks.map((book, i) => (
-                  <button
-                    key={book.id}
-                    type="button"
-                    data-book-id={book.id}
-                    className={
-                      'shelf-book' + (openedBookId === book.id ? ' is-extracted' : '')
-                    }
-                    style={{ '--i': i } as React.CSSProperties}
-                    onClick={() => onOpenDetail(book.id)}
-                    onPointerEnter={() => {
-                      preloadBookCover(book);
-                      setPlateActive(book.id, true);
-                    }}
-                    onPointerLeave={() => {
-                      if (openedBookId !== book.id) setPlateActive(book.id, false);
-                    }}
-                    onFocus={() => {
-                      preloadBookCover(book);
-                      setPlateActive(book.id, true);
-                    }}
-                    onBlur={() => {
-                      if (openedBookId !== book.id) setPlateActive(book.id, false);
-                    }}
-                    aria-label={book.nombre}
-                    title={book.nombre}
-                  >
-                    <div className="relative w-full">
-                      {book.sagaNombre && (
-                        <span className="dashboard-saga-chip">
-                          {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
-                        </span>
-                      )}
-                      <BookCover
-                        nombre={book.nombre}
-                        autor={book.autor}
-                        portadaUrl={book.portadaUrl}
-                        portadaFallbackUrl={book.portadaFallbackUrl}
-                        portadaDataUrl={book.portadaDataUrl}
-                        size="sm"
-                        variant="book"
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Balda de madera y placas de latón */}
-              <div className="shelf-plank" aria-hidden="true">
-                <div className="shelf-plank-top" />
-                <div className="shelf-niche-front">
-                  <div className="shelf-plates grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
-                    {displayedBooks.map((book) => (
-                      <div
-                        key={book.id}
-                        data-plate-id={book.id}
-                        className={
-                          'shelf-plate' + (openedBookId === book.id ? ' is-active' : '')
-                        }
-                      >
-                        {book.nombre}
+            {rows.map((rowBooks, rowIdx) => (
+              <div className="shelf-row" key={`fav-row-${rowIdx}`}>
+                {/* Libros apoyados sobre esta balda */}
+                <div className="shelf-books" style={gridStyle}>
+                  {rowBooks.map((book, i) => (
+                    <button
+                      key={book.id}
+                      type="button"
+                      data-book-id={book.id}
+                      className={
+                        'shelf-book' + (openedBookId === book.id ? ' is-extracted' : '')
+                      }
+                      style={{ '--i': rowIdx * cols + i } as React.CSSProperties}
+                      onClick={() => onOpenDetail(book.id)}
+                      onPointerEnter={() => {
+                        preloadBookCover(book);
+                        setPlateActive(book.id, true);
+                      }}
+                      onPointerLeave={() => {
+                        if (openedBookId !== book.id) setPlateActive(book.id, false);
+                      }}
+                      onFocus={() => {
+                        preloadBookCover(book);
+                        setPlateActive(book.id, true);
+                      }}
+                      onBlur={() => {
+                        if (openedBookId !== book.id) setPlateActive(book.id, false);
+                      }}
+                      aria-label={book.nombre}
+                      title={book.nombre}
+                    >
+                      <div className="relative w-full">
+                        {book.sagaNombre && (
+                          <span className="dashboard-saga-chip">
+                            {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
+                          </span>
+                        )}
+                        <BookCover
+                          nombre={book.nombre}
+                          autor={book.autor}
+                          portadaUrl={book.portadaUrl}
+                          portadaFallbackUrl={book.portadaFallbackUrl}
+                          portadaDataUrl={book.portadaDataUrl}
+                          size="sm"
+                          variant="book"
+                        />
                       </div>
-                    ))}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Balda de madera y placas de latón de esta fila */}
+                <div className="shelf-plank" aria-hidden="true">
+                  <div className="shelf-plank-top" />
+                  <div className="shelf-niche-front">
+                    <div className="shelf-plates" style={gridStyle}>
+                      {rowBooks.map((book) => (
+                        <div
+                          key={book.id}
+                          data-plate-id={book.id}
+                          className={
+                            'shelf-plate' + (openedBookId === book.id ? ' is-active' : '')
+                          }
+                        >
+                          {book.nombre}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       )}
