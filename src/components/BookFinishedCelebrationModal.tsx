@@ -15,6 +15,7 @@ import {
 import { Book } from '../types/models';
 import { BookCover } from './BookCover';
 import { formatStars } from '../constants/catalogs';
+import { soundService } from '../services/soundService';
 
 export interface BookFinishedCelebrationModalProps {
   isOpen: boolean;
@@ -26,49 +27,6 @@ export interface BookFinishedCelebrationModalProps {
   onOpenShareCard?: (book: Book) => void;
   onOpenChallenge?: () => void;
   onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
-}
-
-// Sonido sintético de sello de lacre ceremonial usando Web Audio API
-function playWaxSealSound() {
-  try {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-    const now = ctx.currentTime;
-
-    // 1. Golpe táctil sordo de lacre sobre pergamino (thump)
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(115, now);
-    osc.frequency.exponentialRampToValueAtTime(30, now + 0.22);
-
-    gain.gain.setValueAtTime(0.55, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.25);
-
-    // 2. Resonancia cálida de latón (chime)
-    const bellOsc = ctx.createOscillator();
-    const bellGain = ctx.createGain();
-    bellOsc.type = 'sine';
-    bellOsc.frequency.setValueAtTime(587.33, now + 0.05); // D5
-    bellGain.gain.setValueAtTime(0.18, now + 0.05);
-    bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-
-    bellOsc.connect(bellGain);
-    bellGain.connect(ctx.destination);
-    bellOsc.start(now + 0.05);
-    bellOsc.stop(now + 0.55);
-  } catch {
-    // Si el navegador bloquea audio sin interacción previa, se ignora silenciosamente
-  }
 }
 
 export const BookFinishedCelebrationModal: React.FC<BookFinishedCelebrationModalProps> = ({
@@ -91,7 +49,7 @@ export const BookFinishedCelebrationModal: React.FC<BookFinishedCelebrationModal
       // Lanzar animación de sello con pequeño delay de suspenso
       const landTimer = setTimeout(() => {
         setStampLanded(true);
-        playWaxSealSound();
+        soundService.playWaxSeal();
       }, 350);
 
       const particleTimer = setTimeout(() => {

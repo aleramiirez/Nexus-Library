@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { soundService } from '../services/soundService';
 import {
   X,
   Edit3,
@@ -292,6 +293,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
       const direction = order[targetTab] > order[activeTab] ? 'forward' : 'backward';
       setIsFlippingPage(true);
       setFlipDirection(direction);
+      soundService.playPageTurn();
       if (flipTimerRef.current) window.clearTimeout(flipTimerRef.current);
       flipTimerRef.current = window.setTimeout(() => {
         setActiveTab(targetTab);
@@ -392,6 +394,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     setAnimDone(false);
     setActiveTab('details');
     setIsFlippingPage(false);
+    soundService.playPageTurn();
 
     return () => {
       if (closeTimerRef.current !== null) {
