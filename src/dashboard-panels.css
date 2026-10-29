@@ -600,3 +600,146 @@ html.dark .collection-shelf-more {
   display: block;
   margin-bottom: 22px;
 }
+
+/* ===== 7. Pantalla de Descubrimiento (DiscoverBooksScreen) ===== */
+.discover-hero-panel {
+  position: relative;
+  padding-top: 32px;
+  overflow: visible;
+}
+.discover-hero-panel .catalog-brass-tab {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+}
+
+.discover-search-input {
+  background: #fbf5e8;
+  border: 1px solid rgba(160, 115, 55, 0.35);
+  box-shadow: inset 0 2px 4px rgba(60, 30, 10, 0.05);
+  color: #291c10;
+  transition: all 0.25s ease;
+}
+.discover-search-input:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18), inset 0 1px 2px rgba(60, 30, 10, 0.05);
+}
+html.dark .discover-search-input {
+  background: #141b27;
+  border-color: rgba(220, 180, 100, 0.2);
+  color: #f1f5f9;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+html.dark .discover-search-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.discover-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(251, 245, 232, 0.95);
+  border: 1px solid rgba(160, 115, 55, 0.25);
+  color: #5c3a1d;
+  box-shadow: 0 1px 2px rgba(60, 30, 10, 0.04);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.discover-chip:hover {
+  background: #fffdf8;
+  border-color: #d97706;
+  color: #92400e;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(60, 30, 10, 0.08);
+}
+html.dark .discover-chip {
+  background: rgba(20, 27, 39, 0.9);
+  border-color: rgba(220, 180, 100, 0.18);
+  color: #cbd5e1;
+}
+html.dark .discover-chip:hover {
+  background: #1e2738;
+  border-color: #f59e0b;
+  color: #fde68a;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Ficha de libro en el catálogo de descubrimiento */
+.discover-book-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fdfaf3;
+  border: 1px solid rgba(160, 115, 55, 0.22);
+  box-shadow:
+    0 2px 6px rgba(60, 30, 10, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+}
+.discover-book-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(217, 119, 6, 0.55);
+  box-shadow:
+    0 12px 24px -6px rgba(60, 30, 10, 0.12),
+    0 4px 8px -2px rgba(60, 30, 10, 0.06);
+  background: #ffffff;
+}
+html.dark .discover-book-card {
+  background: #151c28;
+  border-color: rgba(220, 180, 100, 0.16);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+html.dark .discover-book-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow:
+    0 14px 28px -6px rgba(0, 0, 0, 0.55),
+    0 4px 10px rgba(0, 0, 0, 0.3);
+  background: #1c2536;
+}
+
+/* Placa temática grabada (Sección de estanterías) */
+.discover-placard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.65), rgba(246, 230, 192, 0.5));
+  border: 1px solid rgba(180, 130, 60, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 2px 4px rgba(60, 30, 10, 0.04);
+}
+html.dark .discover-placard {
+  background: linear-gradient(135deg, #182030, #131926);
+  border-color: rgba(220, 180, 100, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 639px) {
+  .discover-hero-panel {
+    padding: 24px 14px 16px;
+  }
+  .discover-hero-panel .catalog-brass-tab {
+    left: 14px;
+    font-size: 11px;
+    padding: 2.5px 10px;
+  }
+  .discover-book-card {
+    padding: 10px;
+  }
+}

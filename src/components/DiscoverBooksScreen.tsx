@@ -32,6 +32,7 @@ import { BookCover } from './BookCover';
 import { normalizeText } from '../constants/catalogs';
 import { CommunityReadersView } from './CommunityReadersView';
 import { BookDetailModal } from './BookDetailModal';
+import '../dashboard-panels.css';
 
 interface DiscoverBooksScreenProps {
   books: Book[];
@@ -424,15 +425,15 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       )}
 
       {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Comunidad de Lectores) ─── */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
         <button
           type="button"
           onClick={() => handleTabChange('books')}
           className={
-            'inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold transition ' +
+            'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition shadow-sm ' +
             (discoverTab === 'books'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
           }
         >
           <Compass className="w-4 h-4 shrink-0" /> <span className="truncate">Catálogo de Libros</span>
@@ -442,10 +443,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           type="button"
           onClick={() => handleTabChange('community')}
           className={
-            'inline-flex items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-semibold transition ' +
+            'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition shadow-sm ' +
             (discoverTab === 'community'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50')
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
           }
         >
           <Users className="w-4 h-4 shrink-0" /> <span className="truncate">Comunidad</span>
@@ -454,66 +455,74 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
 
       {/* ─── Contenedor Catálogo de Libros: se oculta con CSS para no perder estado ni remontar ─── */}
       <div className={discoverTab === 'books' ? 'space-y-8' : 'hidden'}>
-          {/* ─── Cabecera Compacta & Buscador ─── */}
-          <div className="space-y-3 pb-3 border-b border-amber-900/15 dark:border-[#242E42]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Compass className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight">
-                Descubrir Libros
-              </h1>
+        {/* ─── Ficha de Cabecera & Buscador ─── */}
+        <div className="catalog-card-panel discover-hero-panel">
+          <div className="catalog-brass-tab">
+            Explorador Bibliográfico
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                    <Compass className="w-4 h-4 shrink-0" />
+                  </span>
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight">
+                    Descubrir Libros
+                  </h1>
+                </div>
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+                  Explora catálogos abiertos, novedades y recomendaciones afines a tus gustos literarios
+                </p>
+              </div>
+
+              {/* Barra de búsqueda interactiva */}
+              <div className="relative w-full sm:w-80 md:w-96">
+                <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Buscar título, autor, saga o ISBN..."
+                  className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition"
+                />
+                {isSearching ? (
+                  <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                ) : searchInput ? (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : null}
+              </div>
             </div>
-            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-              Explora catálogos abiertos y recomendaciones según tus preferencias
-            </p>
-          </div>
 
-          {/* Barra de búsqueda interactiva */}
-          <div className="relative w-full sm:w-80 md:w-96">
-            <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Buscar título, autor, saga o ISBN..."
-              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-10 pr-9 py-2 text-xs sm:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
-            />
-            {isSearching ? (
-              <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-            ) : searchInput ? (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
-                title="Limpiar búsqueda"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : null}
+            {/* Chips de sugerencias rápidas (deslizables en móvil, multilínea en escritorio) */}
+            <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 pt-1 -mx-1 px-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs">
+              <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400 shrink-0 mr-1">
+                Sugerencias:
+              </span>
+              {QUICK_CHIPS.map((chip) => {
+                const cleanText = chip.replace(/^[^\s]+\s/, '');
+                return (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => handleQuickChip(cleanText)}
+                    className="discover-chip shrink-0 active:scale-95"
+                  >
+                    {chip}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-
-        {/* Chips de sugerencias rápidas (deslizables en móvil, multilínea en escritorio) */}
-        <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 pt-0.5 pb-1 sm:pb-0 -mx-1 px-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs">
-          <span className="text-[11px] font-medium text-stone-500 dark:text-slate-400 shrink-0">
-            Sugerencias:
-          </span>
-          {QUICK_CHIPS.map((chip) => {
-            const cleanText = chip.replace(/^[^\s]+\s/, '');
-            return (
-              <button
-                key={chip}
-                type="button"
-                onClick={() => handleQuickChip(cleanText)}
-                className="shrink-0 rounded-full border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#141A26] px-2.5 py-1 sm:py-0.5 text-[11px] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 dark:hover:border-amber-400/50 hover:bg-amber-500/10 transition active:scale-95"
-              >
-                {chip}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* ─── VISTA 1: Resultados de Búsqueda Dinámica ─── */}
       {debouncedQuery.length >= 2 ? (
@@ -575,10 +584,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                     onClick={() => setSelectedCandidate(cand)}
                     role="button"
                     tabIndex={0}
-                    className="group relative flex flex-col justify-between rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    className="discover-book-card group"
                   >
                     <div>
-                      <div className="relative mb-2">
+                      <div className="relative mb-2.5 flex items-center justify-center">
                         <BookCover
                           nombre={cand.nombre}
                           autor={cand.autor}
@@ -593,27 +602,27 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       >
                         {cand.nombre}
                       </h3>
-                      <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5">
+                      <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5 font-medium">
                         {cand.autor || 'Autor desconocido'}
                       </p>
 
                       <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-stone-500 dark:text-slate-400">
                         {cand.fechaPublicacion && (
-                          <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
+                          <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.5">
                             {cand.fechaPublicacion}
                           </span>
                         )}
                         {cand.suggestedGenre && (
-                          <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 truncate max-w-[110px]">
+                          <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 truncate max-w-[110px]">
                             {cand.suggestedGenre.replace(/^[^\s]+\s/, '')}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-amber-900/15 dark:border-[#253044]">
+                    <div className="mt-3 pt-2.5 border-t border-amber-900/15 dark:border-[#253044]">
                       {inLibrary ? (
-                        <div className="w-full flex items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 text-[11px] font-semibold">
+                        <div className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 text-[11px] font-semibold">
                           <Check className="w-3.5 h-3.5" /> En tu biblioteca
                         </div>
                       ) : (
@@ -621,12 +630,12 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                           type="button"
                           disabled={isAdding}
                           onClick={(e) => handleQuickAdd(cand, e)}
-                          className="w-full flex items-center justify-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition active:scale-[0.98] disabled:opacity-50"
                         >
                           {isAdding ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3.5 h-3.5" />
                           )}
                           Añadir libro
                         </button>
@@ -660,15 +669,15 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
 
               {/* Controles de recomendación: Sub-filtros y Refrescar */}
               <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-                <div className="inline-flex items-center p-1 rounded-xl bg-amber-900/10 dark:bg-[#121824] border border-amber-900/15 dark:border-[#283246] text-xs">
+                <div className="inline-flex items-center p-1 rounded-xl bg-[#f5ecda] dark:bg-[#121824] border border-amber-900/20 dark:border-[#283246] text-xs shadow-inner">
                   <button
                     type="button"
                     onClick={() => handleRecSubFilterChange('mix')}
                     className={
-                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      'px-3 py-1 rounded-lg text-[11px] font-semibold transition ' +
                       (recSubFilter === 'mix'
-                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
-                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                        ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                        : 'text-stone-700 dark:text-slate-300 hover:text-amber-800 dark:hover:text-amber-300')
                     }
                   >
                     🎯 Mix
@@ -677,10 +686,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                     type="button"
                     onClick={() => handleRecSubFilterChange('authors')}
                     className={
-                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      'px-3 py-1 rounded-lg text-[11px] font-semibold transition ' +
                       (recSubFilter === 'authors'
-                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
-                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                        ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                        : 'text-stone-700 dark:text-slate-300 hover:text-amber-800 dark:hover:text-amber-300')
                     }
                   >
                     👥 Nuevos autores
@@ -689,10 +698,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                     type="button"
                     onClick={() => handleRecSubFilterChange('classics')}
                     className={
-                      'px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ' +
+                      'px-3 py-1 rounded-lg text-[11px] font-semibold transition ' +
                       (recSubFilter === 'classics'
-                        ? 'bg-white dark:bg-[#1C2433] text-stone-900 dark:text-white shadow-sm font-bold'
-                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
+                        ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                        : 'text-stone-700 dark:text-slate-300 hover:text-amber-800 dark:hover:text-amber-300')
                     }
                   >
                     🏆 Grandes joyas
@@ -703,7 +712,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                   type="button"
                   disabled={isLoadingRecs}
                   onClick={handleRefreshRecs}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-amber-500/10 transition shadow-sm disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-amber-500/10 transition shadow-sm disabled:opacity-50 active:scale-95"
                   title="Explorar nuevas sugerencias"
                 >
                   <RefreshCw
@@ -717,9 +726,9 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
             </div>
 
             {isLoadingRecs ? (
-              <div className="flex items-center justify-center py-12 text-xs text-stone-500 dark:text-slate-400 gap-2">
+              <div className="flex items-center justify-center py-12 text-xs text-stone-500 dark:text-slate-400 gap-2 font-serif">
                 <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
-                Cargando recomendaciones personalizadas...
+                Examinando manuscritos afines a tus gustos...
               </div>
             ) : visibleRecommendations.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4.5">
@@ -732,7 +741,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       onClick={() => setSelectedCandidate(cand)}
                       role="button"
                       tabIndex={0}
-                      className="group relative flex flex-col justify-between rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                      className="discover-book-card group"
                     >
                       {/* Botón discreto para descartar recomendación */}
                       <button
@@ -756,7 +765,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                           </div>
                         )}
 
-                        <div className="relative mb-2">
+                        <div className="relative mb-2.5 flex items-center justify-center">
                           <BookCover
                             nombre={cand.nombre}
                             autor={cand.autor}
@@ -771,35 +780,35 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                         >
                           {cand.nombre}
                         </h3>
-                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5">
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5 font-medium">
                           {cand.autor || 'Autor desconocido'}
                         </p>
 
                         <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-stone-500 dark:text-slate-400">
                           {cand.fechaPublicacion && (
-                            <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
+                            <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.5">
                               {cand.fechaPublicacion}
                             </span>
                           )}
                           {cand.suggestedGenre && (
-                            <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 truncate max-w-[110px]">
+                            <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 truncate max-w-[110px]">
                               {cand.suggestedGenre.replace(/^[^\s]+\s/, '')}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="mt-3 pt-2 border-t border-amber-900/15 dark:border-[#253044]">
+                      <div className="mt-3 pt-2.5 border-t border-amber-900/15 dark:border-[#253044]">
                         <button
                           type="button"
                           disabled={isAdding}
                           onClick={(e) => handleQuickAdd(cand, e)}
-                          className="w-full flex items-center justify-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition active:scale-[0.98] disabled:opacity-50"
                         >
                           {isAdding ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3.5 h-3.5" />
                           )}
                           Añadir libro
                         </button>
@@ -869,23 +878,32 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
               })}
             </div>
 
-            {/* Banner explicativo del género actual */}
+            {/* Placa temática grabada (Banner de la sección activa) */}
             {currentCategory && (
-              <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#121824]/90 p-3.5 flex items-center justify-between text-xs text-stone-700 dark:text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{currentCategory.icon}</span>
-                  <span>{currentCategory.description}</span>
+              <div className="discover-placard">
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-lg shadow-sm shrink-0">
+                    {currentCategory.icon}
+                  </span>
+                  <div>
+                    <div className="font-serif font-bold text-sm text-stone-900 dark:text-amber-100 flex items-center gap-2">
+                      <span>{currentCategory.name}</span>
+                      <span className="text-[10px] font-sans font-normal px-2 py-0.5 rounded-full bg-amber-900/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                        {currentCategoryBooks.length} volúmenes
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
+                      {currentCategory.description}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2.5">
                   {isLoadingCategory && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 font-medium bg-amber-500/10 px-2 py-1 rounded-lg">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       <span className="hidden md:inline">Ampliando catálogo...</span>
                     </span>
                   )}
-                  <span className="font-mono text-[10px] text-stone-500 dark:text-slate-400">
-                    {currentCategoryBooks.length} volúmenes
-                  </span>
                 </div>
               </div>
             )}
@@ -903,10 +921,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                       onClick={() => setSelectedCandidate(cand)}
                       role="button"
                       tabIndex={0}
-                      className="group relative flex flex-col justify-between rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                      className="discover-book-card group"
                     >
                       <div>
-                        <div className="relative mb-2">
+                        <div className="relative mb-2.5 flex items-center justify-center">
                           <BookCover
                             nombre={cand.nombre}
                             autor={cand.autor}
@@ -921,27 +939,27 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                         >
                           {cand.nombre}
                         </h3>
-                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5">
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5 font-medium">
                           {cand.autor || 'Autor desconocido'}
                         </p>
 
                         <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-stone-500 dark:text-slate-400">
                           {cand.fechaPublicacion && (
-                            <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.2">
+                            <span className="rounded bg-amber-900/10 dark:bg-slate-800 px-1.5 py-0.5">
                               {cand.fechaPublicacion}
                             </span>
                           )}
                           {cand.edicion && (
-                            <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.2">
+                            <span className="rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 truncate max-w-[110px]">
                               {cand.edicion}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="mt-3 pt-2 border-t border-amber-900/15 dark:border-[#253044]">
+                      <div className="mt-3 pt-2.5 border-t border-amber-900/15 dark:border-[#253044]">
                         {inLibrary ? (
-                          <div className="w-full flex items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 text-[11px] font-semibold">
+                          <div className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 py-1.5 text-[11px] font-semibold">
                             <Check className="w-3.5 h-3.5" /> En tu biblioteca
                           </div>
                         ) : (
@@ -949,12 +967,12 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                             type="button"
                             disabled={isAdding}
                             onClick={(e) => handleQuickAdd(cand, e)}
-                            className="w-full flex items-center justify-center gap-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold py-1.5 text-[11px] shadow-sm transition active:scale-[0.98] disabled:opacity-50"
                           >
                             {isAdding ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Plus className="w-3 h-3" />
+                              <Plus className="w-3.5 h-3.5" />
                             )}
                             Añadir libro
                           </button>
