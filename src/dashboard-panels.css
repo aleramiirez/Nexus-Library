@@ -401,3 +401,130 @@ html.dark .dashboard-saga-chip {
     max-width: 90%;
   }
 }
+
+/* ===== Pantalla de sagas: ficha de catálogo + balda deslizante ===== */
+.saga-card {
+  padding-top: 30px;
+}
+.saga-card > * {
+  position: relative;
+  z-index: 2;
+}
+.saga-card .catalog-brass-tab {
+  position: absolute;
+  max-width: calc(100% - 56px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saga-shelf {
+  --saga-book-w: 112px;
+  --saga-gap: 18px;
+}
+.saga-shelf-scroll {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 14px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.saga-shelf-scroll::-webkit-scrollbar {
+  display: none;
+}
+.saga-shelf-track {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+}
+.saga-shelf-books,
+.saga-shelf-plates {
+  display: flex;
+  gap: var(--saga-gap);
+  padding: 0 14px;
+}
+.saga-shelf-books {
+  position: relative;
+  z-index: 2;
+  align-items: flex-end;
+  padding-top: 26px;
+}
+.saga-shelf-item,
+.saga-shelf-plate {
+  flex: 0 0 var(--saga-book-w);
+  width: var(--saga-book-w);
+  scroll-snap-align: start;
+}
+.saga-shelf-plate {
+  max-width: none;
+  margin: 0;
+}
+
+/* Sello de lacre con el estado de lectura */
+.saga-seal {
+  position: absolute;
+  right: -5px;
+  bottom: 8px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff6e0;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+.saga-seal.is-read    { background: radial-gradient(circle at 35% 30%, #4f9a6a, #1f5a36); }
+.saga-seal.is-reading { background: radial-gradient(circle at 35% 30%, #d9a441, #8a5a12); }
+.saga-seal.is-paused  { background: radial-gradient(circle at 35% 30%, #9b3a48, #5a1620); font-size: 10px; }
+
+/* Acciones de la ficha */
+.saga-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c3a1d;
+  background: #f7eedb;
+  border: 1px solid rgba(160, 115, 55, 0.3);
+  transition: all 0.2s;
+}
+.saga-action-btn:hover {
+  border-color: #d4af37;
+  background: #fff8eb;
+}
+.saga-action-btn.is-danger { color: #9b2c3a; }
+.saga-action-btn.is-active { color: #9b2c3a; border-color: rgba(155, 44, 58, 0.4); }
+html.dark .saga-action-btn {
+  color: #f1ddb9;
+  background: #1a2232;
+  border-color: rgba(220, 180, 100, 0.2);
+}
+html.dark .saga-action-btn:hover { background: #232e42; border-color: #f59e0b; }
+html.dark .saga-action-btn.is-danger,
+html.dark .saga-action-btn.is-active { color: #f19aa6; }
+
+@media (max-width: 639px) {
+  .saga-card { padding: 26px 14px 16px; }
+  .saga-shelf { --saga-book-w: 92px; --saga-gap: 12px; }
+  .saga-shelf-books { padding-top: 18px; }
+  .saga-shelf-books,
+  .saga-shelf-plates { padding: 0 10px; }
+  .saga-shelf-books { padding-top: 18px; }
+  .saga-shelf-plate { font-size: 10.5px; padding: 2px 8px; }
+  .saga-seal { width: 20px; height: 20px; font-size: 10px; }
+}

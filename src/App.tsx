@@ -99,6 +99,7 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
 import { SagaProgressBar } from './components/SagaProgressBar';
+import { SagaShelf } from './components/SagaShelf';
 import { DashboardReadingPanel } from './components/DashboardReadingPanel';
 import { DashboardSagasPanel } from './components/DashboardSagasPanel';
 import { DashboardFavoritesShelf } from './components/DashboardFavoritesShelf';
@@ -2401,34 +2402,24 @@ export const App: React.FC = () => {
                   {sagasWithBooks.map((item) => (
                     <section
                       key={item.saga.id}
-                      className="rounded-2xl editorial-card-surface p-5 space-y-4"
+                      className="catalog-card-panel saga-card space-y-4"
                     >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-3.5">
+                      <div className="catalog-brass-tab" aria-hidden="true">
+                        {item.registeredCount}{' '}
+                        {item.registeredCount === 1 ? 'volumen' : 'volúmenes'}
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                            <h2 className="font-serif text-xl sm:text-2xl font-bold text-amber-800 dark:text-amber-400 break-words">
-                              {item.saga.nombre}
-                            </h2>
-                            <span className="rounded-full bg-amber-500/15 border border-amber-600/30 dark:border-amber-500/30 px-2.5 py-0.5 text-xs text-amber-900 dark:text-amber-200 font-semibold shrink-0">
-                              {item.registeredCount}{' '}
-                              {item.registeredCount === 1
-                                ? 'volumen registrado'
-                                : 'volúmenes registrados'}
-                            </span>
-                          </div>
-                          {item.saga.descripcion && (
-                            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">{item.saga.descripcion}</p>
-                          )}
+                          <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-stone-100 break-words leading-tight">
+                            {item.saga.nombre}
+                          </h2>
+                          <p className="font-serif italic text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-0.5">
+                            {item.readCount} leídos · {item.pendingCount} pendientes
+                            {item.saga.descripcion ? ` — ${item.saga.descripcion}` : ''}
+                          </p>
                         </div>
 
-                        <div className="flex flex-wrap sm:flex-nowrap items-center md:justify-end gap-3 shrink-0">
-                          <div className="text-left md:text-right shrink-0">
-                            <span className="text-xs text-stone-700 dark:text-slate-300 font-medium">
-                              {item.readCount} leídos · {item.pendingCount} pendientes
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
                               onClick={() => {
@@ -2447,18 +2438,18 @@ export const App: React.FC = () => {
                                 }
                               }}
                               className={
-                                activeSagaIdForAssign === item.saga.id
-                                  ? 'inline-flex items-center gap-1 rounded-lg border border-rose-500/30 dark:border-rose-400/30 bg-rose-500/10 px-2.5 py-1.5 text-xs text-rose-700 dark:text-rose-300 font-medium hover:bg-rose-500/20 transition whitespace-nowrap'
-                                  : 'inline-flex items-center gap-1 rounded-lg border border-amber-600/40 dark:border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-800 dark:text-amber-300 font-medium hover:bg-amber-500/20 transition whitespace-nowrap'
+                                'saga-action-btn' +
+                                (activeSagaIdForAssign === item.saga.id ? ' is-active' : '')
                               }
+                              title={activeSagaIdForAssign === item.saga.id ? 'Cancelar' : 'Asignar libro'}
+                              aria-label={activeSagaIdForAssign === item.saga.id ? 'Cancelar' : 'Asignar libro'}
                             >
                               {activeSagaIdForAssign === item.saga.id ? (
-                                <>
-                                  <X className="w-3.5 h-3.5" /> Cancelar
-                                </>
+                                <X className="w-3.5 h-3.5" />
                               ) : (
                                 <>
-                                  <Plus className="w-3.5 h-3.5" /> Asignar libro
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Asignar libro</span>
                                 </>
                               )}
                             </button>
@@ -2476,7 +2467,7 @@ export const App: React.FC = () => {
                                   setSagaFormOpen(true);
                                 }
                               }}
-                              className="p-1.5 rounded-lg border border-amber-900/25 dark:border-slate-700 text-stone-700 dark:text-slate-300 hover:border-amber-600 dark:hover:border-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
+                              className="saga-action-btn"
                               title="Editar nombre o descripción de la saga"
                               aria-label="Editar saga"
                             >
@@ -2485,13 +2476,12 @@ export const App: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setSagaToDelete(item.saga)}
-                              className="p-1.5 rounded-lg border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15 transition"
+                              className="saga-action-btn is-danger"
                               title="Eliminar saga"
                               aria-label="Eliminar saga"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          </div>
                         </div>
                       </div>
 
@@ -2627,36 +2617,7 @@ export const App: React.FC = () => {
                           No hay volúmenes asignados todavía a esta saga.
                         </p>
                       ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4 pt-1">
-                          {item.books.map((book) => (
-                            <div
-                              key={book.id}
-                              data-book-id={book.id}
-                              onClick={() => handleOpenBookDetail(book.id)}
-                              className="group cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/70 dark:bg-[#101520] hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] p-2.5 hover:-translate-y-1.5 hover:border-amber-500/70 hover:shadow-[0_12px_26px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 flex flex-col justify-between"
-                            >
-                              <div>
-                                <div className="relative mb-2">
-                                  <BookCover
-                                    nombre={book.nombre}
-                                    autor={book.autor}
-                                    portadaUrl={book.portadaUrl}
-                                    portadaFallbackUrl={book.portadaFallbackUrl}
-                                    portadaDataUrl={book.portadaDataUrl}
-                                    size="sm"
-                                  />
-                                  <span className="absolute top-2 left-2 z-10 truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
-                                    {book.volumen ? '#' + String(book.volumen) : 'Sin núm.'}
-                                  </span>
-                                </div>
-                                <p className="font-serif font-bold text-sm mt-1 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300">
-                                  {book.nombre}
-                                </p>
-                              </div>
-                              <p className="text-[11px] text-stone-600 dark:text-slate-400 mt-1">{book.progreso}</p>
-                            </div>
-                          ))}
-                        </div>
+                        <SagaShelf books={item.books} onOpenDetail={handleOpenBookDetail} />
                       )}
                     </section>
                   ))}
