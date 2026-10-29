@@ -565,31 +565,34 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
       drawBookCover3D(ctx, book, coverImg, bookX, bookY, bookW, bookH, isDark);
 
-      // Puntuación en estrellas
-      let currentY = bookY + bookH + 48;
+      // Puntuación en estrellas con margen holgado respecto a la base del libro
+      let currentY = bookY + bookH + 70;
       if (includeRating && book.puntuacion) {
         ctx.fillStyle = '#fbbf24';
         ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         ctx.letterSpacing = '5px';
         ctx.fillText(formatStars(book.puntuacion), W / 2, currentY);
-        currentY += 46;
+        currentY += 66;
+      } else {
+        currentY += 16;
       }
 
-      // Título del Libro
+      // Título del Libro con espacio respirable
       ctx.fillStyle = isDark ? '#ffffff' : '#1c1917';
       ctx.font = 'bold 46px "Cinzel", Georgia, serif';
       ctx.letterSpacing = '1px';
       const titleLines = wrapText(ctx, book.nombre, W - 180).slice(0, 3);
       titleLines.forEach((line) => {
         ctx.fillText(line, W / 2, currentY);
-        currentY += 56;
+        currentY += 58;
       });
 
-      // Autor
+      // Autor con separación elegante
+      currentY += 12;
       ctx.fillStyle = isDark ? '#cbd5e1' : '#44403c';
       ctx.font = 'italic 28px Georgia, serif';
       ctx.fillText(book.autor || 'Autor desconocido', W / 2, currentY);
-      currentY += 40;
+      currentY += 48;
 
       // Saga si aplica
       if (includeSaga && book.sagaNombre) {
@@ -597,20 +600,20 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const sagaText = `✦ ${book.sagaNombre}${book.volumen ? ` · Libro #${book.volumen}` : ''} ✦`;
         ctx.fillText(sagaText, W / 2, currentY);
-        currentY += 44;
+        currentY += 52;
       }
 
       // Cita memorable destacada
       const activeQuote = customQuote.trim();
       if (includeQuote && activeQuote) {
-        currentY += 20;
+        currentY += 28;
 
         // Caja de la cita
         const boxMargin = 90;
         const boxW = W - boxMargin * 2;
         ctx.font = 'italic 25px Georgia, serif';
         const quoteLines = wrapText(ctx, `«${activeQuote}»`, boxW - 80).slice(0, 5);
-        const boxH = quoteLines.length * 38 + 48;
+        const boxH = quoteLines.length * 40 + 54;
 
         ctx.fillStyle = isDark ? 'rgba(217, 119, 6, 0.08)' : 'rgba(255, 255, 255, 0.65)';
         ctx.strokeStyle = isDark ? 'rgba(217, 119, 6, 0.28)' : 'rgba(180, 83, 9, 0.25)';
@@ -625,13 +628,13 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.stroke();
 
         ctx.fillStyle = isDark ? '#f8fafc' : '#292524';
-        let qY = currentY + 42;
+        let qY = currentY + 44;
         quoteLines.forEach((qLine) => {
           ctx.fillText(qLine, W / 2, qY);
-          qY += 38;
+          qY += 40;
         });
 
-        currentY += boxH + 30;
+        currentY += boxH + 34;
       }
 
       // Pie con fecha de lectura y marca
@@ -660,10 +663,10 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
       drawBookCover3D(ctx, book, coverImg, bookX, bookY, bookW, bookH, isDark);
 
-      // Texto alineado a la derecha del libro
+      // Texto alineado a la derecha del libro con márgenes equilibrados
       const textX = bookX + bookW + 65;
       const textMaxW = W - textX - 80;
-      let textY = bookY + 36;
+      let textY = bookY + (includeRating && book.puntuacion ? 28 : 50);
 
       ctx.textAlign = 'left';
 
@@ -673,7 +676,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.font = 'bold 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         ctx.letterSpacing = '4px';
         ctx.fillText(formatStars(book.puntuacion), textX, textY);
-        textY += 46;
+        textY += 56;
       }
 
       // Título
@@ -682,14 +685,15 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       const titleLines = wrapText(ctx, book.nombre, textMaxW).slice(0, 3);
       titleLines.forEach((tLine) => {
         ctx.fillText(tLine, textX, textY);
-        textY += 46;
+        textY += 50;
       });
 
       // Autor
+      textY += 10;
       ctx.fillStyle = isDark ? '#cbd5e1' : '#44403c';
       ctx.font = 'italic 24px Georgia, serif';
       ctx.fillText(book.autor || 'Autor desconocido', textX, textY);
-      textY += 36;
+      textY += 42;
 
       // Saga
       if (includeSaga && book.sagaNombre) {
@@ -697,20 +701,20 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.font = '600 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const sagaText = `✦ ${book.sagaNombre}${book.volumen ? ` · Libro #${book.volumen}` : ''}`;
         ctx.fillText(sagaText, textX, textY);
-        textY += 36;
+        textY += 44;
       }
 
       // Cita
       const activeQuote = customQuote.trim();
       if (includeQuote && activeQuote) {
-        textY += 12;
+        textY += 18;
         ctx.font = 'italic 21px Georgia, serif';
         const qLines = wrapText(ctx, `«${activeQuote}»`, textMaxW).slice(0, 4);
 
         ctx.fillStyle = isDark ? 'rgba(217, 119, 6, 0.08)' : 'rgba(255, 255, 255, 0.6)';
         ctx.strokeStyle = isDark ? 'rgba(217, 119, 6, 0.25)' : 'rgba(180, 83, 9, 0.22)';
         ctx.lineWidth = 1.2;
-        const boxH = qLines.length * 30 + 36;
+        const boxH = qLines.length * 32 + 42;
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') {
           ctx.roundRect(textX - 14, textY - 8, textMaxW + 28, boxH, 12);
@@ -721,13 +725,13 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.stroke();
 
         ctx.fillStyle = isDark ? '#f8fafc' : '#292524';
-        let qLineY = textY + 22;
+        let qLineY = textY + 24;
         qLines.forEach((line) => {
           ctx.fillText(line, textX, qLineY);
-          qLineY += 30;
+          qLineY += 32;
         });
 
-        textY += boxH + 18;
+        textY += boxH + 24;
       }
 
       // Pie
