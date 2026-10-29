@@ -738,15 +738,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         onClick={() =>
                           handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
                         }
-                        className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
+                        className="inline-flex items-center justify-center p-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition disabled:opacity-50"
                         title="Cancelar solicitud de amistad"
+                        aria-label="Cancelar solicitud de amistad"
                       >
                         {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <X className="w-3.5 h-3.5" />
                         )}
-                        <span>Cancelar solicitud</span>
                       </button>
                     </div>
                   ) : (
@@ -932,14 +932,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                             onClick={() =>
                               handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
                             }
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1.5 transition disabled:opacity-50"
+                            className="inline-flex items-center justify-center p-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition disabled:opacity-50"
+                            title="Cancelar solicitud"
+                            aria-label="Cancelar solicitud"
                           >
                             {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
                               <X className="w-3.5 h-3.5" />
                             )}
-                            <span>Cancelar</span>
                           </button>
                         </div>
                       ) : (
@@ -1443,11 +1444,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                               e.stopPropagation();
                               handleCancelFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
                             }}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-0.5 rounded-lg transition disabled:opacity-50"
+                            className="inline-flex items-center justify-center p-1 text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 rounded-md transition disabled:opacity-50"
                             title="Cancelar solicitud enviada"
+                            aria-label="Cancelar solicitud enviada"
                           >
                             {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                            <span>Cancelar</span>
                           </button>
                         </div>
                       ) : isPendingReceived ? (
