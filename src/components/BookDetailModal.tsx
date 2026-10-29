@@ -716,11 +716,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               </div>
 
               {/* Selector de pestañas móvil */}
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ebdcc0]/60 dark:bg-[#111722] border-b border-amber-900/15 dark:border-[#222B3C] overflow-x-auto text-xs shrink-0">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ebdcc0]/60 dark:bg-[#111722] border-b border-amber-900/15 dark:border-[#222B3C] overflow-x-auto text-xs shrink-0 no-scrollbar">
                 <button
                   type="button"
                   onClick={handleTurnToDetails}
-                  className={`px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 whitespace-nowrap ${
                     activeTab === 'details'
                       ? 'bg-amber-600/25 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40'
                       : 'text-stone-600 dark:text-slate-400'
@@ -731,7 +731,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={handleTurnToSynopsis}
-                  className={`px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 whitespace-nowrap ${
                     activeTab === 'synopsis'
                       ? 'bg-amber-600/25 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40'
                       : 'text-stone-600 dark:text-slate-400'
@@ -742,7 +742,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={handleTurnToNotes}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 whitespace-nowrap ${
                     activeTab === 'notes'
                       ? 'bg-amber-600/25 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40'
                       : 'text-stone-600 dark:text-slate-400'
@@ -1654,13 +1654,119 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <div className="open-book-edge-bottom-right" aria-hidden="true" />
 
                   <div className="open-book-right-paper flex-1 flex flex-col p-4 sm:p-5 md:pl-8 md:pr-7 md:pt-0 md:pb-3.5 md:max-h-[85dvh] md:overflow-y-auto">
-                    {/* Cintas / Pestañas Superiores de Acción (Marcapáginas en el borde superior derecho) */}
-                    <div className="flex items-start justify-between gap-2 mb-2 sm:mb-2.5">
-                      <div className="flex items-center gap-1 overflow-x-auto py-1">
+                    {/* Fila 1: Pestañas / cintas marcapáginas superiores (colgando del borde superior derecho) */}
+                    <div className="flex items-center justify-end gap-1.5 pt-0 mb-1 shrink-0">
+                      {activeTab !== 'details' && (
                         <button
                           type="button"
                           onClick={handleTurnToDetails}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-serif italic transition cursor-pointer ${
+                          className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-200 font-bold px-2.5"
+                          title="Volver a la ficha técnica (←)"
+                          aria-label="Volver a la ficha técnica"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {!readOnly && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setIsRecommendOpen(true)}
+                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200"
+                            title="Recomendar este libro a un amigo"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                            <span className="hidden xl:inline">Recomendar</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedQuoteForCard('');
+                              setIsShareCardOpen(true);
+                            }}
+                            className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
+                            title="Crear tarjeta editorial para redes sociales"
+                            aria-label="Compartir tarjeta del libro"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                          </button>
+
+                          {onEdit && (
+                            <button
+                              type="button"
+                              onClick={() => onEdit(book)}
+                              className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
+                              title="Editar ficha del libro"
+                              aria-label="Editar ficha"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {onDelete && (
+                            <button
+                              type="button"
+                              onClick={() => onDelete(book)}
+                              className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 px-2.5"
+                              title="Eliminar libro"
+                              aria-label="Eliminar libro"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {readOnly && onAddToLibrary && (
+                        isAlreadyInLibrary ? (
+                          <span className="open-book-ribbon-tab border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold px-3">
+                            <Check className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">En tu biblioteca</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onAddToLibrary(book)}
+                            className="open-book-ribbon-tab border-amber-600/50 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 shadow-sm transition active:scale-95"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Añadir a Por Leer</span>
+                          </button>
+                        )
+                      )}
+
+                      {readOnly && onCustomize && !isAlreadyInLibrary && (
+                        <button
+                          type="button"
+                          onClick={() => onCustomize(book)}
+                          className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 font-semibold px-2.5 transition active:scale-95"
+                          title="Personalizar datos antes de guardar"
+                        >
+                          <Sliders className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Personalizar</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleRequestClose}
+                        aria-label="Cerrar ficha"
+                        title="Cerrar libro (Esc)"
+                        className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5 shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Fila 2: Encabezado superior de folio (Recto: fol. II / III / IV) alineado con fol. I del Verso */}
+                    <div className="w-full flex items-center justify-between text-[11px] font-serif italic border-b border-amber-900/15 dark:border-[#242E42] pb-1.5 mb-2.5 shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        <button
+                          type="button"
+                          onClick={handleTurnToDetails}
+                          className={`px-2 py-0.5 rounded-md transition cursor-pointer whitespace-nowrap shrink-0 ${
                             activeTab === 'details'
                               ? 'bg-amber-600/20 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40 shadow-xs'
                               : 'text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300'
@@ -1668,11 +1774,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         >
                           fol. II · Catálogo
                         </button>
-                        <span className="text-amber-900/30 dark:text-amber-400/30 text-xs select-none">·</span>
+                        <span className="text-amber-900/30 dark:text-amber-400/30 select-none">·</span>
                         <button
                           type="button"
                           onClick={handleTurnToSynopsis}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-serif italic transition cursor-pointer ${
+                          className={`px-2 py-0.5 rounded-md transition cursor-pointer whitespace-nowrap shrink-0 ${
                             activeTab === 'synopsis'
                               ? 'bg-amber-600/20 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40 shadow-xs'
                               : 'text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300'
@@ -1680,11 +1786,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         >
                           fol. III · Sinopsis
                         </button>
-                        <span className="text-amber-900/30 dark:text-amber-400/30 text-xs select-none">·</span>
+                        <span className="text-amber-900/30 dark:text-amber-400/30 select-none">·</span>
                         <button
                           type="button"
                           onClick={handleTurnToNotes}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-serif italic transition cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md transition cursor-pointer whitespace-nowrap shrink-0 ${
                             activeTab === 'notes'
                               ? 'bg-amber-600/20 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40 shadow-xs'
                               : 'text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300'
@@ -1698,110 +1804,9 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                        {activeTab !== 'details' && (
-                          <button
-                            type="button"
-                            onClick={handleTurnToDetails}
-                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/25 hover:bg-amber-500/35 text-amber-950 dark:text-amber-200 font-bold px-2.5"
-                            title="Volver a la ficha técnica (←)"
-                            aria-label="Volver a la ficha técnica"
-                          >
-                            <ChevronLeft className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-
-                        {!readOnly && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setIsRecommendOpen(true)}
-                              className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200"
-                              title="Recomendar este libro a un amigo"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                              <span className="hidden xl:inline">Recomendar</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedQuoteForCard('');
-                                setIsShareCardOpen(true);
-                              }}
-                              className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
-                              title="Crear tarjeta editorial para redes sociales"
-                              aria-label="Compartir tarjeta del libro"
-                            >
-                              <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                            </button>
-
-                            {onEdit && (
-                              <button
-                                type="button"
-                                onClick={() => onEdit(book)}
-                                className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
-                                title="Editar ficha del libro"
-                                aria-label="Editar ficha"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {onDelete && (
-                              <button
-                                type="button"
-                                onClick={() => onDelete(book)}
-                                className="open-book-ribbon-tab border-rose-500/35 bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-300 px-2.5"
-                                title="Eliminar libro"
-                                aria-label="Eliminar libro"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </>
-                        )}
-
-                        {readOnly && onAddToLibrary && (
-                          isAlreadyInLibrary ? (
-                            <span className="open-book-ribbon-tab border-emerald-500/35 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold px-3">
-                              <Check className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">En tu biblioteca</span>
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => onAddToLibrary(book)}
-                              className="open-book-ribbon-tab border-amber-600/50 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 shadow-sm transition active:scale-95"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Añadir a Por Leer</span>
-                            </button>
-                          )
-                        )}
-
-                        {readOnly && onCustomize && !isAlreadyInLibrary && (
-                          <button
-                            type="button"
-                            onClick={() => onCustomize(book)}
-                            className="open-book-ribbon-tab border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 font-semibold px-2.5 transition active:scale-95"
-                            title="Personalizar datos antes de guardar"
-                          >
-                            <Sliders className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Personalizar</span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={handleRequestClose}
-                          aria-label="Cerrar ficha"
-                          title="Cerrar libro (Esc)"
-                          className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#e9dac0] dark:bg-[#161D2B] hover:bg-amber-900/20 dark:hover:bg-slate-800 text-stone-700 dark:text-slate-300 px-2.5 shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="text-[10px] text-amber-900/60 dark:text-amber-400/60 select-none hidden sm:inline ml-2 whitespace-nowrap">
+                        Recto · {activeTab === 'details' ? 'fol. II' : activeTab === 'synopsis' ? 'fol. III' : 'fol. IV'}
+                      </span>
                     </div>
 
                     {activeTab === 'details' ? (
