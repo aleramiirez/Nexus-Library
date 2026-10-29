@@ -28,6 +28,7 @@ import {
 import { BookCover } from './BookCover';
 import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { formatStars } from '../constants/catalogs';
+import '../dashboard-panels.css';
 
 interface ReadingChallengeScreenProps {
   books: Book[];
@@ -201,8 +202,11 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         </div>
       </div>
 
-      {/* ─── Hero Section: Banner del Reto de Lectura Anual ─── */}
-      <section className="relative overflow-hidden rounded-3xl border border-amber-700/35 dark:border-amber-500/30 bg-gradient-to-br from-[#f6ebd4] via-[#fbf6ea] to-[#edd9b7] dark:from-[#111724] dark:via-[#161D2B] dark:to-[#0D121B] p-6 sm:p-8 shadow-xl">
+      {/* ─── Hero Section: Ficha de Reto de Lectura Anual ─── */}
+      <section className="catalog-card-panel relative overflow-hidden pt-7 sm:pt-8 p-6 sm:p-8 shadow-xl">
+        <div className="catalog-brass-tab" aria-hidden="true">
+          Reto Anual {selectedYear === 'all' ? '· Histórico' : `· ${selectedYear}`}
+        </div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 dark:bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -288,7 +292,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </div>
         </div>
 
-        {/* Tira visual de obras leídas recientemente en este año */}
+        {/* Tira visual de obras leídas recientemente en este año con balda de madera */}
         {stats.completedBooks.length > 0 && (
           <div className="mt-6 pt-5 border-t border-amber-900/15 dark:border-[#242E42]">
             <div className="flex items-center justify-between mb-3.5 text-xs">
@@ -301,8 +305,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               </span>
             </div>
 
-            <div className="rounded-2xl border border-amber-900/10 dark:border-[#253044]/70 bg-gradient-to-b from-amber-950/[0.02] to-amber-950/[0.05] dark:from-black/20 dark:to-black/35 p-3.5 sm:p-4">
-              <div className="flex items-start gap-3.5 sm:gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="collection-shelf-preview p-3.5 sm:p-4">
+              <div className="flex items-end gap-3.5 sm:gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {stats.completedBooks.slice(0, 8).map((book) => {
                   const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
                   return (
@@ -314,8 +318,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                       title={`${book.nombre} (por ${book.autor}) — ${datesLabel}`}
                     >
                       <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
-                        {/* Sombra de contacto suave sobre el fondo */}
-                        <div className="absolute -bottom-1.5 left-1.5 right-1.5 h-2 bg-black/30 dark:bg-black/60 blur-[3px] rounded-full pointer-events-none" />
                         <BookCover
                           nombre={book.nombre}
                           autor={book.autor}
@@ -340,6 +342,10 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                     </div>
                   );
                 })}
+              </div>
+              <div className="collection-mini-plank mt-2">
+                <div className="shelf-plank-top" />
+                <div className="shelf-niche-front collection-plank-lip" />
               </div>
             </div>
           </div>
@@ -802,20 +808,20 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           onClick={() => setIsGoalModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-3xl border border-amber-900/30 dark:border-amber-500/20 bg-[#fdfbf7] dark:bg-[#121722] text-stone-900 dark:text-white p-6 sm:p-7 shadow-2xl space-y-6"
+            className="relative w-full max-w-md rounded-2xl border border-amber-900/30 dark:border-amber-500/25 bg-[#faf5eb] dark:bg-[#121722] text-stone-900 dark:text-stone-100 p-6 sm:p-7 shadow-2xl space-y-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/25">
-                  <Target className="w-6 h-6" />
+                <div className="collection-icon-badge">
+                  <Target className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-white">
+                  <h3 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">
                     Modificar Meta de Lectura
                   </h3>
-                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {selectedYear === 'all'
                       ? `Objetivo anual para el año en curso (${currentYear})`
                       : `Año ${selectedYear}`}
@@ -825,7 +831,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setIsGoalModalOpen(false)}
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition"
+                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition"
                 title="Cerrar"
               >
                 <X className="w-5 h-5" />
@@ -874,7 +880,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
             {/* Presets habituales */}
             <div className="space-y-2">
-              <label className="text-[11px] uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 block">
+              <label className="text-[11px] uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 block font-serif">
                 Metas recomendadas
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -895,7 +901,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                       className={`p-2.5 rounded-xl border text-center transition ${
                         isSelected
                           ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-300 font-bold shadow-xs ring-1 ring-amber-500'
-                          : 'border-amber-900/15 dark:border-slate-800 bg-white/60 dark:bg-slate-800/60 text-stone-700 dark:text-slate-300 hover:border-amber-500/50'
+                          : 'border-amber-900/15 dark:border-slate-800 bg-[#fffcf5]/80 dark:bg-slate-900/60 text-stone-700 dark:text-slate-300 hover:border-amber-500/50'
                       }`}
                     >
                       <div className="text-sm font-bold">{preset.label}</div>
@@ -931,14 +937,14 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setIsGoalModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-slate-700 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition"
+                className="px-4 py-2 rounded-xl border border-amber-900/25 dark:border-slate-700 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => handleSaveGoal()}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition active:scale-95"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition active:scale-95"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar meta</span>
