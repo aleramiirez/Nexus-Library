@@ -39,11 +39,13 @@ import {
   Flame,
   Bell,
   BellOff,
-  BellRing
+  BellRing,
+  Award
 } from 'lucide-react';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
 import { UserAvatar } from './UserAvatar';
 import { AvatarPickerModal } from './AvatarPickerModal';
+import { ShareReaderCardModal } from './ShareReaderCardModal';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -234,6 +236,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   );
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isExportCarnetOpen, setIsExportCarnetOpen] = useState(false);
 
   const handleAvatarSelect = async (avatarUrl: string | null) => {
     if (currentUser) {
@@ -886,7 +889,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       </p>
                     </div>
 
-                    <div className="self-center sm:self-start">
+                    <div className="self-center sm:self-start flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsExportCarnetOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold px-3.5 py-1.5 text-xs transition shadow-sm transform hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <Award className="w-3.5 h-3.5 text-slate-950" />
+                        Exportar Carnet Oficial
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => setIsAvatarModalOpen(true)}
@@ -1268,6 +1280,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               displayName={profileDisplayName}
               username={profileUsername}
               onSaveAvatar={handleAvatarSelect}
+            />
+
+            {/* Modal de Exportación Oficial de Carnet */}
+            <ShareReaderCardModal
+              isOpen={isExportCarnetOpen}
+              onClose={() => setIsExportCarnetOpen(false)}
+              displayName={profileDisplayName}
+              username={profileUsername}
+              avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+              bio={profileBio}
+              memberId={currentUser?.id}
+              totalBooks={books.length}
+              readBooks={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length}
+              totalSagas={sagas.length}
+              onShowToast={(msg, type) =>
+                setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
+              }
             />
           </div>
         </div>

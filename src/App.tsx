@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useDeferredValue, useRef, startTransition } from 'react';
+import React, { useEffect, useMemo, useState, useDeferredValue, useRef, startTransition, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -144,6 +144,8 @@ import { readingChallengeService } from './services/readingChallengeService';
 import { FirstLoginProfileModal } from './components/FirstLoginProfileModal';
 import { ProfileSetupBanner } from './components/ProfileSetupBanner';
 import { SettingsTab } from './components/SettingsScreen';
+import { BookFinishedCelebrationModal } from './components/BookFinishedCelebrationModal';
+import { ShareBookCardModal } from './components/ShareBookCardModal';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -335,6 +337,8 @@ export const App: React.FC = () => {
   });
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
+  const [celebrationBook, setCelebrationBook] = useState<Book | null>(null);
+  const [shareCardBook, setShareCardBook] = useState<Book | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const lastAuthUserIdRef = useRef<string | null | undefined>(undefined);
@@ -1246,6 +1250,19 @@ export const App: React.FC = () => {
     setIsAddEditOpen(true);
   };
 
+  const handleBookStatusChange = useCallback(
+    async (bookId: string, nextStatus: ReadingStatus) => {
+      const currentBook = books.find((b) => b.id === bookId);
+      await updateBookQuickStatus(bookId, nextStatus);
+
+      // Si la obra pasa a estar completada / leída, activar la celebración con sello de lacre
+      if (nextStatus === '✅ Leído' && currentBook && currentBook.progreso !== '✅ Leído') {
+        setCelebrationBook({ ...currentBook, progreso: '✅ Leído' });
+      }
+    },
+    [books]
+  );
+
   const handleQuickAddFromDiscover = async (candidate: BibliographicCandidate) => {
     const bookInput = candidateToBookInput(candidate);
     await saveBookRecord(bookInput);
@@ -1459,7 +1476,7 @@ export const App: React.FC = () => {
                 onOpenDetail={handleOpenCardDetail}
                 onEdit={handleOpenEditBook}
                 onDelete={(b) => setBookToDelete(b)}
-                onQuickStatusChange={updateBookQuickStatus}
+                onQuickStatusChange={handleBookStatusChange}
               />
             ))}
           </div>
@@ -2186,7 +2203,7 @@ export const App: React.FC = () => {
                       onOpenDetail={handleOpenCardDetail}
                       onEdit={handleOpenEditBook}
                       onDelete={(b) => setBookToDelete(b)}
-                      onQuickStatusChange={updateBookQuickStatus}
+                      onQuickStatusChange={handleBookStatusChange}
                     />
                   ))}
                 </div>
@@ -2369,7 +2386,7 @@ export const App: React.FC = () => {
                 onShowToast={showToast}
                 onEditBook={handleOpenEditBook}
                 onDeleteBook={(b) => setBookToDelete(b)}
-                onQuickStatusChange={updateBookQuickStatus}
+                onQuickStatusChange={handleBookStatusChange}
               />
             </React.Suspense>
           )}
@@ -2827,7 +2844,7 @@ export const App: React.FC = () => {
             onClose={() => setDetailBookId(null)}
             onEdit={handleOpenEditBook}
             onDelete={(b) => setBookToDelete(b)}
-            onStatusChange={updateBookQuickStatus}
+            onStatusChange={handleBookStatusChange}
             onRatingChange={updateBookQuickRating}
             onDatesChange={updateBookQuickDates}
             currentUserId={currentUser?.id}
@@ -2850,7 +2867,12 @@ export const App: React.FC = () => {
               setSelectedParsedEbook(null);
             }}
             onSave={async (data, id) => {
-              await saveBookRecord(data, id);
+              const previousBook = id ? books.find((b) => b.id === id) : null;
+              const savedId = await saveBookRecord(data, id);
+              if (data.progreso === '✅ Leído' && (!previousBook || previousBook.progreso !== '✅ Leído')) {
+                const fullBook = { ...(previousBook || {}), ...data, id: id || savedId } as Book;
+                setCelebrationBook(fullBook);
+              }
             }}
             onOpenMultiEpubImport={(files) => {
               setInitialEpubFiles(files);
@@ -2935,6 +2957,37 @@ export const App: React.FC = () => {
           userId={currentUser.id}
           onUpdateProfile={handleUpdateProfile}
           onGoToSettings={handleNavigateToSettingsAccount}
+          onShowToast={showToast}
+        />
+      )}
+
+      {celebrationBook && (
+        <BookFinishedCelebrationModal
+          isOpen={Boolean(celebrationBook)}
+          book={celebrationBook}
+          booksReadCount={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length + 1}
+          readerDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
+          readerUsername={currentUserProfile?.username}
+          onClose={() => setCelebrationBook(null)}
+          onOpenShareCard={(book) => {
+            setCelebrationBook(null);
+            setShareCardBook(book);
+          }}
+          onOpenChallenge={() => {
+            setCelebrationBook(null);
+            setActiveSection('stats');
+          }}
+          onShowToast={showToast}
+        />
+      )}
+
+      {shareCardBook && (
+        <ShareBookCardModal
+          isOpen={Boolean(shareCardBook)}
+          book={shareCardBook}
+          readerDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
+          readerUsername={currentUserProfile?.username}
+          onClose={() => setShareCardBook(null)}
           onShowToast={showToast}
         />
       )}
