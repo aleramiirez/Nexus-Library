@@ -42,6 +42,8 @@ import {
   BellRing
 } from 'lucide-react';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
+import { UserAvatar } from './UserAvatar';
+import { AvatarPickerModal } from './AvatarPickerModal';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -80,6 +82,8 @@ interface SettingsScreenProps {
   onUpdateProfile?: (updates: Partial<UserProfile>) => Promise<void>;
   guestAlias?: string;
   onUpdateGuestAlias?: (alias: string) => void;
+  guestAvatar?: string | null;
+  onUpdateGuestAvatar?: (avatar: string | null) => void;
   onOpenAuthModal: () => void;
   onTriggerSync: () => Promise<void>;
   isSyncing: boolean;
@@ -99,6 +103,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onUpdateProfile,
   guestAlias = '',
   onUpdateGuestAlias,
+  guestAvatar = null,
+  onUpdateGuestAvatar,
   onOpenAuthModal,
   onTriggerSync,
   isSyncing,
@@ -227,6 +233,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     userProfile?.visibility ?? (userProfile?.isPublic === false ? 'private' : 'public')
   );
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+
+  const handleAvatarSelect = async (avatarUrl: string | null) => {
+    if (currentUser) {
+      if (onUpdateProfile) {
+        await onUpdateProfile({ avatarUrl });
+      }
+      setFeedback({
+        type: 'success',
+        text: '¡Sello heráldico actualizado con éxito en tu Carnet de Lector!'
+      });
+    } else {
+      onUpdateGuestAvatar?.(avatarUrl);
+      setFeedback({
+        type: 'success',
+        text: 'Sello de lector guardado en este dispositivo.'
+      });
+    }
+  };
   const [usernameCheck, setUsernameCheck] = useState<{
     status: 'idle' | 'checking' | 'available' | 'unavailable';
     message?: string;
@@ -765,99 +790,191 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ════════════════════ TAB 2: CUENTA Y NUBE ════════════════════ */}
       {activeTab === 'account' && (
         <div className="space-y-6">
-          <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
+          <div className="catalog-card-panel relative pt-8 sm:pt-9 p-5 sm:p-7 shadow-xl space-y-6">
+            <div className="catalog-brass-tab">
+              Expediente de Lector · Carnet Oficial
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
               <div>
-                <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                  <Cloud className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Tu Cuenta y la Nube
+                <h2 className="font-serif text-xl sm:text-2xl font-bold flex items-center gap-2 text-stone-900 dark:text-slate-100">
+                  <Cloud className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Carnet de Lector & Sincronización
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-                  Mantén tus libros, sagas y lecturas respaldados y accesibles desde cualquier lugar.
+                  Tu credencial bibliotecaria histórica, heráldica personal y copia de seguridad en la nube.
                 </p>
               </div>
 
               {currentUser ? (
-                <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Copia en la nube activa
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
+                <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Guardado en este dispositivo
                 </div>
               )}
             </div>
 
-            {/* Perfil actual */}
-            <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                {currentUser ? (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-xl flex items-center justify-center shadow-md shrink-0">
-                    {userProfile?.displayName
-                      ? userProfile.displayName.charAt(0).toUpperCase()
-                      : currentUser.email
-                      ? currentUser.email.charAt(0).toUpperCase()
-                      : 'L'}
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-center justify-center shadow-sm shrink-0 font-serif font-bold text-xl">
-                    {guestAlias ? guestAlias.charAt(0).toUpperCase() : <UserIcon className="w-6 h-6" />}
-                  </div>
-                )}
+            {/* ═══ TARJETA FÍSICA: CARNET DE LECTOR OFICIAL ═══ */}
+            <div className="relative rounded-2xl border-2 border-amber-900/25 dark:border-amber-500/30 bg-gradient-to-br from-[#fbf6ec] via-[#f5ebd6] to-[#eee0c4] dark:from-[#131926] dark:via-[#0f1420] dark:to-[#0a0d14] p-5 sm:p-7 shadow-lg overflow-hidden">
+              {/* Filigrana de fondo */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-6 -bottom-6 w-56 h-56 opacity-5 dark:opacity-10 text-amber-900 dark:text-amber-400 select-none flex items-center justify-center font-serif text-9xl font-black rotate-12"
+              >
+                NL
+              </div>
 
-                <div>
-                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
-                    {currentUser
-                      ? (userProfile?.displayName || currentUser.email)
-                      : (guestAlias ? `${guestAlias} (Sin cuenta)` : 'Lector Invitado')}
-                  </h3>
-                  <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-                    {currentUser ? (
-                      userProfile?.username ? (
-                        <span className="font-mono text-amber-700 dark:text-amber-400 font-semibold">
-                          @{userProfile.username} · {currentUser.email}
-                        </span>
-                      ) : (
-                        currentUser.email
-                      )
-                    ) : (
-                      'Tus libros se guardan en este dispositivo. Crea una cuenta para acceder a ellos desde cualquier lugar.'
-                    )}
-                  </p>
+              {/* Borde interior diploma */}
+              <div className="pointer-events-none absolute inset-2.5 rounded-xl border border-amber-900/15 dark:border-amber-400/15" />
+
+              {/* Encabezado de la credencial */}
+              <div className="relative flex items-center justify-between gap-3 border-b border-amber-900/15 dark:border-amber-400/20 pb-3 mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-600/60 dark:bg-amber-400/60" />
+                  <span className="font-mono text-[10px] sm:text-xs font-bold tracking-widest uppercase text-amber-950/70 dark:text-amber-300/80">
+                    Nexus Librarivm · Carnet Bibliotecario
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded bg-amber-900/10 dark:bg-amber-400/10 text-amber-900 dark:text-amber-300 border border-amber-900/20 dark:border-amber-400/20">
+                  № NL-{(currentUser?.id ? currentUser.id.slice(0, 8) : 'INVITADO').toUpperCase()}
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {currentUser ? (
-                  <>
-                    <button
-                      type="button"
-                      disabled={isSyncing}
-                      onClick={onTriggerSync}
-                      className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 text-xs transition shadow-sm"
-                    >
-                      <RefreshCw className={'w-3.5 h-3.5 ' + (isSyncing ? 'animate-spin' : '')} />
-                      {isSyncing ? 'Guardando en la nube...' : 'Sincronizar ahora'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isSigningOut}
-                      onClick={handleSignOutClick}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold px-3.5 py-2 text-xs transition"
-                    >
-                      <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
-                    </button>
-                  </>
-                ) : (
+              {/* Contenido: Avatar + Datos del lector */}
+              <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                {/* Avatar heráldico con botón de edición */}
+                <div className="relative group shrink-0">
+                  <div className="p-1 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-md">
+                    <UserAvatar
+                      avatarUrl={currentUser ? userProfile?.avatarUrl : guestAvatar}
+                      displayName={profileDisplayName}
+                      username={profileUsername}
+                      size="2xl"
+                      className="rounded-xl"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={onOpenAuthModal}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md"
+                    onClick={() => setIsAvatarModalOpen(true)}
+                    title="Personalizar Sello o Avatar"
+                    className="absolute -bottom-2 -right-2 inline-flex items-center gap-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 text-[10px] shadow-lg border-2 border-white dark:border-[#131926] transition transform hover:scale-105 active:scale-95"
                   >
-                    <LogIn className="w-4 h-4" /> Iniciar sesión o Crear cuenta
+                    <Sparkles className="w-3 h-3" />
+                    <span>Sello</span>
                   </button>
-                )}
+                </div>
+
+                {/* Info lector */}
+                <div className="flex-1 min-w-0 text-center sm:text-left space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                    <div>
+                      <h3 className="font-serif text-xl sm:text-2xl font-black text-amber-950 dark:text-amber-100 tracking-tight">
+                        {profileDisplayName.trim() || (currentUser ? currentUser.email : 'Lector Invitado')}
+                      </h3>
+                      <p className="text-xs font-mono font-semibold text-amber-800 dark:text-amber-400 mt-0.5">
+                        {currentUser && profileUsername ? (
+                          <span>@{profileUsername}</span>
+                        ) : currentUser ? (
+                          <span className="text-stone-600 dark:text-slate-400">{currentUser.email}</span>
+                        ) : (
+                          <span className="text-stone-500 italic">Sin identificador @usuario</span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="self-center sm:self-start">
+                      <button
+                        type="button"
+                        onClick={() => setIsAvatarModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-900/30 dark:border-amber-400/30 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 px-3 py-1.5 text-xs font-bold transition shadow-xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        Cambiar Sello / Avatar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Cita o Biografía en cursiva clásica */}
+                  <div className="text-xs italic font-serif text-stone-700 dark:text-slate-300 border-l-2 border-amber-600/40 pl-3 py-1 bg-amber-500/5 dark:bg-amber-400/5 rounded-r">
+                    &ldquo;{profileBio.trim() || 'Custodio de volúmenes, páginas devoradas y pasajes memorables en Nexus Library.'}&rdquo;
+                  </div>
+
+                  {/* Cifras de biblioteca en carnet */}
+                  <div className="pt-1.5 grid grid-cols-3 gap-2 text-center sm:text-left">
+                    <div className="rounded-lg bg-amber-900/5 dark:bg-amber-400/5 border border-amber-900/10 dark:border-amber-400/10 p-2">
+                      <div className="font-serif text-base sm:text-lg font-bold text-amber-900 dark:text-amber-300">
+                        {books.length}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
+                        Libros
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-amber-900/5 dark:bg-amber-400/5 border border-amber-900/10 dark:border-amber-400/10 p-2">
+                      <div className="font-serif text-base sm:text-lg font-bold text-amber-900 dark:text-amber-300">
+                        {sagas.length}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
+                        Sagas
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-amber-900/5 dark:bg-amber-400/5 border border-amber-900/10 dark:border-amber-400/10 p-2">
+                      <div className="font-serif text-base sm:text-lg font-bold text-amber-900 dark:text-amber-300">
+                        {books.filter((b) => b.progreso && b.progreso.includes('Leído')).length}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
+                        Leídos
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción del carnet */}
+              <div className="relative mt-5 pt-4 border-t border-amber-900/15 dark:border-amber-400/20 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                  <span>
+                    {currentUser
+                      ? `Sesión activa como ${currentUser.email}`
+                      : 'Modo local activo. Conéctate para sincronizar tu colección.'}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {currentUser ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={isSyncing}
+                        onClick={onTriggerSync}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold px-4 py-2 text-xs transition shadow-sm"
+                      >
+                        <RefreshCw className={'w-3.5 h-3.5 ' + (isSyncing ? 'animate-spin' : '')} />
+                        {isSyncing ? 'Guardando en la nube...' : 'Sincronizar ahora'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSigningOut}
+                        onClick={handleSignOutClick}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold px-3.5 py-2 text-xs transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={onOpenAuthModal}
+                      className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs transition shadow-md"
+                    >
+                      <LogIn className="w-4 h-4" /> Iniciar sesión o Crear cuenta
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -866,10 +983,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="font-serif text-base font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
-                    <UserIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Identidad y Alias de Lector
+                    <UserIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Datos de la Credencial & Privacidad
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-                    Define cómo quieres que te conozcan en Nexus Library para cuando busques amigos o compartas recomendaciones.
+                    Modifica tu nombre público, identificador único, cita bibliotecaria y visibilidad comunitaria.
                   </p>
                 </div>
                 {currentUser && (
@@ -918,10 +1035,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       onChange={(e) => setProfileDisplayName(e.target.value)}
                       placeholder="Ej: Alejandro Ramírez"
                       maxLength={50}
-                      className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] px-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0e1420] px-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 focus:outline-none shadow-xs transition"
                     />
                     <p className="text-[11px] text-stone-500 dark:text-slate-500 leading-tight">
-                      Tu nombre personal. Puede incluir espacios, tildes y mayúsculas.
+                      Tu nombre personal en la credencial. Puede incluir espacios, tildes y mayúsculas.
                     </p>
                   </div>
 
@@ -944,7 +1061,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           onBlur={handleUsernameBlur}
                           placeholder="usuario"
                           maxLength={25}
-                          className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] pl-7 pr-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40 font-mono"
+                          className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0e1420] pl-7 pr-3.5 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 focus:outline-none shadow-xs transition font-mono"
                         />
                       </div>
                       {usernameCheck.status === 'checking' && (
@@ -982,19 +1099,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {currentUser && (
                   <div className="space-y-1.5">
                     <label htmlFor="input-bio" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
-                      Biografía o Gustos Literarios (opcional)
+                      Cita o Biografía Literaria (opcional)
                     </label>
                     <textarea
                       id="input-bio"
                       rows={2}
                       value={profileBio}
                       onChange={(e) => setProfileBio(e.target.value)}
-                      placeholder="Ej: Lector empedernido de fantasía épica, ciencia ficción, novelas de misterio y no ficción..."
+                      placeholder="Ej: Lector empedernido de clásicos, novelas de misterio, filosofía y fantasía oscura..."
                       maxLength={200}
-                      className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] p-3 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0e1420] p-3 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 focus:outline-none shadow-xs transition resize-none"
                     />
                     <div className="flex justify-between text-[11px] text-stone-500 dark:text-slate-500">
-                      <span>Visible para otros lectores en tu perfil público.</span>
+                      <span>Aparece estampada en tu Carnet de Lector y perfil comunitario.</span>
                       <span>{profileBio.length} / 200</span>
                     </div>
                   </div>
@@ -1111,7 +1228,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     ) : (
                       <Save className="w-3.5 h-3.5" />
                     )}
-                    {isSavingProfile ? 'Guardando...' : 'Guardar Perfil de Lector'}
+                    {isSavingProfile ? 'Guardando...' : 'Guardar Credencial de Lector'}
                   </button>
                 </div>
               </form>
@@ -1142,6 +1259,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </ul>
               </div>
             )}
+
+            {/* Modal de selección de Sello Heráldico / Avatar */}
+            <AvatarPickerModal
+              isOpen={isAvatarModalOpen}
+              onClose={() => setIsAvatarModalOpen(false)}
+              currentAvatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+              displayName={profileDisplayName}
+              username={profileUsername}
+              onSaveAvatar={handleAvatarSelect}
+            />
           </div>
         </div>
       )}

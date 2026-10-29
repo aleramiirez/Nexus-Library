@@ -2333,6 +2333,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
           onClose={() => setIsShareCardOpen(false)}
           book={book}
           initialQuote={selectedQuoteForCard}
+          readerDisplayName={readerName}
           onShowToast={onShowToast}
         />
       )}

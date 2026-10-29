@@ -13,11 +13,14 @@ import {
   Moon,
   Quote,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Feather,
+  Award
 } from 'lucide-react';
 import { Book } from '../types/models';
 import { formatStars } from '../constants/catalogs';
 import { getAuthorInitials } from '../services/coverService';
+import { profileService } from '../services/profileService';
 import { LibrarySelect } from './LibrarySelect';
 
 export interface ShareBookCardModalProps {
@@ -25,11 +28,13 @@ export interface ShareBookCardModalProps {
   onClose: () => void;
   book: Book;
   initialQuote?: string;
+  readerDisplayName?: string | null;
+  readerUsername?: string | null;
   onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export type CardFormat = 'story' | 'square';
-export type CardTheme = 'parchment' | 'midnight';
+export type CardTheme = 'parchment' | 'midnight' | 'burgundy' | 'forest' | 'leather';
 
 // Telas de encuadernación artesanal de Nexus para libros sin portada (idénticas a BookCover)
 const CLOTH_PALETTES: Array<[string, string]> = [
@@ -408,11 +413,156 @@ function wrapText(
   return lines;
 }
 
+const THEME_PALETTES: Record<
+  CardTheme,
+  {
+    bgStart: string;
+    bgMid: string;
+    bgEnd: string;
+    radialColor: string;
+    borderOuter: string;
+    borderInner: string;
+    cornerDot: string;
+    cornerLine: string;
+    headerText: string;
+    headerLine: string;
+    titleColor: string;
+    authorColor: string;
+    sagaColor: string;
+    quoteBoxBg: string;
+    quoteBoxBorder: string;
+    quoteText: string;
+    footerMeta: string;
+    footerBrand: string;
+    exLibrisColor: string;
+    grainOpacity: number;
+    isDark: boolean;
+  }
+> = {
+  parchment: {
+    bgStart: '#fdfaf2',
+    bgMid: '#f7eedc',
+    bgEnd: '#ebdcc3',
+    radialColor: 'transparent',
+    borderOuter: '#b45309',
+    borderInner: 'rgba(180, 83, 9, 0.28)',
+    cornerDot: '#b45309',
+    cornerLine: 'rgba(180, 83, 9, 0.5)',
+    headerText: '#b45309',
+    headerLine: 'rgba(180, 83, 9, 0.35)',
+    titleColor: '#1c1917',
+    authorColor: '#44403c',
+    sagaColor: '#92400e',
+    quoteBoxBg: 'rgba(255, 255, 255, 0.65)',
+    quoteBoxBorder: 'rgba(180, 83, 9, 0.25)',
+    quoteText: '#292524',
+    footerMeta: '#78716c',
+    footerBrand: '#b45309',
+    exLibrisColor: '#854d0e',
+    grainOpacity: 0.035,
+    isDark: false
+  },
+  midnight: {
+    bgStart: '#0c1017',
+    bgMid: '#121722',
+    bgEnd: '#090c12',
+    radialColor: 'rgba(217, 119, 6, 0.12)',
+    borderOuter: 'rgba(217, 119, 6, 0.55)',
+    borderInner: 'rgba(217, 119, 6, 0.22)',
+    cornerDot: '#f59e0b',
+    cornerLine: 'rgba(245, 158, 11, 0.5)',
+    headerText: '#d97706',
+    headerLine: 'rgba(217, 119, 6, 0.35)',
+    titleColor: '#ffffff',
+    authorColor: '#cbd5e1',
+    sagaColor: '#fbbf24',
+    quoteBoxBg: 'rgba(217, 119, 6, 0.08)',
+    quoteBoxBorder: 'rgba(217, 119, 6, 0.28)',
+    quoteText: '#f8fafc',
+    footerMeta: '#94a3b8',
+    footerBrand: '#f59e0b',
+    exLibrisColor: '#fbbf24',
+    grainOpacity: 0.024,
+    isDark: true
+  },
+  burgundy: {
+    bgStart: '#2e0a12',
+    bgMid: '#42111c',
+    bgEnd: '#1a060a',
+    radialColor: 'rgba(250, 204, 21, 0.13)',
+    borderOuter: 'rgba(234, 179, 8, 0.62)',
+    borderInner: 'rgba(234, 179, 8, 0.25)',
+    cornerDot: '#facc15',
+    cornerLine: 'rgba(250, 204, 21, 0.55)',
+    headerText: '#fde047',
+    headerLine: 'rgba(234, 179, 8, 0.4)',
+    titleColor: '#fff1f2',
+    authorColor: '#fecdd3',
+    sagaColor: '#fde047',
+    quoteBoxBg: 'rgba(250, 204, 21, 0.08)',
+    quoteBoxBorder: 'rgba(250, 204, 21, 0.30)',
+    quoteText: '#fff5f5',
+    footerMeta: '#fca5a5',
+    footerBrand: '#facc15',
+    exLibrisColor: '#fde047',
+    grainOpacity: 0.028,
+    isDark: true
+  },
+  forest: {
+    bgStart: '#0b1d14',
+    bgMid: '#132e20',
+    bgEnd: '#07130d',
+    radialColor: 'rgba(202, 138, 4, 0.13)',
+    borderOuter: 'rgba(202, 138, 4, 0.60)',
+    borderInner: 'rgba(202, 138, 4, 0.25)',
+    cornerDot: '#facc15',
+    cornerLine: 'rgba(250, 204, 21, 0.55)',
+    headerText: '#facc15',
+    headerLine: 'rgba(202, 138, 4, 0.4)',
+    titleColor: '#f0fdf4',
+    authorColor: '#bbf7d0',
+    sagaColor: '#facc15',
+    quoteBoxBg: 'rgba(202, 138, 4, 0.08)',
+    quoteBoxBorder: 'rgba(202, 138, 4, 0.30)',
+    quoteText: '#f0fdf4',
+    footerMeta: '#86efac',
+    footerBrand: '#facc15',
+    exLibrisColor: '#facc15',
+    grainOpacity: 0.028,
+    isDark: true
+  },
+  leather: {
+    bgStart: '#2c170b',
+    bgMid: '#3d2212',
+    bgEnd: '#1a0e06',
+    radialColor: 'rgba(245, 158, 11, 0.15)',
+    borderOuter: 'rgba(217, 119, 6, 0.65)',
+    borderInner: 'rgba(217, 119, 6, 0.28)',
+    cornerDot: '#f59e0b',
+    cornerLine: 'rgba(245, 158, 11, 0.55)',
+    headerText: '#fbbf24',
+    headerLine: 'rgba(217, 119, 6, 0.4)',
+    titleColor: '#fef3c7',
+    authorColor: '#fde68a',
+    sagaColor: '#f59e0b',
+    quoteBoxBg: 'rgba(245, 158, 11, 0.08)',
+    quoteBoxBorder: 'rgba(245, 158, 11, 0.30)',
+    quoteText: '#fffbeb',
+    footerMeta: '#fed7aa',
+    footerBrand: '#f59e0b',
+    exLibrisColor: '#fbbf24',
+    grainOpacity: 0.030,
+    isDark: true
+  }
+};
+
 export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
   isOpen,
   onClose,
   book,
   initialQuote,
+  readerDisplayName,
+  readerUsername,
   onShowToast
 }) => {
   const [format, setFormat] = useState<CardFormat>('story');
@@ -428,9 +578,16 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
   );
   const [includeRating, setIncludeRating] = useState<boolean>(Boolean(book.puntuacion));
   const [includeSaga, setIncludeSaga] = useState<boolean>(Boolean(book.sagaNombre));
+  const [includeExLibris, setIncludeExLibris] = useState<boolean>(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
+
+  const readerLabel =
+    readerDisplayName ||
+    (readerUsername ? `@${readerUsername}` : '') ||
+    profileService.getGuestAlias() ||
+    'Lector Nexus';
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -458,7 +615,8 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
     }
 
     const isStory = format === 'story';
-    const isDark = theme === 'midnight';
+    const pal = THEME_PALETTES[theme] || THEME_PALETTES.parchment;
+    const isDark = pal.isDark;
 
     // Dimensiones en alta resolución
     const W = isStory ? 1080 : 1080;
@@ -466,64 +624,53 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
     canvas.width = W;
     canvas.height = H;
 
-    // 1. Fondo según tema
-    if (isDark) {
-      // Midnight Dark Academia: fondo terciopelo azul noche / carbón con resplandor dorado
-      const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-      bgGrad.addColorStop(0, '#0c1017');
-      bgGrad.addColorStop(0.5, '#121722');
-      bgGrad.addColorStop(1, '#090c12');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, W, H);
+    // 1. Fondo según paleta elegida
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, pal.bgStart);
+    bgGrad.addColorStop(0.5, pal.bgMid);
+    bgGrad.addColorStop(1, pal.bgEnd);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
 
-      // Resplandor radial dorado sutil en el centro
-      const radial = ctx.createRadialGradient(W / 2, isStory ? 680 : 480, 50, W / 2, isStory ? 680 : 480, 550);
-      radial.addColorStop(0, 'rgba(217, 119, 6, 0.12)');
+    // Resplandor radial cálido
+    if (pal.radialColor !== 'transparent') {
+      const radial = ctx.createRadialGradient(
+        W / 2,
+        isStory ? 680 : 480,
+        50,
+        W / 2,
+        isStory ? 680 : 480,
+        550
+      );
+      radial.addColorStop(0, pal.radialColor);
       radial.addColorStop(1, 'transparent');
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, W, H);
-
-      // Marco dorado exterior
-      ctx.strokeStyle = 'rgba(217, 119, 6, 0.55)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(36, 36, W - 72, H - 72);
-
-      ctx.strokeStyle = 'rgba(217, 119, 6, 0.22)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(48, 48, W - 96, H - 96);
-    } else {
-      // Parchment editorial: tonos cálidos de papel y papiro antiguo
-      const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-      bgGrad.addColorStop(0, '#fdfaf2');
-      bgGrad.addColorStop(0.5, '#f7f0df');
-      bgGrad.addColorStop(1, '#ebdcc3');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Textura sutil en los bordes
-      ctx.strokeStyle = '#b45309';
-      ctx.lineWidth = 3.5;
-      ctx.strokeRect(36, 36, W - 72, H - 72);
-
-      ctx.strokeStyle = 'rgba(180, 83, 9, 0.28)';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(48, 48, W - 96, H - 96);
     }
 
-    // Textura táctil de pergamino sobre el fondo de la tarjeta
-    drawPaperGrain(ctx, 0, 0, W, H, isDark ? 0.022 : 0.032);
+    // Marco exterior e interior
+    ctx.strokeStyle = pal.borderOuter;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(36, 36, W - 72, H - 72);
+
+    ctx.strokeStyle = pal.borderInner;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(48, 48, W - 96, H - 96);
+
+    // Micro-textura de grano de papel sobre el fondo
+    drawPaperGrain(ctx, 0, 0, W, H, pal.grainOpacity);
 
     // Ornamentos en las esquinas
     const drawCornerOrnament = (cx: number, cy: number, flipX: number, flipY: number) => {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.scale(flipX, flipY);
-      ctx.fillStyle = isDark ? '#f59e0b' : '#b45309';
+      ctx.fillStyle = pal.cornerDot;
       ctx.beginPath();
       ctx.arc(0, 0, 5, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = isDark ? 'rgba(245, 158, 11, 0.5)' : 'rgba(180, 83, 9, 0.5)';
+      ctx.strokeStyle = pal.cornerLine;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(12, 0);
@@ -541,13 +688,13 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
     // 2. Cabecera editorial
     ctx.textAlign = 'center';
-    ctx.fillStyle = isDark ? '#d97706' : '#b45309';
+    ctx.fillStyle = pal.headerText;
     ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.letterSpacing = '7px';
     const headerY = isStory ? 120 : 95;
     ctx.fillText('NEXUS LIBRARY · SANTUARIO LITERARIO', W / 2, headerY);
 
-    ctx.strokeStyle = isDark ? 'rgba(217, 119, 6, 0.35)' : 'rgba(180, 83, 9, 0.35)';
+    ctx.strokeStyle = pal.headerLine;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(W / 2 - 140, headerY + 16);
@@ -579,7 +726,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       }
 
       // Título del Libro con espacio respirable
-      ctx.fillStyle = isDark ? '#ffffff' : '#1c1917';
+      ctx.fillStyle = pal.titleColor;
       ctx.font = 'bold 46px "Cinzel", Georgia, serif';
       ctx.letterSpacing = '1px';
       const titleLines = wrapText(ctx, book.nombre, W - 180).slice(0, 3);
@@ -590,14 +737,14 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
       // Autor con separación elegante
       currentY += 12;
-      ctx.fillStyle = isDark ? '#cbd5e1' : '#44403c';
+      ctx.fillStyle = pal.authorColor;
       ctx.font = 'italic 28px Georgia, serif';
       ctx.fillText(book.autor || 'Autor desconocido', W / 2, currentY);
       currentY += 48;
 
       // Saga si aplica
       if (includeSaga && book.sagaNombre) {
-        ctx.fillStyle = isDark ? '#fbbf24' : '#92400e';
+        ctx.fillStyle = pal.sagaColor;
         ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const sagaText = `✦ ${book.sagaNombre}${book.volumen ? ` · Libro #${book.volumen}` : ''} ✦`;
         ctx.fillText(sagaText, W / 2, currentY);
@@ -616,8 +763,8 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         const quoteLines = wrapText(ctx, `«${activeQuote}»`, boxW - 80).slice(0, 5);
         const boxH = quoteLines.length * 40 + 54;
 
-        ctx.fillStyle = isDark ? 'rgba(217, 119, 6, 0.08)' : 'rgba(255, 255, 255, 0.65)';
-        ctx.strokeStyle = isDark ? 'rgba(217, 119, 6, 0.28)' : 'rgba(180, 83, 9, 0.25)';
+        ctx.fillStyle = pal.quoteBoxBg;
+        ctx.strokeStyle = pal.quoteBoxBorder;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') {
@@ -628,7 +775,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = isDark ? '#f8fafc' : '#292524';
+        ctx.fillStyle = pal.quoteText;
         let qY = currentY + 44;
         quoteLines.forEach((qLine) => {
           ctx.fillText(qLine, W / 2, qY);
@@ -638,9 +785,21 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         currentY += boxH + 34;
       }
 
-      // Pie con fecha de lectura y marca
-      const footerY = H - 100;
-      ctx.fillStyle = isDark ? '#94a3b8' : '#78716c';
+      // Pie con fecha de lectura, Ex-Libris y marca
+      const footerY = H - 90;
+
+      // Ex-Libris del lector
+      if (includeExLibris) {
+        ctx.save();
+        ctx.fillStyle = pal.exLibrisColor;
+        ctx.font = 'bold 15px "Cinzel", Georgia, serif';
+        ctx.letterSpacing = '3px';
+        ctx.textAlign = 'center';
+        ctx.fillText(`✦ EX LIBRIS · ${readerLabel.toUpperCase()} ✦`, W / 2, footerY - 54);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = pal.footerMeta;
       ctx.font = '18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       const readDateText = book.fechaFin
         ? `Lectura completada el ${book.fechaFin}`
@@ -651,7 +810,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         : 'Colección personal';
       ctx.fillText(readDateText, W / 2, footerY - 26);
 
-      ctx.fillStyle = isDark ? '#f59e0b' : '#b45309';
+      ctx.fillStyle = pal.footerBrand;
       ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       ctx.letterSpacing = '3px';
       ctx.fillText('NEXUS LIBRARY · nexus-library.vercel.app', W / 2, footerY);
@@ -681,7 +840,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       }
 
       // Título
-      ctx.fillStyle = isDark ? '#ffffff' : '#1c1917';
+      ctx.fillStyle = pal.titleColor;
       ctx.font = 'bold 38px "Cinzel", Georgia, serif';
       const titleLines = wrapText(ctx, book.nombre, textMaxW).slice(0, 3);
       titleLines.forEach((tLine) => {
@@ -691,14 +850,14 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
       // Autor
       textY += 10;
-      ctx.fillStyle = isDark ? '#cbd5e1' : '#44403c';
+      ctx.fillStyle = pal.authorColor;
       ctx.font = 'italic 24px Georgia, serif';
       ctx.fillText(book.autor || 'Autor desconocido', textX, textY);
       textY += 42;
 
       // Saga
       if (includeSaga && book.sagaNombre) {
-        ctx.fillStyle = isDark ? '#fbbf24' : '#92400e';
+        ctx.fillStyle = pal.sagaColor;
         ctx.font = '600 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         const sagaText = `✦ ${book.sagaNombre}${book.volumen ? ` · Libro #${book.volumen}` : ''}`;
         ctx.fillText(sagaText, textX, textY);
@@ -712,8 +871,8 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.font = 'italic 21px Georgia, serif';
         const qLines = wrapText(ctx, `«${activeQuote}»`, textMaxW).slice(0, 4);
 
-        ctx.fillStyle = isDark ? 'rgba(217, 119, 6, 0.08)' : 'rgba(255, 255, 255, 0.6)';
-        ctx.strokeStyle = isDark ? 'rgba(217, 119, 6, 0.25)' : 'rgba(180, 83, 9, 0.22)';
+        ctx.fillStyle = pal.quoteBoxBg;
+        ctx.strokeStyle = pal.quoteBoxBorder;
         ctx.lineWidth = 1.2;
         const boxH = qLines.length * 32 + 42;
         ctx.beginPath();
@@ -725,7 +884,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = isDark ? '#f8fafc' : '#292524';
+        ctx.fillStyle = pal.quoteText;
         let qLineY = textY + 24;
         qLines.forEach((line) => {
           ctx.fillText(line, textX, qLineY);
@@ -737,7 +896,19 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
       // Pie
       const footerY = H - 75;
-      ctx.fillStyle = isDark ? '#94a3b8' : '#78716c';
+
+      // Ex-Libris del lector
+      if (includeExLibris) {
+        ctx.save();
+        ctx.fillStyle = pal.exLibrisColor;
+        ctx.font = 'bold 13px "Cinzel", Georgia, serif';
+        ctx.letterSpacing = '2.5px';
+        ctx.textAlign = 'left';
+        ctx.fillText(`✦ EX LIBRIS · ${readerLabel.toUpperCase()}`, textX, footerY - 46);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = pal.footerMeta;
       ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       const readDateText = book.fechaFin
         ? `Lectura completada el ${book.fechaFin}`
@@ -746,14 +917,14 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         : 'Colección personal';
       ctx.fillText(readDateText, textX, footerY - 22);
 
-      ctx.fillStyle = isDark ? '#f59e0b' : '#b45309';
+      ctx.fillStyle = pal.footerBrand;
       ctx.font = '600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       ctx.letterSpacing = '2px';
       ctx.fillText('NEXUS LIBRARY · nexus-library.vercel.app', textX, footerY);
     }
 
     setIsGenerating(false);
-  }, [book, customQuote, format, includeQuote, includeRating, includeSaga, theme]);
+  }, [book, customQuote, format, includeExLibris, includeQuote, includeRating, includeSaga, readerLabel, theme]);
 
   // Redibujar siempre que cambien opciones
   useEffect(() => {
@@ -852,7 +1023,11 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl border border-amber-900/30 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#0f141d] shadow-2xl overflow-hidden">
+      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[92vh] flex flex-col p-0 shadow-2xl overflow-hidden pt-6 sm:pt-7">
+        <div className="catalog-brass-tab">
+          Estudio Editorial · Tarjetas de Lectura
+        </div>
+
         {/* Cabecera */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/80 dark:bg-[#141b27]/80">
           <div className="flex items-center gap-2.5">
@@ -948,37 +1123,85 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
                 </div>
               </div>
 
-              {/* 2. Selector de tema visual */}
+              {/* 2. Selector de tema visual (5 temas Dark Academia) */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-slate-300 mb-2">
-                  Estética & Paleta
+                  Encuadernación & Estética
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {/* Pergamino */}
                   <button
                     type="button"
                     onClick={() => setTheme('parchment')}
                     className={
-                      'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium transition ' +
+                      'flex items-center gap-2 py-2 px-2.5 rounded-xl border text-xs transition ' +
                       (theme === 'parchment'
-                        ? 'border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold shadow-sm'
+                        ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-200 font-bold shadow-xs'
                         : 'border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300')
                     }
                   >
-                    <Sun className="w-4 h-4 text-amber-600" />
-                    <span>Pergamino Editorial</span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#f4ebd6] border border-amber-800/40 shrink-0" />
+                    <span className="truncate">Pergamino</span>
                   </button>
+
+                  {/* Medianoche */}
                   <button
                     type="button"
                     onClick={() => setTheme('midnight')}
                     className={
-                      'flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium transition ' +
+                      'flex items-center gap-2 py-2 px-2.5 rounded-xl border text-xs transition ' +
                       (theme === 'midnight'
-                        ? 'border-amber-600 bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold shadow-sm'
+                        ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-200 font-bold shadow-xs'
                         : 'border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300')
                     }
                   >
-                    <Moon className="w-4 h-4 text-amber-400" />
-                    <span>Noche Dark Academia</span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#121722] border border-amber-400/40 shrink-0" />
+                    <span className="truncate">Medianoche</span>
+                  </button>
+
+                  {/* Burdeos */}
+                  <button
+                    type="button"
+                    onClick={() => setTheme('burgundy')}
+                    className={
+                      'flex items-center gap-2 py-2 px-2.5 rounded-xl border text-xs transition ' +
+                      (theme === 'burgundy'
+                        ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-200 font-bold shadow-xs'
+                        : 'border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300')
+                    }
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#3d101a] border border-amber-400/40 shrink-0" />
+                    <span className="truncate">Burdeos</span>
+                  </button>
+
+                  {/* Verde Archivo */}
+                  <button
+                    type="button"
+                    onClick={() => setTheme('forest')}
+                    className={
+                      'flex items-center gap-2 py-2 px-2.5 rounded-xl border text-xs transition ' +
+                      (theme === 'forest'
+                        ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-200 font-bold shadow-xs'
+                        : 'border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300')
+                    }
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#142e20] border border-emerald-400/40 shrink-0" />
+                    <span className="truncate">Verde Archivo</span>
+                  </button>
+
+                  {/* Cuero & Piel */}
+                  <button
+                    type="button"
+                    onClick={() => setTheme('leather')}
+                    className={
+                      'col-span-2 sm:col-span-1 flex items-center gap-2 py-2 px-2.5 rounded-xl border text-xs transition ' +
+                      (theme === 'leather'
+                        ? 'border-amber-600 bg-amber-500/20 text-amber-950 dark:text-amber-200 font-bold shadow-xs'
+                        : 'border-stone-300 dark:border-[#283246] hover:bg-black/5 dark:hover:bg-white/5 text-stone-700 dark:text-slate-300')
+                    }
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#382012] border border-amber-500/40 shrink-0" />
+                    <span className="truncate">Cuero Vintage</span>
                   </button>
                 </div>
               </div>
@@ -1057,6 +1280,16 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
                     <span>Mostrar saga ({book.sagaNombre})</span>
                   </label>
                 )}
+
+                <label className="flex items-center gap-1.5 cursor-pointer font-medium text-amber-900 dark:text-amber-300">
+                  <input
+                    type="checkbox"
+                    checked={includeExLibris}
+                    onChange={(e) => setIncludeExLibris(e.target.checked)}
+                    className="rounded border-amber-600 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Estampar mi Ex-Libris ({readerLabel})</span>
+                </label>
               </div>
             </div>
 

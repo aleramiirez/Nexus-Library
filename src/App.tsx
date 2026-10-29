@@ -341,6 +341,7 @@ export const App: React.FC = () => {
   const lastAuthUserIsAnonRef = useRef<boolean>(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   const [guestAlias, setGuestAlias] = useState<string>(() => profileService.getGuestAlias());
+  const [guestAvatar, setGuestAvatar] = useState<string | null>(() => profileService.getGuestAvatar());
   const [collectionsCount, setCollectionsCount] = useState<number>(() =>
     collectionService.getCollections(currentUser?.id).length
   );
@@ -1527,6 +1528,11 @@ export const App: React.FC = () => {
     setGuestAlias(alias);
   };
 
+  const handleUpdateGuestAvatar = (avatar: string | null) => {
+    profileService.setGuestAvatar(avatar);
+    setGuestAvatar(avatar);
+  };
+
   const userInitial = (
     currentUserProfile?.displayName ||
     currentUser?.email ||
@@ -1556,6 +1562,7 @@ export const App: React.FC = () => {
         userEmail={currentUser?.email}
         userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
         username={currentUserProfile?.username}
+        avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
         userInitial={userInitial}
         isSyncing={isSyncing}
         mobileOpen={mobileMenuOpen}
@@ -2717,6 +2724,8 @@ export const App: React.FC = () => {
                 onUpdateProfile={handleUpdateProfile}
                 guestAlias={guestAlias}
                 onUpdateGuestAlias={handleUpdateGuestAlias}
+                guestAvatar={guestAvatar}
+                onUpdateGuestAvatar={handleUpdateGuestAvatar}
                 onOpenAuthModal={() => setIsAuthModalOpen(true)}
                 onTriggerSync={runCloudSync}
                 isSyncing={isSyncing}
@@ -2811,6 +2820,7 @@ export const App: React.FC = () => {
             onRatingChange={updateBookQuickRating}
             onDatesChange={updateBookQuickDates}
             currentUserId={currentUser?.id}
+            readerName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
             onShowToast={showToast}
           />
         )}

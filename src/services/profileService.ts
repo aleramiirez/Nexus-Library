@@ -59,6 +59,7 @@ export function mapRowToProfile(row: RawProfileRow): UserProfile {
 
 const PROFILE_CACHE_PREFIX = 'nexus_library_profile_';
 const GUEST_ALIAS_KEY = 'nexus_library_guest_alias';
+const GUEST_AVATAR_KEY = 'nexus_library_guest_avatar';
 
 export const profileService = {
   /**
@@ -289,6 +290,29 @@ export const profileService = {
         localStorage.setItem(GUEST_ALIAS_KEY, alias.trim());
       } else {
         localStorage.removeItem(GUEST_ALIAS_KEY);
+      }
+    } catch {
+      // Ignorar errores de storage
+    }
+  },
+
+  /**
+   * Avatar local para usuarios en modo invitado (sin cuenta)
+   */
+  getGuestAvatar(): string | null {
+    try {
+      return localStorage.getItem(GUEST_AVATAR_KEY) || null;
+    } catch {
+      return null;
+    }
+  },
+
+  setGuestAvatar(avatarUrl: string | null): void {
+    try {
+      if (avatarUrl && avatarUrl.trim()) {
+        localStorage.setItem(GUEST_AVATAR_KEY, avatarUrl.trim());
+      } else {
+        localStorage.removeItem(GUEST_AVATAR_KEY);
       }
     } catch {
       // Ignorar errores de storage

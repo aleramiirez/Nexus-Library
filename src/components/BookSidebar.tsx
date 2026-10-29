@@ -21,6 +21,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { BookmarkMarker } from './BookmarkMarker';
+import { UserAvatar } from './UserAvatar';
 import { pwaInstallService } from '../services/pwaInstallService';
 
 export type NavigationSection =
@@ -51,6 +52,7 @@ interface BookSidebarProps {
   userEmail?: string | null;
   userDisplayName?: string | null;
   username?: string | null;
+  avatarUrl?: string | null;
   userInitial: string;
   isSyncing: boolean;
   mobileOpen?: boolean;
@@ -135,6 +137,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   userEmail,
   userDisplayName,
   username,
+  avatarUrl,
   userInitial,
   isSyncing,
   mobileOpen = false,
@@ -359,15 +362,13 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                   : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5')
               }
             >
-              {hasUser ? (
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
-                  {userDisplayName ? userDisplayName.charAt(0).toUpperCase() : userInitial}
-                </div>
-              ) : (
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <UserIcon className="w-4 h-4" />
-                </div>
-              )}
+              <UserAvatar
+                avatarUrl={avatarUrl}
+                displayName={userDisplayName}
+                username={username}
+                size="sm"
+                className="shrink-0"
+              />
 
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
