@@ -47,7 +47,7 @@ function toRomanNumeral(num: number): string {
  * - Módulos de estantería paginados (18 libros por mueble) para un rendimiento y experiencia física óptima.
  * - Libros apoyados sobre la balda, con sombra de contacto, lomo y brillo uniforme.
  * - Título de cada libro en una placa de latón en el canto de la balda.
- * - El número de libros por balda se adapta al ancho disponible.
+ * - El número de libros por balda se adapta al ancho disponible sin descalabros al cambiar de estantería.
  */
 const BookShelfComponent: React.FC<BookShelfProps> = ({
   books,
@@ -65,12 +65,46 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
   const isPaginated = showPagination && totalBooks > pageSize;
   const totalPages = isPaginated ? Math.ceil(totalBooks / pageSize) : 1;
 
+  // Función estable de cálculo de columnas según el ancho del mueble
+  const updateCols = useCallback(() => {
+    const el = backRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    // Ignorar si el elemento no está medido o está en 0 por transiciones
+    if (w < 120) return;
+    const available = w - SHELF_PAD * 2;
+    const fit = Math.floor((available + SHELF_GAP) / (MIN_BOOK_WIDTH + SHELF_GAP));
+    const nextCols = Math.min(MAX_COLS, Math.max(2, fit));
+    setCols((prev) => (prev === nextCols ? prev : nextCols));
+  }, []);
+
+  // Observador de cambio de tamaño del mueble
+  useEffect(() => {
+    const el = backRef.current;
+    if (!el) return;
+    updateCols();
+
+    let prevWidth = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (!el || el.clientWidth === prevWidth) return;
+      prevWidth = el.clientWidth;
+      updateCols();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateCols]);
+
   // Clamping de página si cambian los libros (ej. tras filtrar o buscar)
   useEffect(() => {
     if (page > totalPages) {
       setPage(Math.max(1, totalPages));
     }
   }, [page, totalPages]);
+
+  // Asegurar que las columnas se recalculan y mantienen al cambiar de página
+  useEffect(() => {
+    updateCols();
+  }, [page, updateCols]);
 
   // Si se abre un libro que está en otra página, saltar automáticamente a su página
   useEffect(() => {
@@ -97,27 +131,6 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
     if (containerRef.current) {
       containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, []);
-
-  useEffect(() => {
-    const el = backRef.current;
-    if (!el) return;
-    let prevWidth = el.clientWidth;
-    const update = () => {
-      const w = el.clientWidth;
-      const available = w - SHELF_PAD * 2;
-      const fit = Math.floor((available + SHELF_GAP) / (MIN_BOOK_WIDTH + SHELF_GAP));
-      const nextCols = Math.min(MAX_COLS, Math.max(2, fit));
-      setCols((c) => (c === nextCols ? c : nextCols));
-    };
-    update();
-    const observer = new ResizeObserver(() => {
-      if (!el || el.clientWidth === prevWidth) return;
-      prevWidth = el.clientWidth;
-      update();
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
   }, []);
 
   const setPlateActive = useCallback((bookId: string, active: boolean) => {
@@ -147,14 +160,15 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
     <div className="bookcase" ref={containerRef}>
       <div className="bookcase-cornice" aria-hidden="true" />
 
-      <div className="bookcase-body" key={`shelf-module-${page}`}>
+      {/* El cuerpo se mantiene montado sin romper el ResizeObserver ni desconfigurar las columnas */}
+      <div className="bookcase-body">
         <div className="bookcase-back" ref={backRef}>
           {rows.map((row, rowIdx) => (
-            <div className="shelf-row" key={rowIdx}>
+            <div className="shelf-row" key={`row-${page}-${rowIdx}`}>
               <div className="shelf-books" style={gridStyle}>
                 {row.map((book, i) => (
                   <button
-                    key={book.id}
+                    key={`${page}-${book.id}`}
                     type="button"
                     data-book-id={book.id}
                     className={
@@ -198,7 +212,7 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
                   <div className="shelf-plates" style={gridStyle}>
                     {row.map((book) => (
                       <div
-                        key={book.id}
+                        key={`plate-${page}-${book.id}`}
                         data-plate-id={book.id}
                         className={
                           'shelf-plate' + (openedBookId === book.id ? ' is-active' : '')
