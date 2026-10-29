@@ -418,47 +418,11 @@ html.dark .dashboard-saga-chip {
   text-overflow: ellipsis;
 }
 
-.saga-shelf {
-  --saga-book-w: 112px;
-  --saga-gap: 18px;
+.saga-shelf .shelf-books {
+  padding-top: 24px;
 }
-.saga-shelf-scroll {
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: 14px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.saga-shelf-scroll::-webkit-scrollbar {
-  display: none;
-}
-.saga-shelf-track {
-  display: flex;
-  flex-direction: column;
-  width: max-content;
-  min-width: 100%;
-}
-.saga-shelf-books,
-.saga-shelf-plates {
-  display: flex;
-  gap: var(--saga-gap);
-  padding: 0 14px;
-}
-.saga-shelf-books {
-  position: relative;
-  z-index: 2;
-  align-items: flex-end;
-  padding-top: 26px;
-}
-.saga-shelf-item,
-.saga-shelf-plate {
-  flex: 0 0 var(--saga-book-w);
-  width: var(--saga-book-w);
-  scroll-snap-align: start;
-}
-.saga-shelf-plate {
-  max-width: none;
-  margin: 0;
+.saga-shelf .shelf-plate {
+  max-width: 100%;
 }
 
 /* Sello de lacre con el estado de lectura */
@@ -520,11 +484,6 @@ html.dark .saga-action-btn.is-active { color: #f19aa6; }
 
 @media (max-width: 639px) {
   .saga-card { padding: 26px 14px 16px; }
-  .saga-shelf { --saga-book-w: 92px; --saga-gap: 12px; }
-  .saga-shelf-books { padding-top: 18px; }
-  .saga-shelf-books,
-  .saga-shelf-plates { padding: 0 10px; }
-  .saga-shelf-books { padding-top: 18px; }
-  .saga-shelf-plate { font-size: 10.5px; padding: 2px 8px; }
+  .saga-shelf .shelf-books { padding-top: 18px; }
   .saga-seal { width: 20px; height: 20px; font-size: 10px; }
 }

@@ -2617,7 +2617,11 @@ export const App: React.FC = () => {
                           No hay volúmenes asignados todavía a esta saga.
                         </p>
                       ) : (
-                        <SagaShelf books={item.books} onOpenDetail={handleOpenBookDetail} />
+                        <SagaShelf
+                          books={item.books}
+                          onOpenDetail={handleOpenBookDetail}
+                          openedBookId={detailBookId}
+                        />
                       )}
                     </section>
                   ))}
