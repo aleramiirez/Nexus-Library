@@ -42,13 +42,15 @@ import {
   BellRing,
   Award,
   Volume2,
-  VolumeX
+  VolumeX,
+  Compass
 } from 'lucide-react';
 import { soundService, SoundPreferences } from '../services/soundService';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
 import { UserAvatar } from './UserAvatar';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { ShareReaderCardModal } from './ShareReaderCardModal';
+import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -258,6 +260,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isExportCarnetOpen, setIsExportCarnetOpen] = useState(false);
+  const [isPassportOpen, setIsPassportOpen] = useState(false);
 
   const handleAvatarSelect = async (avatarUrl: string | null) => {
     if (currentUser) {
@@ -1125,7 +1128,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       </p>
                     </div>
 
-                    <div className="self-center sm:self-start">
+                    <div className="self-center sm:self-start flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => setIsExportCarnetOpen(true)}
@@ -1133,6 +1136,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       >
                         <Award className="w-4 h-4 text-slate-950" />
                         <span>Exportar Carnet Oficial</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPassportOpen(true);
+                          soundService.playPageTurn();
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border border-amber-900/25 dark:border-amber-400/30 bg-[#fffcf5] dark:bg-[#162135] hover:bg-amber-500/10 text-stone-800 dark:text-amber-200 font-bold px-4 py-2 text-xs transition shadow-sm transform hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <Compass className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span>Pasaporte Literario</span>
                       </button>
                     </div>
                   </div>
@@ -1521,6 +1536,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               totalBooks={books.length}
               readBooks={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length}
               totalSagas={sagas.length}
+              onShowToast={(msg, type) =>
+                setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
+              }
+            />
+
+            {/* Modal de Pasaporte Literario y Visados Consulares */}
+            <LiteraryPassportModal
+              isOpen={isPassportOpen}
+              onClose={() => setIsPassportOpen(false)}
+              books={books}
+              displayName={profileDisplayName}
+              username={profileUsername}
+              avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+              memberId={currentUser?.id}
               onShowToast={(msg, type) =>
                 setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
               }
