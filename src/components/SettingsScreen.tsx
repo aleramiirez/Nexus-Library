@@ -849,9 +849,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
               {/* Contenido: Avatar + Datos del lector */}
               <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Avatar heráldico con botón de edición */}
-                <div className="relative group shrink-0">
-                  <div className="p-1 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-md">
+                {/* Avatar heráldico interactivo con botón de edición */}
+                <div
+                  onClick={() => setIsAvatarModalOpen(true)}
+                  title="Haz clic para personalizar tu Sello o Avatar"
+                  className="relative group shrink-0 cursor-pointer"
+                >
+                  <div className="p-1 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-md transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg">
                     <UserAvatar
                       avatarUrl={currentUser ? userProfile?.avatarUrl : guestAvatar}
                       displayName={profileDisplayName}
@@ -862,7 +866,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsAvatarModalOpen(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsAvatarModalOpen(true);
+                    }}
                     title="Personalizar Sello o Avatar"
                     className="absolute -bottom-2 -right-2 inline-flex items-center gap-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 text-[10px] shadow-lg border-2 border-white dark:border-[#131926] transition transform hover:scale-105 active:scale-95"
                   >
@@ -889,23 +896,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       </p>
                     </div>
 
-                    <div className="self-center sm:self-start flex flex-wrap items-center gap-2">
+                    <div className="self-center sm:self-start">
                       <button
                         type="button"
                         onClick={() => setIsExportCarnetOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold px-3.5 py-1.5 text-xs transition shadow-sm transform hover:scale-[1.02] active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold px-4 py-2 text-xs transition shadow-sm transform hover:scale-[1.02] active:scale-[0.98]"
                       >
-                        <Award className="w-3.5 h-3.5 text-slate-950" />
-                        Exportar Carnet Oficial
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setIsAvatarModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-900/30 dark:border-amber-400/30 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 px-3 py-1.5 text-xs font-bold transition shadow-xs"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                        Cambiar Sello / Avatar
+                        <Award className="w-4 h-4 text-slate-950" />
+                        <span>Exportar Carnet Oficial</span>
                       </button>
                     </div>
                   </div>

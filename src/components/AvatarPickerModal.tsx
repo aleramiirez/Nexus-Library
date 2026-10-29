@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check, Sparkles, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { AVATAR_PRESETS } from '../constants/avatarPresets';
 import { UserAvatar } from './UserAvatar';
@@ -89,9 +90,9 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/70 backdrop-blur-xs animate-fade-in"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
@@ -283,4 +284,9 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 };

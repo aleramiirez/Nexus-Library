@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { renderToStaticMarkup } from 'react-dom/server';
 import {
   X,
   Download,
@@ -97,9 +98,36 @@ function drawPaperGrain(
 
 // Carga segura de imagen para evitar tainted canvas
 async function loadSafeImage(src?: string | null): Promise<HTMLImageElement | null> {
-  if (!src || !src.trim() || src.startsWith('preset:')) return null;
+  if (!src || !src.trim()) return null;
 
-  // 1. Data URLs locales (base64)
+  // 1. Si es un sello preset oficial: renderizar su SVG de Lucide a imagen vectorial
+  if (src.startsWith('preset:')) {
+    const preset = getAvatarPreset(src);
+    if (preset) {
+      try {
+        const IconComponent = preset.icon as React.ComponentType<any>;
+        const svgString = renderToStaticMarkup(
+          React.createElement(IconComponent, {
+            color: '#fce49b',
+            size: 160,
+            strokeWidth: 1.9
+          })
+        );
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = reject;
+          img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
+        });
+        return img;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // 2. Data URLs locales (base64)
   if (src.startsWith('data:image/')) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -153,6 +181,106 @@ async function loadSafeImage(src?: string | null): Promise<HTMLImageElement | nu
   } catch {
     return null;
   }
+}
+
+// Dibuja el avatar en el medallón (soporta preset heráldico con icono SVG, foto o monograma)
+function drawAvatarMedallion(
+  ctx: CanvasRenderingContext2D,
+  avatarCenterX: number,
+  avatarCenterY: number,
+  avatarRadius: number,
+  avatarUrl: string | null | undefined,
+  loadedAvatarImg: HTMLImageElement | null,
+  cleanName: string,
+  fontSize: number
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
+  ctx.clip();
+
+  const isPreset = Boolean(avatarUrl && avatarUrl.startsWith('preset:'));
+  const preset = isPreset ? getAvatarPreset(avatarUrl) : undefined;
+
+  if (isPreset && loadedAvatarImg) {
+    const grad = ctx.createLinearGradient(
+      avatarCenterX - avatarRadius,
+      avatarCenterY - avatarRadius,
+      avatarCenterX + avatarRadius,
+      avatarCenterY + avatarRadius
+    );
+    if (preset?.id === 'preset:quill') {
+      grad.addColorStop(0, '#6e1e2d'); grad.addColorStop(1, '#2b080f');
+    } else if (preset?.id === 'preset:owl') {
+      grad.addColorStop(0, '#1c2d4f'); grad.addColorStop(1, '#090f1c');
+    } else if (preset?.id === 'preset:book') {
+      grad.addColorStop(0, '#5a3619'); grad.addColorStop(1, '#241306');
+    } else if (preset?.id === 'preset:watch') {
+      grad.addColorStop(0, '#4e3c1a'); grad.addColorStop(1, '#1d1607');
+    } else if (preset?.id === 'preset:lamp') {
+      grad.addColorStop(0, '#18422b'); grad.addColorStop(1, '#08170e');
+    } else if (preset?.id === 'preset:bust') {
+      grad.addColorStop(0, '#333d50'); grad.addColorStop(1, '#121720');
+    } else if (preset?.id === 'preset:candle') {
+      grad.addColorStop(0, '#73400d'); grad.addColorStop(1, '#2e1702');
+    } else if (preset?.id === 'preset:compass') {
+      grad.addColorStop(0, '#1b344d'); grad.addColorStop(1, '#07111c');
+    } else if (preset?.id === 'preset:scroll') {
+      grad.addColorStop(0, '#6e2229'); grad.addColorStop(1, '#29070a');
+    } else if (preset?.id === 'preset:library') {
+      grad.addColorStop(0, '#23232b'); grad.addColorStop(1, '#0c0c0f');
+    } else {
+      grad.addColorStop(0, '#4a2810'); grad.addColorStop(1, '#1e0f05');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(
+      avatarCenterX - avatarRadius,
+      avatarCenterY - avatarRadius,
+      avatarRadius * 2,
+      avatarRadius * 2
+    );
+
+    const iconSize = Math.round(avatarRadius * 1.15);
+    ctx.drawImage(
+      loadedAvatarImg,
+      avatarCenterX - iconSize / 2,
+      avatarCenterY - iconSize / 2,
+      iconSize,
+      iconSize
+    );
+  } else if (loadedAvatarImg) {
+    ctx.drawImage(
+      loadedAvatarImg,
+      avatarCenterX - avatarRadius,
+      avatarCenterY - avatarRadius,
+      avatarRadius * 2,
+      avatarRadius * 2
+    );
+  } else {
+    const grad = ctx.createLinearGradient(
+      avatarCenterX - avatarRadius,
+      avatarCenterY - avatarRadius,
+      avatarCenterX + avatarRadius,
+      avatarCenterY + avatarRadius
+    );
+    grad.addColorStop(0, '#5a3619');
+    grad.addColorStop(1, '#241306');
+    ctx.fillStyle = grad;
+    ctx.fillRect(
+      avatarCenterX - avatarRadius,
+      avatarCenterY - avatarRadius,
+      avatarRadius * 2,
+      avatarRadius * 2
+    );
+
+    ctx.fillStyle = '#fce49b';
+    ctx.font = `bold ${fontSize}px "Cinzel", "Cormorant Garamond", Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const initial = (cleanName || 'NL').charAt(0).toUpperCase();
+    ctx.fillText(initial, avatarCenterX, avatarCenterY);
+  }
+  ctx.restore();
 }
 
 export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
@@ -426,46 +554,16 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
       ctx.restore();
 
       // Relleno avatar (imagen, preset heráldico o iniciales)
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
-      ctx.clip();
-
-      if (loadedAvatarImg) {
-        ctx.drawImage(
-          loadedAvatarImg,
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarRadius * 2,
-          avatarRadius * 2
-        );
-      } else {
-        // Preset heráldico o iniciales
-        const preset = getAvatarPreset(avatarUrl);
-        const grad = ctx.createLinearGradient(
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarCenterX + avatarRadius,
-          avatarCenterY + avatarRadius
-        );
-        grad.addColorStop(0, '#5a3619');
-        grad.addColorStop(1, '#241306');
-        ctx.fillStyle = grad;
-        ctx.fillRect(
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarRadius * 2,
-          avatarRadius * 2
-        );
-
-        ctx.fillStyle = '#fce49b';
-        ctx.font = 'bold 44px "Cinzel", "Cormorant Garamond", Georgia, serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const initial = (cleanName || 'NL').charAt(0).toUpperCase();
-        ctx.fillText(initial, avatarCenterX, avatarCenterY);
-      }
-      ctx.restore();
+      drawAvatarMedallion(
+        ctx,
+        avatarCenterX,
+        avatarCenterY,
+        avatarRadius,
+        avatarUrl,
+        loadedAvatarImg,
+        cleanName,
+        44
+      );
 
       // Badge de rango bajo el avatar
       const rankBadgeY = avatarCenterY + avatarRadius + 32;
@@ -639,44 +737,16 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
       ctx.fill();
       ctx.restore();
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarCenterX, avatarCenterY, avatarRadius, 0, Math.PI * 2);
-      ctx.clip();
-
-      if (loadedAvatarImg) {
-        ctx.drawImage(
-          loadedAvatarImg,
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarRadius * 2,
-          avatarRadius * 2
-        );
-      } else {
-        const grad = ctx.createLinearGradient(
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarCenterX + avatarRadius,
-          avatarCenterY + avatarRadius
-        );
-        grad.addColorStop(0, '#5a3619');
-        grad.addColorStop(1, '#241306');
-        ctx.fillStyle = grad;
-        ctx.fillRect(
-          avatarCenterX - avatarRadius,
-          avatarCenterY - avatarRadius,
-          avatarRadius * 2,
-          avatarRadius * 2
-        );
-
-        ctx.fillStyle = '#fce49b';
-        ctx.font = 'bold 64px "Cinzel", "Cormorant Garamond", Georgia, serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const initial = (cleanName || 'NL').charAt(0).toUpperCase();
-        ctx.fillText(initial, avatarCenterX, avatarCenterY);
-      }
-      ctx.restore();
+      drawAvatarMedallion(
+        ctx,
+        avatarCenterX,
+        avatarCenterY,
+        avatarRadius,
+        avatarUrl,
+        loadedAvatarImg,
+        cleanName,
+        64
+      );
 
       // Badge de nivel
       curY += avatarRadius + 45;
