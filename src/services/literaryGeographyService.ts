@@ -64,6 +64,17 @@ export interface PassportSummary {
   badges: PassportBadge[];
 }
 
+/**
+ * Determina con total precisión si un libro está concluido/leído.
+ * Previene el fallo donde '❌ No Leído' contenía la subcadena 'Leído'.
+ */
+export function isBookRead(book: { progreso?: string | null }): boolean {
+  if (!book?.progreso) return false;
+  const p = book.progreso.trim().toLowerCase();
+  if (p === 'read') return true;
+  return (p.includes('leído') || p.includes('leido')) && !p.includes('no');
+}
+
 // ─── Catálogo de Países Literarios ───
 export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
   ES: {
@@ -818,7 +829,7 @@ class LiteraryGeographyService {
       const country = COUNTRIES_CATALOG[code];
       if (!country) return;
 
-      const readBooks = bookList.filter((b) => b.progreso && b.progreso.includes('Leído'));
+      const readBooks = bookList.filter((b) => isBookRead(b));
       const isStamped = readBooks.length > 0;
 
       const authorsSet = new Set<string>();
@@ -839,6 +850,20 @@ class LiteraryGeographyService {
         authors: Array.from(authorsSet),
         stamped: isStamped
       });
+    });
+
+    // Añadir el resto de países del catálogo mundial para exploración visual ("Por descubrir")
+    Object.values(COUNTRIES_CATALOG).forEach((country) => {
+      if (!countryMap.has(country.code)) {
+        entries.push({
+          country,
+          books: [],
+          readBooks: [],
+          readCount: 0,
+          authors: [],
+          stamped: false
+        });
+      }
     });
 
     // Ordenar: primero los sellados con más obras leídas, luego alfabéticamente
@@ -866,8 +891,8 @@ class LiteraryGeographyService {
         description: 'Has leído obras de autores españoles o portugueses.',
         icon: '🏛️',
         unlocked: Boolean(
-          (countryMap.get('ES')?.some((b) => b.progreso?.includes('Leído'))) ||
-          (countryMap.get('PT')?.some((b) => b.progreso?.includes('Leído')))
+          (countryMap.get('ES')?.some((b) => isBookRead(b))) ||
+          (countryMap.get('PT')?.some((b) => isBookRead(b)))
         ),
         progressText: 'España / Portugal'
       },
@@ -878,8 +903,8 @@ class LiteraryGeographyService {
         description: 'Has completado 3 o más obras de autores británicos o estadounidenses.',
         icon: '👑',
         unlocked:
-          ((countryMap.get('GB')?.filter((b) => b.progreso?.includes('Leído')).length || 0) +
-            (countryMap.get('US')?.filter((b) => b.progreso?.includes('Leído')).length || 0)) >= 3,
+          ((countryMap.get('GB')?.filter((b) => isBookRead(b)).length || 0) +
+            (countryMap.get('US')?.filter((b) => isBookRead(b)).length || 0)) >= 3,
         progressText: '3+ obras de UK o EE.UU.'
       },
       {
@@ -889,7 +914,7 @@ class LiteraryGeographyService {
         description: 'Has leído autores latinoamericanos (México, Argentina, Colombia, Chile, etc.).',
         icon: '🌿',
         unlocked: ['MX', 'AR', 'CO', 'CL', 'PE', 'UY'].some((code) =>
-          countryMap.get(code)?.some((b) => b.progreso?.includes('Leído'))
+          countryMap.get(code)?.some((b) => isBookRead(b))
         ),
         progressText: 'América Latina'
       },
@@ -900,7 +925,7 @@ class LiteraryGeographyService {
         description: 'Has cruzado el Pacífico para leer autores asiáticos (Japón, Corea o China).',
         icon: '⛩️',
         unlocked: ['JP', 'KR', 'CN'].some((code) =>
-          countryMap.get(code)?.some((b) => b.progreso?.includes('Leído'))
+          countryMap.get(code)?.some((b) => isBookRead(b))
         ),
         progressText: 'Japón / Asia'
       },

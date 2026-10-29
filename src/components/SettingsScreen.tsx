@@ -51,6 +51,7 @@ import { UserAvatar } from './UserAvatar';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { ShareReaderCardModal } from './ShareReaderCardModal';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
+import { isBookRead } from '../services/literaryGeographyService';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -100,6 +101,7 @@ interface SettingsScreenProps {
   initialTab?: SettingsTab;
   onOpenEpubImport?: () => void;
   onNavigateToLibrary?: () => void;
+  onOpenBookDetail?: (book: Book) => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -119,7 +121,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   sagas,
   initialTab = 'appearance',
   onOpenEpubImport,
-  onNavigateToLibrary
+  onNavigateToLibrary,
+  onOpenBookDetail
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [, startTransition] = useTransition();
@@ -1177,7 +1180,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                     <div className="rounded-lg bg-amber-900/5 dark:bg-amber-400/5 border border-amber-900/10 dark:border-amber-400/10 p-2">
                       <div className="font-serif text-base sm:text-lg font-bold text-amber-900 dark:text-amber-300">
-                        {books.filter((b) => b.progreso && b.progreso.includes('Leído')).length}
+                        {books.filter((b) => isBookRead(b)).length}
                       </div>
                       <div className="text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
                         Leídos
@@ -1534,7 +1537,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               bio={profileBio}
               memberId={currentUser?.id}
               totalBooks={books.length}
-              readBooks={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length}
+              readBooks={books.filter((b) => isBookRead(b)).length}
               totalSagas={sagas.length}
               onShowToast={(msg, type) =>
                 setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
@@ -1550,6 +1553,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               username={profileUsername}
               avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
               memberId={currentUser?.id}
+              onOpenBookDetail={onOpenBookDetail}
               onShowToast={(msg, type) =>
                 setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
               }

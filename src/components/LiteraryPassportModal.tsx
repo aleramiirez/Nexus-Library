@@ -87,9 +87,9 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-4 overflow-hidden">
+      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-4 overflow-visible">
         {/* Pestaña de latón superior */}
-        <div className="catalog-brass-tab">
+        <div className="catalog-brass-tab z-20 whitespace-nowrap">
           Pasaporte Consular · República de las Letras
         </div>
 
@@ -173,7 +173,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
         </div>
 
         {/* Contenido del Pasaporte (soporta papel claro y modo oscuro) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 rounded-b-[18px]">
           {/* ════════════════════ PESTAÑA 1: VISADOS Y SELLOS ════════════════════ */}
           {activeTab === 'visas' && (
             <div className="space-y-5 animate-fadeIn">
@@ -498,13 +498,24 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
               {/* Lista de libros de este país */}
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {selectedEntry.books.map((b) => (
-                  <div
-                    key={b.id}
-                    onClick={() => {
-                      setSelectedEntry(null);
-                      onOpenBookDetail?.(b);
-                    }}
+                {selectedEntry.books.length === 0 ? (
+                  <div className="py-6 px-4 text-center border border-dashed border-amber-900/20 dark:border-slate-800 rounded-xl bg-amber-900/5 dark:bg-black/20">
+                    <p className="font-serif text-xs italic text-stone-600 dark:text-slate-400">
+                      Aún no has registrado obras de este país.
+                    </p>
+                    <p className="text-[11px] text-amber-800 dark:text-amber-400 mt-1">
+                      ¡Lee una obra o asigna un autor de su literatura para conseguir este sello!
+                    </p>
+                  </div>
+                ) : (
+                  selectedEntry.books.map((b) => (
+                    <div
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedEntry(null);
+                        onClose();
+                        onOpenBookDetail?.(b);
+                      }}
                     className="p-2.5 rounded-xl border border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-500/40 bg-[#fffcf5] dark:bg-[#0d131f] flex items-center justify-between gap-3 cursor-pointer transition group shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 truncate">
@@ -533,7 +544,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       {b.progreso || 'Registrado'}
                     </span>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
           </div>

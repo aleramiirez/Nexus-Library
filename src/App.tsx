@@ -2769,6 +2769,7 @@ export const App: React.FC = () => {
                   setIsEpubImportOpen(true);
                 }}
                 onNavigateToLibrary={() => handleNavigate('library')}
+                onOpenBookDetail={handleOpenCardDetail}
               />
             </React.Suspense>
           )}

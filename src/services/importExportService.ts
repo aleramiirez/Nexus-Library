@@ -373,10 +373,10 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
 
     if (rawShelf.includes('currently-reading') || rawShelf.includes('leyendo')) {
       progreso = '⏳ Leyendo';
+    } else if (rawShelf.includes('to-read') || rawShelf.includes('no le') || rawShelf.includes('por leer') || rawShelf.includes('pendientes')) {
+      progreso = '❌ No Leído';
     } else if (rawShelf === 'read' || rawShelf.includes('leído') || rawShelf.includes('leido')) {
       progreso = '✅ Leído';
-    } else if (rawShelf.includes('to-read') || rawShelf.includes('por leer') || rawShelf.includes('pendientes')) {
-      progreso = '❌ No Leído';
     } else if (rawShelf.includes('abandon') || rawShelf.includes('dnf') || rawShelf.includes('paus')) {
       progreso = '⏸️ Pausado';
     } else if (fechaFin) {
