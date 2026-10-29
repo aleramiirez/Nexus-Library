@@ -1,11 +1,25 @@
 import { Book, Saga } from '../types/models';
-import { db, saveBookRecord, upsertSaga, deleteBookRecord } from '../db/database';
+import { db, saveBookRecord, upsertSaga, deleteBookRecord, ensureValidUuid } from '../db/database';
 
-export const SAMPLE_SAGA_ID = 'sample_saga_cementerio_libros';
+export const SAMPLE_BOOK_IDS = {
+  dorianGray: 'a1000000-0000-4000-8000-000000000001',
+  cumbresBorrascosas: 'a1000000-0000-4000-8000-000000000002',
+  frankenstein: 'a1000000-0000-4000-8000-000000000003',
+  sombraDelViento: 'a1000000-0000-4000-8000-000000000004'
+} as const;
+
+export const SAMPLE_SAGA_ID = 'a1000000-0000-4000-8000-000000000010';
+
+export const SAMPLE_ISBNS = new Set([
+  '9780141439570',
+  '9780141439556',
+  '9780141439471',
+  '9788408043645'
+]);
 
 export const SAMPLE_BOOKS: Book[] = [
   {
-    id: 'sample_dorian_gray',
+    id: SAMPLE_BOOK_IDS.dorianGray,
     nombre: 'El retrato de Dorian Gray',
     autor: 'Oscar Wilde',
     genero: '🏛️ Clásicos',
@@ -40,7 +54,7 @@ export const SAMPLE_BOOKS: Book[] = [
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'sample_cumbres_borrascosas',
+    id: SAMPLE_BOOK_IDS.cumbresBorrascosas,
     nombre: 'Cumbres Borrascosas',
     autor: 'Emily Brontë',
     genero: '🏛️ Clásicos',
@@ -75,7 +89,7 @@ export const SAMPLE_BOOKS: Book[] = [
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'sample_frankenstein',
+    id: SAMPLE_BOOK_IDS.frankenstein,
     nombre: 'Frankenstein o el moderno Prometeo',
     autor: 'Mary Shelley',
     genero: '🔭 Ciencia Ficción & Distopía',
@@ -109,7 +123,7 @@ export const SAMPLE_BOOKS: Book[] = [
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'sample_sombra_del_viento',
+    id: SAMPLE_BOOK_IDS.sombraDelViento,
     nombre: 'La sombra del viento',
     autor: 'Carlos Ruiz Zafón',
     genero: '🕵️ Misterio, Thriller & Novela Negra',
@@ -153,10 +167,31 @@ export const SAMPLE_SAGA: Saga = {
   updatedAt: new Date().toISOString()
 };
 
+const SAMPLE_ID_SET = new Set<string>([
+  ...Object.values(SAMPLE_BOOK_IDS),
+  'sample_dorian_gray',
+  'sample_cumbres_borrascosas',
+  'sample_frankenstein',
+  'sample_sombra_del_viento'
+]);
+
 /**
  * Carga 4 obras maestras de muestra con sagas, citas, portadas y reseñas en Dexie DB y Supabase.
  */
 export async function loadSampleLibrary(userId?: string): Promise<number> {
+  // Limpiar cualquier registro previo que haya sido sobreescrito accidentalmente bajo userId
+  if (userId) {
+    try {
+      const validUserId = ensureValidUuid(userId);
+      const rogue = await db.books.get(validUserId);
+      if (rogue && (SAMPLE_ISBNS.has(rogue.isbn) || rogue.nombre === 'La sombra del viento')) {
+        await deleteBookRecord(validUserId);
+      }
+    } catch (err) {
+      console.warn('[SampleLibrary] Limpieza previa de rogue id:', err);
+    }
+  }
+
   // 1. Guardar la saga de muestra
   try {
     await upsertSaga(SAMPLE_SAGA.nombre, SAMPLE_SAGA.descripcion, SAMPLE_SAGA.id);
@@ -164,11 +199,11 @@ export async function loadSampleLibrary(userId?: string): Promise<number> {
     console.warn('[SampleLibrary] No se pudo guardar la saga de muestra:', err);
   }
 
-  // 2. Guardar los 4 libros de muestra
+  // 2. Guardar los 4 libros de muestra individualmente con sus propios IDs únicos
   let count = 0;
   for (const book of SAMPLE_BOOKS) {
     try {
-      await saveBookRecord(book, userId);
+      await saveBookRecord(book, book.id);
       count++;
     } catch (err) {
       console.warn(`[SampleLibrary] Error al cargar ${book.nombre}:`, err);
@@ -183,10 +218,12 @@ export async function loadSampleLibrary(userId?: string): Promise<number> {
 }
 
 /**
- * Elimina todos los libros de muestra con prefijo sample_ y limpia la saga asociada.
+ * Elimina todos los libros de muestra y limpia la saga asociada.
  */
 export async function removeSampleLibrary(userId?: string): Promise<number> {
   let count = 0;
+
+  // Eliminar por IDs de muestra actuales
   for (const book of SAMPLE_BOOKS) {
     try {
       await deleteBookRecord(book.id);
@@ -194,6 +231,24 @@ export async function removeSampleLibrary(userId?: string): Promise<number> {
     } catch (err) {
       console.warn(`[SampleLibrary] Error al eliminar ${book.id}:`, err);
     }
+  }
+
+  // Limpiar posibles IDs legacy
+  for (const legacyId of ['sample_dorian_gray', 'sample_cumbres_borrascosas', 'sample_frankenstein', 'sample_sombra_del_viento']) {
+    try {
+      await deleteBookRecord(legacyId);
+    } catch {}
+  }
+
+  // Limpiar posible libro residual con ID de usuario si coincidía con la muestra
+  if (userId) {
+    try {
+      const validUserId = ensureValidUuid(userId);
+      const rogue = await db.books.get(validUserId);
+      if (rogue && (SAMPLE_ISBNS.has(rogue.isbn) || rogue.nombre === 'La sombra del viento')) {
+        await deleteBookRecord(validUserId);
+      }
+    } catch {}
   }
 
   // Comprobar si quedan otros libros en la saga; si no, eliminar la saga de muestra
@@ -216,6 +271,7 @@ export async function removeSampleLibrary(userId?: string): Promise<number> {
  */
 export async function convertSampleBooksToPermanent(userId?: string): Promise<number> {
   let count = 0;
+
   for (const book of SAMPLE_BOOKS) {
     const existing = await db.books.get(book.id);
     if (existing) {
@@ -226,9 +282,28 @@ export async function convertSampleBooksToPermanent(userId?: string): Promise<nu
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      await saveBookRecord(permanentBook, userId);
+      await saveBookRecord(permanentBook);
       count++;
     }
+  }
+
+  // Comprobar si quedó alguno residual bajo userId
+  if (userId) {
+    try {
+      const validUserId = ensureValidUuid(userId);
+      const rogue = await db.books.get(validUserId);
+      if (rogue && (SAMPLE_ISBNS.has(rogue.isbn) || rogue.nombre === 'La sombra del viento')) {
+        await deleteBookRecord(validUserId);
+        const permanentBook: Book = {
+          ...rogue,
+          id: crypto.randomUUID ? crypto.randomUUID() : 'b_' + Math.random().toString(36).slice(2, 11),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        await saveBookRecord(permanentBook);
+        count++;
+      }
+    } catch {}
   }
 
   if (typeof window !== 'undefined') {
@@ -242,12 +317,20 @@ export async function convertSampleBooksToPermanent(userId?: string): Promise<nu
  * Comprueba si la colección actual contiene libros de muestra.
  */
 export function hasSampleBooks(books: Book[]): boolean {
-  return books.some((b) => b.id.startsWith('sample_'));
+  return books.some((b) => isSampleBook(b.id, b.isbn));
 }
 
 /**
  * Comprueba si un libro específico es de muestra.
  */
-export function isSampleBook(bookId: string): boolean {
-  return bookId.startsWith('sample_');
+export function isSampleBook(bookId: string, bookIsbn?: string): boolean {
+  if (SAMPLE_ID_SET.has(bookId) || bookId.startsWith('sample_')) {
+    return true;
+  }
+  if (bookIsbn && SAMPLE_ISBNS.has(bookIsbn)) {
+    if (typeof window !== 'undefined' && localStorage.getItem('nexus_sample_library_active') === 'true') {
+      return true;
+    }
+  }
+  return false;
 }

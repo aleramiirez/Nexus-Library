@@ -639,12 +639,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             setSelectedQuoteForCard('');
                             setIsShareCardOpen(true);
                           }}
-                          className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] font-semibold border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 active:scale-95 transition"
-                          title="Crear tarjeta editorial para redes sociales (Stories, X, WhatsApp)"
-                          aria-label="Crear tarjeta editorial para redes sociales"
+                          className="p-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#fbf6ea] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 active:scale-95 transition"
+                          title="Crear tarjeta editorial para redes sociales"
+                          aria-label="Compartir tarjeta del libro"
                         >
                           <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          <span className="hidden sm:inline">Tarjeta</span>
                         </button>
 
                         {onEdit && (
@@ -1730,12 +1729,11 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                 setSelectedQuoteForCard('');
                                 setIsShareCardOpen(true);
                               }}
-                              className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-3 flex items-center gap-1.5"
-                              title="Crear tarjeta editorial para redes sociales (Stories, X, WhatsApp)"
-                              aria-label="Crear tarjeta para redes sociales"
+                              className="open-book-ribbon-tab border-amber-900/25 dark:border-slate-700 bg-[#f2e6ce] dark:bg-[#1B2333] hover:bg-[#ead9b8] dark:hover:bg-[#232D42] text-stone-800 dark:text-slate-200 px-2.5"
+                              title="Crear tarjeta editorial para redes sociales"
+                              aria-label="Compartir tarjeta del libro"
                             >
                               <Share2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                              <span className="hidden xl:inline">Tarjeta</span>
                             </button>
 
                             {onEdit && (
