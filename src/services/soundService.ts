@@ -13,7 +13,7 @@ export interface SoundPreferences {
 
 const DEFAULT_PREFERENCES: SoundPreferences = {
   enabled: true,
-  volume: 0.75,
+  volume: 0.55,
   waxSeal: true,
   pageTurn: true,
   brassBell: true
@@ -186,7 +186,7 @@ class SoundService {
       const masterVol = this.preferences.volume;
 
       const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(masterVol * 0.85, now);
+      masterGain.gain.setValueAtTime(masterVol * 0.65, now);
       masterGain.connect(ctx.destination);
 
       // Fricción de papel: ruido blanco pasado por filtro paso banda variable

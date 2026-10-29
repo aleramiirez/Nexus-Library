@@ -72,7 +72,6 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
   const handleSelectEntry = (entry: CountryPassportEntry) => {
     setSelectedEntry(entry);
-    soundService.playInkStamp();
   };
 
   const handleAssignCountry = (book: Book, countryCode: string) => {

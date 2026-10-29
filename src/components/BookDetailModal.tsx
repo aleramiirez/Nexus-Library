@@ -394,7 +394,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     setAnimDone(false);
     setActiveTab('details');
     setIsFlippingPage(false);
-    soundService.playPageTurn();
 
     return () => {
       if (closeTimerRef.current !== null) {
