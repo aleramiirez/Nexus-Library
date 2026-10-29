@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Book } from '../types/models';
 import { formatStars } from '../constants/catalogs';
+import { getAuthorInitials } from '../services/coverService';
 
 export interface ShareBookCardModalProps {
   isOpen: boolean;
@@ -29,55 +30,173 @@ export interface ShareBookCardModalProps {
 export type CardFormat = 'story' | 'square';
 export type CardTheme = 'parchment' | 'midnight';
 
-// Carga segura de imagen para Canvas evitando problemas de CORS / canvas tainted
-async function loadSafeCoverImage(src?: string): Promise<HTMLImageElement | null> {
-  if (!src || !src.trim()) return null;
+// Telas de encuadernación artesanal de Nexus para libros sin portada (idénticas a BookCover)
+const CLOTH_PALETTES: Array<[string, string]> = [
+  ['#7a2231', '#4a1320'], // burdeos
+  ['#24523b', '#12301f'], // verde bosque
+  ['#23406e', '#122241'], // azul marino
+  ['#8a5a22', '#553413'], // ocre
+  ['#3b4252', '#1e222c'], // pizarra
+  ['#5b2f5e', '#321a35']  // ciruela
+];
 
-  // 1. Data URLs
-  if (src.startsWith('data:image/')) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
-  }
+const hashString = (value: string) => {
+  let h = 0;
+  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) >>> 0;
+  return h;
+};
 
-  // 2. Fetch como blob con CORS y fallback a Image()
-  try {
-    const res = await fetch(src, { mode: 'cors' });
-    if (res.ok) {
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-          URL.revokeObjectURL(objectUrl);
-          resolve(null);
-        };
-        img.src = objectUrl;
-      });
+// Generador de micro-grano de papel / lienzo para texturizar el canvas
+function drawPaperGrain(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  opacity: number = 0.035
+) {
+  ctx.save();
+  ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+  const step = 4;
+  for (let py = y; py < y + h; py += step) {
+    for (let px = x; px < x + w; px += step) {
+      if ((px * 13 + py * 29) % 7 === 0) {
+        ctx.fillRect(px, py, 1.2, 1.2);
+      }
     }
-  } catch {}
-
-  // 3. Image directa con crossOrigin
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    const timer = setTimeout(() => resolve(null), 3500);
-    img.onload = () => {
-      clearTimeout(timer);
-      resolve(img);
-    };
-    img.onerror = () => {
-      clearTimeout(timer);
-      resolve(null);
-    };
-    img.src = src;
-  });
+  }
+  ctx.restore();
 }
 
+// Carga segura de imagen para Canvas evitando problemas de CORS / canvas tainted
+async function loadSafeCoverImage(book: Book): Promise<HTMLImageElement | null> {
+  const sources = [book.portadaDataUrl, book.portadaUrl, book.portadaFallbackUrl].filter(
+    (u): u is string => Boolean(u && u.trim())
+  );
+  if (sources.length === 0) return null;
+
+  for (const src of sources) {
+    // 1. Data URLs locales (base64) - nunca contaminan el canvas
+    if (src.startsWith('data:image/')) {
+      try {
+        const img = await new Promise<HTMLImageElement | null>((resolve) => {
+          const i = new Image();
+          i.onload = () => resolve(i);
+          i.onerror = () => resolve(null);
+          i.src = src;
+        });
+        if (img && (img.naturalWidth || img.width) > 2) return img;
+      } catch {}
+    }
+
+    // 2. Fetch directo como blob con CORS y conversión a DataURL local
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(src, { mode: 'cors', signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.type.startsWith('image/') || blob.size > 100) {
+          const dataUrl = await new Promise<string | null>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+          if (dataUrl) {
+            const img = await new Promise<HTMLImageElement | null>((resolve) => {
+              const i = new Image();
+              i.onload = () => resolve(i);
+              i.onerror = () => resolve(null);
+              i.src = dataUrl;
+            });
+            if (img && (img.naturalWidth || img.width) > 2) return img;
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Image directa con crossOrigin anonymous y comprobación en micro-canvas
+    try {
+      const img = await new Promise<HTMLImageElement | null>((resolve) => {
+        const i = new Image();
+        i.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => resolve(null), 3500);
+        i.onload = () => {
+          clearTimeout(timer);
+          resolve(i);
+        };
+        i.onerror = () => {
+          clearTimeout(timer);
+          resolve(null);
+        };
+        i.src = src;
+      });
+
+      if (img && (img.naturalWidth || img.width) > 2) {
+        const testCanvas = document.createElement('canvas');
+        testCanvas.width = 1;
+        testCanvas.height = 1;
+        const testCtx = testCanvas.getContext('2d');
+        if (testCtx) {
+          testCtx.drawImage(img, 0, 0, 1, 1);
+          try {
+            testCanvas.toDataURL(); // Verifica que el canvas no quede 'tainted'
+            return img;
+          } catch {
+            // Tainted
+          }
+        }
+      }
+    } catch {}
+
+    // 4. Proxy CORS para fuentes remotas como Google Books u OpenLibrary
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      const cleaned = src.replace(/^https?:\/\//, '');
+      const proxyUrls = [
+        `https://images.weserv.nl/?url=${encodeURIComponent(cleaned)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`
+      ];
+
+      for (const pUrl of proxyUrls) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 3500);
+          const res = await fetch(pUrl, { signal: controller.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            const blob = await res.blob();
+            if (blob.type.startsWith('image/') || blob.size > 100) {
+              const dataUrl = await new Promise<string | null>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+              });
+              if (dataUrl) {
+                const img = await new Promise<HTMLImageElement | null>((resolve) => {
+                  const i = new Image();
+                  i.onload = () => resolve(i);
+                  i.onerror = () => resolve(null);
+                  i.src = dataUrl;
+                });
+                if (img && (img.naturalWidth || img.width) > 2) return img;
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Dibuja un libro con portada real, textura artesanal de lomo 3D, cantos de páginas
+ * y reflejos satinados idénticos a los mostrados en la estantería de Nexus Library.
+ */
 function drawBookCover3D(
   ctx: CanvasRenderingContext2D,
   book: Book,
@@ -88,15 +207,15 @@ function drawBookCover3D(
   bh: number,
   isDark: boolean
 ) {
-  // 1. Sombra de contacto
+  // 1. Sombra de contacto realista en la base del libro
   ctx.save();
-  ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(40, 25, 10, 0.35)';
+  ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(40, 25, 10, 0.45)';
   ctx.beginPath();
-  ctx.ellipse(bx + bw / 2, by + bh + 4, bw * 0.46, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(bx + bw / 2, by + bh + 4, bw * 0.46, 8, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // 2. Páginas en bloque lateral derecho
+  // 2. Cantos de las páginas en el lateral derecho (artesanal de encuadernación)
   ctx.save();
   ctx.fillStyle = '#dccfae';
   ctx.fillRect(bx + bw, by + 4, 3, bh - 8);
@@ -106,19 +225,26 @@ function drawBookCover3D(
   ctx.fillRect(bx + bw + 5, by + 9, 3, bh - 18);
   ctx.fillStyle = '#8e8062';
   ctx.fillRect(bx + bw + 8, by + 12, 2, bh - 24);
+
+  // Líneas de hojas finas agrupadas
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+  for (let l = by + 14; l < by + bh - 20; l += 8) {
+    ctx.fillRect(bx + bw, l, 9, 1);
+  }
   ctx.restore();
 
-  // 3. Tapa dura
+  // 3. Tapa dura del libro recortada con esquinas exteriores redondeadas
   ctx.save();
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(bx, by, bw, bh, [4, 8, 8, 4]);
+    ctx.roundRect(bx, by, bw, bh, [3, 8, 8, 3]);
   } else {
     ctx.rect(bx, by, bw, bh);
   }
   ctx.clip();
 
   if (coverImg && (coverImg.naturalWidth || coverImg.width) > 2) {
+    // Portada real dibujada proporcionalmente con recorte central (object-fit: cover)
     const imgW = coverImg.naturalWidth || coverImg.width;
     const imgH = coverImg.naturalHeight || coverImg.height;
     const scale = Math.max(bw / imgW, bh / imgH);
@@ -128,50 +254,126 @@ function drawBookCover3D(
     const drawY = by + (bh - drawH) / 2;
     ctx.drawImage(coverImg, drawX, drawY, drawW, drawH);
   } else {
-    // Cubierta editorial burdeos de repuesto
-    const bg = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-    bg.addColorStop(0, '#5e1b26');
-    bg.addColorStop(1, '#330e14');
-    ctx.fillStyle = bg;
+    // Cubierta artesanal de tela con acabado exacto a Nexus BookCover
+    const palette = CLOTH_PALETTES[hashString(book.nombre + (book.autor || '')) % CLOTH_PALETTES.length];
+    const clothGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+    clothGrad.addColorStop(0, palette[0]);
+    clothGrad.addColorStop(1, palette[1]);
+    ctx.fillStyle = clothGrad;
     ctx.fillRect(bx, by, bw, bh);
 
-    ctx.strokeStyle = 'rgba(245, 218, 140, 0.5)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(bx + 16, by + 16, bw - 32, bh - 32);
+    // Resplandor radial superior izquierdo (idéntico a .book-cover-cloth)
+    const clothRadial = ctx.createRadialGradient(
+      bx + bw * 0.3, by + bh * 0.15, 10,
+      bx + bw * 0.3, by + bh * 0.15, bw * 0.8
+    );
+    clothRadial.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+    clothRadial.addColorStop(1, 'transparent');
+    ctx.fillStyle = clothRadial;
+    ctx.fillRect(bx, by, bw, bh);
 
-    ctx.fillStyle = '#fae4aa';
-    ctx.font = 'bold 20px Georgia, serif';
+    // Marco exterior e interior dorado grabado en la tela
+    const mLeft = bx + Math.round(bw * 0.14);
+    const mTop = by + Math.round(bh * 0.06);
+    const mW = Math.round(bw * 0.80);
+    const mH = Math.round(bh * 0.88);
+
+    ctx.strokeStyle = 'rgba(236, 213, 150, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(mLeft, mTop, mW, mH);
+
+    ctx.strokeStyle = 'rgba(236, 213, 150, 0.28)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(mLeft + 4, mTop + 4, mW - 8, mH - 8);
+
+    // Esquinas ornamentales del marco (pequeños rombos dorados)
+    const corners = [
+      [mLeft + 4, mTop + 4],
+      [mLeft + mW - 4, mTop + 4],
+      [mLeft + 4, mTop + mH - 4],
+      [mLeft + mW - 4, mTop + mH - 4]
+    ];
+    ctx.fillStyle = 'rgba(245, 218, 140, 0.8)';
+    corners.forEach(([cx, cy]) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Medallón circular de iniciales del autor
+    const initials = getAuthorInitials(book.autor || '');
+    const circleRadius = Math.round(bw * 0.08);
+    const circleX = mLeft + mW / 2;
+    const circleY = mTop + Math.round(mH * 0.16);
+
+    ctx.strokeStyle = 'rgba(236, 213, 150, 0.75)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(236, 213, 150, 0.12)';
+    ctx.fill();
+
+    ctx.fillStyle = '#fce7b0';
+    ctx.font = `bold ${Math.round(circleRadius * 0.95)}px "Cormorant Garamond", Georgia, serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(book.nombre.slice(0, 30), bx + bw / 2, by + bh * 0.4, bw - 40);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initials || '✦', circleX, circleY);
 
-    ctx.fillStyle = '#e4ca8c';
-    ctx.font = 'italic 16px Georgia, serif';
-    ctx.fillText(book.autor || 'Autor desconocido', bx + bw / 2, by + bh * 0.54, bw - 40);
+    // Título grabado en oro
+    ctx.fillStyle = '#fce7b0';
+    ctx.font = `bold ${Math.max(17, Math.round(bw * 0.062))}px "Cormorant Garamond", Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const titleLines = wrapText(ctx, book.nombre, mW - 24).slice(0, 4);
+    let titleY = circleY + circleRadius + Math.round(bh * 0.07);
+    titleLines.forEach((line) => {
+      ctx.fillText(line, mLeft + mW / 2, titleY);
+      titleY += Math.max(22, Math.round(bw * 0.075));
+    });
+
+    // Autor estampado en mayúsculas
+    ctx.fillStyle = '#ecd596';
+    ctx.font = `600 ${Math.max(11, Math.round(bw * 0.038))}px "Plus Jakarta Sans", system-ui, sans-serif`;
+    const authorText = (book.autor || 'AUTOR DESCONOCIDO').toUpperCase();
+    const shortAuthor = authorText.length > 26 ? authorText.slice(0, 24) + '...' : authorText;
+    ctx.fillText(shortAuthor, mLeft + mW / 2, mTop + mH - Math.round(bh * 0.06));
   }
 
-  // 4. Lomo 3D en relieve
-  const spineW = Math.max(22, Math.round(bw * 0.14));
-  const spine = ctx.createLinearGradient(bx, by, bx + spineW, by);
-  spine.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
-  spine.addColorStop(0.15, 'rgba(0, 0, 0, 0.4)');
-  spine.addColorStop(0.3, 'rgba(255, 255, 255, 0.28)');
-  spine.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
-  spine.addColorStop(0.7, 'rgba(0, 0, 0, 0.55)');
-  spine.addColorStop(0.88, 'rgba(255, 255, 255, 0.15)');
-  spine.addColorStop(1, 'transparent');
-  ctx.fillStyle = spine;
+  // 4. Texturas 3D del lomo y articulación de bisagra a la izquierda (idéntica a CSS .book-cover::before)
+  const spineW = Math.max(22, Math.round(bw * 0.15));
+  const spineGrad = ctx.createLinearGradient(bx, by, bx + spineW, by);
+  spineGrad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+  spineGrad.addColorStop(0.08, 'rgba(0, 0, 0, 0.42)');
+  spineGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.28)');
+  spineGrad.addColorStop(0.35, 'rgba(255, 255, 255, 0.07)');
+  spineGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.55)');
+  spineGrad.addColorStop(0.64, 'rgba(255, 255, 255, 0.16)');
+  spineGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = spineGrad;
   ctx.fillRect(bx, by, spineW, bh);
 
-  // 5. Brillo diagonal
-  const shine = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-  shine.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-  shine.addColorStop(0.4, 'transparent');
-  shine.addColorStop(0.75, 'transparent');
-  shine.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
-  ctx.fillStyle = shine;
+  // 5. Brillo satinado diagonal (barniz editorial, idéntico a CSS .book-cover::after)
+  const shineGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+  shineGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+  shineGrad.addColorStop(0.34, 'transparent');
+  shineGrad.addColorStop(0.72, 'transparent');
+  shineGrad.addColorStop(1, 'rgba(0, 0, 0, 0.24)');
+  ctx.fillStyle = shineGrad;
   ctx.fillRect(bx, by, bw, bh);
 
-  // 6. Borde exterior fino
+  // 6. Micro-textura de grano de papel y tela artesanal sobre la tapa
+  drawPaperGrain(ctx, bx, by, bw, bh, 0.035);
+
+  // 7. Oscurecimiento en la parte inferior para dar peso y volumen 3D
+  const bottomShadow = ctx.createLinearGradient(bx, by + bh * 0.72, bx, by + bh);
+  bottomShadow.addColorStop(0, 'transparent');
+  bottomShadow.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+  ctx.fillStyle = bottomShadow;
+  ctx.fillRect(bx, by + bh * 0.72, bw, bh * 0.28);
+
+  // 8. Bisel y contorno interior fino de la encuadernación
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
   ctx.lineWidth = 1;
   ctx.strokeRect(bx, by, bw, bh);
@@ -248,6 +450,12 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
 
     setIsGenerating(true);
 
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch {}
+    }
+
     const isStory = format === 'story';
     const isDark = theme === 'midnight';
 
@@ -301,6 +509,9 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       ctx.strokeRect(48, 48, W - 96, H - 96);
     }
 
+    // Textura táctil de pergamino sobre el fondo de la tarjeta
+    drawPaperGrain(ctx, 0, 0, W, H, isDark ? 0.022 : 0.032);
+
     // Ornamentos en las esquinas
     const drawCornerOrnament = (cx: number, cy: number, flipX: number, flipY: number) => {
       ctx.save();
@@ -342,9 +553,8 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
     ctx.lineTo(W / 2 + 140, headerY + 16);
     ctx.stroke();
 
-    // 3. Carga y dibujo de la Portada 3D
-    const coverUrl = book.portadaDataUrl || book.portadaUrl || book.portadaFallbackUrl;
-    const coverImg = await loadSafeCoverImage(coverUrl);
+    // 3. Carga y dibujo de la Portada 3D con texturas realistas de Nexus
+    const coverImg = await loadSafeCoverImage(book);
 
     if (isStory) {
       // Formato Vertical (Story 9:16)
