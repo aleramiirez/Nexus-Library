@@ -614,22 +614,22 @@ html.dark .bookcase-nav-plate {
   margin-top: 2px;
 }
 
-/* Botones de navegación anterior / siguiente */
+/* Botones de navegación anterior / siguiente (solo icono) */
 .bookcase-nav-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border-radius: 8px;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
   color: #5c3a1d;
   background: #f7eedb;
   border: 1px solid rgba(160, 115, 55, 0.3);
   box-shadow: 0 1px 2px rgba(60, 35, 10, 0.08);
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 html.dark .bookcase-nav-btn {
@@ -717,12 +717,11 @@ html.dark .bookcase-nav-pill.is-active {
 
 @media (max-width: 639px) {
   .bookcase-nav {
-    flex-direction: column;
-    padding: 10px 12px;
-    gap: 10px;
+    padding: 8px 10px;
+    gap: 8px;
   }
   .bookcase-nav-btn {
-    padding: 6px 10px;
-    font-size: 11px;
+    width: 32px;
+    height: 32px;
   }
 }

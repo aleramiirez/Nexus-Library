@@ -240,9 +240,9 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
             onClick={() => handlePageChange(page - 1)}
             className="bookcase-nav-btn"
             aria-label="Estantería anterior"
+            title="Estantería anterior"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Estantería anterior</span>
           </button>
 
           <div className="bookcase-nav-plate">
@@ -275,8 +275,8 @@ const BookShelfComponent: React.FC<BookShelfProps> = ({
             onClick={() => handlePageChange(page + 1)}
             className="bookcase-nav-btn"
             aria-label="Siguiente estantería"
+            title="Siguiente estantería"
           >
-            <span className="hidden sm:inline">Siguiente estantería</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
