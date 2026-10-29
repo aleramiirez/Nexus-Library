@@ -1,0 +1,283 @@
+import React, { useState, useEffect } from 'react';
+import {
+  UserCheck,
+  Sparkles,
+  X,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  Check,
+  Shield
+} from 'lucide-react';
+import { UserProfile } from '../types/models';
+import { profileService } from '../services/profileService';
+import '../dashboard-panels.css';
+
+interface FirstLoginProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userProfile: UserProfile;
+  userId: string;
+  onUpdateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  onGoToSettings: () => void;
+  onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+export const FirstLoginProfileModal: React.FC<FirstLoginProfileModalProps> = ({
+  isOpen,
+  onClose,
+  userProfile,
+  userId,
+  onUpdateProfile,
+  onGoToSettings,
+  onShowToast
+}) => {
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (userProfile) {
+      setDisplayName(userProfile.displayName || '');
+      // Si el username termina en _xxxx autogenerado, sugerir el nombre base limpio
+      const cleanSuggested = userProfile.username.replace(/_[a-f0-9]{4}$/, '');
+      setUsername(cleanSuggested || userProfile.username || '');
+      setBio(userProfile.bio || '');
+    }
+  }, [userProfile]);
+
+  if (!isOpen) return null;
+
+  const handleValidateUsername = async (val: string): Promise<boolean> => {
+    const clean = val.trim().toLowerCase();
+    if (!clean) {
+      setUsernameError('Elige un nombre de usuario.');
+      return false;
+    }
+    if (clean.length < 3) {
+      setUsernameError('El nombre debe tener al menos 3 caracteres.');
+      return false;
+    }
+    if (!/^[a-z0-9_]+$/.test(clean)) {
+      setUsernameError('Solo letras, números y guiones bajos (_).');
+      return false;
+    }
+
+    if (clean === userProfile.username) {
+      setUsernameError(null);
+      return true;
+    }
+
+    setIsCheckingUsername(true);
+    try {
+      const res = await profileService.checkUsernameAvailable(clean, userId);
+      if (!res.available) {
+        setUsernameError(res.reason || 'Este nombre de usuario ya está ocupado.');
+        return false;
+      }
+      setUsernameError(null);
+      return true;
+    } catch {
+      setUsernameError(null);
+      return true;
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      onShowToast?.('Por favor, indica tu nombre o alias de lector.', 'error');
+      return;
+    }
+
+    const isAvailable = await handleValidateUsername(username);
+    if (!isAvailable) return;
+
+    setIsSubmitting(true);
+    try {
+      await onUpdateProfile({
+        displayName: displayName.trim(),
+        username: username.trim().toLowerCase(),
+        bio: bio.trim(),
+        isPublic: true
+      });
+
+      // Guardar que el usuario ya completó su carnet inicial
+      localStorage.setItem(`nexus_profile_setup_done_${userId}`, 'true');
+      onShowToast?.('¡Tu carnet de lector ha sido expedido con éxito!', 'success');
+      onClose();
+    } catch {
+      onShowToast?.('Ocurrió un error al guardar los datos. Inténtalo de nuevo.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSkip = () => {
+    // Recordar que el usuario descartó el modal inicial en este dispositivo
+    localStorage.setItem(`nexus_onboarding_modal_dismissed_${userId}`, 'true');
+    onClose();
+  };
+
+  const handleSettingsClick = () => {
+    localStorage.setItem(`nexus_onboarding_modal_dismissed_${userId}`, 'true');
+    onGoToSettings();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="catalog-card-panel relative w-full max-w-lg p-6 sm:p-8 animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="catalog-brass-tab">Expedición de Carnet · Paso Inicial</div>
+
+        {/* Botón cerrar sutil */}
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+          title="Configurar más tarde"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Encabezado */}
+        <div className="flex items-start gap-3.5 mb-5 pt-1">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/30 flex items-center justify-center shrink-0 shadow-inner">
+            <UserCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100 leading-tight">
+              Bienvenido a Nexus Library
+            </h3>
+            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
+              Expide tu <strong>Carnet de Lector</strong> oficial. Así tus amistades podrán reconocerte, enviarte recomendaciones y seguir tus lecturas compartidas.
+            </p>
+          </div>
+        </div>
+
+        {/* Formulario rápido */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
+              Nombre o Alias Visible *
+            </label>
+            <input
+              type="text"
+              required
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Ej. Alejandro Ramírez, Lector Apasionado..."
+              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3.5 py-2.5 text-xs text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 shadow-inner focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
+              Nombre de Usuario (@) *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-700 dark:text-amber-400 select-none">
+                @
+              </span>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                  setUsernameError(null);
+                }}
+                onBlur={(e) => handleValidateUsername(e.target.value)}
+                placeholder="usuario_lector"
+                className={`w-full rounded-xl border pl-8 pr-10 py-2.5 text-xs text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 shadow-inner focus:outline-none transition ${
+                  usernameError
+                    ? 'border-rose-500 focus:ring-2 focus:ring-rose-500/20'
+                    : 'border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20'
+                }`}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {isCheckingUsername ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                ) : !usernameError && username.trim().length >= 3 ? (
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                ) : null}
+              </div>
+            </div>
+            {usernameError ? (
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{usernameError}</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-stone-500 dark:text-slate-400 mt-1">
+                Tus amigos usarán este identificador para encontrarte y recomendarte libros.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
+              Biografía o Gustos Literarios (Opcional)
+            </label>
+            <textarea
+              rows={2}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="¿Qué géneros disfrutas? ¿Cuál es tu autor favorito?..."
+              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] p-2.5 text-xs text-stone-900 dark:text-slate-100 placeholder:text-stone-400 dark:placeholder:text-slate-500 shadow-inner focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 transition resize-none"
+            />
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleSettingsClick}
+              className="text-xs text-amber-800 dark:text-amber-400 hover:underline font-semibold flex items-center gap-1 order-2 sm:order-1"
+            >
+              <span>Personalizar todo en Ajustes</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
+              <button
+                type="button"
+                onClick={handleSkip}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-amber-900/25 dark:border-[#283246] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition"
+              >
+                Más tarde
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || Boolean(usernameError)}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-md transition disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Confirmar Carnet</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

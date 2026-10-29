@@ -17,9 +17,10 @@ import {
   Calendar,
   History,
   CheckCircle2,
-  Bell
+  Bell,
+  ArrowRight
 } from 'lucide-react';
-import { BookRecommendation, Friendship, Book } from '../types/models';
+import { BookRecommendation, Friendship, Book, UserProfile } from '../types/models';
 import { recommendationInboxService } from '../services/recommendationInboxService';
 import { friendshipService } from '../services/friendshipService';
 import { BookCover } from './BookCover';
@@ -34,9 +35,11 @@ interface BookInboxModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUserId?: string;
+  userProfile?: UserProfile | null;
   onAddBookToLibrary: (bookData: BookRecommendation['bookData']) => Promise<void>;
   onShowToast?: (message: string) => void;
   onInboxUpdated?: () => void;
+  onNavigateToSettingsAccount?: () => void;
   initialTab?: 'recommendations' | 'friend_requests';
 }
 
@@ -44,9 +47,11 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   isOpen,
   onClose,
   currentUserId,
+  userProfile,
   onAddBookToLibrary,
   onShowToast,
   onInboxUpdated,
+  onNavigateToSettingsAccount,
   initialTab = 'recommendations'
 }) => {
   const [activeTab, setActiveTab] = useState<'recommendations' | 'friend_requests'>(initialTab);
@@ -63,6 +68,30 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
   const [pushStatus, setPushStatus] = useState<PushSubscriptionStatus | null>(null);
   const [isPushBannerDismissed, setIsPushBannerDismissed] = useState(false);
   const [isActivatingPush, setIsActivatingPush] = useState(false);
+
+  const [isWelcomeRead, setIsWelcomeRead] = useState<boolean>(() => {
+    if (!currentUserId) return true;
+    try {
+      return (
+        localStorage.getItem(`nexus_welcome_read_${currentUserId}`) === 'true' ||
+        localStorage.getItem(`nexus_profile_setup_done_${currentUserId}`) === 'true'
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissWelcome = () => {
+    setIsWelcomeRead(true);
+    if (currentUserId) {
+      try {
+        localStorage.setItem(`nexus_welcome_read_${currentUserId}`, 'true');
+        onInboxUpdated?.();
+      } catch {
+        // Ignore storage error
+      }
+    }
+  };
 
   useEffect(() => {
     if (initialTab) {
@@ -423,33 +452,108 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
 
               {recsView === 'pending' ? (
                 /* Subvista: Pendientes */
-                pendingRecs.length === 0 ? (
-                  <div className="py-14 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
-                      ¡Buzón al día!
-                    </h4>
-                    <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-                      {historyRecs.length > 0
-                        ? 'Has gestionado todas las recomendaciones recibidas de tus amigos.'
-                        : 'Cuando tus amigos te recomienden lecturas con dedicatorias personales, aparecerán aquí para que puedas añadirlas con un clic.'}
-                    </p>
-                    {historyRecs.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setRecsView('history')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/30 text-xs font-semibold transition"
-                      >
-                        <History className="w-3.5 h-3.5" />
-                        Ver historial de recomendaciones
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingRecs.map((rec) => {
+                <div className="space-y-4">
+                  {/* Despacho Oficial de Bienvenida y Configuración de Carnet */}
+                  {currentUserId && !isWelcomeRead && (
+                    <article className="rounded-2xl border-2 border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-br from-[#fdfbf6] via-[#f9f3e5] to-[#f4ead4] dark:from-[#172030] dark:via-[#131926] dark:to-[#0D121B] p-4 sm:p-5 shadow-md space-y-3.5 relative overflow-hidden">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/40 font-serif font-bold text-sm flex items-center justify-center shrink-0 shadow-inner">
+                            <BookOpen className="w-5 h-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-stone-900 dark:text-slate-100 truncate block">
+                                Consejo Bibliotecario Nexus
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-600/30">
+                                Despacho Oficial #001
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono block">
+                              @nexus_oficial
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleDismissWelcome}
+                          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-black/5 dark:hover:bg-white/5 transition shrink-0"
+                          title="Archivar despacho de bienvenida"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
+                        <h4 className="font-serif font-bold text-sm sm:text-base text-stone-900 dark:text-slate-100">
+                          📜 Emisión de tu Carnet Bibliotecario Oficial
+                        </h4>
+                        <p>
+                          ¡Te damos la más cálida bienvenida a tu santuario literario! Tu carnet actual cuenta con el identificador provisional{' '}
+                          <strong className="font-mono text-amber-800 dark:text-amber-300">
+                            @{userProfile?.username || 'usuario'}
+                          </strong>.
+                        </p>
+                        <p className="text-stone-600 dark:text-slate-400 text-[11px]">
+                          Para que tus amistades puedan encontrarte, enviarte solicitudes y recomendarte libros directamente a esta bandeja, te sugerimos personalizar tu nombre, alias y biografía en Ajustes.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1 border-t border-amber-900/15 dark:border-[#20293C]">
+                        <button
+                          type="button"
+                          onClick={handleDismissWelcome}
+                          className="text-[11px] font-semibold text-stone-500 hover:text-stone-800 dark:hover:text-slate-200 transition text-left sm:text-center"
+                        >
+                          Archivar este mensaje
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleDismissWelcome();
+                            onClose();
+                            onNavigateToSettingsAccount?.();
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-4 py-2 text-xs shadow-sm transition active:scale-95"
+                        >
+                          <span>Completar mi Carnet en Ajustes</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </article>
+                  )}
+
+                  {pendingRecs.length === 0 ? (
+                    isWelcomeRead && (
+                      <div className="py-14 text-center space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
+                          ¡Buzón al día!
+                        </h4>
+                        <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                          {historyRecs.length > 0
+                            ? 'Has gestionado todas las recomendaciones recibidas de tus amigos.'
+                            : 'Cuando tus amigos te recomienden lecturas con dedicatorias personales, aparecerán aquí para que puedas añadirlas con un clic.'}
+                        </p>
+                        {historyRecs.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setRecsView('history')}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/30 text-xs font-semibold transition"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            Ver historial de recomendaciones
+                          </button>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    pendingRecs.map((rec) => {
                       const isAdding = addingRecId === rec.id;
                       const sender = rec.senderProfile;
 
@@ -553,9 +657,9 @@ export const BookInboxModal: React.FC<BookInboxModalProps> = ({
                           </div>
                         </article>
                       );
-                    })}
-                  </div>
-                )
+                    })
+                  )}
+                </div>
               ) : (
                 /* Subvista: Historial de Recomendaciones Aceptadas */
                 historyRecs.length === 0 ? (
