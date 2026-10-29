@@ -2,18 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
-  Globe,
   Compass,
   Award,
   BookOpen,
-  Sparkles,
   ShieldCheck,
-  ChevronRight,
   MapPin,
-  Check,
-  Layers,
-  ArrowRight,
-  Volume2
+  Check
 } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover } from './BookCover';
@@ -93,24 +87,29 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 pt-7 sm:pt-9 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl bg-[#0e1422] text-slate-100 shadow-2xl border-2 border-amber-600/30 overflow-hidden ring-1 ring-amber-400/20">
-        {/* Cabecera ceremonial de pasaporte */}
-        <div className="relative bg-gradient-to-r from-[#172033] via-[#1f2c45] to-[#172033] border-b border-amber-500/25 px-5 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-4 overflow-hidden">
+        {/* Pestaña de latón superior */}
+        <div className="catalog-brass-tab">
+          Pasaporte Consular · República de las Letras
+        </div>
+
+        {/* Cabecera ceremonial */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/85 dark:bg-[#141b27]/85 rounded-t-[14px]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-xs">
+            <div className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/30 dark:border-amber-400/30 shadow-xs">
               <Compass className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400 font-bold">
-                  REPÚBLICA DE LAS LETRAS · EXPEDIENTE CONSULAR
+                <span className="font-mono text-[10px] uppercase tracking-widest text-amber-800 dark:text-amber-400 font-bold">
+                  EXPEDIENTE CONSULAR LITERARIO
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-300 text-[10px] font-mono border border-amber-500/20">
+                <span className="hidden sm:inline-block px-2 py-0.2 rounded-full bg-amber-900/10 dark:bg-amber-400/10 text-amber-900 dark:text-amber-300 text-[10px] font-mono border border-amber-900/20 dark:border-amber-400/20">
                   № NL-PAS-{cleanId}
                 </span>
               </div>
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-amber-100 leading-tight">
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-slate-100 leading-tight">
                 Pasaporte Literario Internacional
               </h2>
             </div>
@@ -120,26 +119,26 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Cerrar Pasaporte"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Barra de pestañas interiores del Pasaporte */}
-        <div className="flex items-center gap-1 px-4 py-2 bg-[#121929] border-b border-amber-900/20 text-xs font-serif font-semibold">
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-amber-900/15 dark:border-[#242f42] bg-[#efe4cc]/60 dark:bg-[#0f1522]/80 text-xs font-serif font-semibold">
           <button
             type="button"
             onClick={() => handleTabChange('visas')}
             className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
               activeTab === 'visas'
-                ? 'bg-amber-600/20 text-amber-300 border border-amber-500/35 font-bold shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <MapPin className="w-3.5 h-3.5 text-amber-400" />
+            <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span>Visados y Sellos Consulares</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono">
+            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold">
               {passport.totalCountriesStamped}
             </span>
           </button>
@@ -149,11 +148,11 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
             onClick={() => handleTabChange('identity')}
             className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
               activeTab === 'identity'
-                ? 'bg-amber-600/20 text-amber-300 border border-amber-500/35 font-bold shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span>Ficha Consular del Lector</span>
           </button>
 
@@ -162,20 +161,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
             onClick={() => handleTabChange('badges')}
             className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
               activeTab === 'badges'
-                ? 'bg-amber-600/20 text-amber-300 border border-amber-500/35 font-bold shadow-xs'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <Award className="w-3.5 h-3.5 text-amber-400" />
+            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             <span>Insignias de Exploración</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono">
+            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold">
               {passport.badges.filter((b) => b.unlocked).length}/{passport.badges.length}
             </span>
           </button>
         </div>
 
-        {/* Contenido scrolleable del Pasaporte */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#090d16] space-y-6">
+        {/* Contenido del Pasaporte (soporta papel claro y modo oscuro) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* ════════════════════ PESTAÑA 1: VISADOS Y SELLOS ════════════════════ */}
           {activeTab === 'visas' && (
             <div className="space-y-5 animate-fadeIn">
@@ -192,10 +191,10 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                         setSelectedContinent(cont);
                         soundService.playPageTurn();
                       }}
-                      className={`px-3 py-1 rounded-xl text-xs font-serif font-medium transition ${
+                      className={`px-3 py-1 rounded-xl text-xs font-serif font-semibold transition ${
                         selectedContinent === cont
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'bg-[#151d2d] text-slate-400 hover:text-amber-200 border border-slate-700/50'
+                          ? 'bg-amber-600 dark:bg-amber-500 text-white dark:text-slate-950 font-bold shadow-xs'
+                          : 'bg-amber-900/5 dark:bg-[#151d2d] text-stone-700 dark:text-slate-300 hover:bg-amber-500/10 border border-amber-900/15 dark:border-slate-700/50'
                       }`}
                     >
                       {cont}
@@ -203,7 +202,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                   ))}
                 </div>
 
-                <span className="text-[11px] font-mono text-amber-300/80">
+                <span className="text-[11px] font-mono text-amber-800 dark:text-amber-300 font-semibold">
                   {passport.totalCountriesStamped} países sellados · {passport.totalContinentsStamped} continentes
                 </span>
               </div>
@@ -220,48 +219,60 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       onClick={() => handleSelectEntry(entry)}
                       role="button"
                       tabIndex={0}
-                      className={`group relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-between text-center select-none ${
+                      className={`group relative p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-between text-center select-none ${
                         isStamped
-                          ? 'border-amber-500/40 bg-gradient-to-b from-[#182338] to-[#101827] hover:border-amber-400 hover:scale-103 shadow-lg'
-                          : 'border-slate-800 bg-[#0d131f]/60 opacity-50 hover:opacity-80'
+                          ? 'border-amber-700/30 dark:border-amber-500/40 bg-gradient-to-b from-[#fffcf5] to-[#f7eedc] dark:from-[#182338] dark:to-[#101827] hover:border-amber-600 dark:hover:border-amber-400 hover:scale-103 shadow-md'
+                          : 'border-stone-300/70 dark:border-slate-800 bg-stone-200/30 dark:bg-[#0d131f]/60 opacity-55 hover:opacity-85'
                       }`}
-                      style={{
-                        boxShadow: isStamped ? `0 8px 24px -6px ${c.color}25` : undefined
-                      }}
                     >
-                      {/* Sello de visado gráfico */}
+                      {/* Sello de visado gráfico con tinta */}
                       <div
                         className={`w-full py-2.5 px-2 rounded-xl flex flex-col items-center justify-center transition ${
                           isStamped
-                            ? 'border border-dashed'
-                            : 'border border-dotted border-slate-700'
+                            ? 'border-2 border-dashed'
+                            : 'border border-dotted border-stone-400/50 dark:border-slate-700'
                         }`}
                         style={{
-                          borderColor: isStamped ? `${c.color}60` : undefined,
-                          backgroundColor: isStamped ? `${c.color}10` : 'transparent'
+                          borderColor: isStamped ? `${c.color}75` : undefined,
+                          backgroundColor: isStamped ? `${c.color}0d` : 'transparent'
                         }}
                       >
-                        <span className="text-2xl filter drop-shadow">{c.flag}</span>
+                        {/* Bandera / Código Consular */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xl filter drop-shadow">{c.flag}</span>
+                          <span
+                            className="font-mono text-[10px] font-black px-1.5 py-0.2 rounded border uppercase"
+                            style={{
+                              color: isStamped ? c.color : '#78716c',
+                              borderColor: isStamped ? `${c.color}40` : '#a8a29e',
+                              backgroundColor: isStamped ? `${c.color}15` : 'transparent'
+                            }}
+                          >
+                            {c.code}
+                          </span>
+                        </div>
+
                         <span
-                          className="font-mono text-[9px] uppercase tracking-widest font-bold mt-1"
-                          style={{ color: isStamped ? c.color : '#94a3b8' }}
+                          className="font-mono text-[8.5px] uppercase tracking-widest font-black mt-1"
+                          style={{ color: isStamped ? c.color : '#78716c' }}
                         >
                           {c.sealLatinName}
                         </span>
-                        <span className="font-serif font-bold text-sm text-slate-100 mt-0.5">
+
+                        <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5 leading-tight">
                           {c.name}
                         </span>
                       </div>
 
                       {/* Estado del visado */}
-                      <div className="mt-3 pt-2 border-t border-slate-800 w-full flex items-center justify-between text-[10px] font-mono">
+                      <div className="mt-3 pt-2 border-t border-amber-900/10 dark:border-slate-800 w-full flex items-center justify-between text-[10px] font-mono">
                         {isStamped ? (
-                          <span className="text-amber-400 font-bold flex items-center gap-1 mx-auto">
-                            <Check className="w-3 h-3 text-emerald-400" />
-                            {entry.readCount} {entry.readCount === 1 ? 'obra' : 'obras'}
+                          <span className="text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1 mx-auto">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            {entry.readCount} {entry.readCount === 1 ? 'obra leída' : 'obras leídas'}
                           </span>
                         ) : (
-                          <span className="text-slate-500 mx-auto italic font-serif">
+                          <span className="text-stone-500 dark:text-slate-500 mx-auto italic font-serif">
                             Por descubrir
                           </span>
                         )}
@@ -273,15 +284,15 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
               {/* Obras sin identificar país (con selector amigable para el lector) */}
               {passport.unmappedBooks.length > 0 && (
-                <div className="mt-8 pt-5 border-t border-amber-900/20">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="mt-8 pt-5 border-t border-amber-900/15 dark:border-amber-900/20">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-amber-500" />
-                      <h3 className="font-serif text-sm font-bold text-amber-200">
+                      <BookOpen className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <h3 className="font-serif text-sm font-bold text-stone-900 dark:text-amber-200">
                         Obras sin país asignado ({passport.unmappedBooks.length})
                       </h3>
                     </div>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-stone-600 dark:text-slate-400">
                       Asigna la procedencia de sus autores para coleccionar sus sellos
                     </span>
                   </div>
@@ -290,20 +301,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                     {passport.unmappedBooks.slice(0, 6).map((b) => (
                       <div
                         key={b.id}
-                        className="p-2.5 rounded-xl border border-slate-800 bg-[#121929] flex items-center justify-between gap-2"
+                        className="p-2.5 rounded-xl border border-amber-900/15 dark:border-slate-800 bg-[#fffcf5]/70 dark:bg-[#121929] flex items-center justify-between gap-2 shadow-xs"
                       >
                         <div className="truncate text-left">
-                          <p className="font-serif text-xs font-semibold text-slate-200 truncate">
+                          <p className="font-serif text-xs font-semibold text-stone-900 dark:text-slate-200 truncate">
                             {b.nombre}
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate">
+                          <p className="text-[10px] text-stone-600 dark:text-slate-400 truncate">
                             {b.autor || 'Autor desconocido'}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => setAssigningBook(b)}
-                          className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0 transition"
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-600/30 dark:border-amber-500/30 text-amber-900 dark:text-amber-300 text-[10px] font-bold shrink-0 transition"
                         >
                           Asignar país
                         </button>
@@ -319,13 +330,13 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
           {activeTab === 'identity' && (
             <div className="space-y-6 animate-fadeIn">
               {/* Carnet Consular de Pasaporte */}
-              <div className="rounded-3xl bg-gradient-to-br from-[#1a2336] via-[#141b2a] to-[#0c121e] border-2 border-amber-500/35 p-6 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="rounded-3xl bg-gradient-to-br from-[#fbf4e2] via-[#f7ecd5] to-[#f2e2be] dark:from-[#1a2336] dark:via-[#141b2a] dark:to-[#0c121e] border-2 border-amber-800/25 dark:border-amber-500/35 p-6 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 dark:bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
                   {/* Foto o Sello Heráldico Consular */}
                   <div className="flex flex-col items-center space-y-2">
-                    <div className="p-1 rounded-2xl border-2 border-amber-400 bg-amber-950/40 shadow-xl">
+                    <div className="p-1 rounded-2xl border-2 border-amber-600/40 dark:border-amber-400 bg-amber-500/10 dark:bg-amber-950/40 shadow-md">
                       <UserAvatar
                         avatarUrl={avatarUrl}
                         displayName={cleanName}
@@ -333,31 +344,33 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                         className="w-24 h-24 sm:w-28 sm:h-28 text-3xl font-serif rounded-xl"
                       />
                     </div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-amber-400 font-bold">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-amber-900 dark:text-amber-400 font-black">
                       VISADO OFICIAL
                     </span>
                   </div>
 
                   {/* Datos del Ciudadano de las Letras */}
                   <div className="flex-1 space-y-3 text-center md:text-left">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[11px] font-bold">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/30 dark:border-amber-500/30 font-mono text-[11px] font-bold">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>{passport.diplomaticRank.badge}</span>
                     </div>
 
-                    <h3 className="font-serif text-2xl sm:text-3xl font-bold text-amber-100">
+                    <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-amber-100">
                       {cleanName}
                     </h3>
-                    <p className="font-mono text-xs text-amber-400">{cleanUsername}</p>
+                    <p className="font-mono text-xs text-amber-800 dark:text-amber-400 font-bold">
+                      {cleanUsername}
+                    </p>
 
-                    <div className="pt-2 border-t border-slate-700/60">
-                      <p className="font-serif text-sm font-semibold text-slate-200">
+                    <div className="pt-2 border-t border-amber-900/15 dark:border-slate-700/60">
+                      <p className="font-serif text-sm font-bold text-stone-800 dark:text-slate-200">
                         {passport.diplomaticRank.title}
                       </p>
-                      <p className="font-serif italic text-xs text-amber-400/80">
+                      <p className="font-serif italic text-xs text-amber-900/80 dark:text-amber-400/80 font-medium">
                         {passport.diplomaticRank.latinTitle}
                       </p>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      <p className="text-xs text-stone-700 dark:text-slate-400 mt-1 leading-relaxed">
                         {passport.diplomaticRank.description}
                       </p>
                     </div>
@@ -365,39 +378,39 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                 </div>
 
                 {/* Métricas Consulares Clave */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-amber-900/30">
-                  <div className="p-3 rounded-xl bg-black/30 border border-slate-800 text-center">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-amber-900/20 dark:border-amber-900/30">
+                  <div className="p-3 rounded-xl bg-white/60 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800 text-center shadow-xs">
+                    <span className="text-[10px] font-mono uppercase text-stone-600 dark:text-slate-400 block font-semibold">
                       Países Sellados
                     </span>
-                    <span className="font-serif text-2xl font-bold text-amber-300">
+                    <span className="font-serif text-2xl font-bold text-amber-800 dark:text-amber-300">
                       {passport.totalCountriesStamped}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/30 border border-slate-800 text-center">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                  <div className="p-3 rounded-xl bg-white/60 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800 text-center shadow-xs">
+                    <span className="text-[10px] font-mono uppercase text-stone-600 dark:text-slate-400 block font-semibold">
                       Continentes
                     </span>
-                    <span className="font-serif text-2xl font-bold text-emerald-300">
+                    <span className="font-serif text-2xl font-bold text-emerald-700 dark:text-emerald-300">
                       {passport.totalContinentsStamped}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/30 border border-slate-800 text-center">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                  <div className="p-3 rounded-xl bg-white/60 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800 text-center shadow-xs">
+                    <span className="text-[10px] font-mono uppercase text-stone-600 dark:text-slate-400 block font-semibold">
                       Obras Catalogadas
                     </span>
-                    <span className="font-serif text-2xl font-bold text-slate-100">
+                    <span className="font-serif text-2xl font-bold text-stone-900 dark:text-slate-100">
                       {passport.totalBooksMapped}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/30 border border-slate-800 text-center">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                  <div className="p-3 rounded-xl bg-white/60 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800 text-center shadow-xs">
+                    <span className="text-[10px] font-mono uppercase text-stone-600 dark:text-slate-400 block font-semibold">
                       Insignias Consulares
                     </span>
-                    <span className="font-serif text-2xl font-bold text-amber-400">
+                    <span className="font-serif text-2xl font-bold text-amber-700 dark:text-amber-400">
                       {passport.badges.filter((b) => b.unlocked).length}
                     </span>
                   </div>
@@ -415,15 +428,15 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                     key={badge.id}
                     className={`p-4 rounded-2xl border-2 transition flex items-start gap-4 ${
                       badge.unlocked
-                        ? 'border-amber-500/40 bg-gradient-to-br from-[#182438] to-[#0f1726] shadow-md'
-                        : 'border-slate-800/80 bg-[#0d121c]/50 opacity-60'
+                        ? 'border-amber-700/30 dark:border-amber-500/40 bg-gradient-to-br from-[#fffcf5] to-[#f7eedc] dark:from-[#182438] dark:to-[#0f1726] shadow-sm'
+                        : 'border-stone-300/70 dark:border-slate-800/80 bg-stone-200/40 dark:bg-[#0d121c]/50 opacity-60'
                     }`}
                   >
                     <div
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border ${
                         badge.unlocked
-                          ? 'bg-amber-500/20 border-amber-500/40 shadow-inner'
-                          : 'bg-slate-800/40 border-slate-700'
+                          ? 'bg-amber-500/20 border-amber-600/30 dark:border-amber-500/40 shadow-inner'
+                          : 'bg-stone-300/40 dark:bg-slate-800/40 border-stone-400 dark:border-slate-700'
                       }`}
                     >
                       {badge.icon}
@@ -431,19 +444,19 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-serif font-bold text-sm text-slate-100">
+                        <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100">
                           {badge.title}
                         </h4>
                         {badge.unlocked && (
-                          <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
+                          <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/30">
                             SELLADO
                           </span>
                         )}
                       </div>
-                      <p className="font-serif italic text-xs text-amber-400/80">
+                      <p className="font-serif italic text-xs text-amber-800 dark:text-amber-400/80 font-semibold">
                         {badge.latinTitle}
                       </p>
-                      <p className="text-xs text-slate-400 leading-snug">
+                      <p className="text-xs text-stone-600 dark:text-slate-400 leading-snug">
                         {badge.description}
                       </p>
                     </div>
@@ -457,15 +470,15 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
         {/* ─── Modal Desplegable de Inspección de Visado de País ─── */}
         {selectedEntry && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
-            <div className="relative w-full max-w-lg rounded-2xl bg-[#131c2d] border-2 border-amber-500/40 p-5 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+            <div className="catalog-card-panel relative w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-amber-900/15 dark:border-slate-700">
                 <div className="flex items-center gap-2.5">
                   <span className="text-3xl">{selectedEntry.country.flag}</span>
                   <div>
-                    <span className="font-mono text-[9px] uppercase tracking-widest text-amber-400 font-bold block">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-amber-800 dark:text-amber-400 font-black block">
                       VISADO CONSULAR · {selectedEntry.country.sealLatinName}
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-white">
+                    <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
                       {selectedEntry.country.name} ({selectedEntry.country.continent})
                     </h3>
                   </div>
@@ -473,16 +486,16 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedEntry(null)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  className="p-1 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Estadísticas de este país */}
-              <div className="flex items-center justify-between text-xs font-mono text-slate-300 p-2.5 rounded-xl bg-black/30 border border-slate-800">
-                <span>Obras leídas: <strong className="text-amber-400">{selectedEntry.readCount}</strong></span>
-                <span>Autores: <strong className="text-amber-400">{selectedEntry.authors.length}</strong></span>
+              <div className="flex items-center justify-between text-xs font-mono text-stone-800 dark:text-slate-300 p-2.5 rounded-xl bg-amber-900/5 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800">
+                <span>Obras leídas: <strong className="text-amber-800 dark:text-amber-400">{selectedEntry.readCount}</strong></span>
+                <span>Autores: <strong className="text-amber-800 dark:text-amber-400">{selectedEntry.authors.length}</strong></span>
               </div>
 
               {/* Lista de libros de este país */}
@@ -494,7 +507,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       setSelectedEntry(null);
                       onOpenBookDetail?.(b);
                     }}
-                    className="p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/40 bg-[#0d131f] flex items-center justify-between gap-3 cursor-pointer transition group"
+                    className="p-2.5 rounded-xl border border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-500/40 bg-[#fffcf5] dark:bg-[#0d131f] flex items-center justify-between gap-3 cursor-pointer transition group shadow-xs"
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       <div className="w-8 h-11 shrink-0 rounded overflow-hidden shadow">
@@ -509,16 +522,16 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                         />
                       </div>
                       <div className="truncate">
-                        <p className="font-serif text-xs font-bold text-slate-200 truncate group-hover:text-amber-300">
+                        <p className="font-serif text-xs font-bold text-stone-900 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300">
                           {b.nombre}
                         </p>
-                        <p className="text-[11px] text-slate-400 truncate">
+                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate">
                           {b.autor}
                         </p>
                       </div>
                     </div>
 
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 shrink-0 border border-amber-500/20">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 shrink-0 border border-amber-600/20 dark:border-amber-500/20">
                       {b.progreso || 'Registrado'}
                     </span>
                   </div>
@@ -531,20 +544,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
         {/* ─── Modal para Asignar País a un Autor ─── */}
         {assigningBook && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
-            <div className="relative w-full max-w-md rounded-2xl bg-[#131c2d] border-2 border-amber-500/40 p-5 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-700">
+            <div className="catalog-card-panel relative w-full max-w-md p-5 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-900/15 dark:border-slate-700">
                 <div>
-                  <h3 className="font-serif text-base font-bold text-white">
+                  <h3 className="font-serif text-base font-bold text-stone-900 dark:text-white">
                     Asignar País a {assigningBook.autor || 'Autor'}
                   </h3>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-stone-600 dark:text-slate-400">
                     Libro: «{assigningBook.nombre}»
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setAssigningBook(null)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  className="p-1 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -556,10 +569,10 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                     key={c.code}
                     type="button"
                     onClick={() => handleAssignCountry(assigningBook, c.code)}
-                    className="p-2 rounded-xl border border-slate-800 hover:border-amber-400 bg-[#0d131f] flex items-center gap-2 text-left transition hover:bg-amber-500/10"
+                    className="p-2 rounded-xl border border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-400 bg-[#fffcf5] dark:bg-[#0d131f] flex items-center gap-2 text-left transition hover:bg-amber-500/10 shadow-xs"
                   >
                     <span className="text-xl">{c.flag}</span>
-                    <span className="font-serif font-bold text-slate-200">{c.name}</span>
+                    <span className="font-serif font-bold text-stone-900 dark:text-slate-200">{c.name}</span>
                   </button>
                 ))}
               </div>
