@@ -91,13 +91,13 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/80 backdrop-blur-sm animate-fade-in"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="catalog-card-panel relative w-full max-w-2xl max-h-[92vh] flex flex-col p-5 sm:p-7 shadow-2xl"
+        className="catalog-card-panel relative w-full max-w-3xl max-h-[90vh] flex flex-col p-5 sm:p-7 shadow-2xl mt-2 sm:mt-3"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="catalog-brass-tab">Heráldica & Sellos · Carnet de Lector</div>
@@ -162,7 +162,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
         {/* Contenido desplazable */}
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {activeTab === 'presets' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
               {AVATAR_PRESETS.map((preset) => {
                 const isCurrent = selected === preset.id;
                 const Icon = preset.icon;
@@ -172,29 +172,29 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     key={preset.id}
                     type="button"
                     onClick={() => handleSelectPreset(preset.id)}
-                    className={`relative p-3 rounded-2xl flex flex-col items-center text-center gap-2 transition group border ${
+                    className={`relative w-full p-2.5 sm:p-3 rounded-2xl flex flex-col items-center justify-between text-center transition group border overflow-hidden min-h-[148px] ${
                       isCurrent
                         ? 'border-amber-600 bg-amber-500/15 shadow-md ring-2 ring-amber-500/30'
                         : 'border-amber-900/15 dark:border-[#222B3C] bg-[#fffcf5] dark:bg-[#111724] hover:border-amber-600/50 hover:bg-[#faebd0]/60'
                     }`}
                   >
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${preset.gradient} border ${preset.borderColor} shadow-inner group-hover:scale-105 transition-transform`}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${preset.gradient} border ${preset.borderColor} shadow-inner group-hover:scale-105 transition-transform shrink-0 my-1`}
                     >
                       <Icon className={`w-6 h-6 ${preset.iconColor}`} />
                     </div>
 
-                    <div className="min-w-0">
-                      <span className="block text-xs font-bold font-serif text-stone-900 dark:text-slate-100 truncate">
+                    <div className="w-full min-w-0 px-1 flex flex-col items-center">
+                      <span className="block w-full text-xs sm:text-[13px] font-bold font-serif text-stone-900 dark:text-slate-100 leading-tight text-center break-words">
                         {preset.title}
                       </span>
-                      <span className="block text-[10px] text-stone-500 dark:text-slate-400 line-clamp-1 leading-tight mt-0.5">
+                      <span className="block w-full text-[10px] sm:text-[11px] text-stone-500 dark:text-slate-400 line-clamp-2 leading-tight mt-1 text-center">
                         {preset.description}
                       </span>
                     </div>
 
                     {isCurrent && (
-                      <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-xs">
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-xs">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}

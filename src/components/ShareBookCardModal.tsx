@@ -1022,14 +1022,14 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[92vh] flex flex-col p-0 shadow-2xl overflow-hidden pt-6 sm:pt-7">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 pt-8 sm:pt-10 bg-black/75 backdrop-blur-md animate-fadeIn">
+      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-4">
         <div className="catalog-brass-tab">
           Estudio Editorial · Tarjetas de Lectura
         </div>
 
         {/* Cabecera */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/80 dark:bg-[#141b27]/80">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/80 dark:bg-[#141b27]/80 rounded-t-[14px]">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
               <Sparkles className="w-5 h-5" />
@@ -1054,7 +1054,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
         </div>
 
         {/* Contenido dividido: Preview de Canvas + Controles */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-5 p-4 sm:p-6 rounded-b-[14px]">
           {/* Panel Izquierdo: Vista previa interactiva de la tarjeta */}
           <div className="md:col-span-6 flex flex-col items-center justify-center rounded-xl border border-amber-900/15 dark:border-[#20293a] bg-[#efe4cc]/40 dark:bg-[#090d14]/70 p-4 relative min-h-[360px]">
             {isGenerating && (
