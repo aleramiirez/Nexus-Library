@@ -480,4 +480,123 @@ html.dark .saga-action-btn.is-active { color: #f19aa6; }
   .saga-card { padding: 26px 14px 16px; }
   .saga-shelf .shelf-books { padding-top: 18px; }
   .saga-seal { width: 20px; height: 20px; font-size: 10px; }
+  .collection-card { padding: 26px 14px 16px; }
+}
+
+/* ===== 6. Fichas de Colecciones Personalizadas ===== */
+.collection-card {
+  padding-top: 30px;
+}
+.collection-card > * {
+  position: relative;
+  z-index: 2;
+}
+.collection-card .catalog-brass-tab {
+  position: absolute;
+  max-width: calc(100% - 56px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collection-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(217, 119, 6, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+html.dark .collection-icon-badge {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.collection-shelf-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(100, 60, 20, 0.28);
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255, 240, 200, 0.25), transparent 75%),
+    linear-gradient(180deg, rgba(80, 45, 15, 0.15), rgba(40, 20, 5, 0.28));
+  box-shadow:
+    inset 0 8px 12px -4px rgba(0, 0, 0, 0.35),
+    inset 4px 0 8px -2px rgba(0, 0, 0, 0.2),
+    inset -4px 0 8px -2px rgba(0, 0, 0, 0.2);
+}
+html.dark .collection-shelf-preview {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255, 180, 80, 0.1), transparent 75%),
+    linear-gradient(180deg, #18120d, #0d0906);
+  border-color: rgba(0, 0, 0, 0.65);
+  box-shadow:
+    inset 0 10px 14px -4px rgba(0, 0, 0, 0.65),
+    inset 4px 0 10px -2px rgba(0, 0, 0, 0.5),
+    inset -4px 0 10px -2px rgba(0, 0, 0, 0.5);
+}
+
+.collection-mini-shelf {
+  position: relative;
+  padding-top: 16px;
+}
+.collection-shelf-books {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 0 16px;
+  position: relative;
+  z-index: 2;
+  min-height: 96px;
+}
+.collection-shelf-book {
+  flex: 0 0 58px;
+  width: 58px;
+  transform-origin: bottom center;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.collection-card:hover .collection-shelf-book {
+  transform: translateY(-3px);
+}
+.collection-shelf-more {
+  align-self: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #78350f;
+  background: #fef3c7;
+  border: 1px solid #d97706;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  margin-bottom: 6px;
+}
+html.dark .collection-shelf-more {
+  color: #fde68a;
+  background: #291e0a;
+  border-color: #92400e;
+}
+
+.collection-mini-plank {
+  margin-top: -6px;
+}
+.collection-plank-lip {
+  height: 10px;
+  padding: 0;
+}
+
+.collection-empty-niche {
+  padding: 30px 14px 0;
+  text-align: center;
+}
+.collection-empty-niche span {
+  display: block;
+  margin-bottom: 22px;
 }

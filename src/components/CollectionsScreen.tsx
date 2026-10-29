@@ -32,6 +32,7 @@ import { BookCard } from './BookCard';
 import { formatStars, ReadingStatus } from '../constants/catalogs';
 
 import '../book-shelf.css';
+import '../dashboard-panels.css';
 
 interface CollectionsScreenProps {
   books: Book[];
@@ -226,14 +227,14 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#242E42] pb-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-600/30">
-                <Bookmark className="w-5 h-5" />
+              <div className="collection-icon-badge">
+                <Bookmark className="w-4 h-4" />
               </div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100">
                 Colecciones & Estanterías
               </h1>
             </div>
-            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+            <p className="text-xs text-stone-600 dark:text-stone-400 mt-1">
               Organiza tus obras en baldas y estanterías temáticas personalizadas
             </p>
           </div>
@@ -242,7 +243,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
             <button
               type="button"
               onClick={() => handleOpenCreate()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Nueva Estantería</span>
@@ -254,20 +255,21 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
           {activeCollection ? (
             <div className="space-y-4 sm:space-y-6">
               {/* Barra superior de pestañas de estanterías (scroll horizontal) */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedCollectionId(null);
                     setSearchQuery('');
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-stone-950 dark:hover:text-white text-xs font-semibold whitespace-nowrap transition shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white text-xs font-semibold whitespace-nowrap transition shadow-xs"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Todas las estanterías</span>
                 </button>
                 {collections.map((col) => {
                   const isCurrent = col.id === activeCollection.id;
+                  const IconComp = AVAILABLE_ICONS[col.icono || 'Bookmark'] || Bookmark;
                   return (
                     <button
                       key={col.id}
@@ -280,13 +282,10 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition ' +
                         (isCurrent
                           ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea]/80 dark:bg-[#141A26] text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                          : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea]/80 dark:bg-[#141A26] text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white')
                       }
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: col.color || '#d97706' }}
-                      />
+                      <IconComp className="w-3.5 h-3.5" />
                       <span>{col.nombre}</span>
                       <span className="opacity-70 text-[10px]">({col.bookIds.length})</span>
                     </button>
@@ -606,23 +605,26 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
             /* Caso B: Galería de todas las estanterías */
             <div className="space-y-6">
               {collections.length === 0 ? (
-                /* Estado vacío con plantillas sugeridas */
-                <div className="rounded-3xl border border-amber-900/20 dark:border-amber-500/20 bg-gradient-to-br from-[#fbf6ea] via-[#f7efdc] to-[#edd9b7] dark:from-[#111724] dark:via-[#161D2B] dark:to-[#0D121B] p-6 sm:p-10 shadow-lg text-center space-y-6">
-                  <div className="w-14 h-14 rounded-3xl bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-600/30 flex items-center justify-center mx-auto shadow-sm">
+                /* Estado vacío con plantillas sugeridas en panel estilo catálogo */
+                <div className="catalog-card-panel p-6 sm:p-10 shadow-lg text-center space-y-6">
+                  <div className="catalog-brass-tab" aria-hidden="true">
+                    Primeras Estanterías
+                  </div>
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/30 flex items-center justify-center mx-auto shadow-sm">
                     <Bookmark className="w-7 h-7" />
                   </div>
                   <div className="max-w-md mx-auto space-y-2">
-                    <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white">
+                    <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">
                       Crea tus propias estanterías
                     </h2>
-                    <p className="text-xs text-stone-600 dark:text-slate-400">
+                    <p className="text-xs text-stone-600 dark:text-stone-400">
                       Más allá de los estados de lectura, agrupa tus libros en colecciones especiales como favoritos, relecturas o listas temáticas.
                     </p>
                   </div>
 
                   {/* Plantillas sugeridas en 1 clic */}
                   <div className="space-y-2 max-w-xl mx-auto pt-2">
-                    <span className="text-[11px] uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 block">
+                    <span className="text-[11px] uppercase tracking-wider font-bold text-amber-800 dark:text-amber-400 block font-serif">
                       ¿Por dónde empezar? Elige una plantilla sugerida:
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
@@ -631,12 +633,12 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                           key={tmpl.nombre}
                           type="button"
                           onClick={() => handleOpenCreate(tmpl)}
-                          className="p-3.5 rounded-2xl border border-amber-900/20 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 hover:border-amber-600 hover:scale-[1.01] transition space-y-1 shadow-xs"
+                          className="p-3.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5]/85 dark:bg-[#161D2B]/85 hover:border-amber-600 dark:hover:border-amber-400 hover:scale-[1.01] transition space-y-1 shadow-xs text-left"
                         >
-                          <span className="font-serif font-bold text-xs text-stone-900 dark:text-white block">
+                          <span className="font-serif font-bold text-xs text-stone-900 dark:text-stone-100 block">
                             {tmpl.nombre}
                           </span>
-                          <span className="text-[10px] text-stone-500 dark:text-slate-400 block line-clamp-2">
+                          <span className="text-[10px] text-stone-500 dark:text-stone-400 block line-clamp-2">
                             {tmpl.desc}
                           </span>
                         </button>
@@ -645,104 +647,123 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                   </div>
                 </div>
               ) : (
-                /* Cuadrícula de tarjetas de estanterías */
+                /* Cuadrícula de tarjetas de estanterías estilo Ficha de Catálogo */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {collections.map((col) => {
                     const colBooks = col.bookIds
                       .map((id) => booksMap.get(id))
                       .filter((b): b is Book => Boolean(b));
                     const previewBooks = colBooks.slice(0, 3);
+                    const IconComp = AVAILABLE_ICONS[col.icono || 'Bookmark'] || Bookmark;
 
                     return (
                       <div
                         key={col.id}
                         onClick={() => setSelectedCollectionId(col.id)}
-                        className="group relative rounded-3xl editorial-card-surface editorial-card-interactive p-5 cursor-pointer flex flex-col justify-between space-y-4"
+                        className="catalog-card-panel collection-card group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between"
                       >
-                        <div>
-                          {/* Cabecera de la tarjeta */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2.5">
-                              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/20">
-                                <Bookmark className="w-4 h-4" />
+                        {/* Pestaña de latón grabada en la parte superior con el número de libros */}
+                        <div className="catalog-brass-tab" aria-hidden="true">
+                          {col.bookIds.length} {col.bookIds.length === 1 ? 'obra' : 'obras'}
+                        </div>
+
+                        <div className="flex flex-col justify-between h-full space-y-4">
+                          {/* Cabecera de la ficha */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                              <div className="collection-icon-badge shrink-0">
+                                <IconComp className="w-4 h-4" />
                               </div>
-                              <div>
-                                <h3 className="font-serif font-bold text-base text-stone-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition truncate">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition truncate leading-snug">
                                   {col.nombre}
                                 </h3>
-                                <span className="text-[11px] font-semibold text-stone-500 dark:text-slate-400">
-                                  {col.bookIds.length} {col.bookIds.length === 1 ? 'obra' : 'obras'}
-                                </span>
+                                {col.descripcion ? (
+                                  <p className="text-xs text-stone-600 dark:text-stone-400 line-clamp-2 mt-0.5 font-serif italic">
+                                    {col.descripcion}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                                    Colección temática personal
+                                  </p>
+                                )}
                               </div>
                             </div>
 
-                            {/* Opciones */}
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                            {/* Opciones rápidas */}
+                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
                                 type="button"
                                 onClick={(e) => handleOpenEdit(col, e)}
-                                className="p-1.5 rounded-lg text-stone-400 hover:text-amber-600 transition"
-                                title="Editar"
+                                className="saga-action-btn"
+                                title="Editar estantería"
+                                aria-label="Editar estantería"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteCollection(col.id, col.nombre, e)}
-                                className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 transition"
-                                title="Eliminar"
+                                className="saga-action-btn is-danger"
+                                title="Eliminar estantería"
+                                aria-label="Eliminar estantería"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
 
-                          {col.descripcion && (
-                            <p className="text-xs text-stone-600 dark:text-slate-400 mt-2 line-clamp-2">
-                              {col.descripcion}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Previsualización en abanico de libros */}
-                        <div className="relative pt-4 pb-2 border-t border-amber-900/10 dark:border-slate-800/80">
-                          {previewBooks.length > 0 ? (
-                            <div className="flex items-end gap-2.5 h-24 overflow-hidden">
-                              {previewBooks.map((b, i) => (
-                                <div
-                                  key={b.id}
-                                  className="w-14 shrink-0 relative transition-transform duration-300 group-hover:-translate-y-1"
-                                  style={{ transform: `rotate(${(i - 1) * 3}deg)` }}
-                                >
-                                  <div className="absolute -bottom-1 left-0.5 right-0.5 h-2 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
-                                  <BookCover
-                                    nombre={b.nombre}
-                                    autor={b.autor}
-                                    portadaUrl={b.portadaUrl}
-                                    portadaFallbackUrl={b.portadaFallbackUrl}
-                                    portadaDataUrl={b.portadaDataUrl}
-                                    size="sm"
-                                    variant="book"
-                                  />
+                          {/* Mini balda de madera real con los libros apoyados verticalmente */}
+                          <div className="collection-shelf-preview" aria-hidden="true">
+                            {previewBooks.length > 0 ? (
+                              <div className="collection-mini-shelf">
+                                <div className="collection-shelf-books">
+                                  {previewBooks.map((b, i) => (
+                                    <div
+                                      key={b.id}
+                                      className="collection-shelf-book"
+                                      style={{ '--book-i': i } as React.CSSProperties}
+                                    >
+                                      <BookCover
+                                        nombre={b.nombre}
+                                        autor={b.autor}
+                                        portadaUrl={b.portadaUrl}
+                                        portadaFallbackUrl={b.portadaFallbackUrl}
+                                        portadaDataUrl={b.portadaDataUrl}
+                                        size="sm"
+                                        variant="book"
+                                      />
+                                    </div>
+                                  ))}
+                                  {colBooks.length > 3 && (
+                                    <div className="collection-shelf-more">
+                                      +{colBooks.length - 3}
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
-                              {colBooks.length > 3 && (
-                                <div className="text-[11px] font-bold text-amber-800 dark:text-amber-400 self-center pl-2">
-                                  +{colBooks.length - 3} más
+                                <div className="collection-mini-plank">
+                                  <div className="shelf-plank-top" />
+                                  <div className="shelf-niche-front collection-plank-lip" />
                                 </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="h-24 flex items-center justify-center text-xs italic text-stone-400 dark:text-slate-500">
-                              Estantería vacía
-                            </div>
-                          )}
-                        </div>
+                              </div>
+                            ) : (
+                              <div className="collection-empty-niche">
+                                <span className="font-serif italic text-xs text-stone-500 dark:text-stone-400">
+                                  Balda lista para recibir obras
+                                </span>
+                                <div className="collection-mini-plank">
+                                  <div className="shelf-plank-top" />
+                                  <div className="shelf-niche-front collection-plank-lip" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Pie de tarjeta */}
-                        <div className="flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 pt-1">
-                          <span>Ver estantería</span>
-                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          {/* Pie de tarjeta */}
+                          <div className="flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400 pt-1 border-t border-amber-900/10 dark:border-amber-400/10">
+                            <span className="font-serif italic">Explorar esta balda</span>
+                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </div>
                         </div>
                       </div>
                     );
@@ -757,19 +778,19 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
           onClick={() => setIsCreateModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-3xl border border-amber-900/30 dark:border-amber-500/20 bg-[#fdfbf7] dark:bg-[#121722] text-stone-900 dark:text-white p-6 shadow-2xl space-y-5"
+            className="relative w-full max-w-md rounded-2xl border border-amber-900/30 dark:border-amber-500/25 bg-[#faf5eb] dark:bg-[#121722] text-stone-900 dark:text-stone-100 p-6 shadow-2xl space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-600/20">
+                <div className="collection-icon-badge">
                   <Bookmark className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
+                  <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
                     {editingCollection ? 'Editar Estantería' : 'Nueva Estantería Personalizada'}
                   </h3>
-                  <p className="text-xs text-stone-500 dark:text-slate-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     Define el nombre y temática de tu colección
                   </p>
                 </div>
@@ -777,7 +798,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white transition"
+                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -793,7 +814,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                   placeholder="Ej. Favoritos de Fantasía, Relecturas..."
                   value={modalName}
                   onChange={(e) => setModalName(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-stone-900 dark:text-white focus:outline-none focus:border-amber-600"
+                  className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs font-medium text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400"
                   autoFocus
                 />
               </div>
@@ -807,7 +828,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                   placeholder="Describe qué tipo de obras componen esta colección..."
                   value={modalDesc}
                   onChange={(e) => setModalDesc(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-stone-900 dark:text-white focus:outline-none focus:border-amber-600 resize-none"
+                  className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs font-medium text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400 resize-none"
                 />
               </div>
 
@@ -816,7 +837,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                 <label className="font-semibold text-stone-700 dark:text-slate-300 block">
                   Icono identificador
                 </label>
-                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {Object.entries(AVAILABLE_ICONS).map(([id, IconComponent]) => (
                     <button
                       key={id}
@@ -826,7 +847,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                         'p-2 rounded-xl border transition ' +
                         (modalIcon === id
                           ? 'border-amber-600 bg-amber-500 text-slate-950 font-bold shadow-xs'
-                          : 'border-stone-300 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-stone-600 dark:text-slate-400 hover:border-amber-500')
+                          : 'border-amber-900/20 dark:border-slate-800 bg-[#fffcf5] dark:bg-slate-900 text-stone-600 dark:text-slate-400 hover:border-amber-500')
                       }
                     >
                       <IconComponent className="w-4 h-4" />
@@ -835,18 +856,18 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-slate-700 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition"
+                  className="px-4 py-2 rounded-xl border border-amber-900/25 dark:border-slate-700 text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={!modalName.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 text-slate-950 font-bold text-xs shadow-md transition"
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs shadow-md transition"
                 >
                   {editingCollection ? 'Guardar Cambios' : 'Crear Estantería'}
                 </button>
@@ -865,35 +886,35 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
           onClick={() => setIsBookPickerOpen(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-3xl border border-amber-900/30 dark:border-amber-500/20 bg-[#fdfbf7] dark:bg-[#121722] text-stone-900 dark:text-white p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+            className="relative w-full max-w-lg rounded-2xl border border-amber-900/30 dark:border-amber-500/25 bg-[#faf5eb] dark:bg-[#121722] text-stone-900 dark:text-stone-100 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-amber-900/15 dark:border-[#222B3D] pb-3">
               <div>
-                <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
+                <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
                   Añadir Obras a «{activeCollection.nombre}»
                 </h3>
-                <p className="text-xs text-stone-500 dark:text-slate-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   Haz clic para incluir o retirar libros de esta estantería
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsBookPickerOpen(false)}
-                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-white transition"
+                className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-stone-400" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-stone-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Buscar por título, autor o género..."
                 value={pickerSearch}
                 onChange={(e) => setPickerSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-amber-600"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400"
                 autoFocus
               />
             </div>
@@ -919,8 +940,8 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                       className={
                         'p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ' +
                         (isIncluded
-                          ? 'border-amber-600 bg-amber-500/15'
-                          : 'border-amber-900/10 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 hover:border-amber-500/40')
+                          ? 'border-amber-600 bg-amber-500/15 dark:bg-amber-500/10'
+                          : 'border-amber-900/10 dark:border-slate-800 bg-[#fffcf5]/80 dark:bg-slate-900/50 hover:border-amber-500/40')
                       }
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -936,10 +957,10 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                           />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-serif font-bold text-xs truncate text-stone-900 dark:text-white">
+                          <h4 className="font-serif font-bold text-xs truncate text-stone-900 dark:text-stone-100">
                             {b.nombre}
                           </h4>
-                          <p className="text-[10px] text-stone-500 dark:text-slate-400 truncate">
+                          <p className="text-[10px] text-stone-500 dark:text-stone-400 truncate">
                             {b.autor}
                           </p>
                         </div>
@@ -961,7 +982,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-amber-900/15 dark:border-[#222B3D]">
-              <span className="text-xs font-semibold text-stone-600 dark:text-slate-400">
+              <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">
                 {activeCollection.bookIds.length} libros seleccionados
               </span>
               <button
