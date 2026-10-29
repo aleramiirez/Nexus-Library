@@ -92,6 +92,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   const [goalModalValue, setGoalModalValue] = useState<number>(10);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthCadence | null>(null);
+  const [showAllCompleted, setShowAllCompleted] = useState(false);
 
   // Meta sobreescrita en memoria para respuesta reactiva instantánea (0ms)
   const activeYearNum = selectedYear === 'all' ? currentYear : selectedYear;
@@ -106,6 +107,10 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       currentGoalOverride
     );
   }, [books, selectedYear, currentUserId, currentGoalOverride, goalTick]);
+
+  const displayedCompletedBooks = useMemo(() => {
+    return showAllCompleted ? stats.completedBooks : stats.completedBooks.slice(0, 16);
+  }, [showAllCompleted, stats.completedBooks]);
 
   const handleOpenGoalModal = () => {
     setGoalModalValue(stats.targetGoal);
@@ -300,24 +305,24 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             <div className="flex items-center justify-between mb-3.5 text-xs">
               <span className="font-serif italic font-semibold text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                Últimas obras terminadas en {selectedYear === 'all' ? 'tu colección' : selectedYear}:
+                Obras terminadas en {selectedYear === 'all' ? 'tu colección' : selectedYear}:
               </span>
               <span className="text-stone-500 dark:text-slate-400 text-[11px] font-medium">
-                Mostrando {Math.min(8, stats.completedBooks.length)} de {stats.completedBooks.length}
+                Mostrando {displayedCompletedBooks.length} de {stats.completedBooks.length}
               </span>
             </div>
 
             {/* Vitrina editorial cálida (integrada con el estilo del catálogo) */}
-            <div className="rounded-2xl editorial-card-surface p-4 sm:p-5 relative shadow-xs overflow-hidden">
-              <div className="flex items-end gap-3.5 sm:gap-5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {stats.completedBooks.slice(0, 8).map((book) => {
+            <div className="rounded-2xl editorial-card-surface p-4 sm:p-5 relative shadow-xs">
+              <div className="flex flex-wrap items-start gap-3.5 sm:gap-5">
+                {displayedCompletedBooks.map((book) => {
                   const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
                   return (
                     <div
                       key={book.id}
                       onClick={() => onOpenBookDetail?.(book)}
                       data-book-id={book.id}
-                      className="group flex-shrink-0 w-20 sm:w-24 cursor-pointer text-left flex flex-col items-center space-y-1.5 active:scale-95 transition"
+                      className="group w-20 sm:w-24 cursor-pointer text-left flex flex-col items-center space-y-1.5 active:scale-95 transition"
                       title={`${book.nombre} (por ${book.autor}) — ${datesLabel}`}
                     >
                       <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
@@ -350,6 +355,22 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                   );
                 })}
               </div>
+
+              {stats.completedBooks.length > 16 && (
+                <div className="mt-4 pt-3 border-t border-amber-900/10 dark:border-amber-400/10 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCompleted((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-800/20 dark:border-amber-400/25 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-serif font-bold text-amber-900 dark:text-amber-300 transition"
+                  >
+                    <span>
+                      {showAllCompleted
+                        ? 'Mostrar menos'
+                        : `Ver todas las obras terminadas (${stats.completedBooks.length})`}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
