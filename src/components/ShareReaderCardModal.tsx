@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -307,30 +307,43 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
   const cleanName = displayName?.trim() || 'Lector Nexus';
   const cleanUsername = username?.trim() ? `@${username.trim()}` : '@lector';
   const cleanId = (memberId || 'INVITADO').slice(0, 8).toUpperCase();
-  const rank = getReaderRank(readBooks);
-  const cleanBio =
-    bio?.trim() || 'Custodio de volúmenes, páginas devoradas y pasajes memorables en Nexus Library.';
+  const rank = useMemo(() => getReaderRank(readBooks), [readBooks]);
+  const cleanBio = useMemo(
+    () =>
+      bio?.trim() ||
+      'Custodio de volúmenes, páginas devoradas y pasajes memorables en Nexus Library.',
+    [bio]
+  );
+
+  const isRenderingRef = useRef(false);
+  const cachedAvatarUrlRef = useRef<string | null | undefined>(undefined);
+  const cachedAvatarImgRef = useRef<HTMLImageElement | null>(null);
 
   // Generación en Canvas
   const renderCanvas = useCallback(async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || isRenderingRef.current) return;
 
+    isRenderingRef.current = true;
     setIsGenerating(true);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      setIsGenerating(false);
-      return;
-    }
 
-    const isStory = format === 'story';
-    const width = isStory ? 1080 : 1200;
-    const height = isStory ? 1920 : 750;
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    canvas.width = width;
-    canvas.height = height;
+      const isStory = format === 'story';
+      const width = isStory ? 1080 : 1200;
+      const height = isStory ? 1920 : 750;
 
-    const loadedAvatarImg = await loadSafeImage(avatarUrl);
+      canvas.width = width;
+      canvas.height = height;
+
+      let loadedAvatarImg = cachedAvatarImgRef.current;
+      if (cachedAvatarUrlRef.current !== avatarUrl) {
+        cachedAvatarUrlRef.current = avatarUrl;
+        loadedAvatarImg = await loadSafeImage(avatarUrl);
+        cachedAvatarImgRef.current = loadedAvatarImg;
+      }
 
     // ── Paletas cromáticas ──
     const palettes = {
@@ -833,8 +846,10 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
       ctx.letterSpacing = '3px';
       ctx.fillText('EX LIBRIS · VERITAS IN LIBRIS · NEXUS MCMXCIV', cardX + cardW / 2, curY + 40);
     }
-
-    setIsGenerating(false);
+    } finally {
+      setIsGenerating(false);
+      isRenderingRef.current = false;
+    }
   }, [
     format,
     theme,
