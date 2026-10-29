@@ -18,6 +18,7 @@ import {
 import { Book } from '../types/models';
 import { formatStars } from '../constants/catalogs';
 import { getAuthorInitials } from '../services/coverService';
+import { LibrarySelect } from './LibrarySelect';
 
 export interface ShareBookCardModalProps {
   isOpen: boolean;
@@ -1003,20 +1004,18 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
                 {includeQuote && (
                   <div className="space-y-2">
                     {book.citas && book.citas.length > 1 && (
-                      <select
+                      <LibrarySelect
                         value={selectedQuote}
-                        onChange={(e) => {
-                          setSelectedQuote(e.target.value);
-                          setCustomQuote(e.target.value);
+                        onChange={(val) => {
+                          setSelectedQuote(val);
+                          setCustomQuote(val);
                         }}
-                        className="w-full text-xs rounded-lg border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#161c27] p-2 text-stone-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                      >
-                        {book.citas.map((q, idx) => (
-                          <option key={idx} value={q}>
-                            Cita #{idx + 1}: «{q.slice(0, 45)}...»
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Selecciona una cita..."
+                        options={book.citas.map((q, idx) => ({
+                          value: q,
+                          label: `Cita #${idx + 1}: «${q.slice(0, 45)}...»`
+                        }))}
+                      />
                     )}
 
                     <textarea

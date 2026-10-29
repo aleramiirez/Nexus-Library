@@ -49,6 +49,7 @@ import {
   ParsedEbookFile,
   parseEbookFile
 } from '../services/epubParserService';
+import { LibrarySelect } from './LibrarySelect';
 import '../dashboard-panels.css';
 
 interface AddEditBookModalProps {
@@ -677,18 +678,16 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             <label className={labelCls}>
               Género (Selección única)
             </label>
-            <select
+            <LibrarySelect
               value={genero}
-              onChange={(e) => setGenero(e.target.value as Genre | '')}
+              onChange={(val) => setGenero(val as Genre | '')}
+              placeholder="— Sin seleccionar —"
+              options={[
+                { value: '', label: '— Sin seleccionar —' },
+                ...GENRES.map((g) => ({ value: g, label: g }))
+              ]}
               className={inputCls}
-            >
-              <option value="">— Sin seleccionar —</option>
-              {GENRES.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
@@ -829,22 +828,23 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label className={labelCls}>Puntuación</label>
-          <select
+          <LibrarySelect
             value={puntuacion ?? ''}
-            onChange={(e) =>
+            onChange={(val) =>
               setPuntuacion(
-                e.target.value ? (Number(e.target.value) as StarRating) : null
+                val !== '' ? (Number(val) as StarRating) : null
               )
             }
+            placeholder="Sin puntuar"
+            options={[
+              { value: '', label: 'Sin puntuar' },
+              ...STAR_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: `${opt.label} (${opt.value})`
+              }))
+            ]}
             className={inputCls}
-          >
-            <option value="">Sin puntuar</option>
-            {STAR_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label} ({opt.value})
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div>
           <label className={labelCls}>Fecha Inicio</label>

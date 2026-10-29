@@ -23,6 +23,8 @@ import {
 } from '../services/epubParserService';
 import { isDuplicateBook } from '../services/importExportService';
 import { BookCover } from './BookCover';
+import { ReadingStatusControl } from './ReadingStatusControl';
+import { LibrarySelect } from './LibrarySelect';
 import '../dashboard-panels.css';
 
 interface EpubImportModalProps {
@@ -405,17 +407,10 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                 <span className="text-xs text-stone-600 dark:text-slate-400 whitespace-nowrap">
                   Estado inicial:
                 </span>
-                <select
+                <ReadingStatusControl
                   value={defaultStatus}
-                  onChange={(e) => handleApplyDefaultStatus(e.target.value as ReadingStatus)}
-                  className="rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-amber-600"
-                >
-                  {READING_STATUSES.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleApplyDefaultStatus}
+                />
               </div>
             </div>
 
@@ -675,41 +670,25 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                             <label className="block text-[10px] font-semibold uppercase tracking-wider text-stone-600 dark:text-slate-400 mb-0.5">
                               Género
                             </label>
-                            <select
-                              value={item.genero}
-                              onChange={(e) =>
-                                updateItem(item.id, { genero: e.target.value as Genre })
-                              }
-                              className={inputCls}
-                            >
-                              <option value="">Seleccionar...</option>
-                              {GENRES.map((g) => (
-                                <option key={g} value={g}>
-                                  {g}
-                                </option>
-                              ))}
-                            </select>
+                            <LibrarySelect
+                              value={item.genero || ''}
+                              onChange={(val) => updateItem(item.id, { genero: val as Genre })}
+                              placeholder="Seleccionar..."
+                              options={[
+                                { value: '', label: 'Seleccionar...' },
+                                ...GENRES.map((g) => ({ value: g, label: g }))
+                              ]}
+                            />
                           </div>
 
                           <div>
                             <label className="block text-[10px] font-semibold uppercase tracking-wider text-stone-600 dark:text-slate-400 mb-0.5">
                               Estado
                             </label>
-                            <select
+                            <ReadingStatusControl
                               value={item.progreso}
-                              onChange={(e) =>
-                                updateItem(item.id, {
-                                  progreso: e.target.value as ReadingStatus
-                                })
-                              }
-                              className={inputCls}
-                            >
-                              {READING_STATUSES.map((st) => (
-                                <option key={st} value={st}>
-                                  {st}
-                                </option>
-                              ))}
-                            </select>
+                              onChange={(st) => updateItem(item.id, { progreso: st })}
+                            />
                           </div>
 
                           <div>

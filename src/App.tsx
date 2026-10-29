@@ -105,6 +105,7 @@ import { DashboardSagasPanel } from './components/DashboardSagasPanel';
 import { DashboardFavoritesShelf } from './components/DashboardFavoritesShelf';
 import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
+import { LibrarySelect } from './components/LibrarySelect';
 import './dashboard-panels.css';
 
 import { BookDetailModal } from './components/BookDetailModal';
@@ -259,6 +260,43 @@ export const App: React.FC = () => {
   const [filters, setFilters] = useState<LibraryFilters>(initialFilters);
   const deferredSearch = useDeferredValue(filters.search);
   const [showFilters, setShowFilters] = useState(false);
+
+  const subgenreSelectGroups = useMemo(() => {
+    if (!filters.genero) return undefined;
+    const recommended = getRecommendedSubgenres(filters.genero);
+    const recNormSet = new Set(recommended.map((s) => normalizeText(s)));
+    const otherSubgenres = SUBGENRES.filter(
+      (s, idx, arr) =>
+        !recNormSet.has(normalizeText(s)) &&
+        arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
+    );
+    return [
+      {
+        groupLabel: 'Recomendados para este género',
+        options: [
+          { value: '' as Subgenre | '', label: 'Todos los subgéneros' },
+          ...recommended.map((sub) => ({ value: sub, label: sub }))
+        ]
+      },
+      ...(otherSubgenres.length > 0
+        ? [
+            {
+              groupLabel: 'Otros subgéneros',
+              options: otherSubgenres.map((sub) => ({ value: sub, label: sub }))
+            }
+          ]
+        : [])
+    ];
+  }, [filters.genero]);
+
+  const allSubgenresOptions = useMemo(() => {
+    return [
+      { value: '' as Subgenre | '', label: 'Todos los subgéneros' },
+      ...SUBGENRES.filter(
+        (s, idx, arr) => arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
+      ).map((sub) => ({ value: sub, label: sub }))
+    ];
+  }, []);
 
   const [detailBookId, setDetailBookId] = useState<string | null>(null);
   const handleOpenBookDetail = React.useCallback(
@@ -1841,120 +1879,65 @@ export const App: React.FC = () => {
                   {/* Fila 1: Filtros de Clasificación Temática */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
-                      <select
+                      <LibrarySelect
                         value={filters.genero}
-                        onChange={(e) =>
-                          setFilters((f) => ({ ...f, genero: e.target.value as Genre | '' }))
+                        onChange={(val) =>
+                          setFilters((f) => ({ ...f, genero: val as Genre | '', subgenero: '' }))
                         }
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Todos los géneros</option>
-                        {GENRES.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Todos los géneros"
+                        options={[
+                          { value: '', label: 'Todos los géneros' },
+                          ...GENRES.map((g) => ({ value: g, label: g }))
+                        ]}
+                      />
                     </div>
 
                     <div>
-                      <select
+                      <LibrarySelect
                         value={filters.subgenero}
-                        onChange={(e) =>
-                          setFilters((f) => ({ ...f, subgenero: e.target.value as Subgenre | '' }))
+                        onChange={(val) =>
+                          setFilters((f) => ({ ...f, subgenero: val as Subgenre | '' }))
                         }
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Todos los subgéneros</option>
-                        {filters.genero ? (
-                          <>
-                            {(() => {
-                              const recommended = getRecommendedSubgenres(filters.genero);
-                              const recNormSet = new Set(recommended.map((s) => normalizeText(s)));
-                              const otherSubgenres = SUBGENRES.filter(
-                                (s, idx, arr) =>
-                                  !recNormSet.has(normalizeText(s)) &&
-                                  arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
-                              );
-                              return (
-                                <>
-                                  <optgroup label="Recomendados para este género">
-                                    {recommended.map((sub) => (
-                                      <option key={sub} value={sub}>
-                                        {sub}
-                                      </option>
-                                    ))}
-                                  </optgroup>
-                                  {otherSubgenres.length > 0 && (
-                                    <optgroup label="Otros subgéneros">
-                                      {otherSubgenres.map((sub) => (
-                                        <option key={sub} value={sub}>
-                                          {sub}
-                                        </option>
-                                      ))}
-                                    </optgroup>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </>
-                        ) : (
-                          SUBGENRES.filter(
-                            (s, idx, arr) =>
-                              arr.findIndex((x) => normalizeText(x) === normalizeText(s)) === idx
-                          ).map((sub) => (
-                            <option key={sub} value={sub}>
-                              {sub}
-                            </option>
-                          ))
-                        )}
-                      </select>
+                        placeholder="Todos los subgéneros"
+                        options={!filters.genero ? allSubgenresOptions : undefined}
+                        groups={filters.genero ? subgenreSelectGroups : undefined}
+                      />
                     </div>
 
                     <div className="sm:col-span-2 lg:col-span-1">
-                      <select
+                      <LibrarySelect
                         value={filters.sagaId}
-                        onChange={(e) => setFilters((f) => ({ ...f, sagaId: e.target.value }))}
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Todas las sagas</option>
-                        <option value="__none__">Libros independientes (Sin saga)</option>
-                        {sagas.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            Saga: {s.nombre}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setFilters((f) => ({ ...f, sagaId: val as string }))}
+                        placeholder="Todas las sagas"
+                        options={[
+                          { value: '', label: 'Todas las sagas' },
+                          { value: '__none__', label: 'Libros independientes (Sin saga)' },
+                          ...sagas.map((s) => ({ value: s.id, label: `Saga: ${s.nombre}` }))
+                        ]}
+                      />
                     </div>
                   </div>
 
                   {/* Fila 2: Estado, Puntuación, Ordenación y Limpiar */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1 items-center">
                     <div className="lg:col-span-3">
-                      <select
+                      <LibrarySelect
                         value={filters.progreso}
-                        onChange={(e) =>
-                          setFilters((f) => ({
-                            ...f,
-                            progreso: e.target.value as ReadingStatus | ''
-                          }))
+                        onChange={(val) =>
+                          setFilters((f) => ({ ...f, progreso: val as ReadingStatus | '' }))
                         }
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Todos los estados</option>
-                        {READING_STATUSES.map((st) => (
-                          <option key={st} value={st}>
-                            {st}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Todos los estados"
+                        options={[
+                          { value: '', label: 'Todos los estados' },
+                          ...READING_STATUSES.map((st) => ({ value: st, label: st }))
+                        ]}
+                      />
                     </div>
 
                     <div className="lg:col-span-3">
-                      <select
+                      <LibrarySelect
                         value={filters.puntuacion === null ? '' : String(filters.puntuacion)}
-                        onChange={(e) => {
-                          const val = e.target.value;
+                        onChange={(val) => {
                           setFilters((f) => ({
                             ...f,
                             puntuacion:
@@ -1965,33 +1948,35 @@ export const App: React.FC = () => {
                                 : (Number(val) as StarRating)
                           }));
                         }}
-                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100"
-                      >
-                        <option value="">Cualquier puntuación</option>
-                        {STAR_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                        <option value="unrated">Sin puntuar</option>
-                      </select>
+                        placeholder="Cualquier puntuación"
+                        options={[
+                          { value: '', label: 'Cualquier puntuación' },
+                          ...STAR_OPTIONS.map((opt) => ({
+                            value: String(opt.value),
+                            label: opt.label
+                          })),
+                          { value: 'unrated', label: 'Sin puntuar' }
+                        ]}
+                      />
                     </div>
 
                     <div className="lg:col-span-4 flex items-center gap-1.5 min-w-0">
-                      <select
-                        value={filters.sortBy}
-                        onChange={(e) =>
-                          setFilters((f) => ({ ...f, sortBy: e.target.value as SortField }))
-                        }
-                        className="flex-1 min-w-0 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-3 py-2 text-xs text-stone-800 dark:text-slate-100 truncate"
-                      >
-                        <option value="createdAt">Ordenar: Fecha incorporación</option>
-                        <option value="nombre">Ordenar: Título</option>
-                        <option value="autor">Ordenar: Autor</option>
-                        <option value="fechaPublicacion">Ordenar: Año publicación</option>
-                        <option value="puntuacion">Ordenar: Puntuación</option>
-                        <option value="paginas">Ordenar: Número de páginas</option>
-                      </select>
+                      <div className="flex-1 min-w-0">
+                        <LibrarySelect
+                          value={filters.sortBy}
+                          onChange={(val) =>
+                            setFilters((f) => ({ ...f, sortBy: val as SortField }))
+                          }
+                          options={[
+                            { value: 'createdAt', label: 'Ordenar: Fecha incorporación' },
+                            { value: 'nombre', label: 'Ordenar: Título' },
+                            { value: 'autor', label: 'Ordenar: Autor' },
+                            { value: 'fechaPublicacion', label: 'Ordenar: Año publicación' },
+                            { value: 'puntuacion', label: 'Ordenar: Puntuación' },
+                            { value: 'paginas', label: 'Ordenar: Número de páginas' }
+                          ]}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() =>
@@ -2563,20 +2548,20 @@ export const App: React.FC = () => {
                             <label className="block text-[11px] font-semibold text-stone-700 dark:text-slate-300 mb-1">
                               Libro de tu biblioteca
                             </label>
-                            <select
+                            <LibrarySelect
                               value={assignBookId}
-                              onChange={(e) => setAssignBookId(e.target.value)}
-                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] px-2.5 py-1.5 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 dark:focus:border-amber-400"
-                            >
-                              <option value="">— Selecciona un libro —</option>
-                              {books
-                                .filter((b) => b.sagaId !== item.saga.id)
-                                .map((b) => (
-                                  <option key={b.id} value={b.id}>
-                                    {b.nombre} ({b.autor || 'Sin autor'})
-                                  </option>
-                                ))}
-                            </select>
+                              onChange={(val) => setAssignBookId(val)}
+                              placeholder="— Selecciona un libro —"
+                              options={[
+                                { value: '', label: '— Selecciona un libro —' },
+                                ...books
+                                  .filter((b) => b.sagaId !== item.saga.id)
+                                  .map((b) => ({
+                                    value: b.id,
+                                    label: `${b.nombre} (${b.autor || 'Sin autor'})`
+                                  }))
+                              ]}
+                            />
                           </div>
                           <div className="w-24 sm:w-28">
                             <label className="block text-[11px] font-semibold text-stone-700 dark:text-slate-300 mb-1">
