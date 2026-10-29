@@ -1143,10 +1143,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsPassportOpen(true);
-                          soundService.playPageTurn();
-                        }}
+                        onClick={() => setIsPassportOpen(true)}
                         className="inline-flex items-center gap-2 rounded-xl border border-amber-900/25 dark:border-amber-400/30 bg-[#fffcf5] dark:bg-[#162135] hover:bg-amber-500/10 text-stone-800 dark:text-amber-200 font-bold px-4 py-2 text-xs transition shadow-sm transform hover:scale-[1.02] active:scale-[0.98]"
                       >
                         <Compass className="w-4 h-4 text-amber-600 dark:text-amber-400" />

@@ -29,7 +29,6 @@ import {
 import { BookCover } from './BookCover';
 import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
-import { soundService } from '../services/soundService';
 import { formatStars } from '../constants/catalogs';
 import '../dashboard-panels.css';
 
@@ -217,10 +216,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => {
-              setIsPassportOpen(true);
-              soundService.playPageTurn();
-            }}
+            onClick={() => setIsPassportOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-700/30 dark:border-amber-500/30 bg-[#fffcf5] dark:bg-[#151D2A] hover:bg-amber-500/15 text-stone-800 dark:text-amber-200 font-bold text-xs shadow-sm transition"
             title="Abrir Pasaporte Literario y Visados Consulares"
           >
