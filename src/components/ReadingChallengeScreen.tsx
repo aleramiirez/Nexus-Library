@@ -314,7 +314,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
             {/* Vitrina editorial cálida (integrada con el estilo del catálogo) */}
             <div className="rounded-2xl editorial-card-surface p-4 sm:p-5 relative shadow-xs">
-              <div className="flex flex-wrap items-start gap-3.5 sm:gap-5">
+              <div className="flex flex-wrap items-start justify-center gap-3.5 sm:gap-5">
                 {displayedCompletedBooks.map((book) => {
                   const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
                   return (
