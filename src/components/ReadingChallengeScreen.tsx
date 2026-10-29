@@ -307,8 +307,9 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               </span>
             </div>
 
-            <div className="collection-shelf-preview p-3.5 sm:p-4">
-              <div className="flex items-end gap-3.5 sm:gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* Vitrina editorial cálida (integrada con el estilo del catálogo) */}
+            <div className="rounded-2xl editorial-card-surface p-4 sm:p-5 relative shadow-xs overflow-hidden">
+              <div className="flex items-end gap-3.5 sm:gap-5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {stats.completedBooks.slice(0, 8).map((book) => {
                   const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
                   return (
@@ -320,17 +321,21 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                       title={`${book.nombre} (por ${book.autor}) — ${datesLabel}`}
                     >
                       <div className="relative group-hover:-translate-y-2 transition-transform duration-300">
-                        <BookCover
-                          nombre={book.nombre}
-                          autor={book.autor}
-                          portadaUrl={book.portadaUrl}
-                          portadaFallbackUrl={book.portadaFallbackUrl}
-                          portadaDataUrl={book.portadaDataUrl}
-                          size="sm"
-                          variant="book"
-                        />
+                        <div className="shadow-md rounded group-hover:shadow-xl transition-shadow duration-300">
+                          <BookCover
+                            nombre={book.nombre}
+                            autor={book.autor}
+                            portadaUrl={book.portadaUrl}
+                            portadaFallbackUrl={book.portadaFallbackUrl}
+                            portadaDataUrl={book.portadaDataUrl}
+                            size="sm"
+                            variant="book"
+                          />
+                        </div>
+                        {/* Sombra de contacto en la base */}
+                        <div className="w-14 h-1.5 bg-black/25 dark:bg-black/50 blur-[2px] rounded-full mx-auto -mt-0.5 pointer-events-none" />
                         {book.puntuacion && (
-                          <span className="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/85 backdrop-blur-sm text-[9px] font-bold text-amber-300 z-10 border border-amber-500/20">
+                          <span className="absolute bottom-2.5 right-1 px-1 py-0.2 rounded bg-black/85 backdrop-blur-sm text-[9px] font-bold text-amber-300 z-10 border border-amber-500/20">
                             {book.puntuacion}★
                           </span>
                         )}
@@ -338,16 +343,12 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                       <p className="w-full font-serif text-[11px] font-semibold text-stone-900 dark:text-slate-100 truncate text-center group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
                         {book.nombre}
                       </p>
-                      <span className="inline-flex items-center text-[10px] font-medium text-amber-900/80 dark:text-amber-300/80 bg-amber-500/10 dark:bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-600/15 dark:border-amber-400/15 truncate max-w-full">
+                      <span className="inline-flex items-center text-[10px] font-mono font-medium text-amber-950/80 dark:text-amber-200/90 bg-amber-500/15 dark:bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-600/20 dark:border-amber-400/25 truncate max-w-full">
                         {datesLabel}
                       </span>
                     </div>
                   );
                 })}
-              </div>
-              <div className="collection-mini-plank mt-2">
-                <div className="shelf-plank-top" />
-                <div className="shelf-niche-front collection-plank-lip" />
               </div>
             </div>
           </div>
