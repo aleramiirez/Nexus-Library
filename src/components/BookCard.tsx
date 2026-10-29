@@ -51,7 +51,7 @@ const BookCardComponent: React.FC<BookCardProps> = ({
         />
 
         {book.sagaNombre && (
-          <span className="absolute top-2 left-2 z-10 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-medium text-amber-200 shadow">
+          <span className="absolute top-2 left-2 z-10 max-w-[88%] truncate rounded-md bg-[#fbf5e8]/95 dark:bg-[#251d16]/95 border border-[#c4a475] dark:border-[#8f6834] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold text-[#5c3a1d] dark:text-[#f3ddb4] shadow-xs">
             {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
           </span>
         )}

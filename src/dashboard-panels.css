@@ -1,0 +1,365 @@
+/* ===== Paneles de Biblioteca Material (Dashboard) ===== */
+
+:root {
+  --lib-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.28 -0.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)'/%3E%3C/svg%3E");
+}
+
+/* 1. Base común: Papel de biblioteca apilado */
+.library-paper-panel {
+  position: relative;
+  isolation: isolate;
+  background-color: #f7f0df;
+  background-image:
+    var(--lib-paper-grain),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.45), transparent 70%),
+    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
+  border-radius: 18px;
+  /* Canto de hojas apiladas en el borde inferior y lateral */
+  box-shadow:
+    0 1px 2px rgba(60, 35, 10, 0.05),
+    0 3px 0 0 #ede0c7,
+    0 4px 2px rgba(60, 35, 10, 0.07),
+    0 6px 0 0 #e4d4b6,
+    0 7px 3px rgba(60, 35, 10, 0.08),
+    0 12px 24px -6px rgba(60, 35, 10, 0.14);
+  border: 1px solid rgba(160, 115, 55, 0.25);
+  padding: 22px 24px;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+html.dark .library-paper-panel {
+  background-color: #101520;
+  background-image:
+    var(--lib-paper-grain),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.04), transparent 70%),
+    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 3px 0 0 #18202d,
+    0 4px 2px rgba(0, 0, 0, 0.4),
+    0 6px 0 0 #0f141f,
+    0 7px 3px rgba(0, 0, 0, 0.5),
+    0 16px 28px -6px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(220, 180, 100, 0.16);
+}
+
+/* Marco impreso fino interior */
+.library-paper-panel::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 12px;
+  border: 1px solid rgba(175, 130, 75, 0.22);
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.dark .library-paper-panel::before {
+  border-color: rgba(220, 180, 100, 0.12);
+}
+
+/* 2. Marcapáginas burdeos colgando del borde superior */
+.dashboard-ribbon {
+  position: absolute;
+  top: 0;
+  right: 28px;
+  width: 24px;
+  height: 52px;
+  z-index: 12;
+  background: linear-gradient(180deg, #99283c 0%, #7d1c2d 42%, #5e111f 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 9px), 0 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.28),
+    inset -1px 0 0 rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.38));
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+.dashboard-ribbon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 44%, rgba(255, 255, 255, 0.18) 50%, rgba(0, 0, 0, 0.22) 56%, transparent 64%);
+}
+
+.library-paper-panel:hover .dashboard-ribbon {
+  transform: translateY(2px);
+}
+
+/* 3. Píldora de estado de lectura (pergamino cálido) */
+.dashboard-reading-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: #fbf5e7;
+  color: #7a4813;
+  border: 1px solid #d8bf8e;
+  box-shadow: 0 1px 2px rgba(90, 50, 10, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html.dark .dashboard-reading-badge {
+  background: #1e1913;
+  color: #eec97e;
+  border: 1px solid #7d5f2a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 4. Panel Ficha de Catálogo (Mis Sagas) */
+.catalog-card-panel {
+  position: relative;
+  isolation: isolate;
+  background-color: #f7f0df;
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(160, 120, 70, 0.12) 33px, rgba(160, 120, 70, 0.12) 34px),
+    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
+  background-position: 0 10px;
+  border-radius: 18px;
+  box-shadow:
+    0 1px 2px rgba(60, 35, 10, 0.05),
+    0 3px 0 0 #ede0c7,
+    0 4px 2px rgba(60, 35, 10, 0.07),
+    0 6px 0 0 #e4d4b6,
+    0 7px 3px rgba(60, 35, 10, 0.08),
+    0 12px 24px -6px rgba(60, 35, 10, 0.14);
+  border: 1px solid rgba(160, 115, 55, 0.25);
+  padding: 22px 24px;
+}
+
+html.dark .catalog-card-panel {
+  background-color: #101520;
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(255, 255, 255, 0.038) 33px, rgba(255, 255, 255, 0.038) 34px),
+    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 3px 0 0 #18202d,
+    0 4px 2px rgba(0, 0, 0, 0.4),
+    0 6px 0 0 #0f141f,
+    0 7px 3px rgba(0, 0, 0, 0.5),
+    0 16px 28px -6px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(220, 180, 100, 0.16);
+}
+
+/* Marco fino de la ficha de catálogo */
+.catalog-card-panel::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 12px;
+  border: 1px solid rgba(175, 130, 75, 0.22);
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.dark .catalog-card-panel::before {
+  border-color: rgba(220, 180, 100, 0.12);
+}
+
+/* Pestaña de latón grabada "Mis sagas" */
+.catalog-brass-tab {
+  position: absolute;
+  top: -12px;
+  left: 28px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 20px 4px;
+  border-radius: 6px 6px 3px 3px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #3b280c;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  background: linear-gradient(180deg, #f5e4a4 0%, #d5ab48 55%, #ab822b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 2px 5px rgba(40, 20, 5, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(100, 70, 10, 0.4);
+}
+
+.catalog-brass-tab::before,
+.catalog-brass-tab::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8a6c25, #5e4713);
+}
+.catalog-brass-tab::before { left: 6px; }
+.catalog-brass-tab::after  { right: 6px; }
+
+/* 5. Balda de madera empotrada en Favoritos */
+.dashboard-shelf-niche {
+  --shelf-pad: 14px;
+  --shelf-gap: 16px;
+
+  /* Roble miel para claro */
+  --wood-light: #dbb67f;
+  --wood-mid: #c4965c;
+  --wood-dark: #a47843;
+  --lip: #efd5a6;
+  --back-1: #cdaa73;
+  --back-2: #b48d56;
+  --shade: rgba(70, 40, 10, 0.4);
+  --glow: rgba(255, 244, 210, 0.4);
+
+  --grain-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='90'%3E%3Cfilter id='gh'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.26' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.11 0 0 0 0 0.04 0 0 0 1.15 -0.32'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23gh)'/%3E%3C/svg%3E");
+  --grain-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='420'%3E%3Cfilter id='gv'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.26 0.004' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.11 0 0 0 0 0.04 0 0 0 1.15 -0.32'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23gv)'/%3E%3C/svg%3E");
+
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 12px 18px -6px rgba(0, 0, 0, 0.55),
+    inset 8px 0 12px -4px rgba(0, 0, 0, 0.4),
+    inset -8px 0 12px -4px rgba(0, 0, 0, 0.4),
+    0 4px 10px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(100, 60, 20, 0.3);
+}
+
+html.dark .dashboard-shelf-niche {
+  --wood-light: #62412b;
+  --wood-mid: #4a2f1e;
+  --wood-dark: #33200f;
+  --lip: #8a6040;
+  --back-1: #1d1410;
+  --back-2: #110b08;
+  --shade: rgba(0, 0, 0, 0.65);
+  --glow: rgba(255, 190, 100, 0.13);
+
+  border-color: rgba(0, 0, 0, 0.7);
+  box-shadow:
+    inset 0 14px 22px -6px rgba(0, 0, 0, 0.8),
+    inset 8px 0 14px -4px rgba(0, 0, 0, 0.65),
+    inset -8px 0 14px -4px rgba(0, 0, 0, 0.65),
+    0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Moldura superior de la hornacina */
+.shelf-niche-cornice {
+  height: 14px;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--lip), var(--wood-light) 40%, var(--wood-mid));
+  box-shadow:
+    0 5px 8px -2px var(--shade),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Fondo con lamas verticales de madera */
+.shelf-niche-back {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 38px,
+      rgba(0, 0, 0, 0.18) 39px,
+      rgba(255, 255, 255, 0.08) 40px
+    ),
+    radial-gradient(ellipse 70% 50% at 50% 0%, var(--glow), transparent 75%),
+    var(--grain-v),
+    linear-gradient(180deg, var(--back-1), var(--back-2));
+  box-shadow:
+    inset 0 16px 20px -8px rgba(0, 0, 0, 0.65),
+    inset 10px 0 14px -6px rgba(0, 0, 0, 0.5),
+    inset -10px 0 14px -6px rgba(0, 0, 0, 0.5);
+  padding: 0 12px;
+}
+
+/* Laterales de madera */
+.shelf-niche-back::before,
+.shelf-niche-back::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  z-index: 3;
+  background:
+    var(--grain-v),
+    linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 45%, var(--wood-light));
+}
+.shelf-niche-back::before {
+  left: 0;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.4), 2px 0 6px -1px var(--shade);
+}
+.shelf-niche-back::after {
+  right: 0;
+  transform: scaleX(-1);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.4), 2px 0 6px -1px var(--shade);
+}
+
+/* Chip de saga de pergamino cálido sobre la portada */
+.dashboard-saga-chip {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  max-width: 86%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: #fbf5e8;
+  color: #5c3c1d;
+  border: 1px solid #c2a170;
+  box-shadow: 0 1px 3px rgba(60, 30, 5, 0.25);
+  z-index: 10;
+}
+
+html.dark .dashboard-saga-chip {
+  background: #282017;
+  color: #f3dec0;
+  border: 1px solid #82623a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Transición suave y enfoque en las placas de latón de la estantería del dashboard */
+.shelf-niche-front {
+  padding: 6px 0 8px;
+  background:
+    var(--grain-h),
+    linear-gradient(180deg, var(--wood-light), var(--wood-mid) 55%, var(--wood-dark));
+  box-shadow:
+    0 10px 14px -4px var(--shade),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28);
+}
+
+@media (max-width: 639px) {
+  .library-paper-panel,
+  .catalog-card-panel {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+  .dashboard-ribbon {
+    right: 18px;
+    width: 20px;
+    height: 44px;
+  }
+  .catalog-brass-tab {
+    left: 18px;
+    padding: 3px 14px;
+    font-size: 12px;
+  }
+}

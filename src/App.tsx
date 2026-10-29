@@ -99,6 +99,9 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
 import { BookShelf } from './components/BookShelf';
 import { SagaProgressBar } from './components/SagaProgressBar';
+import { DashboardReadingPanel } from './components/DashboardReadingPanel';
+import { DashboardSagasPanel } from './components/DashboardSagasPanel';
+import { DashboardFavoritesShelf } from './components/DashboardFavoritesShelf';
 import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
 
@@ -1654,189 +1657,41 @@ export const App: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 rounded-2xl editorial-card-surface p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Leyendo Actualmente
-                    </h2>
-                    <button
-                      type="button"
-                      onClick={() => handleNavigate('shelf-reading')}
-                      className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
-                    >
-                      Ver estantería <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {books.filter((b) => b.progreso === '⏳ Leyendo').length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-6 text-center text-xs text-stone-600 dark:text-slate-400">
-                      No tienes ningún libro marcado como "⏳ Leyendo" en este momento.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {books
-                        .filter((b) => b.progreso === '⏳ Leyendo')
-                        .slice(0, 4)
-                        .map((book) => (
-                          <div
-                            key={book.id}
-                            data-book-id={book.id}
-                            onClick={() => handleOpenBookDetail(book.id)}
-                            className="group flex items-center gap-3.5 p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f5ecdc]/90 dark:bg-[#0e131d]/90 hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] hover:-translate-y-1 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_10px_24px_-6px_rgba(180,115,30,0.18)] cursor-pointer transition-all duration-300 shadow-sm"
-                          >
-                            <div className="w-16 shrink-0">
-                              <BookCover
-                                nombre={book.nombre}
-                                autor={book.autor}
-                                portadaUrl={book.portadaUrl}
-                                portadaFallbackUrl={book.portadaFallbackUrl}
-                                portadaDataUrl={book.portadaDataUrl}
-                                size="sm"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-serif font-bold text-base group-hover:text-amber-700 dark:group-hover:text-amber-300 truncate transition">
-                                {book.nombre}
-                              </h3>
-                              <p className="text-xs text-stone-600 dark:text-slate-400 truncate">{book.autor}</p>
-                              {book.sagaNombre && (
-                                <span className="inline-block mt-1.5 text-[10px] font-semibold text-amber-900 dark:text-amber-300 bg-amber-500/20 dark:bg-amber-500/15 px-2 py-0.5 rounded">
-                                  {book.sagaNombre}{' '}
-                                  {book.volumen ? '#' + String(book.volumen) : ''}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <div className="lg:col-span-7 xl:col-span-8">
+                  <DashboardReadingPanel
+                    readingBooks={books.filter((b) => b.progreso === '⏳ Leyendo')}
+                    onOpenDetail={handleOpenBookDetail}
+                    onNavigateToShelf={() => handleNavigate('shelf-reading')}
+                  />
                 </div>
 
-                <div className="lg:col-span-4 rounded-2xl editorial-card-surface p-5 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                        <Layers className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Mis Sagas
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => handleNavigate('sagas')}
-                        className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
-                      >
-                        Gestionar ({sagas.length})
-                      </button>
-                    </div>
-
-                    {sagasWithBooks.length === 0 ? (
-                      <p className="text-xs text-stone-600 dark:text-slate-400">
-                        Aún no has creado ninguna saga. Puedes crearlas al añadir un libro o desde
-                        la sección Sagas.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {sagasWithBooks.slice(0, 4).map((item) => (
-                          <div
-                            key={item.saga.id}
-                            onClick={() => handleNavigate('sagas')}
-                            className="group p-3 rounded-xl border border-amber-900/20 dark:border-[#253044] bg-[#f5ecdc]/90 dark:bg-[#0e131d]/90 hover:bg-[#fffcf5] dark:hover:bg-[#161E2E] cursor-pointer hover:-translate-y-0.5 hover:border-amber-600/60 dark:hover:border-amber-400/60 hover:shadow-[0_8px_20px_-6px_rgba(180,115,30,0.16)] transition-all duration-300 shadow-sm"
-                          >
-                            <div className="flex items-center justify-between text-xs font-semibold">
-                              <span className="truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition">
-                                {item.saga.nombre}
-                              </span>
-                              <span className="text-amber-800 dark:text-amber-400 shrink-0">
-                                {item.readCount}/{item.registeredCount} leídos
-                              </span>
-                            </div>
-                            <SagaProgressBar size="sm" className="mt-2" books={item.books} percent={item.progressPercent} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="lg:col-span-5 xl:col-span-4">
+                  <DashboardSagasPanel
+                    sagasWithBooks={sagasWithBooks}
+                    totalSagasCount={sagas.length}
+                    onNavigateToSagas={() => handleNavigate('sagas')}
+                  />
                 </div>
               </div>
 
-              <div className="rounded-2xl editorial-card-surface p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-                    <span className="text-amber-600 dark:text-amber-400">★</span> Favoritos
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('library')}
-                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
-                  >
-                    Ver biblioteca completa <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {books.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-6 sm:p-8 text-center space-y-3">
-                    <p className="font-serif text-lg text-stone-700 dark:text-slate-300">
-                      Tu biblioteca está lista para recibir tus libros
-                    </p>
-                    <p className="text-xs text-stone-500 dark:text-slate-400 max-w-md mx-auto">
-                      Puedes añadir libros con portada automática, importar tu historial de Goodreads en 1 clic, o cargar libros clásicos para ver la estantería en acción.
-                    </p>
-                    <div className="pt-1 flex flex-wrap items-center justify-center gap-2.5">
-                      <button
-                        type="button"
-                        onClick={handleLoadSampleBooks}
-                        disabled={isLoadingSample}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-50"
-                      >
-                        {isLoadingSample ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3.5 h-3.5" />
-                        )}
-                        <span>Cargar 4 libros de muestra</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsImportOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#1B2333] hover:bg-amber-500/10 text-stone-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
-                      >
-                        <FileUp className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Importar CSV</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : books.filter((b) => b.puntuacion !== null).length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] p-8 text-center">
-                    <p className="font-serif text-lg text-stone-700 dark:text-slate-300">
-                      Aún no tienes libros valorados en Favoritos
-                    </p>
-                    <p className="text-xs text-stone-500 dark:text-slate-400 mt-1">
-                      Pulsa sobre cualquier libro de tu biblioteca y asígnale una puntuación con
-                      estrellas (⭐) para destacar aquí tus mejores lecturas.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                    {[...books]
-                      .filter((b) => b.puntuacion !== null)
-                      .sort((a, b) => {
-                        const diff = (b.puntuacion || 0) - (a.puntuacion || 0);
-                        if (diff !== 0) return diff;
-                        return b.createdAt.localeCompare(a.createdAt);
-                      })
-                      .slice(0, 5)
-                      .map((book) => (
-                        <BookCard
-                          key={book.id}
-                          book={book}
-                          onOpenDetail={handleOpenCardDetail}
-                          onEdit={handleOpenEditBook}
-                          onDelete={(b) => setBookToDelete(b)}
-                          onQuickStatusChange={updateBookQuickStatus}
-                        />
-                      ))}
-                  </div>
-                )}
-              </div>
+              <DashboardFavoritesShelf
+                favoriteBooks={[...books]
+                  .filter((b) => b.puntuacion !== null)
+                  .sort((a, b) => {
+                    const diff = (b.puntuacion || 0) - (a.puntuacion || 0);
+                    if (diff !== 0) return diff;
+                    return b.createdAt.localeCompare(a.createdAt);
+                  })}
+                hasAnyBooks={books.length > 0}
+                hasRatedBooks={books.some((b) => b.puntuacion !== null)}
+                onOpenDetail={handleOpenBookDetail}
+                onNavigateToLibrary={() => handleNavigate('library')}
+                onLoadSampleBooks={handleLoadSampleBooks}
+                isLoadingSample={isLoadingSample}
+                onOpenImport={() => setIsImportOpen(true)}
+                openedBookId={detailBookId}
+              />
             </div>
           )}
 
