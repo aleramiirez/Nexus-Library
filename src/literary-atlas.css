@@ -1,0 +1,965 @@
+/* ==========================================================================
+   Atlas Literario Mundial · Nexus Library
+   Planisferio editorial antiguo (SVG) — modo claro (html:not(.dark)) y oscuro (html.dark)
+   ========================================================================== */
+
+.la-root {
+  /* — Pergamino (claro) — */
+  --la-paper: #fbf6ea;
+  --la-paper-2: #f0e5cc;
+  --la-brass: #c9a24c;
+  --la-brass-soft: rgba(201, 162, 76, 0.55);
+  --la-brass-faint: rgba(201, 162, 76, 0.28);
+  --la-ink: #3a2c1d;
+  --la-ink-soft: #6b5a43;
+  --la-crimson: #8b2433;
+  --la-gold: #e5c158;
+
+  --la-sea-a: #ecdfbd;
+  --la-sea-b: #dcc994;
+  --la-land-a: #fbf6ea;
+  --la-land-b: #f0e5cc;
+  --la-land-hover: #fff9e8;
+  --la-coast: #6b4f2a;
+  --la-ripple: #a98a4c;
+  --la-grat: rgba(107, 79, 42, 0.34);
+  --la-hatch: rgba(107, 79, 42, 0.17);
+  --la-label: rgba(107, 79, 42, 0.5);
+  --la-ocean-label: rgba(107, 79, 42, 0.36);
+
+  --la-wax-a: #cf4d62;
+  --la-wax-b: #8b2433;
+  --la-wax-c: #55111e;
+  --la-wax-ring: #e5c158;
+  --la-explore: #b9771f;
+  --la-explore-fill: rgba(251, 246, 234, 0.9);
+  --la-discover: #6b5a43;
+  --la-route: #b8862e;
+
+  --la-chip-bg: rgba(251, 246, 234, 0.94);
+  --la-chip-ink: #3a2c1d;
+  --la-sel-bg: #8b2433;
+  --la-sel-ink: #fbf6ea;
+  --la-rose-a: #3a2c1d;
+  --la-rose-b: #c9a24c;
+  --la-shadow: 0 14px 34px -18px rgba(70, 46, 10, 0.55);
+
+  --la-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  color: var(--la-ink);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html.dark .la-root {
+  --la-paper: #141a26;
+  --la-paper-2: #0e131e;
+  --la-brass: #e5c158;
+  --la-brass-soft: rgba(229, 193, 88, 0.5);
+  --la-brass-faint: rgba(229, 193, 88, 0.22);
+  --la-ink: #efe7d2;
+  --la-ink-soft: #b8ac8c;
+  --la-crimson: #b53247;
+  --la-gold: #e5c158;
+
+  --la-sea-a: #121a29;
+  --la-sea-b: #0a0f19;
+  --la-land-a: #1f2a3f;
+  --la-land-b: #172032;
+  --la-land-hover: #27354f;
+  --la-coast: rgba(229, 193, 88, 0.7);
+  --la-ripple: #e5c158;
+  --la-grat: rgba(229, 193, 88, 0.22);
+  --la-hatch: rgba(229, 193, 88, 0.1);
+  --la-label: rgba(229, 193, 88, 0.55);
+  --la-ocean-label: rgba(229, 193, 88, 0.3);
+
+  --la-wax-a: #d64a61;
+  --la-wax-b: #9c2638;
+  --la-wax-c: #4a0f1a;
+  --la-wax-ring: #f1d27a;
+  --la-explore: #e5a73c;
+  --la-explore-fill: rgba(14, 19, 30, 0.85);
+  --la-discover: #b8a77d;
+  --la-route: #e5c158;
+
+  --la-chip-bg: rgba(20, 26, 38, 0.92);
+  --la-chip-ink: #efe7d2;
+  --la-sel-bg: #e5c158;
+  --la-sel-ink: #0e131e;
+  --la-rose-a: #e5c158;
+  --la-rose-b: #7a6330;
+  --la-shadow: 0 16px 38px -18px rgba(0, 0, 0, 0.8);
+}
+
+.la-root *,
+.la-root *::before,
+.la-root *::after {
+  box-sizing: border-box;
+}
+
+.la-serif {
+  font-family: 'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;
+}
+
+.la-noscroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.la-noscroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   Barra superior: regiones + zoom
+   ========================================================================== */
+
+.la-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.la-regions {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 3px 2px;
+  scroll-snap-type: x proximity;
+}
+
+.la-zoom {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.3rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--la-brass-faint);
+}
+
+.la-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--la-brass-soft);
+  border-radius: 999px;
+  background: var(--la-chip-bg);
+  color: var(--la-chip-ink);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: background 0.25s var(--la-ease), color 0.25s var(--la-ease),
+    border-color 0.25s var(--la-ease), transform 0.25s var(--la-ease), box-shadow 0.25s var(--la-ease);
+}
+.la-chip:hover {
+  border-color: var(--la-brass);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -8px rgba(70, 46, 10, 0.6);
+}
+.la-chip[aria-pressed='true'] {
+  background: var(--la-sel-bg);
+  color: var(--la-sel-ink);
+  border-color: var(--la-sel-bg);
+  box-shadow: 0 6px 16px -8px var(--la-sel-bg);
+}
+
+.la-iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--la-brass-soft);
+  border-radius: 999px;
+  background: var(--la-chip-bg);
+  color: var(--la-chip-ink);
+  cursor: pointer;
+  transition: background 0.2s var(--la-ease), transform 0.2s var(--la-ease), opacity 0.2s;
+}
+.la-iconbtn:hover:not(:disabled) {
+  border-color: var(--la-brass);
+  background: var(--la-brass-faint);
+  transform: translateY(-1px);
+}
+.la-iconbtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.la-chip:focus-visible,
+.la-iconbtn:focus-visible,
+.la-pill:focus-visible {
+  outline: 2px solid var(--la-gold);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Lienzo del mapa
+   ========================================================================== */
+
+.la-canvas {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--la-brass);
+  border-radius: 16px;
+  background: radial-gradient(ellipse at 50% 42%, var(--la-sea-a) 0%, var(--la-sea-b) 100%);
+  box-shadow: var(--la-shadow);
+  isolation: isolate;
+}
+
+.la-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1000 / 520;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  cursor: default;
+}
+.la-svg[data-zoomed='true'] {
+  cursor: grab;
+  touch-action: none;
+}
+.la-svg[data-drag='1'] {
+  cursor: grabbing;
+}
+
+/* Textura de grano de papel + viñeta + marco */
+.la-grain,
+.la-vignette,
+.la-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.la-grain {
+  z-index: 2;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.26 0 0 0 0 0.12 0.95 0 0 0 -0.28'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+}
+html.dark .la-grain {
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+}
+.la-vignette {
+  z-index: 3;
+  box-shadow: inset 0 0 70px rgba(120, 80, 20, 0.32), inset 0 0 12px rgba(120, 80, 20, 0.25);
+  border-radius: inherit;
+}
+html.dark .la-vignette {
+  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.65), inset 0 0 14px rgba(229, 193, 88, 0.12);
+}
+.la-frame {
+  z-index: 4;
+  inset: 7px;
+  border: 1.5px solid var(--la-brass);
+  border-radius: 10px;
+  opacity: 0.85;
+}
+.la-frame::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid var(--la-brass-soft);
+  border-radius: 7px;
+}
+.la-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--la-crimson);
+  border: 1.5px solid var(--la-brass);
+  transform: rotate(45deg);
+}
+html.dark .la-corner {
+  background: var(--la-paper-2);
+}
+.la-corner--tl { top: -7px; left: -7px; }
+.la-corner--tr { top: -7px; right: -7px; }
+.la-corner--bl { bottom: -7px; left: -7px; }
+.la-corner--br { bottom: -7px; right: -7px; }
+
+.la-hint {
+  position: absolute;
+  z-index: 5;
+  left: 18px;
+  bottom: 16px;
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--la-brass-soft);
+  border-radius: 999px;
+  background: var(--la-chip-bg);
+  color: var(--la-ink-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s var(--la-ease), transform 0.4s var(--la-ease);
+}
+.la-hint[data-show='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+   Capas del SVG: mar, tierra, retícula
+   ========================================================================== */
+
+.la-stop-a { stop-color: var(--la-land-a); }
+.la-stop-b { stop-color: var(--la-land-b); }
+.la-wax-s0 { stop-color: var(--la-wax-a); }
+.la-wax-s1 { stop-color: var(--la-wax-b); }
+.la-wax-s2 { stop-color: var(--la-wax-c); }
+.la-hatch-line { stroke: var(--la-hatch); stroke-width: 0.5; }
+
+.la-ripple {
+  fill: none;
+  stroke: var(--la-ripple);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.la-ripple--1 { stroke-width: 11; opacity: 0.12; }
+.la-ripple--2 { stroke-width: 6; opacity: 0.18; }
+.la-ripple--3 { stroke-width: 2.6; opacity: 0.32; }
+
+.la-land {
+  fill: url(#la-land-grad);
+  fill-rule: evenodd;
+  stroke: var(--la-coast);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+  transition: fill 0.3s ease;
+}
+.la-land--click {
+  cursor: pointer;
+}
+.la-land--click:hover {
+  fill: var(--la-land-hover);
+}
+.la-hatch {
+  fill: url(#la-hatch);
+  fill-rule: evenodd;
+  stroke: none;
+  pointer-events: none;
+}
+
+.la-grat {
+  fill: none;
+  stroke: var(--la-grat);
+  stroke-width: 0.7;
+  stroke-dasharray: 1.5 5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.la-grat--major {
+  stroke-dasharray: 7 5;
+  stroke-width: 0.9;
+  opacity: 0.8;
+}
+.la-grat-text {
+  fill: var(--la-label);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 6.5px;
+  pointer-events: none;
+}
+
+.la-rhumb {
+  fill: none;
+  stroke: var(--la-ripple);
+  stroke-width: 0.55;
+  opacity: 0.2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.la-rhumb--minor {
+  opacity: 0.1;
+  stroke-dasharray: 3 4;
+}
+
+.la-region-label {
+  fill: var(--la-label);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-anchor: middle;
+  cursor: pointer;
+  transition: fill 0.25s ease, letter-spacing 0.4s var(--la-ease);
+}
+.la-region-label:hover {
+  fill: var(--la-crimson);
+  letter-spacing: 0.42em;
+}
+html.dark .la-region-label:hover {
+  fill: var(--la-gold);
+}
+.la-ocean-label {
+  fill: var(--la-ocean-label);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.la-title {
+  fill: var(--la-ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.la-subtitle {
+  fill: var(--la-ink-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.la-title-rule {
+  stroke: var(--la-brass);
+  stroke-width: 0.8;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Rosa de los vientos
+   ========================================================================== */
+
+.la-rose {
+  pointer-events: none;
+}
+.la-rose__ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: la-spin 320s linear infinite;
+}
+.la-rose__star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: la-sway 9s ease-in-out infinite;
+}
+.la-rose-stroke { fill: none; stroke: var(--la-brass); stroke-width: 0.8; }
+.la-rose-stroke--dash { stroke-dasharray: 1.2 2.2; opacity: 0.9; }
+.la-rose-tick { stroke: var(--la-ink-soft); stroke-width: 0.5; opacity: 0.8; }
+.la-rose-halfA { fill: var(--la-rose-a); opacity: 0.9; }
+.la-rose-halfB { fill: var(--la-rose-b); opacity: 0.95; }
+.la-rose-halfA--minor { opacity: 0.55; }
+.la-rose-halfB--minor { opacity: 0.6; }
+.la-rose-hub { fill: var(--la-paper); stroke: var(--la-brass); stroke-width: 1; }
+.la-rose-letter {
+  fill: var(--la-ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.la-rose-letter--n { fill: var(--la-crimson); font-size: 11px; }
+html.dark .la-rose-letter--n { fill: var(--la-gold); }
+
+/* ==========================================================================
+   Rutas de viaje literarias
+   ========================================================================== */
+
+.la-route {
+  fill: none;
+  stroke: var(--la-route);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1.5 7;
+  vector-effect: non-scaling-stroke;
+  animation: la-flow 2.4s linear infinite;
+  pointer-events: none;
+}
+.la-route-glow {
+  fill: none;
+  stroke: var(--la-route);
+  stroke-width: 4;
+  opacity: 0.14;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Nodos de países
+   (el tamaño se contra-escala con --la-s para que sean pulsables a cualquier zoom)
+   ========================================================================== */
+
+.la-node {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.4s var(--la-ease);
+}
+.la-node--dim {
+  opacity: 0.26;
+  pointer-events: none;
+}
+.la-node__hit {
+  fill: transparent;
+}
+.la-node__body {
+  transition: transform 0.35s var(--la-ease), filter 0.35s var(--la-ease);
+}
+.la-node:hover .la-node__body {
+  transform: scale(1.16);
+}
+.la-node--selected .la-node__body,
+.la-node--selected:hover .la-node__body {
+  transform: translateY(-3px) scale(1.14);
+  filter: drop-shadow(0 4px 5px rgba(60, 20, 10, 0.45));
+}
+html.dark .la-node--selected .la-node__body {
+  filter: drop-shadow(0 0 6px rgba(229, 193, 88, 0.75));
+}
+
+.la-focus {
+  fill: none;
+  stroke: var(--la-gold);
+  stroke-width: 1.6;
+  stroke-dasharray: 2 2;
+  opacity: 0;
+}
+.la-node:focus-visible .la-focus {
+  opacity: 1;
+}
+
+/* — Sello conquistado — */
+.la-wax {
+  stroke: rgba(60, 10, 20, 0.5);
+  stroke-width: 0.6;
+}
+.la-wax-ring {
+  fill: none;
+  stroke: var(--la-wax-ring);
+  stroke-width: 1.1;
+  opacity: 0.95;
+}
+.la-wax-ring--dash {
+  stroke-width: 0.7;
+  stroke-dasharray: 1.3 1.7;
+  opacity: 0.8;
+}
+.la-wax-shine {
+  fill: rgba(255, 255, 255, 0.28);
+}
+.la-node__code {
+  fill: #fbf6ea;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 8.6px;
+  letter-spacing: 0.04em;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: rgba(70, 10, 20, 0.55);
+  stroke-width: 0.8px;
+  transition: opacity 0.3s ease;
+}
+.la-badge circle {
+  fill: var(--la-paper);
+  stroke: var(--la-wax-ring);
+  stroke-width: 1;
+}
+html:not(.dark) .la-badge circle {
+  stroke: var(--la-brass);
+}
+.la-badge text {
+  fill: var(--la-crimson);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 6.4px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+html.dark .la-badge text {
+  fill: #0e131e;
+}
+html.dark .la-badge circle {
+  fill: var(--la-gold);
+}
+.la-badge,
+.la-node__code {
+  transition: opacity 0.3s ease;
+}
+.la-svg[data-zoom='low'] .la-badge,
+.la-svg[data-zoom='low'] .la-node__code {
+  opacity: 0;
+}
+
+/* — En expedición — */
+.la-explore__disc {
+  fill: var(--la-explore-fill);
+  stroke: var(--la-explore);
+  stroke-width: 0.9;
+}
+.la-explore__ring {
+  fill: none;
+  stroke: var(--la-explore);
+  stroke-width: 1.3;
+  stroke-dasharray: 3.2 2.5;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: la-spin 26s linear infinite;
+}
+.la-explore__half {
+  fill: var(--la-explore);
+}
+.la-explore__outline {
+  fill: none;
+  stroke: var(--la-explore);
+  stroke-width: 1;
+}
+
+/* — Territorio por descubrir — */
+.la-discover__halo {
+  fill: var(--la-brass-faint);
+  stroke: var(--la-brass);
+  stroke-width: 0.9;
+  stroke-dasharray: 1.6 2.2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.6);
+  transition: opacity 0.35s var(--la-ease), transform 0.5s var(--la-ease);
+}
+.la-node:hover .la-discover__halo,
+.la-node:focus-visible .la-discover__halo {
+  opacity: 1;
+  transform: scale(1);
+}
+.la-discover__dot {
+  fill: var(--la-discover);
+  opacity: 0.85;
+  transition: fill 0.3s ease, opacity 0.3s ease;
+}
+.la-discover__star {
+  fill: none;
+  stroke: var(--la-discover);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.7s var(--la-ease), stroke 0.3s ease;
+}
+.la-node:hover .la-discover__star {
+  transform: rotate(135deg) scale(1.2);
+  stroke: var(--la-brass);
+}
+.la-node:hover .la-discover__dot {
+  fill: var(--la-gold);
+  opacity: 1;
+}
+html:not(.dark) .la-node:hover .la-discover__dot {
+  fill: var(--la-brass);
+}
+
+/* — Seleccionado — */
+.la-sel__ring {
+  fill: none;
+  stroke: var(--la-gold);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+html:not(.dark) .la-sel__ring {
+  stroke: var(--la-brass);
+}
+.la-sel__ring--a {
+  stroke-width: 1.6;
+  stroke-dasharray: 7 3.5;
+  animation: la-spin 14s linear infinite;
+}
+.la-sel__ring--b {
+  stroke-width: 1.2;
+  stroke-dasharray: 1.4 3.4;
+  stroke-linecap: round;
+  animation: la-spin-rev 22s linear infinite;
+}
+.la-pulse {
+  fill: none;
+  stroke: var(--la-gold);
+  stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: la-pulse 2.4s ease-out infinite;
+}
+html:not(.dark) .la-pulse {
+  stroke: var(--la-crimson);
+}
+
+/* — Etiquetas — */
+.la-label {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.la-node:hover .la-label,
+.la-node:focus-visible .la-label,
+.la-node--selected .la-label,
+.la-svg[data-zoom='high'] .la-node:not(.la-node--dim) .la-label {
+  opacity: 1;
+}
+.la-label__bg {
+  fill: var(--la-chip-bg);
+  stroke: var(--la-brass);
+  stroke-width: 0.9;
+}
+.la-label__name {
+  fill: var(--la-chip-ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.la-label__meta {
+  fill: var(--la-sel-ink);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 6.6px;
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+  dominant-baseline: central;
+  opacity: 0.92;
+}
+.la-node--selected .la-label__bg {
+  fill: var(--la-sel-bg);
+  stroke: var(--la-gold);
+  stroke-width: 1.1;
+}
+html:not(.dark) .la-node--selected .la-label__bg {
+  stroke: var(--la-brass);
+}
+.la-node--selected .la-label__name {
+  fill: var(--la-sel-ink);
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   Cinta inferior de navegación rápida
+   ========================================================================== */
+
+.la-strip {
+  position: relative;
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.3rem 0.2rem 0.55rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.la-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 42px;
+  padding: 0 0.85rem 0 0.6rem;
+  border: 1px solid var(--la-brass-soft);
+  border-radius: 999px;
+  background: var(--la-chip-bg);
+  color: var(--la-chip-ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  scroll-snap-align: center;
+  transition: background 0.25s var(--la-ease), color 0.25s var(--la-ease),
+    transform 0.25s var(--la-ease), box-shadow 0.25s var(--la-ease), border-color 0.25s;
+}
+.la-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -10px rgba(70, 46, 10, 0.7);
+  border-color: var(--la-brass);
+}
+.la-pill__flag {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.la-pill__glyph {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.la-pill--conquered {
+  border-color: rgba(139, 36, 51, 0.55);
+}
+.la-pill--conquered .la-pill__glyph {
+  background: var(--la-crimson);
+  color: #fbf6ea;
+  box-shadow: 0 0 0 1.5px var(--la-brass) inset;
+}
+.la-pill--exploring {
+  border-style: dashed;
+  border-color: var(--la-explore);
+}
+.la-pill--exploring .la-pill__glyph {
+  background: transparent;
+  color: var(--la-explore);
+  border: 1px solid var(--la-explore);
+  font-size: 0.8rem;
+}
+.la-pill--discover {
+  border-style: dotted;
+  color: var(--la-ink-soft);
+}
+.la-pill--discover .la-pill__glyph {
+  color: var(--la-discover);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.la-pill[aria-pressed='true'] {
+  background: var(--la-sel-bg);
+  color: var(--la-sel-ink);
+  border-style: solid;
+  border-color: var(--la-gold);
+  box-shadow: 0 0 0 2px var(--la-brass-faint), 0 10px 20px -10px var(--la-sel-bg);
+  transform: translateY(-2px);
+}
+.la-pill[aria-pressed='true'] .la-pill__glyph {
+  background: var(--la-paper);
+  color: var(--la-crimson);
+  border-color: transparent;
+  box-shadow: none;
+}
+html.dark .la-pill[aria-pressed='true'] .la-pill__glyph {
+  background: #0e131e;
+  color: var(--la-gold);
+}
+.la-strip__empty {
+  padding: 0.6rem 0.4rem;
+  color: var(--la-ink-soft);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   Leyenda cartográfica
+   ========================================================================== */
+
+.la-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.2rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--la-brass-faint);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--la-paper), var(--la-paper-2));
+  font-size: 0.74rem;
+  color: var(--la-ink-soft);
+}
+.la-legend__title {
+  margin-right: 0.2rem;
+  color: var(--la-ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.la-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+.la-legend__item svg {
+  flex: 0 0 auto;
+}
+.la-legend__count {
+  color: var(--la-ink);
+  font-weight: 800;
+}
+.la-legend__summary {
+  margin-left: auto;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 0.98rem;
+  font-style: italic;
+  color: var(--la-ink);
+}
+.la-legend__summary strong {
+  color: var(--la-crimson);
+  font-size: 1.15em;
+}
+html.dark .la-legend__summary strong {
+  color: var(--la-gold);
+}
+
+/* ==========================================================================
+   Animaciones
+   ========================================================================== */
+
+@keyframes la-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes la-spin-rev {
+  to { transform: rotate(-360deg); }
+}
+@keyframes la-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+@keyframes la-pulse {
+  0% { transform: scale(0.9); opacity: 0.85; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes la-flow {
+  to { stroke-dashoffset: -17; }
+}
+
+@media (max-width: 640px) {
+  .la-toolbar { gap: 0.4rem; }
+  .la-zoom { padding-left: 0.4rem; }
+  .la-iconbtn { width: 40px; height: 40px; }
+  .la-chip { min-height: 40px; }
+  .la-legend { padding: 0.6rem 0.7rem; gap: 0.45rem 0.9rem; }
+  .la-legend__summary { margin-left: 0; width: 100%; }
+  .la-frame { inset: 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .la-root *,
+  .la-root *::before,
+  .la-root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

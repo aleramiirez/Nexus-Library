@@ -378,6 +378,7 @@ export const App: React.FC = () => {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('appearance');
+  const [discoverInitialTab, setDiscoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
   const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState(false);
 
   const handleNavigateToSettingsAccount = React.useCallback(() => {
@@ -385,6 +386,22 @@ export const App: React.FC = () => {
     setActiveSection('settings');
     setIsInboxOpen(false);
     setIsFirstLoginModalOpen(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleNavigateToAtlas = React.useCallback(() => {
+    setDiscoverInitialTab('atlas');
+    setActiveSection('discover');
+    try {
+      localStorage.setItem('nexus_discover_tab', 'atlas');
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'atlas');
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // ignorar
+    }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
@@ -2337,6 +2354,7 @@ export const App: React.FC = () => {
                 currentUserId={currentUser?.id}
                 onAddBookFromCommunity={handleAddBookFromCommunity}
                 onOpenBookDetail={handleOpenCardDetail}
+                initialTab={discoverInitialTab}
               />
             </React.Suspense>
           )}
@@ -2734,6 +2752,7 @@ export const App: React.FC = () => {
                 onOpenBookDetail={handleOpenCardDetail}
                 onShowToast={showToast}
                 onUpdateBookDates={updateBookQuickDates}
+                onOpenAtlas={handleNavigateToAtlas}
               />
             </React.Suspense>
           )}

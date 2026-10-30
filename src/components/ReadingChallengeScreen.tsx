@@ -44,6 +44,7 @@ interface ReadingChallengeScreenProps {
   onOpenBookDetail?: (book: Book) => void;
   onShowToast?: (message: string) => void;
   onUpdateBookDates?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
+  onOpenAtlas?: () => void;
 }
 
 function formatReadingDates(fechaInicio?: string, fechaFin?: string): string {
@@ -81,7 +82,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   darkMode = false,
   onOpenBookDetail,
   onShowToast,
-  onUpdateBookDates
+  onUpdateBookDates,
+  onOpenAtlas
 }) => {
   const currentYear = new Date().getFullYear();
   const availableYears = useMemo(
@@ -216,12 +218,12 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
           <button
             type="button"
-            onClick={() => setIsPassportOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-700/30 dark:border-amber-500/30 bg-[#fffcf5] dark:bg-[#151D2A] hover:bg-amber-500/15 text-stone-800 dark:text-amber-200 font-bold text-xs shadow-sm transition"
-            title="Abrir Pasaporte Literario y Visados Consulares"
+            onClick={onOpenAtlas || (() => setIsPassportOpen(true))}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-700/30 dark:border-amber-500/30 bg-[#fffcf5] dark:bg-[#151D2A] hover:bg-amber-500/15 text-stone-800 dark:text-amber-200 font-bold text-xs shadow-sm transition active:scale-95"
+            title="Abrir Atlas Literario Mundial y Visados Consulares"
           >
             <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Pasaporte Literario</span>
+            <span>Atlas Literario</span>
           </button>
         </div>
       </div>
