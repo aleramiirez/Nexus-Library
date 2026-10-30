@@ -237,6 +237,28 @@ html.dark .la-root {
   cursor: grabbing;
 }
 
+/* Modo Gran Formato / Mesa Cartográfica */
+.la-root--expanded {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.la-root--expanded .la-canvas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+.la-root--expanded .la-svg {
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 1000 / 520;
+  margin: auto;
+}
+
 /* Textura de grano de papel + viñeta + marco */
 .la-grain,
 .la-vignette,
@@ -768,10 +790,10 @@ html:not(.dark) .la-pulse {
 }
 .la-label__name {
   fill: var(--la-chip-ink);
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Twemoji Country Flags', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 700;
   font-size: 11px;
-  text-anchor: middle;
+  text-anchor: start;
   dominant-baseline: central;
 }
 .la-label__meta {

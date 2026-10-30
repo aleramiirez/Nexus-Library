@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Compass, Minus, Plus, Globe } from 'lucide-react';
+import { Compass, Minus, Plus, Globe, Maximize2, Minimize2 } from 'lucide-react';
 import '../literary-atlas.css';
 
 /* ==========================================================================
@@ -35,6 +35,8 @@ export interface LiteraryAtlasMapProps {
   activeContinent: ContinentId;
   onSelectCountry: (code: string) => void;
   onSelectContinent: (continent: ContinentId) => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 /* ==========================================================================
@@ -511,7 +513,7 @@ const BaseMap = memo(function BaseMap({ onContinent, isGeneralView }: BaseMapPro
           <circle cx="0" cy="0" r="6.5" />
         </clipPath>
         <clipPath id="la-clip-label-flag">
-          <rect x="0" y="0" width="14" height="10" rx="1.5" ry="1.5" />
+          <rect x="0" y="0" width="16" height="11" rx="2" ry="2" />
         </clipPath>
         {LANDS.map((l) => (
           <path key={l.id} id={`la-p-${l.id}`} d={l.d} />
@@ -773,14 +775,16 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
       ? `Canon por descubrir · ${plural(c.canonCount, 'obra', 'obras')}`
       : `${c.readCount} leídos · ${c.canonCount} en el canon`;
 
-  const FLAG_W = 14;
-  const FLAG_H = 10;
-  const GAP = 5;
-  const textW = c.name.length * 5.8;
+  const FLAG_W = 16;
+  const FLAG_H = 11;
+  const GAP = 6;
+  const charW = selected ? 7.2 : 6.4;
+  const textW = Math.ceil(c.name.length * charW);
   const contentW = FLAG_W + GAP + textW;
-  const labelW = Math.max(54, selected ? Math.max(contentW + 16, meta.length * 3.7 + 16) : contentW + 14);
+  const horizontalPadding = 22;
+  const labelW = Math.max(56, selected ? Math.max(contentW + horizontalPadding, meta.length * 4.2 + 20) : contentW + horizontalPadding);
   const startX = -contentW / 2;
-  const flagY = selected ? -10 : -5;
+  const flagY = selected ? -10.5 : -5.5;
   const ty = selected ? 37 : 24;
 
   const flagUrl = `https://flagcdn.com/w40/${c.code.toLowerCase()}.png`;
@@ -885,10 +889,10 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
           <rect
             width={FLAG_W}
             height={FLAG_H}
-            rx={1.5}
-            ry={1.5}
+            rx={2}
+            ry={2}
             fill="#dcd4c0"
-            stroke="rgba(80,50,20,0.25)"
+            stroke="rgba(80,50,20,0.3)"
             strokeWidth={0.5}
           />
           <image
@@ -934,7 +938,7 @@ interface Gesture {
 const IDLE_GESTURE: Gesture = { mode: 'none', sx: 0, sy: 0, rect: WORLD, startDist: 0, moved: false };
 
 export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
-  const { countries, selectedCountryCode, activeContinent, onSelectContinent } = props;
+  const { countries, selectedCountryCode, activeContinent, onSelectContinent, isExpanded, onToggleExpand } = props;
 
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -1300,7 +1304,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   /* ------------------------------ Render ------------------------------ */
 
   return (
-    <section className="la-root font-sans" aria-label="Atlas Literario Mundial">
+    <section className={`la-root font-sans ${isExpanded ? 'la-root--expanded' : ''}`} aria-label="Atlas Literario Mundial">
       {/* Barra superior: regiones + zoom */}
       <div className="la-toolbar">
         <div className="la-regions la-noscroll" role="group" aria-label="Regiones del mundo">
@@ -1349,6 +1353,17 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           >
             <Globe size={16} />
           </button>
+          {onToggleExpand && (
+            <button
+              type="button"
+              className="la-iconbtn"
+              onClick={onToggleExpand}
+              aria-label={isExpanded ? 'Reducir mapa' : 'Agrandar mapa (Mesa cartográfica)'}
+              title={isExpanded ? 'Reducir mapa a vista normal' : 'Agrandar mapa (Mesa cartográfica)'}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          )}
         </div>
       </div>
 
