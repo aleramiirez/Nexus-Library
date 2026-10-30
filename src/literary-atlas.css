@@ -903,6 +903,50 @@ html:not(.dark) .la-node--selected .la-label__bg {
    Cinta inferior de navegación rápida
    ========================================================================== */
 
+.la-strip-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.la-strip-wrapper .la-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.la-strip-btn {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--la-brass-soft);
+  background: var(--la-chip-bg);
+  color: var(--la-chip-ink);
+  cursor: pointer;
+  transition: all 0.2s var(--la-ease);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  user-select: none;
+  z-index: 2;
+}
+
+.la-strip-btn:hover:not(:disabled) {
+  border-color: var(--la-brass);
+  background: var(--la-brass-faint);
+  color: var(--la-gold);
+  transform: translateY(-1px);
+}
+
+.la-strip-btn:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .la-strip {
   position: relative;
   display: flex;
@@ -1090,6 +1134,7 @@ html.dark .la-legend__summary strong {
   .la-legend { padding: 0.6rem 0.7rem; gap: 0.45rem 0.9rem; }
   .la-legend__summary { margin-left: 0; width: 100%; }
   .la-frame { inset: 5px; }
+  .la-strip-btn { width: 28px; height: 28px; flex-basis: 28px; }
   .la-root--expanded .la-toolbar {
     top: 10px;
     left: 10px;

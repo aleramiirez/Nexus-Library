@@ -776,14 +776,13 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={handleTurnToNotes}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-serif italic text-xs transition shrink-0 whitespace-nowrap ${
                     activeTab === 'notes'
                       ? 'bg-amber-600/25 text-amber-950 dark:text-amber-200 font-bold border border-amber-600/40'
                       : 'text-stone-600 dark:text-slate-400'
                   }`}
                 >
-                  <PenLine className="w-3 h-3 text-amber-700 dark:text-amber-400" />
-                  <span>fol. IV · Diario & Citas</span>
+                  fol. IV · Diario & Citas
                   {(Boolean(localNotes) || localQuotes.length > 0) && (
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   )}
@@ -901,8 +900,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 ) : activeTab === 'notes' ? (
                   <div className="mobile-page-transition-forward space-y-4">
                     <div className="border-b border-amber-900/15 dark:border-[#242E42] pb-3">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold flex items-center gap-1.5">
-                        <PenLine className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
                         fol. IV · Diario de Lectura & Citas
                       </span>
                       <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-white mt-0.5">
@@ -1841,8 +1839,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               : 'text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300'
                           }`}
                         >
-                          <PenLine className="w-3 h-3 text-amber-700 dark:text-amber-400" />
-                          <span>fol. IV · Diario & Citas</span>
+                          fol. IV · Diario & Citas
                           {(Boolean(localNotes) || localQuotes.length > 0) && (
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                           )}
@@ -2030,8 +2027,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     <div className="open-book-fade-content flex flex-col gap-4 sm:gap-5">
                       <div className="text-left border-b border-amber-900/15 dark:border-[#242E42] pb-3">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold flex items-center gap-1.5">
-                            <PenLine className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
                             fol. IV · Cuaderno de Lectura & Citas Memorables
                           </span>
                           <span className="text-[10px] text-stone-500 dark:text-slate-400 font-serif italic">

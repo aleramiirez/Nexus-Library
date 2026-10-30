@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Compass, Minus, Plus, Globe, Maximize2, Minimize2 } from 'lucide-react';
+import { Compass, Minus, Plus, Globe, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import '../literary-atlas.css';
 
 /* ==========================================================================
@@ -1289,6 +1289,51 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     return { conquered, exploring, discover, total: countries.length };
   }, [countries]);
 
+  const [canScrollStripLeft, setCanScrollStripLeft] = useState(false);
+  const [canScrollStripRight, setCanScrollStripRight] = useState(false);
+  const [hasStripOverflow, setHasStripOverflow] = useState(false);
+
+  const checkStripScroll = useCallback(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const overflow = el.scrollWidth > el.clientWidth + 2;
+    setHasStripOverflow(overflow);
+    setCanScrollStripLeft(el.scrollLeft > 4);
+    setCanScrollStripRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const handleScrollStrip = (amount: number) => {
+    const el = stripRef.current;
+    if (!el) return;
+    el.scrollBy({ left: amount, behavior: 'smooth' });
+    setTimeout(checkStripScroll, 250);
+  };
+
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const t = setTimeout(checkStripScroll, 50);
+
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+        checkStripScroll();
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('scroll', checkStripScroll, { passive: true });
+    window.addEventListener('resize', checkStripScroll);
+
+    return () => {
+      clearTimeout(t);
+      el.removeEventListener('wheel', handleWheel);
+      el.removeEventListener('scroll', checkStripScroll);
+      window.removeEventListener('resize', checkStripScroll);
+    };
+  }, [pills, checkStripScroll]);
+
   // Centra la píldora activa dentro de la cinta (sin mover la página)
   useEffect(() => {
     const strip = stripRef.current;
@@ -1299,7 +1344,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       left: btn.offsetLeft - strip.clientWidth / 2 + btn.clientWidth / 2,
       behavior: 'smooth',
     });
-  }, [selectedCountryCode, activeContinent]);
+    setTimeout(checkStripScroll, 300);
+  }, [selectedCountryCode, activeContinent, checkStripScroll]);
 
   const isZoomed = zoom > 1.05 || activeContinent !== 'all';
   const isGeneralView = activeContinent === 'all' && zoom <= 1.05;
@@ -1441,43 +1487,71 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
 
       {/* Cinta inferior de navegación rápida (oculta en modo ampliado para máxima perspectiva) */}
       {!isExpanded && (
-        <nav className="la-strip la-noscroll" ref={stripRef} aria-label="Países de la región activa">
-          {pills.length === 0 && <span className="la-strip__empty">No hay territorios en esta región todavía.</span>}
-          {pills.map(({ c, status }) => {
-            const selected = c.code === selectedCountryCode;
-            const glyph = status === 'conquered' ? String(c.readCount) : STATUS_GLYPH[status];
-            return (
-              <button
-                key={c.code}
-                type="button"
-                data-code={c.code}
-                className={`la-pill la-pill--${status}`}
-                aria-pressed={selected}
-                aria-label={`${c.name}: ${
-                  status === 'conquered'
-                    ? plural(c.readCount, 'libro leído', 'libros leídos')
-                    : status === 'exploring'
-                      ? 'en expedición'
-                      : 'canon por descubrir'
-                }`}
-                onClick={() => propsRef.current.onSelectCountry(c.code)}
-              >
-                <span className="la-pill__flag" aria-hidden="true">
-                  <img
-                    src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
-                    alt=""
-                    className="w-3.5 h-2.5 object-cover rounded-xs border border-amber-900/15 dark:border-white/15 inline-block mr-1 align-middle"
-                    loading="lazy"
-                  />
-                </span>
-                <span>{c.name}</span>
-                <span className="la-pill__glyph" aria-hidden="true">
-                  {glyph}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        <div className="la-strip-wrapper">
+          {hasStripOverflow && (
+            <button
+              type="button"
+              className="la-strip-btn la-strip-btn--prev"
+              onClick={() => handleScrollStrip(-280)}
+              disabled={!canScrollStripLeft}
+              aria-label="Desplazar países hacia la izquierda"
+              title="Desplazar a la izquierda"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
+
+          <nav className="la-strip la-noscroll" ref={stripRef} aria-label="Países de la región activa">
+            {pills.length === 0 && <span className="la-strip__empty">No hay territorios en esta región todavía.</span>}
+            {pills.map(({ c, status }) => {
+              const selected = c.code === selectedCountryCode;
+              const glyph = status === 'conquered' ? String(c.readCount) : STATUS_GLYPH[status];
+              return (
+                <button
+                  key={c.code}
+                  type="button"
+                  data-code={c.code}
+                  className={`la-pill la-pill--${status}`}
+                  aria-pressed={selected}
+                  aria-label={`${c.name}: ${
+                    status === 'conquered'
+                      ? plural(c.readCount, 'libro leído', 'libros leídos')
+                      : status === 'exploring'
+                        ? 'en expedición'
+                        : 'canon por descubrir'
+                  }`}
+                  onClick={() => propsRef.current.onSelectCountry(c.code)}
+                >
+                  <span className="la-pill__flag" aria-hidden="true">
+                    <img
+                      src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
+                      alt=""
+                      className="w-3.5 h-2.5 object-cover rounded-xs border border-amber-900/15 dark:border-white/15 inline-block mr-1 align-middle"
+                      loading="lazy"
+                    />
+                  </span>
+                  <span>{c.name}</span>
+                  <span className="la-pill__glyph" aria-hidden="true">
+                    {glyph}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {hasStripOverflow && (
+            <button
+              type="button"
+              className="la-strip-btn la-strip-btn--next"
+              onClick={() => handleScrollStrip(280)}
+              disabled={!canScrollStripRight}
+              aria-label="Desplazar países hacia la derecha"
+              title="Desplazar a la derecha"
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Leyenda cartográfica (oculta en modo ampliado para despejar el lienzo) */}

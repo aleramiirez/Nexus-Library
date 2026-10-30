@@ -197,19 +197,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
         </div>
 
         {/* Barra de pestañas interiores del Pasaporte */}
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-amber-900/15 dark:border-[#242f42] bg-[#efe4cc]/60 dark:bg-[#0f1522]/80 text-xs font-serif font-semibold">
+        <div className="flex items-center gap-1.5 px-3 sm:px-4 py-2 border-b border-amber-900/15 dark:border-[#242f42] bg-[#efe4cc]/60 dark:bg-[#0f1522]/80 text-xs font-serif font-semibold overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => handleTabChange('visas')}
-            className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'visas'
                 ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
                 : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Visados y Sellos Consulares</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold">
+            <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden">Visados</span>
+            <span className="hidden sm:inline">Visados y Sellos Consulares</span>
+            <span className="ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold shrink-0">
               {passport.totalCountriesStamped}
             </span>
           </button>
@@ -217,28 +218,30 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
           <button
             type="button"
             onClick={() => handleTabChange('identity')}
-            className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'identity'
                 ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
                 : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Ficha Consular del Lector</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden">Ficha Consular</span>
+            <span className="hidden sm:inline">Ficha Consular del Lector</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('badges')}
-            className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
               activeTab === 'badges'
                 ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
                 : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
             }`}
           >
-            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Insignias de Exploración</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold">
+            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden">Insignias</span>
+            <span className="hidden sm:inline">Insignias de Exploración</span>
+            <span className="ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold shrink-0">
               {passport.badges.filter((b) => b.unlocked).length}/{passport.badges.length}
             </span>
           </button>
