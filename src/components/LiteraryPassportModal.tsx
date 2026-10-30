@@ -196,20 +196,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
           </button>
         </div>
 
-        {/* Barra de pestañas interiores del Pasaporte */}
-        <div className="flex items-center gap-1.5 px-3 sm:px-4 py-2 border-b border-amber-900/15 dark:border-[#242f42] bg-[#efe4cc]/60 dark:bg-[#0f1522]/80 text-xs font-serif font-semibold overflow-x-auto no-scrollbar">
+        {/* Barra de pestañas interiores del Pasaporte: pestañas archivísticas limpias sin marcos apretados */}
+        <div className="flex items-center gap-3 sm:gap-6 px-4 sm:px-6 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/90 dark:bg-[#141b27]/90 text-xs font-serif overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => handleTabChange('visas')}
-            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
+            className={`relative py-3 px-1 transition flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === 'visas'
-                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
-                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
+                ? 'text-amber-950 dark:text-amber-300 font-bold border-b-2 border-amber-800 dark:border-amber-400 -mb-[1px]'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 border-b-2 border-transparent'
             }`}
           >
-            <MapPin className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="sm:hidden">Visados</span>
-            <span className="hidden sm:inline">Visados y Sellos Consulares</span>
+            <MapPin className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden font-semibold">Visados</span>
+            <span className="hidden sm:inline font-semibold">Visados y Sellos Consulares</span>
             <span className="ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold shrink-0">
               {passport.totalCountriesStamped}
             </span>
@@ -218,29 +218,29 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
           <button
             type="button"
             onClick={() => handleTabChange('identity')}
-            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
+            className={`relative py-3 px-1 transition flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === 'identity'
-                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
-                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
+                ? 'text-amber-950 dark:text-amber-300 font-bold border-b-2 border-amber-800 dark:border-amber-400 -mb-[1px]'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 border-b-2 border-transparent'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="sm:hidden">Ficha Consular</span>
-            <span className="hidden sm:inline">Ficha Consular del Lector</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden font-semibold">Ficha Consular</span>
+            <span className="hidden sm:inline font-semibold">Ficha Consular del Lector</span>
           </button>
 
           <button
             type="button"
             onClick={() => handleTabChange('badges')}
-            className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl transition flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
+            className={`relative py-3 px-1 transition flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === 'badges'
-                ? 'bg-amber-600/20 text-amber-900 dark:text-amber-300 border border-amber-700/30 dark:border-amber-500/35 font-bold shadow-xs'
-                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200'
+                ? 'text-amber-950 dark:text-amber-300 font-bold border-b-2 border-amber-800 dark:border-amber-400 -mb-[1px]'
+                : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200 border-b-2 border-transparent'
             }`}
           >
-            <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="sm:hidden">Insignias</span>
-            <span className="hidden sm:inline">Insignias de Exploración</span>
+            <Award className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+            <span className="sm:hidden font-semibold">Insignias</span>
+            <span className="hidden sm:inline font-semibold">Insignias de Exploración</span>
             <span className="ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-[10px] font-mono font-bold shrink-0">
               {passport.badges.filter((b) => b.unlocked).length}/{passport.badges.length}
             </span>

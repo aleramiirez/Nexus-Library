@@ -459,36 +459,39 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       )}
 
       {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Atlas Literario vs Comunidad de Lectores) ─── */}
-      <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+      <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
         <button
           type="button"
           onClick={() => handleTabChange('books')}
           className={
-            'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (discoverTab === 'books'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
           }
         >
-          <Compass className="w-4 h-4 shrink-0" /> <span className="truncate">Catálogo de Libros</span>
+          <Compass className="w-4 h-4 shrink-0" />
+          <span className="sm:hidden whitespace-nowrap">Catálogo</span>
+          <span className="hidden sm:inline whitespace-nowrap">Catálogo de Libros</span>
         </button>
 
         <button
           type="button"
           onClick={() => handleTabChange('atlas')}
           className={
-            'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (discoverTab === 'atlas'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
           }
         >
           <Globe className="w-4 h-4 shrink-0" />
-          <span className="truncate">Atlas Literario</span>
+          <span className="sm:hidden whitespace-nowrap">Atlas</span>
+          <span className="hidden sm:inline whitespace-nowrap">Atlas Literario</span>
           {conqueredCount > 0 && (
             <span
               className={
-                'ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ' +
+                'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
                 (discoverTab === 'atlas'
                   ? 'bg-slate-950/20 text-slate-950'
                   : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
@@ -503,13 +506,14 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           type="button"
           onClick={() => handleTabChange('community')}
           className={
-            'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (discoverTab === 'community'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
           }
         >
-          <Users className="w-4 h-4 shrink-0" /> <span className="truncate">Comunidad</span>
+          <Users className="w-4 h-4 shrink-0" />
+          <span className="whitespace-nowrap">Comunidad</span>
         </button>
       </div>
 
