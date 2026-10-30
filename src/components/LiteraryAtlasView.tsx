@@ -870,7 +870,7 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
       )}
 
       {/* =====================================================================
-          MESA CARTOGRÁFICA DE GRAN FORMATO (LIGHTBOX OVERLAY)
+          MESA CARTOGRÁFICA DE GRAN FORMATO (LIGHTBOX OVERLAY DESPEJADO)
          ===================================================================== */}
       {isMapExpanded &&
         createPortal(
@@ -881,77 +881,53 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
             }}
           >
             <div
-              className="relative w-full max-w-7xl h-[88vh] sm:h-[92vh] flex flex-col rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden"
+              className="relative w-full max-w-7xl h-[92vh] sm:h-[95vh] rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Cabecera de la mesa cartográfica */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-amber-950 text-amber-100 border-b border-amber-900/50 select-none">
-                <div className="flex items-center gap-2.5">
-                  <Compass className="w-4 h-4 text-amber-400" />
-                  <span className="font-serif font-bold text-sm tracking-wide">
-                    Mesa Cartográfica de Gran Formato · Atlas Literario Mundial
-                  </span>
-                  <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded bg-amber-900/70 text-amber-300 font-sans">
-                    Esc para salir
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMapExpanded(false)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-amber-900/70 hover:bg-amber-800 text-amber-200 border border-amber-700/50 transition cursor-pointer"
-                  title="Reducir mapa a vista normal (Esc)"
-                >
-                  <Minimize2 className="w-3.5 h-3.5" />
-                  <span>Reducir mapa</span>
-                </button>
-              </div>
+              {/* Mapa a pantalla completa en la mesa */}
+              <LiteraryAtlasMap
+                countries={mapCountries}
+                selectedCountryCode={selectedCountryCode}
+                activeContinent={activeContinent}
+                onSelectCountry={(code) => {
+                  setSelectedCountryCode(code);
+                  soundService.playBrassBell();
+                }}
+                onSelectContinent={setActiveContinent}
+                isExpanded={true}
+                onToggleExpand={() => setIsMapExpanded(false)}
+              />
 
-              {/* Contenedor del mapa en tamaño completo */}
-              <div className="flex-1 min-h-0 relative">
-                <LiteraryAtlasMap
-                  countries={mapCountries}
-                  selectedCountryCode={selectedCountryCode}
-                  activeContinent={activeContinent}
-                  onSelectCountry={(code) => {
-                    setSelectedCountryCode(code);
-                    soundService.playBrassBell();
-                  }}
-                  onSelectContinent={setActiveContinent}
-                  isExpanded={true}
-                  onToggleExpand={() => setIsMapExpanded(false)}
-                />
-              </div>
-
-              {/* Barra rápida de expedición si hay país seleccionado */}
+              {/* Píldora flotante minimalista al seleccionar un país en la mesa grande */}
               {selectedCountryCode && activeCountryInfo && (
-                <div className="px-4 py-2.5 bg-[#eae0c2] dark:bg-[#0f151f] border-t border-amber-900/20 dark:border-amber-900/40 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2.5">
+                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+                  <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#fbf6ea]/95 dark:bg-[#151d2b]/95 backdrop-blur-md border border-amber-600/40 shadow-2xl">
                     <img
                       src={`https://flagcdn.com/w40/${activeCountryInfo.code.toLowerCase()}.png`}
                       alt={activeCountryInfo.name}
                       className="w-5 h-3.5 object-cover rounded-xs border border-amber-900/20 shadow-xs"
                     />
-                    <span className="font-serif font-bold text-sm text-stone-900 dark:text-stone-100">
-                      {activeCountryInfo.name}
-                    </span>
-                    <span className="text-xs text-stone-600 dark:text-stone-400">
-                      · {currentCountryBooks.length} en tu biblioteca · {canonBooks.length} en el canon
-                    </span>
+                    <div className="flex items-center gap-1.5 font-serif text-sm font-bold text-stone-900 dark:text-stone-100">
+                      <span>{activeCountryInfo.name}</span>
+                      <span className="text-xs font-sans font-normal text-stone-500 dark:text-stone-400">
+                        ({currentCountryBooks.length} en biblioteca · {canonBooks.length} en canon)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMapExpanded(false);
+                        setTimeout(() => {
+                          const el = document.getElementById('atlas-country-detail');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                      }}
+                      className="ml-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-700 hover:bg-amber-800 text-white shadow-sm transition cursor-pointer"
+                    >
+                      <span>Ver obras</span>
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMapExpanded(false);
-                      setTimeout(() => {
-                        const el = document.getElementById('atlas-country-detail');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }, 100);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-amber-700 hover:bg-amber-800 text-white shadow-sm transition cursor-pointer"
-                  >
-                    <span>Ver obras y canon nacional</span>
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
                 </div>
               )}
             </div>

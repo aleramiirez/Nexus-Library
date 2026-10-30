@@ -1356,12 +1356,19 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           {onToggleExpand && (
             <button
               type="button"
-              className="la-iconbtn"
+              className={isExpanded ? 'la-iconbtn px-2.5 w-auto' : 'la-iconbtn'}
               onClick={onToggleExpand}
               aria-label={isExpanded ? 'Reducir mapa' : 'Agrandar mapa (Mesa cartográfica)'}
-              title={isExpanded ? 'Reducir mapa a vista normal' : 'Agrandar mapa (Mesa cartográfica)'}
+              title={isExpanded ? 'Reducir mapa a vista normal (Esc)' : 'Agrandar mapa (Mesa cartográfica)'}
             >
-              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              {isExpanded ? (
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
+                  <Minimize2 size={14} />
+                  <span>Cerrar</span>
+                </span>
+              ) : (
+                <Maximize2 size={16} />
+              )}
             </button>
           )}
         </div>
@@ -1373,7 +1380,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           ref={svgRef}
           className="la-svg"
           viewBox="0 0 1000 520"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio={isZoomed ? 'xMidYMid slice' : 'xMidYMid meet'}
           role="group"
           aria-label="Planisferio literario interactivo"
           data-zoom="low"
@@ -1422,83 +1429,87 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           <i className="la-corner la-corner--bl" />
           <i className="la-corner la-corner--br" />
         </div>
-        <div className="la-hint" data-show={isZoomed && !isTouchDevice} aria-hidden="true">
+        <div className="la-hint" data-show={isZoomed && !isTouchDevice && !isExpanded} aria-hidden="true">
           Arrastra para explorar · Ctrl + rueda para acercar
         </div>
       </div>
 
-      {/* Cinta inferior de navegación rápida */}
-      <nav className="la-strip la-noscroll" ref={stripRef} aria-label="Países de la región activa">
-        {pills.length === 0 && <span className="la-strip__empty">No hay territorios en esta región todavía.</span>}
-        {pills.map(({ c, status }) => {
-          const selected = c.code === selectedCountryCode;
-          const glyph = status === 'conquered' ? String(c.readCount) : STATUS_GLYPH[status];
-          return (
-            <button
-              key={c.code}
-              type="button"
-              data-code={c.code}
-              className={`la-pill la-pill--${status}`}
-              aria-pressed={selected}
-              aria-label={`${c.name}: ${
-                status === 'conquered'
-                  ? plural(c.readCount, 'libro leído', 'libros leídos')
-                  : status === 'exploring'
-                    ? 'en expedición'
-                    : 'canon por descubrir'
-              }`}
-              onClick={() => propsRef.current.onSelectCountry(c.code)}
-            >
-              <span className="la-pill__flag" aria-hidden="true">
-                <img
-                  src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
-                  alt=""
-                  className="w-3.5 h-2.5 object-cover rounded-xs border border-amber-900/15 dark:border-white/15 inline-block mr-1 align-middle"
-                  loading="lazy"
-                />
-              </span>
-              <span>{c.name}</span>
-              <span className="la-pill__glyph" aria-hidden="true">
-                {glyph}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Cinta inferior de navegación rápida (oculta en modo ampliado para máxima perspectiva) */}
+      {!isExpanded && (
+        <nav className="la-strip la-noscroll" ref={stripRef} aria-label="Países de la región activa">
+          {pills.length === 0 && <span className="la-strip__empty">No hay territorios en esta región todavía.</span>}
+          {pills.map(({ c, status }) => {
+            const selected = c.code === selectedCountryCode;
+            const glyph = status === 'conquered' ? String(c.readCount) : STATUS_GLYPH[status];
+            return (
+              <button
+                key={c.code}
+                type="button"
+                data-code={c.code}
+                className={`la-pill la-pill--${status}`}
+                aria-pressed={selected}
+                aria-label={`${c.name}: ${
+                  status === 'conquered'
+                    ? plural(c.readCount, 'libro leído', 'libros leídos')
+                    : status === 'exploring'
+                      ? 'en expedición'
+                      : 'canon por descubrir'
+                }`}
+                onClick={() => propsRef.current.onSelectCountry(c.code)}
+              >
+                <span className="la-pill__flag" aria-hidden="true">
+                  <img
+                    src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
+                    alt=""
+                    className="w-3.5 h-2.5 object-cover rounded-xs border border-amber-900/15 dark:border-white/15 inline-block mr-1 align-middle"
+                    loading="lazy"
+                  />
+                </span>
+                <span>{c.name}</span>
+                <span className="la-pill__glyph" aria-hidden="true">
+                  {glyph}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
-      {/* Leyenda cartográfica */}
-      <footer className="la-legend">
-        <span className="la-legend__title">
-          <Compass size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: '-2px' }} />
-          Leyenda
-        </span>
-        <span className="la-legend__item">
-          <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
-            <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
-            <circle className="la-wax-ring" r={8} />
-          </svg>
-          ● Sello Conquistado (Leído) <span className="la-legend__count">{summary.conquered}</span>
-        </span>
-        <span className="la-legend__item">
-          <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
-            <circle className="la-explore__disc" r={10} />
-            <circle className="la-explore__ring" r={11.5} style={{ animation: 'none' }} />
-            <path className="la-explore__half" d={HALF_D} />
-            <circle className="la-explore__outline" r={5} />
-          </svg>
-          ◐ En Expedición (Leyendo / Por leer) <span className="la-legend__count">{summary.exploring}</span>
-        </span>
-        <span className="la-legend__item">
-          <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
-            <path className="la-discover__star" d={COMPASS_STAR_D} />
-            <circle className="la-discover__dot" r={3.2} />
-          </svg>
-          ○ Territorio con Canon por Descubrir <span className="la-legend__count">{summary.discover}</span>
-        </span>
-        <span className="la-legend__summary">
-          <strong>{summary.conquered}</strong> de {summary.total} territorios conquistados
-        </span>
-      </footer>
+      {/* Leyenda cartográfica (oculta en modo ampliado para despejar el lienzo) */}
+      {!isExpanded && (
+        <footer className="la-legend">
+          <span className="la-legend__title">
+            <Compass size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: '-2px' }} />
+            Leyenda
+          </span>
+          <span className="la-legend__item">
+            <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
+              <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
+              <circle className="la-wax-ring" r={8} />
+            </svg>
+            ● Sello Conquistado (Leído) <span className="la-legend__count">{summary.conquered}</span>
+          </span>
+          <span className="la-legend__item">
+            <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
+              <circle className="la-explore__disc" r={10} />
+              <circle className="la-explore__ring" r={11.5} style={{ animation: 'none' }} />
+              <path className="la-explore__half" d={HALF_D} />
+              <circle className="la-explore__outline" r={5} />
+            </svg>
+            ◐ En Expedición (Leyendo / Por leer) <span className="la-legend__count">{summary.exploring}</span>
+          </span>
+          <span className="la-legend__item">
+            <svg width="20" height="20" viewBox="-12 -12 24 24" aria-hidden="true">
+              <path className="la-discover__star" d={COMPASS_STAR_D} />
+              <circle className="la-discover__dot" r={3.2} />
+            </svg>
+            ○ Territorio con Canon por Descubrir <span className="la-legend__count">{summary.discover}</span>
+          </span>
+          <span className="la-legend__summary">
+            <strong>{summary.conquered}</strong> de {summary.total} territorios conquistados
+          </span>
+        </footer>
+      )}
     </section>
   );
 }
