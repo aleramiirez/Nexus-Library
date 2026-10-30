@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Compass, Minus, Plus, RotateCcw } from 'lucide-react';
+import { Compass, Minus, Plus, Globe } from 'lucide-react';
 import '../literary-atlas.css';
 
 /* ==========================================================================
@@ -1157,10 +1157,10 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
             type="button"
             className="la-iconbtn"
             onClick={resetView}
-            aria-label="Resetear vista"
-            title="Resetear vista"
+            aria-label="Vista general del mundo"
+            title="Vista general del mundo (Planisferio completo)"
           >
-            <RotateCcw size={16} />
+            <Globe size={16} />
           </button>
         </div>
       </div>

@@ -314,12 +314,12 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
       {/* =====================================================================
           BLOQUE 1: CABECERA DIPLOMÁTICA Y RANGO DEL LECTOR
          ===================================================================== */}
-      <section className="catalog-card-panel relative overflow-hidden p-5 sm:p-7 shadow-xl">
+      <section className="catalog-card-panel relative overflow-visible mt-4 pt-8 sm:pt-9 p-5 sm:p-7 shadow-xl">
         <div className="catalog-brass-tab">
           Planisferio Diplomático & Pasaporte Consular
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-1">
           {/* Rango y descripción */}
           <div className="space-y-3 max-w-2xl">
             <div className="flex items-center gap-3">
