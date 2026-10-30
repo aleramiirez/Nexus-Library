@@ -124,6 +124,20 @@ html.dark .la-root {
   gap: 0.6rem;
 }
 
+.la-regions-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.la-regions-wrapper .la-regions {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .la-regions {
   display: flex;
   flex: 1 1 auto;
@@ -132,6 +146,9 @@ html.dark .la-root {
   overflow-x: auto;
   padding: 3px 2px;
   scroll-snap-type: x proximity;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .la-zoom {
@@ -289,6 +306,25 @@ html.dark .la-root {
   border: none;
   padding: 0;
   margin: 0;
+}
+.la-root--expanded .la-regions-wrapper {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.la-root--expanded .la-regions-wrapper .la-strip-btn {
+  pointer-events: auto;
+  background: rgba(251, 246, 234, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--la-brass);
+}
+html.dark .la-root--expanded .la-regions-wrapper .la-strip-btn {
+  background: rgba(19, 27, 39, 0.94);
+  border-color: rgba(229, 193, 88, 0.35);
 }
 .la-root--expanded .la-regions,
 .la-root--expanded .la-zoom {
@@ -955,8 +991,24 @@ html:not(.dark) .la-node--selected .la-label__bg {
   padding: 0.3rem 0.2rem 0.55rem;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
   mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.la-regions.is-dragging,
+.la-strip.is-dragging {
+  cursor: grabbing !important;
+  scroll-behavior: auto !important;
+  scroll-snap-type: none !important;
+}
+
+.la-regions.is-dragging *,
+.la-strip.is-dragging * {
+  cursor: grabbing !important;
+  pointer-events: none;
 }
 
 .la-pill {
@@ -1127,6 +1179,7 @@ html.dark .la-legend__summary strong {
 
 @media (max-width: 640px) {
   .la-toolbar { gap: 0.4rem; }
+  .la-regions-wrapper { gap: 0.25rem; }
   .la-zoom { padding-left: 0.4rem; }
   .la-iconbtn { width: 40px; height: 40px; }
   .la-expand-btn { width: 40px; height: 40px; min-width: 40px; padding: 0; }

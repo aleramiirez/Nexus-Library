@@ -468,6 +468,68 @@ const STATUS_GLYPH: Record<Status, string> = { conquered: '●', exploring: '◐
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+function attachDragScroll(el: HTMLElement, onScrolled?: () => void): () => void {
+  let isDown = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+  let hasDragged = false;
+
+  const onMouseDown = (e: MouseEvent) => {
+    if (e.button !== 0) return; // Solo clic izquierdo
+    isDown = true;
+    hasDragged = false;
+    startX = e.clientX;
+    startScrollLeft = el.scrollLeft;
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    if (!hasDragged && Math.abs(dx) > 4) {
+      hasDragged = true;
+      el.classList.add('is-dragging');
+    }
+    if (hasDragged) {
+      el.scrollLeft = startScrollLeft - dx;
+      onScrolled?.();
+    }
+  };
+
+  const onMouseUp = () => {
+    if (!isDown) return;
+    isDown = false;
+    if (hasDragged) {
+      setTimeout(() => {
+        el.classList.remove('is-dragging');
+        hasDragged = false;
+      }, 50);
+    } else {
+      el.classList.remove('is-dragging');
+    }
+    onScrolled?.();
+  };
+
+  const onClickCapture = (e: MouseEvent) => {
+    if (hasDragged) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  el.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+  el.addEventListener('click', onClickCapture, { capture: true });
+
+  return () => {
+    el.removeEventListener('mousedown', onMouseDown);
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+    el.removeEventListener('click', onClickCapture, { capture: true });
+    el.classList.remove('is-dragging');
+  };
+}
+
 /* ==========================================================================
    Mapa base (estático y memoizado: no se repinta durante el zoom)
    ========================================================================== */
@@ -945,6 +1007,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
 
   const svgRef = useRef<SVGSVGElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
+  const regionsRef = useRef<HTMLDivElement>(null);
   const curRef = useRef<Rect>(PRESETS[activeContinent]);
   const targetRef = useRef<Rect>(PRESETS[activeContinent]);
   const rafRef = useRef(0);
@@ -1322,12 +1385,15 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       }
     };
 
+    const cleanupDrag = attachDragScroll(el, checkStripScroll);
+
     el.addEventListener('wheel', handleWheel, { passive: false });
     el.addEventListener('scroll', checkStripScroll, { passive: true });
     window.addEventListener('resize', checkStripScroll);
 
     return () => {
       clearTimeout(t);
+      cleanupDrag();
       el.removeEventListener('wheel', handleWheel);
       el.removeEventListener('scroll', checkStripScroll);
       window.removeEventListener('resize', checkStripScroll);
@@ -1347,6 +1413,69 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     setTimeout(checkStripScroll, 300);
   }, [selectedCountryCode, activeContinent, checkStripScroll]);
 
+  /* ------------------- Control y arrastre de Regiones ------------------- */
+  const [canScrollRegionsLeft, setCanScrollRegionsLeft] = useState(false);
+  const [canScrollRegionsRight, setCanScrollRegionsRight] = useState(false);
+  const [hasRegionsOverflow, setHasRegionsOverflow] = useState(false);
+
+  const checkRegionsScroll = useCallback(() => {
+    const el = regionsRef.current;
+    if (!el) return;
+    const overflow = el.scrollWidth > el.clientWidth + 2;
+    setHasRegionsOverflow(overflow);
+    setCanScrollRegionsLeft(el.scrollLeft > 4);
+    setCanScrollRegionsRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const handleScrollRegions = (amount: number) => {
+    const el = regionsRef.current;
+    if (!el) return;
+    el.scrollBy({ left: amount, behavior: 'smooth' });
+    setTimeout(checkRegionsScroll, 250);
+  };
+
+  useEffect(() => {
+    const el = regionsRef.current;
+    if (!el) return;
+    const t = setTimeout(checkRegionsScroll, 50);
+
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+        checkRegionsScroll();
+      }
+    };
+
+    const cleanupDrag = attachDragScroll(el, checkRegionsScroll);
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('scroll', checkRegionsScroll, { passive: true });
+    window.addEventListener('resize', checkRegionsScroll);
+
+    return () => {
+      clearTimeout(t);
+      cleanupDrag();
+      el.removeEventListener('wheel', handleWheel);
+      el.removeEventListener('scroll', checkRegionsScroll);
+      window.removeEventListener('resize', checkRegionsScroll);
+    };
+  }, [checkRegionsScroll]);
+
+  // Centra la región activa cuando cambia
+  useEffect(() => {
+    const el = regionsRef.current;
+    if (!el) return;
+    const activeChip = el.querySelector<HTMLElement>(`[aria-pressed="true"]`);
+    if (activeChip) {
+      el.scrollTo({
+        left: activeChip.offsetLeft - el.clientWidth / 2 + activeChip.clientWidth / 2,
+        behavior: 'smooth',
+      });
+    }
+    setTimeout(checkRegionsScroll, 300);
+  }, [activeContinent, checkRegionsScroll]);
+
   const isZoomed = zoom > 1.05 || activeContinent !== 'all';
   const isGeneralView = activeContinent === 'all' && zoom <= 1.05;
 
@@ -1356,21 +1485,49 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     <section className={`la-root font-sans ${isExpanded ? 'la-root--expanded' : ''}`} aria-label="Atlas Literario Mundial">
       {/* Barra superior: regiones + zoom */}
       <div className="la-toolbar">
-        <div className="la-regions la-noscroll" role="group" aria-label="Regiones del mundo">
-          {REGIONS.map((r) => (
+        <div className="la-regions-wrapper">
+          {hasRegionsOverflow && (
             <button
-              key={r.id}
               type="button"
-              className="la-chip"
-              aria-pressed={activeContinent === r.id}
-              onClick={() => {
-                if (r.id === activeContinent) animateTo(PRESETS[r.id]);
-                else onSelectContinent(r.id);
-              }}
+              className="la-strip-btn la-regions-btn--prev"
+              onClick={() => handleScrollRegions(-220)}
+              disabled={!canScrollRegionsLeft}
+              aria-label="Desplazar regiones hacia la izquierda"
+              title="Desplazar a la izquierda"
             >
-              {r.label}
+              <ChevronLeft size={16} />
             </button>
-          ))}
+          )}
+
+          <div className="la-regions la-noscroll" ref={regionsRef} role="group" aria-label="Regiones del mundo">
+            {REGIONS.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                className="la-chip"
+                aria-pressed={activeContinent === r.id}
+                onClick={() => {
+                  if (r.id === activeContinent) animateTo(PRESETS[r.id]);
+                  else onSelectContinent(r.id);
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          {hasRegionsOverflow && (
+            <button
+              type="button"
+              className="la-strip-btn la-regions-btn--next"
+              onClick={() => handleScrollRegions(220)}
+              disabled={!canScrollRegionsRight}
+              aria-label="Desplazar regiones hacia la derecha"
+              title="Desplazar a la derecha"
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
         </div>
         <div className="la-zoom" role="group" aria-label="Controles de zoom">
           <button
