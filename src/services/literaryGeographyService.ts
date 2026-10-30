@@ -1265,9 +1265,28 @@ class LiteraryGeographyService {
         stampedContinents.add(country.continent);
       }
 
+      // Ordenar obras con prioridad absoluta a las leídas, luego en lectura, luego pendientes
+      const sortedBooks = [...bookList].sort((a, b) => {
+        const aRead = isBookRead(a);
+        const bRead = isBookRead(b);
+        if (aRead !== bRead) return aRead ? -1 : 1;
+
+        const aReading =
+          !aRead &&
+          (a.progreso?.toLowerCase().includes('leyendo') ||
+            a.progreso?.toLowerCase() === 'reading');
+        const bReading =
+          !bRead &&
+          (b.progreso?.toLowerCase().includes('leyendo') ||
+            b.progreso?.toLowerCase() === 'reading');
+        if (aReading !== bReading) return aReading ? -1 : 1;
+
+        return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+      });
+
       entries.push({
         country,
-        books: bookList,
+        books: sortedBooks,
         readBooks,
         readCount: readBooks.length,
         authors: Array.from(authorsSet),

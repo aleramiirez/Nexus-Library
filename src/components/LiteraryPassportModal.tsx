@@ -17,7 +17,8 @@ import {
   CONTINENT_NAMES,
   CountryPassportEntry,
   COUNTRIES_CATALOG,
-  literaryGeographyService
+  literaryGeographyService,
+  isBookRead
 } from '../services/literaryGeographyService';
 import { soundService } from '../services/soundService';
 
@@ -74,6 +75,28 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
     if (selectedContinent === 'all') return passport.entries;
     return passport.entries.filter((e) => e.country.continent === selectedContinent);
   }, [passport.entries, selectedContinent]);
+
+  // Libros del país seleccionado ordenados con prioridad a los leídos
+  const sortedEntryBooks = useMemo(() => {
+    if (!selectedEntry?.books) return [];
+    return [...selectedEntry.books].sort((a, b) => {
+      const aRead = isBookRead(a);
+      const bRead = isBookRead(b);
+      if (aRead !== bRead) return aRead ? -1 : 1;
+
+      const aReading =
+        !aRead &&
+        (a.progreso?.toLowerCase().includes('leyendo') ||
+          a.progreso?.toLowerCase() === 'reading');
+      const bReading =
+        !bRead &&
+        (b.progreso?.toLowerCase().includes('leyendo') ||
+          b.progreso?.toLowerCase() === 'reading');
+      if (aReading !== bReading) return aReading ? -1 : 1;
+
+      return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+    });
+  }, [selectedEntry]);
 
   if (!isOpen) return null;
 
@@ -245,7 +268,12 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       >
                         {/* Bandera / Código Consular */}
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xl filter drop-shadow">{c.flag}</span>
+                          <img
+                            src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
+                            alt=""
+                            className="w-5 h-3.5 object-cover rounded-xs border border-black/10 shadow-xs"
+                            loading="lazy"
+                          />
                           <span
                             className="font-mono text-[10px] font-black px-1.5 py-0.2 rounded border uppercase"
                             style={{
@@ -479,7 +507,12 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
             <div className="catalog-card-panel relative w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-amber-900/15 dark:border-slate-700">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-3xl">{selectedEntry.country.flag}</span>
+                  <img
+                    src={`https://flagcdn.com/w80/${selectedEntry.country.code.toLowerCase()}.png`}
+                    alt={selectedEntry.country.name}
+                    className="w-10 h-7 object-cover rounded shadow border border-amber-900/20 shrink-0"
+                    loading="lazy"
+                  />
                   <div>
                     <span className="font-mono text-[9px] uppercase tracking-widest text-amber-800 dark:text-amber-400 font-black block">
                       VISADO CONSULAR · {selectedEntry.country.sealLatinName}
@@ -492,7 +525,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setSelectedEntry(null)}
-                  className="p-1 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white"
+                  className="p-1 rounded-lg text-stone-500 hover:text-stone-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -501,12 +534,13 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
               {/* Estadísticas de este país */}
               <div className="flex items-center justify-between text-xs font-mono text-stone-800 dark:text-slate-300 p-2.5 rounded-xl bg-amber-900/5 dark:bg-black/30 border border-amber-900/15 dark:border-slate-800">
                 <span>Obras leídas: <strong className="text-amber-800 dark:text-amber-400">{selectedEntry.readCount}</strong></span>
+                <span>Total en biblioteca: <strong className="text-amber-800 dark:text-amber-400">{selectedEntry.books.length}</strong></span>
                 <span>Autores: <strong className="text-amber-800 dark:text-amber-400">{selectedEntry.authors.length}</strong></span>
               </div>
 
-              {/* Lista de libros de este país */}
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {selectedEntry.books.length === 0 ? (
+              {/* Lista de libros de este país (prioridad absoluta a los leídos) */}
+              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                {sortedEntryBooks.length === 0 ? (
                   <div className="py-6 px-4 text-center border border-dashed border-amber-900/20 dark:border-slate-800 rounded-xl bg-amber-900/5 dark:bg-black/20">
                     <p className="font-serif text-xs italic text-stone-600 dark:text-slate-400">
                       Aún no has registrado obras de este país.
@@ -516,43 +550,70 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                     </p>
                   </div>
                 ) : (
-                  selectedEntry.books.map((b) => (
-                    <div
-                      key={b.id}
-                      onClick={() => {
-                        setSelectedEntry(null);
-                        onClose();
-                        onOpenBookDetail?.(b);
-                      }}
-                    className="p-2.5 rounded-xl border border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-500/40 bg-[#fffcf5] dark:bg-[#0d131f] flex items-center justify-between gap-3 cursor-pointer transition group shadow-xs"
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <div className="w-8 h-11 shrink-0 rounded overflow-hidden shadow">
-                        <BookCover
-                          nombre={b.nombre}
-                          autor={b.autor}
-                          portadaUrl={b.portadaUrl}
-                          portadaFallbackUrl={b.portadaFallbackUrl}
-                          portadaDataUrl={b.portadaDataUrl}
-                          size="sm"
-                          variant="book"
-                        />
-                      </div>
-                      <div className="truncate">
-                        <p className="font-serif text-xs font-bold text-stone-900 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300">
-                          {b.nombre}
-                        </p>
-                        <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate">
-                          {b.autor}
-                        </p>
-                      </div>
-                    </div>
+                  sortedEntryBooks.map((b) => {
+                    const isRead = isBookRead(b);
+                    const isReading =
+                      !isRead &&
+                      (b.progreso?.toLowerCase().includes('leyendo') ||
+                        b.progreso?.toLowerCase() === 'reading');
 
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 shrink-0 border border-amber-600/20 dark:border-amber-500/20">
-                      {b.progreso || 'Registrado'}
-                    </span>
-                  </div>
-                )))}
+                    return (
+                      <div
+                        key={b.id}
+                        onClick={() => {
+                          setSelectedEntry(null);
+                          onClose();
+                          onOpenBookDetail?.(b);
+                        }}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition group shadow-xs ${
+                          isRead
+                            ? 'border-emerald-600/35 dark:border-emerald-500/30 bg-[#f7fcf7] dark:bg-[#0c1914] hover:border-emerald-600'
+                            : 'border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-500/40 bg-[#fffcf5] dark:bg-[#0d131f]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <div className="w-8 h-11 shrink-0 rounded overflow-hidden shadow">
+                            <BookCover
+                              nombre={b.nombre}
+                              autor={b.autor}
+                              portadaUrl={b.portadaUrl}
+                              portadaFallbackUrl={b.portadaFallbackUrl}
+                              portadaDataUrl={b.portadaDataUrl}
+                              size="sm"
+                              variant="book"
+                            />
+                          </div>
+                          <div className="truncate">
+                            <p className="font-serif text-xs font-bold text-stone-900 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300">
+                              {b.nombre}
+                            </p>
+                            <p className="text-[11px] text-stone-600 dark:text-slate-400 truncate">
+                              {b.autor}
+                            </p>
+                          </div>
+                        </div>
+
+                        {isRead ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-900 dark:text-emerald-200 shrink-0 border border-emerald-600/35">
+                            <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>Leído</span>
+                            {b.puntuacion ? (
+                              <span className="ml-0.5 text-amber-600 dark:text-amber-400">★{b.puntuacion}</span>
+                            ) : null}
+                          </span>
+                        ) : isReading ? (
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 shrink-0 border border-amber-600/25">
+                            Leyendo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded-full bg-stone-200/70 dark:bg-stone-800 text-stone-600 dark:text-stone-400 shrink-0 border border-stone-300/40 dark:border-stone-700">
+                            Por leer
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -588,7 +649,12 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                     onClick={() => handleAssignCountry(assigningBook, c.code)}
                     className="p-2 rounded-xl border border-amber-900/15 dark:border-slate-800 hover:border-amber-600 dark:hover:border-amber-400 bg-[#fffcf5] dark:bg-[#0d131f] flex items-center gap-2 text-left transition hover:bg-amber-500/10 shadow-xs"
                   >
-                    <span className="text-xl">{c.flag}</span>
+                    <img
+                      src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
+                      alt=""
+                      className="w-5 h-3.5 object-cover rounded-xs border border-black/10 shrink-0"
+                      loading="lazy"
+                    />
                     <span className="font-serif font-bold text-stone-900 dark:text-slate-200">{c.name}</span>
                   </button>
                 ))}
