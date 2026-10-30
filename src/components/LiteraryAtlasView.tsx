@@ -153,10 +153,44 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
   const activeCountryInfo: CountryInfo =
     COUNTRIES_CATALOG[selectedCountryCode] || COUNTRIES_CATALOG.ES;
 
-  // Libros del usuario en el país activo
-  const currentCountryBooks = useMemo(
-    () => countryBooksMap[selectedCountryCode] || [],
-    [countryBooksMap, selectedCountryCode]
+  // Libros del usuario en el país activo, ordenados dando prioridad absoluta a los leídos
+  const currentCountryBooks = useMemo(() => {
+    const list = countryBooksMap[selectedCountryCode] || [];
+    return [...list].sort((a, b) => {
+      const aRead = isBookRead(a);
+      const bRead = isBookRead(b);
+      // 1. Leídos primero
+      if (aRead !== bRead) return aRead ? -1 : 1;
+
+      // 2. Leyendo segundo
+      const aReading =
+        !aRead &&
+        (a.progreso?.toLowerCase().includes('leyendo') ||
+          a.progreso?.toLowerCase() === 'reading');
+      const bReading =
+        !bRead &&
+        (b.progreso?.toLowerCase().includes('leyendo') ||
+          b.progreso?.toLowerCase() === 'reading');
+      if (aReading !== bReading) return aReading ? -1 : 1;
+
+      // 3. Dentro del mismo estado, fecha más reciente primero (si existe)
+      const aDate = a.fechaFin || a.fechaInicio || a.createdAt || '';
+      const bDate = b.fechaFin || b.fechaInicio || b.createdAt || '';
+      if (aDate && bDate && aDate !== bDate) return bDate.localeCompare(aDate);
+
+      // 4. Mejor puntuación
+      const aScore = a.puntuacion || 0;
+      const bScore = b.puntuacion || 0;
+      if (aScore !== bScore) return bScore - aScore;
+
+      // 5. Alfabético por nombre
+      return a.nombre.localeCompare(b.nombre, 'es');
+    });
+  }, [countryBooksMap, selectedCountryCode]);
+
+  const currentCountryReadCount = useMemo(
+    () => currentCountryBooks.filter((b) => isBookRead(b)).length,
+    [currentCountryBooks]
   );
 
   // Canon del país activo + obras adicionales cargadas bajo demanda
@@ -483,6 +517,12 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
                   {currentCountryBooks.length}
                 </span>
               </h4>
+
+              {currentCountryReadCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                  <Check className="w-3 h-3" /> {currentCountryReadCount} {currentCountryReadCount === 1 ? 'leído' : 'leídos'}
+                </span>
+              )}
             </div>
 
             {currentCountryBooks.length > 0 ? (

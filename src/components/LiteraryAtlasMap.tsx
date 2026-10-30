@@ -306,24 +306,24 @@ const LANDS: Land[] = [
   island('newfoundland', [[-59, 47.7], [-55, 51.5], [-52.7, 47.5], [-53.5, 46.7]], 'north_america'),
   island('cuba', [[-85, 22], [-82, 23.2], [-79, 22.5], [-77, 21], [-74.2, 20.2], [-77.5, 19.9], [-79.5, 21.5], [-82.5, 22.2]], 'latam'),
   island('hispaniola', [[-74.4, 18.5], [-72, 19.9], [-69, 19.2], [-68.3, 18.5], [-71, 17.8]], 'latam'),
-  island('iceland', [[-24, 65.5], [-22, 66.4], [-16, 66.5], [-14, 65], [-18, 63.5], [-22.5, 63.8]]),
-  island('britain', [[-5.7, 50], [-3, 50.6], [1.4, 51.2], [1.7, 52.7], [0, 53.5], [-1.5, 55], [-2, 56], [-2, 57.6], [-3.5, 58.6], [-5, 58.5], [-6, 57], [-5.5, 56], [-4.8, 55], [-3, 54.8], [-3, 53.4], [-4.5, 53.3], [-4.2, 52.3], [-5.2, 51.7], [-3, 51.4], [-4.5, 51]]),
-  island('ireland', [[-10, 51.7], [-6, 52], [-6, 54], [-5.7, 54.6], [-7.5, 55.3], [-9, 54.2], [-10, 53.5], [-9.5, 52.2]]),
-  island('sardinia', [[8.2, 41], [9.7, 41], [9.5, 39], [8.5, 39]]),
-  island('sicily', [[12.5, 38], [15.6, 38.2], [15, 36.7], [12.5, 37.6]]),
-  island('cyprus', [[32.3, 35], [34.5, 35.6], [33, 34.6]]),
-  island('novaya', [[52, 71], [56, 74], [68, 77], [60, 75], [55, 72]]),
-  island('honshu', [[130.8, 34], [133, 35.5], [136, 36], [137, 37.3], [139.5, 38.5], [140, 40.5], [141.5, 41], [142, 39.5], [141, 37], [140.8, 35.7], [139.8, 35], [137.5, 34.6], [135.5, 33.5], [134.5, 34], [132, 33.8]]),
-  island('hokkaido', [[140, 42], [141, 45.4], [145.5, 43.5], [143.5, 42]]),
-  island('kyushu', [[130, 33.5], [131.8, 33.2], [131.5, 31], [130.2, 31.2], [129.8, 32.5]]),
-  island('taiwan', [[120.2, 23], [121.5, 25], [122, 24.5], [120.8, 22]]),
-  island('srilanka', [[80, 9.8], [81.8, 7.5], [81, 6], [80, 6], [79.8, 8]]),
-  island('luzon', [[120.5, 18.5], [122.2, 18.4], [122, 14.5], [124, 13], [120.6, 13.9], [119.8, 16]]),
-  island('mindanao', [[122, 7], [126.5, 7.5], [125.5, 9.5], [123, 8.5]]),
-  island('sumatra', [[95.3, 5.5], [98, 4], [103, -1], [106, -3], [105.8, -5.8], [102, -4], [98.5, 0.5]]),
-  island('java', [[105.2, -6.8], [108.5, -6.5], [114.5, -7.8], [114.5, -8.7], [108, -7.8]]),
-  island('borneo', [[109, 1.5], [111, 2], [114, 4.5], [117, 7], [119, 5], [117.5, 1], [116.5, -3], [114, -4], [110.5, -3], [109, -0.5]]),
-  island('sulawesi', [[119.5, -5.5], [119.5, 0], [121, 1], [125, 1.5], [123, -1], [121.5, -1], [123.2, -4], [121, -4], [120.5, -5.5]]),
+  island('iceland', [[-24, 65.5], [-22, 66.4], [-16, 66.5], [-14, 65], [-18, 63.5], [-22.5, 63.8]], 'europe'),
+  island('britain', [[-5.7, 50], [-3, 50.6], [1.4, 51.2], [1.7, 52.7], [0, 53.5], [-1.5, 55], [-2, 56], [-2, 57.6], [-3.5, 58.6], [-5, 58.5], [-6, 57], [-5.5, 56], [-4.8, 55], [-3, 54.8], [-3, 53.4], [-4.5, 53.3], [-4.2, 52.3], [-5.2, 51.7], [-3, 51.4], [-4.5, 51]], 'europe'),
+  island('ireland', [[-10, 51.7], [-6, 52], [-6, 54], [-5.7, 54.6], [-7.5, 55.3], [-9, 54.2], [-10, 53.5], [-9.5, 52.2]], 'europe'),
+  island('sardinia', [[8.2, 41], [9.7, 41], [9.5, 39], [8.5, 39]], 'europe'),
+  island('sicily', [[12.5, 38], [15.6, 38.2], [15, 36.7], [12.5, 37.6]], 'europe'),
+  island('cyprus', [[32.3, 35], [34.5, 35.6], [33, 34.6]], 'europe'),
+  island('novaya', [[52, 71], [56, 74], [68, 77], [60, 75], [55, 72]], 'europe'),
+  island('honshu', [[130.8, 34], [133, 35.5], [136, 36], [137, 37.3], [139.5, 38.5], [140, 40.5], [141.5, 41], [142, 39.5], [141, 37], [140.8, 35.7], [139.8, 35], [137.5, 34.6], [135.5, 33.5], [134.5, 34], [132, 33.8]], 'asia'),
+  island('hokkaido', [[140, 42], [141, 45.4], [145.5, 43.5], [143.5, 42]], 'asia'),
+  island('kyushu', [[130, 33.5], [131.8, 33.2], [131.5, 31], [130.2, 31.2], [129.8, 32.5]], 'asia'),
+  island('taiwan', [[120.2, 23], [121.5, 25], [122, 24.5], [120.8, 22]], 'asia'),
+  island('srilanka', [[80, 9.8], [81.8, 7.5], [81, 6], [80, 6], [79.8, 8]], 'asia'),
+  island('luzon', [[120.5, 18.5], [122.2, 18.4], [122, 14.5], [124, 13], [120.6, 13.9], [119.8, 16]], 'asia'),
+  island('mindanao', [[122, 7], [126.5, 7.5], [125.5, 9.5], [123, 8.5]], 'asia'),
+  island('sumatra', [[95.3, 5.5], [98, 4], [103, -1], [106, -3], [105.8, -5.8], [102, -4], [98.5, 0.5]], 'asia'),
+  island('java', [[105.2, -6.8], [108.5, -6.5], [114.5, -7.8], [114.5, -8.7], [108, -7.8]], 'asia'),
+  island('borneo', [[109, 1.5], [111, 2], [114, 4.5], [117, 7], [119, 5], [117.5, 1], [116.5, -3], [114, -4], [110.5, -3], [109, -0.5]], 'asia'),
+  island('sulawesi', [[119.5, -5.5], [119.5, 0], [121, 1], [125, 1.5], [123, -1], [121.5, -1], [123.2, -4], [121, -4], [120.5, -5.5]], 'asia'),
   island('newguinea', [[131, -1], [135, -3.3], [138, -1.8], [145, -4.5], [147.5, -6.2], [147.5, -8], [150.5, -10.5], [147, -10], [143.5, -8.5], [141, -9], [138, -8.3], [137.5, -5], [134, -4]], 'oceania'),
   island('madagascar', [[49.5, -12], [50.5, -15.5], [47, -25], [44, -24.5], [43.5, -21], [44.5, -16]], 'africa'),
   island('australia', [[114, -22], [114, -26], [115, -34], [118, -35], [123, -34], [129, -31.5], [134, -32.5], [138, -35], [140, -38], [144, -38.5], [147, -38], [150, -37], [153, -31], [153.5, -25], [149, -20.5], [146, -19], [145.3, -15], [143.5, -12.8], [142.5, -10.7], [141.5, -13], [141.5, -17.5], [139, -17.2], [136.5, -15.5], [135.5, -12], [132, -11.3], [130, -12.5], [129.5, -15], [125.5, -14], [122, -17.5], [119, -20]], 'oceania'),
@@ -493,6 +493,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
         <clipPath id="la-map-clip">
           <rect x="0" y="0" width={MAP_W} height={MAP_H} />
         </clipPath>
+        <clipPath id="la-clip-europe">
+          <polygon
+            points={`${f1(px(-25))},${f1(py(82))} ${f1(px(55))},${f1(py(82))} ${f1(px(55))},${f1(py(48))} ${f1(px(42))},${f1(py(42))} ${f1(px(26))},${f1(py(41))} ${f1(px(26))},${f1(py(34))} ${f1(px(-25))},${f1(py(34))}`}
+          />
+        </clipPath>
+        <clipPath id="la-clip-asia">
+          <polygon
+            points={`${f1(px(55))},${f1(py(82))} ${f1(px(190))},${f1(py(82))} ${f1(px(190))},${f1(py(-15))} ${f1(px(32))},${f1(py(-15))} ${f1(px(32))},${f1(py(30))} ${f1(px(26))},${f1(py(41))} ${f1(px(42))},${f1(py(42))} ${f1(px(55))},${f1(py(48))}`}
+          />
+        </clipPath>
         {LANDS.map((l) => (
           <path key={l.id} id={`la-p-${l.id}`} d={l.d} />
         ))}
@@ -531,22 +541,149 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
         ))}
       </g>
 
-      {/* Continentes e islas */}
+      {/* Continentes e islas agrupados por región para iluminación conjunta al pasar el ratón */}
       <g>
-        {LANDS.map((l) => (
-          <use
-            key={`l-${l.id}`}
-            href={`#la-p-${l.id}`}
-            className={l.continent ? 'la-land la-land--click' : 'la-land'}
-            onClick={l.continent ? () => onContinent(l.continent as RegionId) : undefined}
-          />
-        ))}
+        {/* América del Norte */}
+        <g
+          className="la-continent"
+          data-continent="north_america"
+          onClick={() => onContinent('north_america')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región América del Norte"
+        >
+          {LANDS.filter((l) => l.continent === 'north_america').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(-108))}
+            y={f1(py(47))}
+            fontSize={11}
+          >
+            AMÉRICA DEL NORTE
+          </text>
+        </g>
+
+        {/* América Latina */}
+        <g
+          className="la-continent"
+          data-continent="latam"
+          onClick={() => onContinent('latam')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región América Latina"
+        >
+          {LANDS.filter((l) => l.continent === 'latam').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(-62))}
+            y={f1(py(-21))}
+            fontSize={10.5}
+          >
+            AMÉRICA LATINA
+          </text>
+        </g>
+
+        {/* Europa */}
+        <g
+          className="la-continent"
+          data-continent="europe"
+          onClick={() => onContinent('europe')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región Europa"
+        >
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-europe)" className="la-land la-land--click" />
+          {LANDS.filter((l) => l.continent === 'europe').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(33))}
+            y={f1(py(49.2))}
+            fontSize={8}
+          >
+            EUROPA
+          </text>
+        </g>
+
+        {/* Asia */}
+        <g
+          className="la-continent"
+          data-continent="asia"
+          onClick={() => onContinent('asia')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región Asia & Oriente"
+        >
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-asia)" className="la-land la-land--click" />
+          {LANDS.filter((l) => l.continent === 'asia').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(92))}
+            y={f1(py(51))}
+            fontSize={13}
+          >
+            ASIA
+          </text>
+        </g>
+
+        {/* África */}
+        <g
+          className="la-continent"
+          data-continent="africa"
+          onClick={() => onContinent('africa')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región África"
+        >
+          {LANDS.filter((l) => l.continent === 'africa').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(21))}
+            y={f1(py(3))}
+            fontSize={11}
+          >
+            ÁFRICA
+          </text>
+        </g>
+
+        {/* Oceanía */}
+        <g
+          className="la-continent"
+          data-continent="oceania"
+          onClick={() => onContinent('oceania')}
+          role="button"
+          tabIndex={0}
+          aria-label="Región Oceanía"
+        >
+          {LANDS.filter((l) => l.continent === 'oceania').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+          ))}
+          <text
+            className="la-region-label"
+            x={f1(px(136))}
+            y={f1(py(-33.5))}
+            fontSize={9}
+          >
+            OCEANÍA
+          </text>
+        </g>
+
+        {/* Tramado cartográfico vintage (pointer-events: none) */}
         {LANDS.map((l) => (
           <use key={`h-${l.id}`} href={`#la-p-${l.id}`} className="la-hatch" />
         ))}
       </g>
 
-      {/* Nombres de océanos y regiones */}
+      {/* Nombres de océanos */}
       {OCEAN_LABELS.map((o) => (
         <text
           key={o.text}
@@ -556,18 +693,6 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
           transform={`rotate(${o.rot} ${f1(px(o.lon))} ${f1(py(o.lat))})`}
         >
           {o.text}
-        </text>
-      ))}
-      {REGION_LABELS.map((r) => (
-        <text
-          key={r.id}
-          className="la-region-label"
-          x={f1(px(r.lon))}
-          y={f1(py(r.lat))}
-          fontSize={r.size}
-          onClick={() => onContinent(r.id)}
-        >
-          {r.text}
         </text>
       ))}
 
@@ -686,8 +811,8 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
             <circle className="la-wax-ring" r={9.3} />
             <circle className="la-wax-ring la-wax-ring--dash" r={7.4} />
             <ellipse className="la-wax-shine" cx={-4} cy={-5} rx={4.2} ry={2.2} transform="rotate(-35 -4 -5)" />
-            <text className="la-node__code" y={0.4}>
-              {c.code}
+            <text className="la-node__flag" y={0.5}>
+              {c.flag}
             </text>
             <g className="la-badge" transform="translate(10 -10)">
               <circle r={5.8} />
@@ -702,6 +827,9 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
             <circle className="la-explore__ring" r={11.8} />
             <circle className="la-explore__outline" r={5} />
             <path className="la-explore__half" d={HALF_D} />
+            <text className="la-node__flag" y={0.5} fontSize="9.5">
+              {c.flag}
+            </text>
           </>
         )}
 
@@ -768,6 +896,9 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   const wheelTimer = useRef<number | undefined>(undefined);
 
   const [zoom, setZoom] = useState(() => MAP_W / PRESETS[activeContinent].w);
+  const isTouchDevice = typeof window !== 'undefined' && (
+    'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+  );
 
   /* ------------------------------ Cámara ------------------------------ */
 
@@ -1220,7 +1351,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           <i className="la-corner la-corner--bl" />
           <i className="la-corner la-corner--br" />
         </div>
-        <div className="la-hint" data-show={isZoomed} aria-hidden="true">
+        <div className="la-hint" data-show={isZoomed && !isTouchDevice} aria-hidden="true">
           Arrastra para explorar · Ctrl + rueda para acercar
         </div>
       </div>
