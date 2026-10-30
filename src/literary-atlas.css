@@ -138,57 +138,63 @@ html.dark .la-root {
   min-width: 0;
 }
 
-/* Selector móvil de continentes */
+/* Selector móvil de continentes con LibrarySelect */
 .la-mobile-regions {
+  display: none;
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 175px;
 }
 
-.la-select-continent {
-  width: 100%;
-  height: 38px;
-  padding: 0 1.85rem 0 0.85rem;
-  border-radius: 999px;
-  border: 1px solid var(--la-brass-soft);
-  background: var(--la-chip-bg);
-  color: var(--la-chip-ink);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(40, 25, 10, 0.06);
-  transition: all 0.2s var(--la-ease);
-  outline: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.la-continent-select-trigger {
+  border-radius: 999px !important;
+  background: var(--la-chip-bg) !important;
+  border-color: var(--la-brass-soft) !important;
+  color: var(--la-chip-ink) !important;
+  font-weight: 700 !important;
+  font-size: 0.78rem !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 0.85rem !important;
+  box-shadow: 0 1px 3px rgba(40, 25, 10, 0.08) !important;
+  max-width: 100%;
 }
 
-.la-select-continent:focus {
-  border-color: var(--la-brass);
-  box-shadow: 0 0 0 2px var(--la-gold);
+.la-continent-select-trigger:hover:not(:disabled) {
+  border-color: var(--la-brass) !important;
 }
 
-.la-select-continent-arrow {
-  position: absolute;
-  right: 10px;
-  pointer-events: none;
-  color: var(--la-chip-ink);
-  opacity: 0.7;
+.la-continent-select-trigger.is-open {
+  border-color: var(--la-brass) !important;
+  box-shadow: 0 0 0 2px var(--la-gold) !important;
 }
 
-html.dark .la-select-continent {
-  background: var(--la-chip-bg);
-  border-color: rgba(229, 193, 88, 0.3);
-  color: #f1f5f9;
+.la-continent-select-trigger--filtered {
+  background: linear-gradient(135deg, #781d22 0%, #5c1418 100%) !important;
+  color: #fff9ed !important;
+  border-color: rgba(245, 197, 66, 0.5) !important;
+  box-shadow: 0 2px 6px rgba(110, 26, 36, 0.3) !important;
 }
 
-html.dark .la-select-continent option {
-  background: #111722;
-  color: #f1f5f9;
+html.dark .la-continent-select-trigger {
+  background: var(--la-chip-bg) !important;
+  border-color: rgba(229, 193, 88, 0.3) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .la-continent-select-trigger:hover:not(:disabled) {
+  border-color: rgba(229, 193, 88, 0.5) !important;
+}
+
+html.dark .la-continent-select-trigger.is-open {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
+}
+
+html.dark .la-continent-select-trigger--filtered {
+  background: linear-gradient(135deg, #781d22 0%, #4b1014 100%) !important;
+  color: #fff9ed !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
 }
 
 .la-regions {
@@ -382,15 +388,19 @@ html.dark .la-root--expanded .la-regions-wrapper .la-strip-btn {
 .la-root--expanded .la-mobile-regions {
   pointer-events: auto;
 }
-.la-root--expanded .la-mobile-regions .la-select-continent {
-  background: rgba(251, 246, 234, 0.94);
+.la-root--expanded .la-mobile-regions .la-continent-select-trigger {
+  background: rgba(251, 246, 234, 0.94) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--la-brass);
+  border: 1px solid var(--la-brass) !important;
 }
-html.dark .la-root--expanded .la-mobile-regions .la-select-continent {
-  background: rgba(19, 27, 39, 0.94);
-  border-color: rgba(229, 193, 88, 0.35);
+html.dark .la-root--expanded .la-mobile-regions .la-continent-select-trigger {
+  background: rgba(19, 27, 39, 0.94) !important;
+  border-color: rgba(229, 193, 88, 0.35) !important;
+}
+.la-root--expanded .la-mobile-regions .la-continent-select-trigger--filtered {
+  background: linear-gradient(135deg, rgba(120, 29, 34, 0.95) 0%, rgba(92, 20, 24, 0.95) 100%) !important;
+  border-color: rgba(245, 197, 66, 0.6) !important;
 }
 .la-root--expanded .la-regions,
 .la-root--expanded .la-zoom {
@@ -1244,9 +1254,17 @@ html.dark .la-legend__summary strong {
 }
 
 @media (max-width: 640px) {
+  .la-mobile-regions {
+    display: flex !important;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .la-regions-wrapper {
+    display: none !important;
+  }
   .la-toolbar { gap: 0.4rem; }
-  .la-regions-wrapper { gap: 0.25rem; }
-  .la-zoom { padding-left: 0.4rem; }
+  .la-zoom { padding-left: 0.2rem; }
   .la-iconbtn { width: 38px; height: 38px; }
   .la-expand-btn { width: 38px; height: 38px; min-width: 38px; padding: 0; }
   .la-chip { min-height: 38px; }
@@ -1288,6 +1306,15 @@ html.dark .la-legend__summary strong {
   }
   .la-root--expanded .la-regions {
     padding: 3px 6px;
+  }
+}
+
+@media (min-width: 641px) {
+  .la-mobile-regions {
+    display: none !important;
+  }
+  .la-regions-wrapper {
+    display: flex !important;
   }
 }
 

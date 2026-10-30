@@ -7,7 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Compass, Minus, Plus, Globe, Maximize2, Minimize2, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Compass, Minus, Plus, Globe, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LibrarySelect } from './LibrarySelect';
 import '../literary-atlas.css';
 
 /* ==========================================================================
@@ -457,6 +458,11 @@ const REGIONS: { id: ContinentId; label: string }[] = [
   { id: 'africa', label: 'África' },
   { id: 'oceania', label: 'Oceanía' },
 ];
+
+const REGION_OPTIONS = REGIONS.map((r) => ({
+  value: r.id,
+  label: r.label,
+}));
 
 const statusOf = (c: CountryMapNode): Status => {
   if (c.readCount > 0) return 'conquered';
@@ -1485,31 +1491,27 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     <section className={`la-root font-sans ${isExpanded ? 'la-root--expanded' : ''}`} aria-label="Atlas Literario Mundial">
       {/* Barra superior: regiones + zoom */}
       <div className="la-toolbar">
-        {/* Selector de continentes en móvil: desplegable compacto y elegante */}
-        <div className="la-mobile-regions sm:hidden">
-          <div className="relative flex items-center">
-            <select
-              value={activeContinent}
-              onChange={(e) => {
-                const val = e.target.value as ContinentId;
-                if (val === activeContinent) animateTo(PRESETS[val]);
-                else onSelectContinent(val);
-              }}
-              className="la-select-continent"
-              aria-label="Seleccionar continente o región"
-            >
-              {REGIONS.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="la-select-continent-arrow" aria-hidden="true" />
-          </div>
+        {/* Selector de continentes en móvil: desplegable con el estilo LibrarySelect de la app */}
+        <div className="la-mobile-regions">
+          <LibrarySelect<ContinentId>
+            value={activeContinent}
+            onChange={(val) => {
+              if (val === activeContinent) {
+                animateTo(PRESETS[val]);
+              } else {
+                onSelectContinent(val);
+              }
+            }}
+            options={REGION_OPTIONS}
+            ariaLabel="Filtrar por continente o región"
+            className={`library-select-trigger la-continent-select-trigger ${
+              activeContinent !== 'all' ? 'la-continent-select-trigger--filtered' : ''
+            }`}
+          />
         </div>
 
-        {/* Cinta de chips de continentes en escritorio (sm en adelante) */}
-        <div className="la-regions-wrapper hidden sm:flex">
+        {/* Cinta de chips de continentes en escritorio (oculta en móvil por CSS) */}
+        <div className="la-regions-wrapper">
           {hasRegionsOverflow && (
             <button
               type="button"
