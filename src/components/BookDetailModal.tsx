@@ -310,9 +310,20 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleTurnToNotes = useCallback(() => handleTurnToTab('notes'), [handleTurnToTab]);
 
   const handleSaveNotes = useCallback(
-    async (notesToSave?: string) => {
+    async (notesToSave?: string, isExplicitSave = false) => {
       if (!book?.id) return;
       const content = notesToSave !== undefined ? notesToSave : localNotes;
+      const currentSaved = book.notasPersonales ?? '';
+
+      // Si no hay cambios respecto a lo que ya está guardado en base de datos:
+      if (content.trim() === currentSaved.trim()) {
+        if (isExplicitSave && content.trim() !== '') {
+          setNotesSavedSuccess(true);
+          setTimeout(() => setNotesSavedSuccess(false), 1500);
+        }
+        return;
+      }
+
       setIsSavingNotes(true);
       try {
         await updateBookPartialRecord(book.id, { notasPersonales: content });
@@ -329,7 +340,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
         setIsSavingNotes(false);
       }
     },
-    [book?.id, localNotes, onShowToast]
+    [book?.id, book?.notasPersonales, localNotes, onShowToast]
   );
 
   const handleAddQuote = useCallback(async () => {
@@ -891,7 +902,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         {!readOnly && (
                           <button
                             type="button"
-                            onClick={() => handleSaveNotes()}
+                            onClick={() => handleSaveNotes(undefined, true)}
                             disabled={isSavingNotes}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition"
                           >
@@ -2032,7 +2043,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           {!readOnly && (
                             <button
                               type="button"
-                              onClick={() => handleSaveNotes()}
+                              onClick={() => handleSaveNotes(undefined, true)}
                               disabled={isSavingNotes}
                               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition cursor-pointer"
                             >
