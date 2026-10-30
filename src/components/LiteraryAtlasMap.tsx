@@ -1028,12 +1028,15 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     [],
   );
 
-  // Zoom con Ctrl/Cmd + rueda (no secuestra el scroll normal de la página)
+  // Zoom con rueda:
+  // - En modo ampliado (mesa de gran formato): la rueda del ratón hace zoom directamente sin necesidad de pulsar Ctrl,
+  //   ya que la ventana bloquea el fondo y no hay scroll de página.
+  // - En vista empotrada normal: exige Ctrl/Cmd para no interferir con el desplazamiento normal por la página web.
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
+      if (!isExpanded && !(e.ctrlKey || e.metaKey)) return;
       e.preventDefault();
       cancelAnimationFrame(rafRef.current);
       const box = el.getBoundingClientRect();
@@ -1050,7 +1053,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [applyRect, syncZoom]);
+  }, [applyRect, syncZoom, isExpanded]);
 
   const zoomBy = useCallback(
     (factor: number) => {
@@ -1356,16 +1359,18 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           {onToggleExpand && (
             <button
               type="button"
-              className={isExpanded ? 'la-iconbtn px-2.5 w-auto' : 'la-iconbtn'}
+              className={isExpanded ? 'la-expand-btn' : 'la-iconbtn'}
               onClick={onToggleExpand}
-              aria-label={isExpanded ? 'Reducir mapa' : 'Agrandar mapa (Mesa cartográfica)'}
-              title={isExpanded ? 'Reducir mapa a vista normal (Esc)' : 'Agrandar mapa (Mesa cartográfica)'}
+              aria-label={isExpanded ? 'Cerrar mapa ampliado (Esc)' : 'Agrandar mapa (Mesa cartográfica)'}
+              title={isExpanded ? 'Cerrar mapa ampliado a vista normal (Esc)' : 'Agrandar mapa (Mesa cartográfica)'}
             >
               {isExpanded ? (
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
-                  <Minimize2 size={14} />
-                  <span>Cerrar</span>
-                </span>
+                <>
+                  <Minimize2 size={15} className="shrink-0 text-amber-900 dark:text-amber-200" />
+                  <span className="hidden sm:inline text-xs font-bold text-amber-950 dark:text-amber-200">
+                    Cerrar
+                  </span>
+                </>
               ) : (
                 <Maximize2 size={16} />
               )}

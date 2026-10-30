@@ -875,13 +875,13 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
       {isMapExpanded &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-stone-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6"
+            className="fixed inset-0 z-[100] bg-stone-950/85 backdrop-blur-md flex items-center justify-center p-1.5 sm:p-4 md:p-6"
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsMapExpanded(false);
             }}
           >
             <div
-              className="relative w-full max-w-7xl h-[92vh] sm:h-[95vh] rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden"
+              className="relative w-full max-w-7xl h-[94vh] sm:h-[95vh] rounded-xl sm:rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Mapa a pantalla completa en la mesa */}
