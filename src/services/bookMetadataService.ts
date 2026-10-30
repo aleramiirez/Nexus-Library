@@ -2499,7 +2499,7 @@ export function candidateToBookInput(
     volumen: null,
     fechaInicio: '',
     fechaFin: '',
-    lecturaVirtual: '',
+    lecturaVirtual: 'Digital (.epub / eBook)',
     tiempoLectura: '',
     isbn: cand.isbn || '',
     editorial: cand.editorial || '',

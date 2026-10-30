@@ -206,7 +206,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       volumen: null,
       fechaInicio: '',
       fechaFin: '',
-      lecturaVirtual: '',
+      lecturaVirtual: 'Digital (.epub / eBook)',
       tiempoLectura: '',
       isbn: selectedCandidate.isbn,
       editorial: selectedCandidate.editorial,

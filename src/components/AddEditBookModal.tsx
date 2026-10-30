@@ -127,7 +127,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const sagaPickerRef = useRef<HTMLDivElement>(null);
   const [fechaInicio, setFechaInicio] = useState<string>('');
   const [fechaFin, setFechaFin] = useState<string>('');
-  const [lecturaVirtual, setLecturaVirtual] = useState<string>('');
+  const [lecturaVirtual, setLecturaVirtual] = useState<string>('Digital (.epub / eBook)');
   const [tiempoLectura, setTiempoLectura] = useState<string>('');
 
   const [isbn, setIsbn] = useState('');
@@ -266,7 +266,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setVolumen('');
       setFechaInicio('');
       setFechaFin('');
-      setLecturaVirtual('');
+      setLecturaVirtual('Digital (.epub / eBook)');
       setTiempoLectura('');
       setIsbn('');
       setEditorial('');
@@ -584,7 +584,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           volumen: volumen ? Number(volumen) : null,
           fechaInicio,
           fechaFin,
-          lecturaVirtual: lecturaVirtual.trim(),
+          lecturaVirtual: (lecturaVirtual || 'Digital (.epub / eBook)').trim(),
           tiempoLectura: calculateReadingTime({
             fechaInicio,
             fechaFin,
@@ -900,11 +900,11 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             value={
               lecturaVirtual.startsWith('http')
                 ? 'url'
-                : ['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual)
+                : ['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual)
                 ? lecturaVirtual
                 : lecturaVirtual
                 ? 'otro'
-                : 'Físico (Papel)'
+                : 'Digital (.epub / eBook)'
             }
             onChange={(e) => {
               const val = e.target.value;
@@ -918,12 +918,12 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             }}
             className={inputCls}
           >
-            <option value="Físico (Papel)">📖 Físico (Papel)</option>
             <option value="Digital (.epub / eBook)">📱 Digital (.epub / eBook)</option>
+            <option value="Físico (Papel)">📖 Físico (Papel)</option>
             <option value="Audiolibro">🎧 Audiolibro</option>
             <option value="url">🌐 Enlace Web / URL</option>
             {lecturaVirtual &&
-              !['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual) &&
+              !['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual) &&
               !lecturaVirtual.startsWith('http') && (
                 <option value="otro">Personalizado: {lecturaVirtual}</option>
               )}
@@ -932,7 +932,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           {/* Si eligió URL o tiene un enlace/personalizado, mostrar el input */}
           {(lecturaVirtual.startsWith('http') ||
             (lecturaVirtual &&
-              !['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual))) && (
+              !['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual))) && (
             <input
               type="text"
               value={lecturaVirtual}

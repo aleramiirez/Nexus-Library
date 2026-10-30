@@ -598,6 +598,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   const isUrl = /^https?:\/\//i.test(book.lecturaVirtual);
 
+  const formatReadingType = (val?: string) => {
+    if (!val) return '📱 Digital (.epub / eBook)';
+    if (/^https?:\/\//i.test(val)) return val;
+    if (/digital|epub|ebook/i.test(val)) return '📱 Digital (.epub / eBook)';
+    if (/físico|papel/i.test(val)) return '📖 Físico (Papel)';
+    if (/audio/i.test(val)) return '🎧 Audiolibro';
+    return val;
+  };
+
   const modalContent = (
     <>
       <div
@@ -1347,7 +1356,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     {book.lecturaVirtual && (
                       <div className="pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2">
                         <span className="text-[11px] text-stone-600 dark:text-slate-400 shrink-0">
-                          Lectura Virtual
+                          Formato
                         </span>
                         {isUrl ? (
                           <a
@@ -1360,7 +1369,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </a>
                         ) : (
                           <span className="font-medium text-xs truncate">
-                            {book.lecturaVirtual}
+                            {formatReadingType(book.lecturaVirtual)}
                           </span>
                         )}
                       </div>
@@ -1597,7 +1606,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                 {book.lecturaVirtual && (
                                   <div className="pt-1 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
                                     <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
-                                      Lectura Virtual
+                                      Formato
                                     </span>
                                     {isUrl ? (
                                       <a
@@ -1610,7 +1619,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                       </a>
                                     ) : (
                                       <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
-                                        {book.lecturaVirtual}
+                                        {formatReadingType(book.lecturaVirtual)}
                                       </span>
                                     )}
                                   </div>
@@ -1665,7 +1674,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               {book.lecturaVirtual && (
                                 <div className="w-full pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
                                   <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
-                                    Lectura Virtual
+                                    Formato
                                   </span>
                                   {isUrl ? (
                                     <a
@@ -1678,7 +1687,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                     </a>
                                   ) : (
                                     <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
-                                      {book.lecturaVirtual}
+                                      {formatReadingType(book.lecturaVirtual)}
                                     </span>
                                   )}
                                 </div>

@@ -237,7 +237,7 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
           volumen: item.volumen,
           fechaInicio: '',
           fechaFin: '',
-          lecturaVirtual: item.lecturaVirtual || 'Digital (.epub)',
+          lecturaVirtual: item.lecturaVirtual || 'Digital (.epub / eBook)',
           tiempoLectura: '',
           isbn: item.isbn.trim(),
           editorial: item.editorial.trim(),
