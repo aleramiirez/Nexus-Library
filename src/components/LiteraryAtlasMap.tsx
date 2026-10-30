@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Compass, Minus, Plus, Globe, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Compass, Minus, Plus, Globe, Maximize2, Minimize2, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import '../literary-atlas.css';
 
 /* ==========================================================================
@@ -1485,7 +1485,31 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     <section className={`la-root font-sans ${isExpanded ? 'la-root--expanded' : ''}`} aria-label="Atlas Literario Mundial">
       {/* Barra superior: regiones + zoom */}
       <div className="la-toolbar">
-        <div className="la-regions-wrapper">
+        {/* Selector de continentes en móvil: desplegable compacto y elegante */}
+        <div className="la-mobile-regions sm:hidden">
+          <div className="relative flex items-center">
+            <select
+              value={activeContinent}
+              onChange={(e) => {
+                const val = e.target.value as ContinentId;
+                if (val === activeContinent) animateTo(PRESETS[val]);
+                else onSelectContinent(val);
+              }}
+              className="la-select-continent"
+              aria-label="Seleccionar continente o región"
+            >
+              {REGIONS.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="la-select-continent-arrow" aria-hidden="true" />
+          </div>
+        </div>
+
+        {/* Cinta de chips de continentes en escritorio (sm en adelante) */}
+        <div className="la-regions-wrapper hidden sm:flex">
           {hasRegionsOverflow && (
             <button
               type="button"
