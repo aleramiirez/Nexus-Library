@@ -29,6 +29,7 @@ export interface Book {
   portadaUrl: string;
   portadaFallbackUrl: string;
   portadaDataUrl?: string;
+  pais?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +62,7 @@ export interface BibliographicCandidate {
   suggestedGenre: Genre | '';
   suggestedSubgenres: Subgenre[];
   recommendationReason?: string;
+  pais?: string;
 }
 
 export interface EditionCoverOption {

@@ -14,6 +14,7 @@ import { BookCover } from './BookCover';
 import { UserAvatar } from './UserAvatar';
 import {
   Continent,
+  CONTINENT_NAMES,
   CountryPassportEntry,
   COUNTRIES_CATALOG,
   literaryGeographyService
@@ -34,6 +35,16 @@ export interface LiteraryPassportModalProps {
 
 type PassportTab = 'identity' | 'visas' | 'badges';
 
+const CONTINENT_FILTERS: { id: Continent | 'all'; label: string }[] = [
+  { id: 'all', label: 'Todos' },
+  { id: 'europe', label: 'Europa' },
+  { id: 'latam', label: 'América Latina' },
+  { id: 'north_america', label: 'América del Norte' },
+  { id: 'asia', label: 'Asia' },
+  { id: 'africa', label: 'África' },
+  { id: 'oceania', label: 'Oceanía' }
+];
+
 export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
   isOpen,
   onClose,
@@ -46,7 +57,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
   onShowToast
 }) => {
   const [activeTab, setActiveTab] = useState<PassportTab>('visas');
-  const [selectedContinent, setSelectedContinent] = useState<Continent | 'Todos'>('Todos');
+  const [selectedContinent, setSelectedContinent] = useState<Continent | 'all'>('all');
   const [selectedEntry, setSelectedEntry] = useState<CountryPassportEntry | null>(null);
   const [assigningBook, setAssigningBook] = useState<Book | null>(null);
 
@@ -60,7 +71,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
   const cleanId = (memberId || 'INVITADO').slice(0, 8).toUpperCase();
 
   const filteredEntries = useMemo(() => {
-    if (selectedContinent === 'Todos') return passport.entries;
+    if (selectedContinent === 'all') return passport.entries;
     return passport.entries.filter((e) => e.country.continent === selectedContinent);
   }, [passport.entries, selectedContinent]);
 
@@ -179,22 +190,20 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
               {/* Filtro de continentes */}
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                  {(
-                    ['Todos', 'Europa', 'América Latina', 'América del Norte', 'Asia', 'África'] as const
-                  ).map((cont) => (
+                  {CONTINENT_FILTERS.map((item) => (
                     <button
-                      key={cont}
+                      key={item.id}
                       type="button"
                       onClick={() => {
-                        setSelectedContinent(cont);
+                        setSelectedContinent(item.id);
                       }}
                       className={`px-3 py-1 rounded-xl text-xs font-serif font-semibold transition ${
-                        selectedContinent === cont
+                        selectedContinent === item.id
                           ? 'bg-amber-600 dark:bg-amber-500 text-white dark:text-slate-950 font-bold shadow-xs'
                           : 'bg-amber-900/5 dark:bg-[#151d2d] text-stone-700 dark:text-slate-300 hover:bg-amber-500/10 border border-amber-900/15 dark:border-slate-700/50'
                       }`}
                     >
-                      {cont}
+                      {item.label}
                     </button>
                   ))}
                 </div>
@@ -476,7 +485,7 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                       VISADO CONSULAR · {selectedEntry.country.sealLatinName}
                     </span>
                     <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
-                      {selectedEntry.country.name} ({selectedEntry.country.continent})
+                      {selectedEntry.country.name} ({CONTINENT_NAMES[selectedEntry.country.continent] || selectedEntry.country.continent})
                     </h3>
                   </div>
                 </div>

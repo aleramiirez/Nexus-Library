@@ -50,6 +50,10 @@ import {
   parseEbookFile
 } from '../services/epubParserService';
 import { LibrarySelect } from './LibrarySelect';
+import {
+  COUNTRIES_CATALOG,
+  literaryGeographyService
+} from '../services/literaryGeographyService';
 import '../dashboard-panels.css';
 
 interface AddEditBookModalProps {
@@ -128,6 +132,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [editorial, setEditorial] = useState('');
   const [idioma, setIdioma] = useState('');
   const [edicion, setEdicion] = useState('');
+  const [pais, setPais] = useState('');
   const [sinopsis, setSinopsis] = useState('');
   const [notasPersonales, setNotasPersonales] = useState('');
   const [portadaUrl, setPortadaUrl] = useState('');
@@ -227,6 +232,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setEditorial(editingBook.editorial);
       setIdioma(editingBook.idioma);
       setEdicion(editingBook.edicion);
+      setPais(editingBook.pais || '');
       setSinopsis(editingBook.sinopsis);
       setNotasPersonales(editingBook.notasPersonales || '');
       setPortadaUrl(editingBook.portadaUrl);
@@ -264,6 +270,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setEditorial('');
       setIdioma('');
       setEdicion('');
+      setPais('');
       setSinopsis('');
       setNotasPersonales('');
       setPortadaUrl('');
@@ -327,6 +334,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     setEditorial(cand.editorial);
     setIdioma(cand.idioma);
     setEdicion(cand.edicion);
+    setPais(cand.pais || '');
     setSinopsis(cand.sinopsis);
     setPortadaUrl(cand.portadaUrl);
     setPortadaFallbackUrl(cand.portadaFallbackUrl);
@@ -439,6 +447,15 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     if (!genero) return [];
     return getRecommendedSubgenres(genero);
   }, [genero]);
+
+  const sortedCountries = useMemo(() => {
+    return Object.values(COUNTRIES_CATALOG).sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
+
+  const autoDetectedCountry = useMemo(() => {
+    if (pais) return null;
+    return literaryGeographyService.resolveBookCountry({ autor, nombre });
+  }, [pais, autor, nombre]);
 
   const displayedSubgenres = useMemo(() => {
     // Lista deduplicada por texto normalizado
@@ -571,6 +588,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           editorial: editorial.trim(),
           idioma: idioma.trim(),
           edicion: edicion.trim(),
+          pais: pais.trim().toUpperCase() || undefined,
           sinopsis: sinopsis.trim(),
           notasPersonales: notasPersonales.trim(),
           citas: editingBook?.citas || [],
@@ -1296,23 +1314,46 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         </div>
       </div>
 
-      {/* Publisher, Language, Edition */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Editorial, País de origen / autor */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Editorial</label>
           <input
             type="text"
             value={editorial}
             onChange={(e) => setEditorial(e.target.value)}
+            placeholder="Ej. Alfaguara, Cátedra..."
             className={inputCls}
           />
         </div>
+        <div>
+          <label className={labelCls}>País de origen / autor</label>
+          <select
+            value={pais}
+            onChange={(e) => setPais(e.target.value)}
+            className={inputCls}
+          >
+            <option value="">
+              ✨ Detectar automáticamente por autor{autoDetectedCountry ? ` (${autoDetectedCountry.flag} ${autoDetectedCountry.name})` : ''}
+            </option>
+            {sortedCountries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.flag} {c.name} ({c.code})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Idioma, Edición */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Idioma</label>
           <input
             type="text"
             value={idioma}
             onChange={(e) => setIdioma(e.target.value)}
+            placeholder="Ej. Español, Inglés..."
             className={inputCls}
           />
         </div>
@@ -1322,6 +1363,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             type="text"
             value={edicion}
             onChange={(e) => setEdicion(e.target.value)}
+            placeholder="Ej. 1ª edición, Bolsillo..."
             className={inputCls}
           />
         </div>

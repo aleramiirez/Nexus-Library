@@ -201,6 +201,7 @@ export function mapRowToBook(row: SupabaseBookRow): Book {
     portadaUrl: d.portadaUrl ?? '',
     portadaFallbackUrl: d.portadaFallbackUrl ?? '',
     portadaDataUrl: d.portadaDataUrl,
+    pais: d.pais ?? '',
     createdAt: row.created_at || d.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || d.updatedAt || new Date().toISOString()
   };
@@ -808,6 +809,28 @@ export async function updateBookQuickRating(
   const updatedBook: Book = {
     ...book,
     puntuacion,
+    updatedAt: new Date().toISOString()
+  };
+
+  const user = await getActiveUser();
+  if (user) {
+    await upsertBookToSupabase(user.id, updatedBook);
+  }
+
+  await db.books.put(updatedBook);
+}
+
+export async function updateBookQuickCountry(
+  bookId: string,
+  countryCode: string
+): Promise<void> {
+  const book = await db.books.get(bookId);
+  if (!book) return;
+
+  const pais = countryCode ? countryCode.trim().toUpperCase() : '';
+  const updatedBook: Book = {
+    ...book,
+    pais,
     updatedAt: new Date().toISOString()
   };
 
