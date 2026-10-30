@@ -52,6 +52,10 @@ export interface LiteraryAtlasViewProps {
   onCustomizeBook: (candidate: BibliographicCandidate) => void;
   onOpenBookDetail?: (book: Book) => void;
   onOpenPassportCard?: () => void;
+  userDisplayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+  memberId?: string | null;
 }
 
 function findEarliestReadDate(books: Book[]): string | undefined {
@@ -72,7 +76,11 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
   onQuickAddBook,
   onCustomizeBook,
   onOpenBookDetail,
-  onOpenPassportCard
+  onOpenPassportCard,
+  userDisplayName,
+  username,
+  avatarUrl,
+  memberId
 }) => {
   // ─── Resumen Consular y Rango ───
   const passportSummary = useMemo(
@@ -865,6 +873,10 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
           isOpen={isPassportModalOpen}
           onClose={() => setIsPassportModalOpen(false)}
           books={books}
+          displayName={userDisplayName}
+          username={username}
+          avatarUrl={avatarUrl}
+          memberId={memberId}
           onOpenBookDetail={onOpenBookDetail}
         />
       )}

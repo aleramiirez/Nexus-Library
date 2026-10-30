@@ -21,6 +21,7 @@ import {
   isBookRead
 } from '../services/literaryGeographyService';
 import { soundService } from '../services/soundService';
+import { profileService } from '../services/profileService';
 
 export interface LiteraryPassportModalProps {
   isOpen: boolean;
@@ -67,9 +68,47 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
     return literaryGeographyService.calculatePassport(books);
   }, [books]);
 
-  const cleanName = displayName?.trim() || 'Lector Nexus';
-  const cleanUsername = username?.trim() ? `@${username.trim()}` : '@lector';
-  const cleanId = (memberId || 'INVITADO').slice(0, 8).toUpperCase();
+  // Fallback inteligente si los props vienen vacíos (por ejemplo usuario en localStorage o invitado)
+  const cachedProfile = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    if (memberId) {
+      return profileService.getCachedProfile(memberId);
+    }
+    try {
+      const keys = Object.keys(localStorage).filter((k) => k.startsWith('nexus_library_profile_'));
+      if (keys.length > 0) {
+        const raw = localStorage.getItem(keys[0]);
+        if (raw) return JSON.parse(raw);
+      }
+    } catch {
+      // Ignorar errores de storage
+    }
+    return null;
+  }, [memberId]);
+
+  const effectiveDisplayName =
+    displayName?.trim() ||
+    cachedProfile?.displayName ||
+    cachedProfile?.username ||
+    profileService.getGuestAlias() ||
+    'Lector Nexus';
+
+  const effectiveUsername =
+    username?.trim() ||
+    cachedProfile?.username ||
+    (profileService.getGuestAlias()
+      ? profileService.getGuestAlias().toLowerCase().replace(/\s+/g, '_')
+      : 'lector');
+
+  const effectiveAvatarUrl =
+    avatarUrl ||
+    cachedProfile?.avatarUrl ||
+    profileService.getGuestAvatar() ||
+    null;
+
+  const cleanName = effectiveDisplayName;
+  const cleanUsername = effectiveUsername.startsWith('@') ? effectiveUsername : `@${effectiveUsername}`;
+  const cleanId = (memberId || cachedProfile?.id || 'INVITADO').slice(0, 8).toUpperCase();
 
   const filteredEntries = useMemo(() => {
     if (selectedContinent === 'all') return passport.entries;
@@ -372,8 +411,9 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                   <div className="flex flex-col items-center space-y-2">
                     <div className="p-1 rounded-2xl border-2 border-amber-600/40 dark:border-amber-400 bg-amber-500/10 dark:bg-amber-950/40 shadow-md">
                       <UserAvatar
-                        avatarUrl={avatarUrl}
+                        avatarUrl={effectiveAvatarUrl}
                         displayName={cleanName}
+                        username={cleanUsername}
                         size="xl"
                         className="w-24 h-24 sm:w-28 sm:h-28 text-3xl font-serif rounded-xl"
                       />
@@ -385,9 +425,14 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
                   {/* Datos del Ciudadano de las Letras */}
                   <div className="flex-1 space-y-3 text-center md:text-left">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/30 dark:border-amber-500/30 font-mono text-[11px] font-bold">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{passport.diplomaticRank.badge}</span>
+                    <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/30 dark:border-amber-500/30 font-mono text-[11px] font-bold">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{passport.diplomaticRank.badge}</span>
+                      </div>
+                      <span className="font-mono text-[10.5px] px-2 py-0.5 rounded-full bg-amber-900/10 dark:bg-amber-400/10 border border-amber-900/15 dark:border-amber-400/20 text-stone-600 dark:text-slate-400 font-semibold">
+                        NL-PAS-{cleanId}
+                      </span>
                     </div>
 
                     <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-amber-100">

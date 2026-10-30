@@ -2355,6 +2355,9 @@ export const App: React.FC = () => {
                 onAddBookFromCommunity={handleAddBookFromCommunity}
                 onOpenBookDetail={handleOpenCardDetail}
                 initialTab={discoverInitialTab}
+                userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
+                username={currentUserProfile?.username}
+                avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
               />
             </React.Suspense>
           )}

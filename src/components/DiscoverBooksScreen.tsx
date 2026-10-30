@@ -45,6 +45,9 @@ interface DiscoverBooksScreenProps {
   onAddBookFromCommunity?: (book: Book) => Promise<void>;
   onOpenBookDetail?: (book: Book) => void;
   initialTab?: 'books' | 'atlas' | 'community';
+  userDisplayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
 }
 
 const QUICK_CHIPS = [
@@ -66,7 +69,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   currentUserId,
   onAddBookFromCommunity,
   onOpenBookDetail,
-  initialTab
+  initialTab,
+  userDisplayName,
+  username,
+  avatarUrl
 }) => {
   const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas' | 'community'>(() => {
     if (initialTab) return initialTab;
@@ -1095,6 +1101,10 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
             onQuickAddBook={onQuickAddBook}
             onCustomizeBook={onCustomizeBook}
             onOpenBookDetail={onOpenBookDetail}
+            userDisplayName={userDisplayName}
+            username={username}
+            avatarUrl={avatarUrl}
+            memberId={currentUserId}
           />
         </div>
       )}
