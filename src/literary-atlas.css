@@ -355,37 +355,36 @@ html.dark .la-corner {
 .la-land--click {
   cursor: pointer;
 }
-.la-land--click:hover {
-  fill: var(--la-land-hover);
-}
 
-/* Continentes interactivos: iluminación conjunta al pasar el ratón */
+/* Continentes interactivos: iluminación conjunta al pasar el ratón SOLO en vista general */
 .la-continent {
-  cursor: pointer;
   outline: none;
 }
-.la-continent:hover .la-land--click,
-.la-continent:focus-visible .la-land--click {
+.la-continent--interactive {
+  cursor: pointer;
+}
+.la-continent--interactive:hover .la-land--click,
+.la-continent--interactive:focus-visible .la-land--click {
   fill: var(--la-land-hover);
   stroke: var(--la-brass);
   filter: drop-shadow(0 0 7px var(--la-brass-soft));
   transition: fill 0.25s var(--la-ease), stroke 0.25s var(--la-ease), filter 0.25s var(--la-ease);
 }
-html.dark .la-continent:hover .la-land--click,
-html.dark .la-continent:focus-visible .la-land--click {
+html.dark .la-continent--interactive:hover .la-land--click,
+html.dark .la-continent--interactive:focus-visible .la-land--click {
   fill: #26354d;
   stroke: var(--la-gold);
   filter: drop-shadow(0 0 8px rgba(229, 193, 88, 0.45));
 }
-.la-continent:hover .la-region-label,
-.la-continent:focus-visible .la-region-label {
+.la-continent--interactive:hover .la-region-label,
+.la-continent--interactive:focus-visible .la-region-label {
   fill: var(--la-crimson);
   opacity: 1;
   text-shadow: 0 0 10px var(--la-brass-soft);
   transition: fill 0.25s var(--la-ease), text-shadow 0.25s var(--la-ease);
 }
-html.dark .la-continent:hover .la-region-label,
-html.dark .la-continent:focus-visible .la-region-label {
+html.dark .la-continent--interactive:hover .la-region-label,
+html.dark .la-continent--interactive:focus-visible .la-region-label {
   fill: var(--la-gold);
   text-shadow: 0 0 10px rgba(229, 193, 88, 0.6);
 }

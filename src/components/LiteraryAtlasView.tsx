@@ -467,9 +467,12 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
         {/* Cabecera del Territorio Activo */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#242E42] pb-5">
           <div className="flex items-center gap-3.5">
-            <span className="text-4xl sm:text-5xl drop-shadow-sm select-none" role="img" aria-label={activeCountryInfo.name}>
-              {activeCountryInfo.flag}
-            </span>
+            <img
+              src={`https://flagcdn.com/w80/${activeCountryInfo.code.toLowerCase()}.png`}
+              alt={activeCountryInfo.name}
+              className="w-11 h-8 sm:w-13 sm:h-9 object-cover rounded-md shadow-md border border-amber-900/20 dark:border-amber-400/30 flex-shrink-0"
+              loading="lazy"
+            />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-stone-200/80 dark:bg-stone-800 text-stone-700 dark:text-stone-300">

@@ -472,9 +472,10 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 
 interface BaseMapProps {
   onContinent: (id: RegionId) => void;
+  isGeneralView: boolean;
 }
 
-const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
+const BaseMap = memo(function BaseMap({ onContinent, isGeneralView }: BaseMapProps) {
   return (
     <>
       <defs>
@@ -502,6 +503,15 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
           <polygon
             points={`${f1(px(55))},${f1(py(82))} ${f1(px(190))},${f1(py(82))} ${f1(px(190))},${f1(py(-15))} ${f1(px(32))},${f1(py(-15))} ${f1(px(32))},${f1(py(30))} ${f1(px(26))},${f1(py(41))} ${f1(px(42))},${f1(py(42))} ${f1(px(55))},${f1(py(48))}`}
           />
+        </clipPath>
+        <clipPath id="la-clip-wax-flag">
+          <circle cx="0" cy="0" r="7.5" />
+        </clipPath>
+        <clipPath id="la-clip-exp-flag">
+          <circle cx="0" cy="0" r="6.5" />
+        </clipPath>
+        <clipPath id="la-clip-label-flag">
+          <rect x="0" y="0" width="14" height="10" rx="1.5" ry="1.5" />
         </clipPath>
         {LANDS.map((l) => (
           <path key={l.id} id={`la-p-${l.id}`} d={l.d} />
@@ -541,19 +551,19 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
         ))}
       </g>
 
-      {/* Continentes e islas agrupados por región para iluminación conjunta al pasar el ratón */}
+      {/* Continentes e islas agrupados por región: interactivos SOLO en vista general */}
       <g>
         {/* América del Norte */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="north_america"
-          onClick={() => onContinent('north_america')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región América del Norte"
+          onClick={isGeneralView ? () => onContinent('north_america') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región América del Norte' : undefined}
         >
           {LANDS.filter((l) => l.continent === 'north_america').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -567,15 +577,15 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* América Latina */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="latam"
-          onClick={() => onContinent('latam')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región América Latina"
+          onClick={isGeneralView ? () => onContinent('latam') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región América Latina' : undefined}
         >
           {LANDS.filter((l) => l.continent === 'latam').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -589,16 +599,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Europa */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="europe"
-          onClick={() => onContinent('europe')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Europa"
+          onClick={isGeneralView ? () => onContinent('europe') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Europa' : undefined}
         >
-          <use href="#la-p-eurasia" clipPath="url(#la-clip-europe)" className="la-land la-land--click" />
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-europe)" className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           {LANDS.filter((l) => l.continent === 'europe').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -612,16 +622,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Asia */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="asia"
-          onClick={() => onContinent('asia')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Asia & Oriente"
+          onClick={isGeneralView ? () => onContinent('asia') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Asia & Oriente' : undefined}
         >
-          <use href="#la-p-eurasia" clipPath="url(#la-clip-asia)" className="la-land la-land--click" />
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-asia)" className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           {LANDS.filter((l) => l.continent === 'asia').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -635,15 +645,15 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* África */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="africa"
-          onClick={() => onContinent('africa')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región África"
+          onClick={isGeneralView ? () => onContinent('africa') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región África' : undefined}
         >
           {LANDS.filter((l) => l.continent === 'africa').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -657,15 +667,15 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Oceanía */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="oceania"
-          onClick={() => onContinent('oceania')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Oceanía"
+          onClick={isGeneralView ? () => onContinent('oceania') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Oceanía' : undefined}
         >
           {LANDS.filter((l) => l.continent === 'oceania').map((l) => (
-            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className="la-land la-land--click" />
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
           ))}
           <text
             className="la-region-label"
@@ -762,10 +772,18 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
     status === 'discover'
       ? `Canon por descubrir · ${plural(c.canonCount, 'obra', 'obras')}`
       : `${c.readCount} leídos · ${c.canonCount} en el canon`;
-  const nameText = `${c.flag} ${c.name}`;
-  const nameW = nameText.length * 5.7 + 14;
-  const labelW = Math.max(46, selected ? Math.max(nameW, meta.length * 3.7 + 16) : nameW);
+
+  const FLAG_W = 14;
+  const FLAG_H = 10;
+  const GAP = 5;
+  const textW = c.name.length * 5.8;
+  const contentW = FLAG_W + GAP + textW;
+  const labelW = Math.max(54, selected ? Math.max(contentW + 16, meta.length * 3.7 + 16) : contentW + 14);
+  const startX = -contentW / 2;
+  const flagY = selected ? -10 : -5;
   const ty = selected ? 37 : 24;
+
+  const flagUrl = `https://flagcdn.com/w40/${c.code.toLowerCase()}.png`;
 
   const cls = [
     'la-node',
@@ -810,10 +828,16 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
             <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
             <circle className="la-wax-ring" r={9.3} />
             <circle className="la-wax-ring la-wax-ring--dash" r={7.4} />
+            <image
+              href={flagUrl}
+              x={-7.5}
+              y={-7.5}
+              width={15}
+              height={15}
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#la-clip-wax-flag)"
+            />
             <ellipse className="la-wax-shine" cx={-4} cy={-5} rx={4.2} ry={2.2} transform="rotate(-35 -4 -5)" />
-            <text className="la-node__flag" y={0.5}>
-              {c.flag}
-            </text>
             <g className="la-badge" transform="translate(10 -10)">
               <circle r={5.8} />
               <text y={0.3}>{c.readCount > 99 ? '99+' : c.readCount}</text>
@@ -827,9 +851,15 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
             <circle className="la-explore__ring" r={11.8} />
             <circle className="la-explore__outline" r={5} />
             <path className="la-explore__half" d={HALF_D} />
-            <text className="la-node__flag" y={0.5} fontSize="9.5">
-              {c.flag}
-            </text>
+            <image
+              href={flagUrl}
+              x={-6.5}
+              y={-6.5}
+              width={13}
+              height={13}
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#la-clip-exp-flag)"
+            />
           </>
         )}
 
@@ -851,8 +881,33 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
           height={selected ? 30 : 18}
           rx={4}
         />
-        <text className="la-label__name" y={selected ? -5 : 0.5}>
-          {nameText}
+        <g transform={`translate(${startX} ${flagY})`}>
+          <rect
+            width={FLAG_W}
+            height={FLAG_H}
+            rx={1.5}
+            ry={1.5}
+            fill="#dcd4c0"
+            stroke="rgba(80,50,20,0.25)"
+            strokeWidth={0.5}
+          />
+          <image
+            href={flagUrl}
+            x={0}
+            y={0}
+            width={FLAG_W}
+            height={FLAG_H}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#la-clip-label-flag)"
+          />
+        </g>
+        <text
+          className="la-label__name"
+          x={startX + FLAG_W + GAP}
+          y={selected ? -5 : 0.5}
+          textAnchor="start"
+        >
+          {c.name}
         </text>
         {selected && (
           <text className="la-label__meta" y={8}>
@@ -1239,7 +1294,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     });
   }, [selectedCountryCode, activeContinent]);
 
-  const isZoomed = zoom > 1.02;
+  const isZoomed = zoom > 1.05 || activeContinent !== 'all';
+  const isGeneralView = activeContinent === 'all' && zoom <= 1.05;
 
   /* ------------------------------ Render ------------------------------ */
 
@@ -1312,7 +1368,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           onPointerUp={endPointer}
           onPointerCancel={endPointer}
         >
-          <BaseMap onContinent={handleContinent} />
+          <BaseMap onContinent={handleContinent} isGeneralView={isGeneralView} />
 
           {/* Rutas de viaje literarias */}
           {routes.length > 0 && (
@@ -1379,7 +1435,12 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
               onClick={() => propsRef.current.onSelectCountry(c.code)}
             >
               <span className="la-pill__flag" aria-hidden="true">
-                {c.flag}
+                <img
+                  src={`https://flagcdn.com/w40/${c.code.toLowerCase()}.png`}
+                  alt=""
+                  className="w-3.5 h-2.5 object-cover rounded-xs border border-amber-900/15 dark:border-white/15 inline-block mr-1 align-middle"
+                  loading="lazy"
+                />
               </span>
               <span>{c.name}</span>
               <span className="la-pill__glyph" aria-hidden="true">
