@@ -38,6 +38,7 @@ import { READING_STATUS_META } from '../constants/readingStatusMeta';
 import { ReadingStatusControl } from './ReadingStatusControl';
 import { RecommendBookModal } from './RecommendBookModal';
 import { ShareBookCardModal } from './ShareBookCardModal';
+import { calculateReadingTime } from '../utils/readingTime';
 import {
   bookMetadataService,
   isLikelyEnglish,
@@ -213,6 +214,26 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     setNewQuotePage('');
     setNotesSavedSuccess(false);
   }, [book?.id, book?.notasPersonales, book?.citas]);
+
+  const computedReadingTime = useMemo(() => {
+    if (!book) return 'Sin calcular';
+    return calculateReadingTime(book);
+  }, [book]);
+
+  const colophonItems = useMemo(() => {
+    if (!book) return [];
+    const items: Array<{ label?: string; value: string; isMono?: boolean }> = [];
+    if (book.editorial && book.editorial.trim()) {
+      items.push({ value: book.editorial.trim() });
+    }
+    if (book.idioma && book.idioma.trim()) {
+      items.push({ value: book.idioma.trim() });
+    }
+    if (book.isbn && book.isbn.trim()) {
+      items.push({ label: 'ISBN', value: book.isbn.trim(), isMono: true });
+    }
+    return items;
+  }, [book]);
 
   const currentSynopsis = (localSynopsis !== null ? localSynopsis : book?.sinopsis) || '';
 
@@ -1349,47 +1370,58 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
                 )}
 
-                {/* Tabla Bibliográfica Compacta */}
-                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/50 dark:bg-[#101520]/60 p-3.5 grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                      <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                      Editorial
-                    </span>
-                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5 truncate">
-                      {book.editorial || 'No disponible'}
-                    </p>
+                {/* Ficha métrica compacta protagonista (Año · Páginas · Tiempo de lectura) */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/50 dark:bg-[#101520]/60 p-3.5 text-xs space-y-2.5">
+                  <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90 text-center">
+                    <div className="px-1">
+                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
+                        <Calendar className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
+                        Año
+                      </span>
+                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
+                        {book.fechaPublicacion ?? '—'}
+                      </p>
+                    </div>
+
+                    <div className="px-1">
+                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
+                        <BookOpen className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
+                        Páginas
+                      </span>
+                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
+                        {book.paginas ? `${book.paginas} págs.` : '—'}
+                      </p>
+                    </div>
+
+                    <div className="px-1">
+                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
+                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
+                        Lectura
+                      </span>
+                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
+                        {computedReadingTime}
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                      <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                      Idioma / Edición
-                    </span>
-                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5 truncate">
-                      {[book.idioma, book.edicion].filter(Boolean).join(' · ') || 'No disponible'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                      <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                      Tiempo Lectura
-                    </span>
-                    <p className="font-semibold text-stone-900 dark:text-slate-100 mt-0.5">
-                      {book.tiempoLectura || 'Sin calcular'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[11px]">
-                      <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                      ISBN
-                    </span>
-                    <p className="font-mono font-semibold text-[11px] text-stone-900 dark:text-slate-100 mt-0.5 break-all">
-                      {book.isbn || 'No disponible'}
-                    </p>
-                  </div>
+                  {/* Colofón bibliográfico sutil: Editorial · Idioma · ISBN */}
+                  {colophonItems.length > 0 && (
+                    <div className="pt-2 border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-center gap-1.5 flex-wrap text-[11px] font-serif text-stone-600 dark:text-slate-400 text-center">
+                      {colophonItems.map((item, idx) => (
+                        <React.Fragment key={idx}>
+                          {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
+                          <span className={item.isMono ? 'font-mono text-[10px] text-stone-500 dark:text-slate-400' : ''}>
+                            {item.label ? (
+                              <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-400 dark:text-slate-500 mr-1">
+                                {item.label}
+                              </span>
+                            ) : null}
+                            {item.value}
+                          </span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
                 </div>
                   </div>
                 )}
@@ -1886,16 +1918,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         ))}
                       </div>
 
-                      {/* Tabla Bibliográfica Clásica con líneas divisorias finas */}
-                      <div className="border-y border-amber-900/20 dark:border-slate-800 divide-y divide-amber-900/15 dark:divide-slate-800/90 text-xs">
-                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
+                      {/* Fila principal con las 3 métricas protagonistas: Año, Páginas y Tiempo de lectura */}
+                      <div className="border-y border-amber-900/20 dark:border-slate-800 text-xs">
+                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90 py-0.5">
                           <div className="py-1.5 sm:py-2 pr-2.5">
                             <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
                               <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Año Publicación
                             </span>
                             <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.fechaPublicacion ?? 'No disponible'}
+                              {book.fechaPublicacion ?? '—'}
                             </p>
                           </div>
 
@@ -1905,40 +1937,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               Páginas
                             </span>
                             <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.paginas ?? 'No disponible'}
-                            </p>
-                          </div>
-
-                          <div className="py-1.5 sm:py-2 pl-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <Hash className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              ISBN
-                            </span>
-                            <p className="font-mono font-semibold text-xs text-stone-900 dark:text-slate-100 mt-0.5 break-all">
-                              {book.isbn || 'No disponible'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90">
-                          <div className="py-1.5 sm:py-2 pr-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <Building2 className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              Editorial
-                            </span>
-                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.editorial || 'No disponible'}
-                            </p>
-                          </div>
-
-                          <div className="py-1.5 sm:py-2 px-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <Globe className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              Idioma / Edición
-                            </span>
-                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {[book.idioma, book.edicion].filter(Boolean).join(' · ') ||
-                                'No disponible'}
+                              {book.paginas ? `${book.paginas} págs.` : '—'}
                             </p>
                           </div>
 
@@ -1947,12 +1946,31 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
                               Tiempo de Lectura
                             </span>
-                            <p className="font-semibold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.tiempoLectura || 'Sin calcular'}
+                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
+                              {computedReadingTime}
                             </p>
                           </div>
                         </div>
                       </div>
+
+                      {/* Colofón bibliográfico sutil: Editorial · Idioma · ISBN */}
+                      {colophonItems.length > 0 && (
+                        <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] font-serif text-stone-600 dark:text-slate-400">
+                          {colophonItems.map((item, idx) => (
+                            <React.Fragment key={idx}>
+                              {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
+                              <span className={item.isMono ? 'font-mono text-[10.5px] text-stone-500 dark:text-slate-400' : ''}>
+                                {item.label ? (
+                                  <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-400 dark:text-slate-500 mr-1">
+                                    {item.label}
+                                  </span>
+                                ) : null}
+                                {item.value}
+                              </span>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Botón interactivo para pasar página a la Sinopsis */}
                       <button

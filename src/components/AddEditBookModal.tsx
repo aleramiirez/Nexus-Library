@@ -19,8 +19,10 @@ import {
   Edit2,
   Hash,
   Images,
-  FileUp
+  FileUp,
+  Clock
 } from 'lucide-react';
+import { calculateReadingTime } from '../utils/readingTime';
 import {
   BibliographicCandidate,
   Book,
@@ -83,7 +85,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: 'essential', label: 'Datos Esenciales', icon: BookPlus, shortLabel: 'Esencial' },
   { id: 'reading', label: 'Lectura & Saga', icon: BookOpen, shortLabel: 'Lectura' },
-  { id: 'edition', label: 'Edición & Detalles', icon: Info, shortLabel: 'Detalles' }
+  { id: 'edition', label: 'Publicación & Detalles', icon: Info, shortLabel: 'Detalles' }
 ];
 
 export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
@@ -583,11 +585,17 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           fechaInicio,
           fechaFin,
           lecturaVirtual: lecturaVirtual.trim(),
-          tiempoLectura,
+          tiempoLectura: calculateReadingTime({
+            fechaInicio,
+            fechaFin,
+            paginas: paginas ? Number(paginas) : null,
+            progreso,
+            tiempoLectura: tiempoLectura.trim()
+          }),
           isbn: isbn.trim(),
           editorial: editorial.trim(),
           idioma: idioma.trim(),
-          edicion: edicion.trim(),
+          edicion: editingBook?.edicion || '',
           pais: pais.trim().toUpperCase() || undefined,
           sinopsis: sinopsis.trim(),
           notasPersonales: notasPersonales.trim(),
@@ -884,29 +892,83 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         </div>
       </div>
 
-      {/* Virtual reading & time */}
+      {/* Formato y Tiempo de lectura calculado */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>
-            Lectura Virtual (URL o referencia)
-          </label>
-          <input
-            type="text"
-            value={lecturaVirtual}
-            onChange={(e) => setLecturaVirtual(e.target.value)}
-            placeholder="https://... o Kindle / Kobo"
+          <label className={labelCls}>Formato de lectura</label>
+          <select
+            value={
+              lecturaVirtual.startsWith('http')
+                ? 'url'
+                : ['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual)
+                ? lecturaVirtual
+                : lecturaVirtual
+                ? 'otro'
+                : 'Físico (Papel)'
+            }
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === 'url') {
+                if (!lecturaVirtual.startsWith('http')) setLecturaVirtual('https://');
+              } else if (val === 'otro') {
+                setLecturaVirtual('');
+              } else {
+                setLecturaVirtual(val);
+              }
+            }}
             className={inputCls}
-          />
+          >
+            <option value="Físico (Papel)">📖 Físico (Papel)</option>
+            <option value="Digital (.epub / eBook)">📱 Digital (.epub / eBook)</option>
+            <option value="Audiolibro">🎧 Audiolibro</option>
+            <option value="url">🌐 Enlace Web / URL</option>
+            {lecturaVirtual &&
+              !['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual) &&
+              !lecturaVirtual.startsWith('http') && (
+                <option value="otro">Personalizado: {lecturaVirtual}</option>
+              )}
+          </select>
+
+          {/* Si eligió URL o tiene un enlace/personalizado, mostrar el input */}
+          {(lecturaVirtual.startsWith('http') ||
+            (lecturaVirtual &&
+              !['Físico (Papel)', 'Digital (.epub / eBook)', 'Audiolibro'].includes(lecturaVirtual))) && (
+            <input
+              type="text"
+              value={lecturaVirtual}
+              onChange={(e) => setLecturaVirtual(e.target.value)}
+              placeholder="https://... o referencia"
+              className={`${inputCls} mt-2`}
+            />
+          )}
         </div>
+
         <div>
-          <label className={labelCls}>Tiempo de lectura</label>
-          <input
-            type="text"
-            value={tiempoLectura}
-            onChange={(e) => setTiempoLectura(e.target.value)}
-            placeholder="Ej. 2 semanas, 14h..."
-            className={inputCls}
-          />
+          <label className={labelCls}>Tiempo de lectura estimado / real</label>
+          <div className="rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-3.5 py-2.5 flex flex-col justify-between min-h-[42px]">
+            <div className="flex items-center justify-between">
+              <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                {calculateReadingTime({
+                  fechaInicio,
+                  fechaFin,
+                  paginas: paginas ? Number(paginas) : null,
+                  progreso,
+                  tiempoLectura
+                })}
+              </span>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-800 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-600/20">
+                Auto
+              </span>
+            </div>
+            <span className="text-[10px] text-stone-500 dark:text-slate-400 mt-1">
+              {fechaInicio && fechaFin
+                ? 'Calculado por diferencia entre fecha de inicio y fin'
+                : paginas
+                ? 'Estimado según número de páginas (1.8 min/pág)'
+                : 'Ingresa páginas o fechas para calcular'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1279,8 +1341,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   /* ───── TAB: edition ───── */
   const renderEditionTab = () => (
     <div className="space-y-5">
-      {/* Year, Pages, ISBN */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {/* Año Publicación & Páginas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Año Publicación</label>
           <input
@@ -1299,16 +1361,6 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             value={paginas}
             onChange={(e) => setPaginas(e.target.value)}
             placeholder="Ej. 880"
-            className={inputCls}
-          />
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <label className={labelCls}>ISBN</label>
-          <input
-            type="text"
-            value={isbn}
-            onChange={(e) => setIsbn(e.target.value)}
-            placeholder="ISBN-13 / ISBN-10"
             className={inputCls}
           />
         </div>
@@ -1345,7 +1397,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         </div>
       </div>
 
-      {/* Idioma, Edición */}
+      {/* Idioma & ISBN */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>Idioma</label>
@@ -1358,12 +1410,12 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           />
         </div>
         <div>
-          <label className={labelCls}>Edición</label>
+          <label className={labelCls}>ISBN (opcional)</label>
           <input
             type="text"
-            value={edicion}
-            onChange={(e) => setEdicion(e.target.value)}
-            placeholder="Ej. 1ª edición, Bolsillo..."
+            value={isbn}
+            onChange={(e) => setIsbn(e.target.value)}
+            placeholder="ISBN-13 o ISBN-10"
             className={inputCls}
           />
         </div>

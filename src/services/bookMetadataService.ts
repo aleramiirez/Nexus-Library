@@ -154,9 +154,7 @@ async function searchOpenLibrary(
         editorial: Array.isArray(doc.publisher) && doc.publisher[0] ? doc.publisher[0] : '',
         idioma: normalizeLanguageCode(prefersSpanish),
         edicion:
-          doc.edition_count && doc.edition_count > 1
-            ? String(doc.edition_count) + ' ediciones registradas'
-            : '',
+          '',
         sinopsis: '',
         portadaUrl: primaryCover,
         portadaFallbackUrl: fallbackCover,
