@@ -1,0 +1,5 @@
+# robots.txt for Nexus Library
+User-agent: *
+Allow: /
+
+Sitemap: https://nexus-library.vercel.app/sitemap.xml
