@@ -889,7 +889,7 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
       {isMapExpanded &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-stone-950/85 backdrop-blur-md flex items-center justify-center p-1.5 sm:p-4 md:p-6"
+            className="fixed inset-0 z-[100] bg-stone-950/95 sm:bg-stone-950/85 sm:backdrop-blur-md flex items-center justify-center p-1.5 sm:p-4 md:p-6"
             onClick={(e) => {
               if (e.target === e.currentTarget) setIsMapExpanded(false);
             }}

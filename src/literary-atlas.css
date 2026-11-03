@@ -384,7 +384,17 @@ html.dark .la-continent-select-trigger--filtered {
   height: 100%;
   aspect-ratio: unset;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   cursor: default;
+}
+.la-svg,
+.la-svg * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Textura de grano de papel + viñeta + marco */
@@ -588,12 +598,14 @@ html.dark .la-continent--interactive:focus-visible .la-region-label {
   cursor: pointer;
   transition: fill 0.25s ease, letter-spacing 0.4s var(--la-ease);
 }
-.la-region-label:hover {
-  fill: var(--la-crimson);
-  letter-spacing: 0.42em;
-}
-html.dark .la-region-label:hover {
-  fill: var(--la-gold);
+@media (hover: hover) {
+  .la-region-label:hover {
+    fill: var(--la-crimson);
+    letter-spacing: 0.42em;
+  }
+  html.dark .la-region-label:hover {
+    fill: var(--la-gold);
+  }
 }
 .la-ocean-label {
   fill: var(--la-ocean-label);
@@ -835,7 +847,6 @@ html.dark .la-badge circle {
   transform: scale(0.6);
   transition: opacity 0.35s var(--la-ease), transform 0.5s var(--la-ease);
 }
-.la-node:hover .la-discover__halo,
 .la-node:focus-visible .la-discover__halo {
   opacity: 1;
   transform: scale(1);
@@ -855,16 +866,22 @@ html.dark .la-badge circle {
   transform-origin: center;
   transition: transform 0.7s var(--la-ease), stroke 0.3s ease;
 }
-.la-node:hover .la-discover__star {
-  transform: rotate(135deg) scale(1.2);
-  stroke: var(--la-brass);
-}
-.la-node:hover .la-discover__dot {
-  fill: var(--la-gold);
-  opacity: 1;
-}
-html:not(.dark) .la-node:hover .la-discover__dot {
-  fill: var(--la-brass);
+@media (hover: hover) {
+  .la-node:hover .la-discover__halo {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .la-node:hover .la-discover__star {
+    transform: rotate(135deg) scale(1.2);
+    stroke: var(--la-brass);
+  }
+  .la-node:hover .la-discover__dot {
+    fill: var(--la-gold);
+    opacity: 1;
+  }
+  html:not(.dark) .la-node:hover .la-discover__dot {
+    fill: var(--la-brass);
+  }
 }
 
 /* — Seleccionado — */
@@ -1244,6 +1261,22 @@ html.dark .la-legend__summary strong {
   }
   .la-regions-wrapper {
     display: flex !important;
+  }
+}
+
+@media (pointer: coarse) {
+  .la-rose__ring,
+  .la-rose__star,
+  .la-route,
+  .la-explore__ring,
+  .la-sel__ring--a,
+  .la-sel__ring--b,
+  .la-pulse {
+    animation: none !important;
+  }
+  .la-svg,
+  .la-svg * {
+    transition: none !important;
   }
 }
 

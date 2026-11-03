@@ -98,25 +98,26 @@ function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
 }
 const EASE = cubicBezier(0.22, 1, 0.36, 1);
 
-function clampRect(r: Rect, box?: DOMRect | null): Rect {
-  const w = Math.min(MAP_W, Math.max(MIN_W, r.w));
-  const h = (w * MAP_H) / MAP_W;
-  let maxX = MAP_W - w;
-  let maxY = MAP_H - h;
-  if (box && box.width > 0 && box.height > 0) {
-    const scale = Math.max(box.width / w, box.height / h);
-    if (scale > 0) {
-      const visW = box.width / scale;
-      const visH = box.height / scale;
-      maxX = Math.max(0, MAP_W - visW);
-      maxY = Math.max(0, MAP_H - visH);
-    }
+const MIN_H = (MIN_W * MAP_H) / MAP_W;
+
+function getMaxViewSize(box?: DOMRect | null): { maxW: number; maxH: number; ar: number } {
+  const mapAr = MAP_W / MAP_H;
+  const ar = box && box.width > 0 && box.height > 0 ? box.width / box.height : mapAr;
+  if (ar <= mapAr) {
+    return { maxW: MAP_H * ar, maxH: MAP_H, ar };
   }
+  return { maxW: MAP_W, maxH: MAP_W / ar, ar };
+}
+
+function clampRect(r: Rect, box?: DOMRect | null): Rect {
+  const { maxH, ar } = getMaxViewSize(box);
+  const h = Math.min(maxH, Math.max(MIN_H, r.h));
+  const w = h * ar;
   return {
     w,
     h,
-    x: Math.min(maxX, Math.max(0, r.x)),
-    y: Math.min(maxY, Math.max(0, r.y)),
+    x: Math.min(MAP_W - w, Math.max(0, r.x)),
+    y: Math.min(MAP_H - h, Math.max(0, r.y)),
   };
 }
 
@@ -147,6 +148,24 @@ const PRESETS: Record<ContinentId, Rect> = {
   africa: regionRect(-22, 56, 40, -37),
   oceania: regionRect(108, 180, -5, -49),
 };
+
+function getPresetRect(continent: ContinentId, box?: DOMRect | null): Rect {
+  const { maxW, maxH, ar } = getMaxViewSize(box);
+  if (continent === 'all') {
+    return {
+      x: (MAP_W - maxW) / 2,
+      y: (MAP_H - maxH) / 2,
+      w: maxW,
+      h: maxH,
+    };
+  }
+  const base = PRESETS[continent];
+  const cx = base.x + base.w / 2;
+  const cy = base.y + base.h / 2;
+  const h = Math.min(maxH, Math.max(MIN_H, base.h));
+  const w = h * ar;
+  return clampRect({ x: cx - w / 2, y: cy - h / 2, w, h }, box);
+}
 
 /** Escala de los marcadores: crecen con el zoom, pero menos que el mapa. */
 const markerScale = (z: number) => Math.min(1.6, 0.4 + 0.34 * (z - 1)) / z;
@@ -1015,8 +1034,11 @@ interface Gesture {
   mode: 'none' | 'drag' | 'pinch';
   sx: number;
   sy: number;
+  lx: number;
+  ly: number;
   rect: Rect;
   startDist: number;
+  ldist: number;
   moved: boolean;
   box: DOMRect | null;
 }
@@ -1024,8 +1046,11 @@ const IDLE_GESTURE: Gesture = {
   mode: 'none',
   sx: 0,
   sy: 0,
+  lx: 0,
+  ly: 0,
   rect: WORLD,
   startDist: 0,
+  ldist: 0,
   moved: false,
   box: null,
 };
@@ -1045,13 +1070,15 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   const wheelRafRef = useRef(0);
   const pendingFlushRef = useRef(0);
   const lastScaleRef = useRef(-1);
+  const lastVbRef = useRef('');
   const lastTapRef = useRef<{ t: number; x: number; y: number }>({ t: 0, x: 0, y: 0 });
   const firstRef = useRef(true);
   const suppressRef = useRef(false);
   const gestureRef = useRef<Gesture>(IDLE_GESTURE);
   const wheelTimer = useRef<number | undefined>(undefined);
 
-  const [zoom, setZoom] = useState(() => MAP_W / PRESETS[activeContinent].w);
+  const [zoom, setZoom] = useState(() => MAP_H / PRESETS[activeContinent].h);
+  const [worldZoom, setWorldZoom] = useState(() => MAP_W / PRESETS[activeContinent].w);
   const isTouchDevice = typeof window !== 'undefined' && (
     'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
   );
@@ -1059,22 +1086,32 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   /* ------------------------------ Cámara ------------------------------ */
 
   const syncZoom = useCallback(() => {
-    const nextZ = Math.round((MAP_W / curRef.current.w) * 100) / 100;
+    const box = svgRef.current?.getBoundingClientRect();
+    const { maxH } = getMaxViewSize(box);
+    const nextZ = Math.round((maxH / curRef.current.h) * 100) / 100;
     setZoom((prev) => (Math.abs(prev - nextZ) < 0.01 ? prev : nextZ));
+    const nextWorldZ = Math.round((MAP_W / curRef.current.w) * 100) / 100;
+    setWorldZoom((prev) => (Math.abs(prev - nextWorldZ) < 0.01 ? prev : nextWorldZ));
   }, []);
 
   const commitRectToDOM = useCallback((r: Rect) => {
     const svg = svgRef.current;
     if (!svg) return;
-    svg.setAttribute('viewBox', `${r.x.toFixed(2)} ${r.y.toFixed(2)} ${r.w.toFixed(2)} ${r.h.toFixed(2)}`);
+    const vb = `${r.x.toFixed(1)} ${r.y.toFixed(1)} ${r.w.toFixed(1)} ${r.h.toFixed(1)}`;
+    if (vb !== lastVbRef.current) {
+      lastVbRef.current = vb;
+      svg.setAttribute('viewBox', vb);
+    }
     const z = MAP_W / r.w;
     const s = markerScale(z);
-    if (Math.abs(s - lastScaleRef.current) > 0.002) {
+    if (Math.abs(s - lastScaleRef.current) > 0.004) {
       lastScaleRef.current = s;
-      svg.style.setProperty('--la-s', s.toFixed(4));
+      svg.style.setProperty('--la-s', s.toFixed(3));
     }
     const lvl = z >= 2.2 ? 'high' : z > 1.12 ? 'mid' : 'low';
     if (svg.dataset.zoom !== lvl) svg.dataset.zoom = lvl;
+    const zoomedStr = z > 1.05 || propsRef.current.activeContinent !== 'all' ? 'true' : 'false';
+    if (svg.dataset.zoomed !== zoomedStr) svg.dataset.zoomed = zoomedStr;
   }, []);
 
   const applyRect = useCallback(
@@ -1141,14 +1178,22 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
 
   // Encuadre inicial y transiciones al cambiar de continente
   useLayoutEffect(() => {
+    const box = svgRef.current?.getBoundingClientRect();
+    let init = getPresetRect(activeContinent, box);
     if (firstRef.current) {
       firstRef.current = false;
-      applyRect(PRESETS[activeContinent]);
-      targetRef.current = PRESETS[activeContinent];
+      const code = propsRef.current.selectedCountryCode;
+      if (code && COORDS[code] && init.w < MAP_W - 1) {
+        const x = px(COORDS[code][0]);
+        const y = py(COORDS[code][1]);
+        init = clampRect({ x: x - init.w / 2, y: y - init.h / 2, w: init.w, h: init.h }, box);
+      }
+      applyRect(init);
+      targetRef.current = init;
       syncZoom();
       return;
     }
-    animateTo(PRESETS[activeContinent]);
+    animateTo(init);
   }, [activeContinent, animateTo, applyRect, syncZoom]);
 
   useEffect(
@@ -1179,8 +1224,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           mode: 'drag',
           sx: t.clientX,
           sy: t.clientY,
+          lx: t.clientX,
+          ly: t.clientY,
           rect: { ...curRef.current },
           startDist: 0,
+          ldist: 0,
           moved: false,
           box,
         };
@@ -1204,8 +1252,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           mode: 'pinch',
           sx: mx,
           sy: my,
+          lx: mx,
+          ly: my,
           rect: { ...curRef.current },
           startDist: dist,
+          ldist: dist,
           moved: true,
           box,
         };
@@ -1228,26 +1279,33 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           g.mode = 'pinch';
           g.sx = mx;
           g.sy = my;
+          g.lx = mx;
+          g.ly = my;
           g.rect = { ...curRef.current };
           g.startDist = dist;
+          g.ldist = dist;
           g.moved = true;
           suppressRef.current = true;
           return;
         }
 
+        if (Math.hypot(mx - g.lx, my - g.ly) < 0.7 && Math.abs(dist - g.ldist) < 0.7) {
+          return;
+        }
+        g.lx = mx;
+        g.ly = my;
+        g.ldist = dist;
+
+        const { maxH, ar } = getMaxViewSize(g.box);
         const k = g.startDist / dist;
-        const nw = Math.min(MAP_W, Math.max(MIN_W, g.rect.w * k));
-        const nh = (nw * MAP_H) / MAP_W;
-        const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
-        const upp = 1 / Math.max(0.001, scale);
-        const ux = g.rect.x + (g.sx - g.box.width / 2) * upp + g.rect.w / 2;
-        const uy = g.rect.y + (g.sy - g.box.height / 2) * upp + g.rect.h / 2;
-        const nextScale = Math.max(g.box.width / nw, g.box.height / nh);
-        const nextUpp = 1 / Math.max(0.001, nextScale);
+        const nh = Math.min(maxH, Math.max(MIN_H, g.rect.h * k));
+        const nw = nh * ar;
+        const ux = g.rect.x + (g.sx / g.box.width) * g.rect.w;
+        const uy = g.rect.y + (g.sy / g.box.height) * g.rect.h;
         const next = clampRect(
           {
-            x: ux - (mx - g.box.width / 2) * nextUpp - nw / 2,
-            y: uy - (my - g.box.height / 2) * nextUpp - nh / 2,
+            x: ux - (mx / g.box.width) * nw,
+            y: uy - (my / g.box.height) * nh,
             w: nw,
             h: nh,
           },
@@ -1271,16 +1329,21 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           suppressRef.current = true;
           g.sx = t.clientX;
           g.sy = t.clientY;
+          g.lx = t.clientX;
+          g.ly = t.clientY;
           g.rect = { ...curRef.current };
           return;
         }
         if (e.cancelable) e.preventDefault();
-        const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
-        const upp = 1 / Math.max(0.001, scale);
+        if (Math.hypot(t.clientX - g.lx, t.clientY - g.ly) < 0.7) return;
+        g.lx = t.clientX;
+        g.ly = t.clientY;
+        const uppX = g.rect.w / g.box.width;
+        const uppY = g.rect.h / g.box.height;
         const next = clampRect(
           {
-            x: g.rect.x - dx * upp,
-            y: g.rect.y - dy * upp,
+            x: g.rect.x - dx * uppX,
+            y: g.rect.y - dy * uppY,
             w: g.rect.w,
             h: g.rect.h,
           },
@@ -1314,23 +1377,22 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
             lastTapRef.current = { t: 0, x: 0, y: 0 };
             suppressRef.current = true;
             const cur = curRef.current;
-            const curZ = MAP_W / cur.w;
+            const { maxH, ar } = getMaxViewSize(g.box);
+            const curZ = maxH / cur.h;
             if (curZ > 3.1) {
-              animateTo(PRESETS[propsRef.current.activeContinent]);
+              animateTo(getPresetRect(propsRef.current.activeContinent, g.box));
             } else {
-              const scale = Math.max(g.box.width / cur.w, g.box.height / cur.h);
-              const upp = 1 / Math.max(0.001, scale);
-              const ux = cur.x + (ct.clientX - g.box.left - g.box.width / 2) * upp + cur.w / 2;
-              const uy = cur.y + (ct.clientY - g.box.top - g.box.height / 2) * upp + cur.h / 2;
-              const nw = Math.max(MIN_W, cur.w / 1.85);
-              const nh = (nw * MAP_H) / MAP_W;
-              const nextScale = Math.max(g.box.width / nw, g.box.height / nh);
-              const nextUpp = 1 / Math.max(0.001, nextScale);
+              const rx = (ct.clientX - g.box.left) / g.box.width;
+              const ry = (ct.clientY - g.box.top) / g.box.height;
+              const ux = cur.x + rx * cur.w;
+              const uy = cur.y + ry * cur.h;
+              const nh = Math.max(MIN_H, cur.h / 1.85);
+              const nw = nh * ar;
               animateTo(
                 clampRect(
                   {
-                    x: ux - (ct.clientX - g.box.left - g.box.width / 2) * nextUpp - nw / 2,
-                    y: uy - (ct.clientY - g.box.top - g.box.height / 2) * nextUpp - nh / 2,
+                    x: ux - rx * nw,
+                    y: uy - ry * nh,
                     w: nw,
                     h: nh,
                   },
@@ -1357,8 +1419,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           mode: 'drag',
           sx: rem.clientX,
           sy: rem.clientY,
+          lx: rem.clientX,
+          ly: rem.clientY,
           rect: { ...curRef.current },
           startDist: 0,
+          ldist: 0,
           moved: true,
           box: g.box,
         };
@@ -1395,10 +1460,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const cur = curRef.current;
       const tgt = targetRef.current;
       const dw = tgt.w - cur.w;
+      const dh = tgt.h - cur.h;
       const dx = tgt.x - cur.x;
       const dy = tgt.y - cur.y;
 
-      if (Math.abs(dw) < 0.2 && Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
+      if (Math.abs(dw) < 0.2 && Math.abs(dh) < 0.2 && Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
         wheelRafRef.current = 0;
         lastWheelFrame = 0;
         applyRect(tgt);
@@ -1407,12 +1473,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       }
 
       const alpha = 1 - Math.pow(0.0006, dt / 160);
-      const nw = cur.w + dw * alpha;
       applyRect({
         x: cur.x + dx * alpha,
         y: cur.y + dy * alpha,
-        w: nw,
-        h: (nw * MAP_H) / MAP_W,
+        w: cur.w + dw * alpha,
+        h: cur.h + dh * alpha,
       });
       wheelRafRef.current = requestAnimationFrame(stepWheelGlide);
     };
@@ -1427,20 +1492,19 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const rawDelta = e.deltaMode === 1 ? e.deltaY * 18 : e.deltaY;
       const clampedDelta = Math.max(-220, Math.min(220, rawDelta));
 
+      const { maxH, ar } = getMaxViewSize(box);
       const base = targetRef.current;
       const cur = curRef.current;
-      const scale = Math.max(box.width / cur.w, box.height / cur.h);
-      const upp = 1 / Math.max(0.001, scale);
-      const ux = cur.x + (e.clientX - box.left - box.width / 2) * upp + cur.w / 2;
-      const uy = cur.y + (e.clientY - box.top - box.height / 2) * upp + cur.h / 2;
-      const nw = Math.min(MAP_W, Math.max(MIN_W, base.w * Math.exp(clampedDelta * 0.0018)));
-      const nh = (nw * MAP_H) / MAP_W;
-      const nextScale = Math.max(box.width / nw, box.height / nh);
-      const nextUpp = 1 / Math.max(0.001, nextScale);
+      const rx = (e.clientX - box.left) / box.width;
+      const ry = (e.clientY - box.top) / box.height;
+      const ux = cur.x + rx * cur.w;
+      const uy = cur.y + ry * cur.h;
+      const nh = Math.min(maxH, Math.max(MIN_H, base.h * Math.exp(clampedDelta * 0.0018)));
+      const nw = nh * ar;
       targetRef.current = clampRect(
         {
-          x: ux - (e.clientX - box.left - box.width / 2) * nextUpp - nw / 2,
-          y: uy - (e.clientY - box.top - box.height / 2) * nextUpp - nh / 2,
+          x: ux - rx * nw,
+          y: uy - ry * nh,
           w: nw,
           h: nh,
         },
@@ -1458,17 +1522,19 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
 
   const zoomBy = useCallback(
     (factor: number) => {
-      const t = targetRef.current;
-      const nw = Math.min(MAP_W, Math.max(MIN_W, t.w / factor));
-      const nh = (nw * MAP_H) / MAP_W;
       const box = svgRef.current?.getBoundingClientRect();
+      const { maxH, ar } = getMaxViewSize(box);
+      const t = targetRef.current;
+      const nh = Math.min(maxH, Math.max(MIN_H, t.h / factor));
+      const nw = nh * ar;
       animateTo(clampRect({ x: t.x + t.w / 2 - nw / 2, y: t.y + t.h / 2 - nh / 2, w: nw, h: nh }, box));
     },
     [animateTo],
   );
 
   const resetView = useCallback(() => {
-    animateTo(WORLD);
+    const box = svgRef.current?.getBoundingClientRect();
+    animateTo(getPresetRect('all', box));
     if (propsRef.current.activeContinent !== 'all') propsRef.current.onSelectContinent('all');
   }, [animateTo]);
 
@@ -1478,7 +1544,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const ll = COORDS[code];
       if (!ll) return;
       const t = targetRef.current;
-      if (t.w >= MAP_W - 1) return;
+      if (t.w >= MAP_W - 1 && t.h >= MAP_H - 1) return;
       const x = px(ll[0]);
       const y = py(ll[1]);
       const inside =
@@ -1503,8 +1569,11 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       mode: 'drag',
       sx: e.clientX,
       sy: e.clientY,
+      lx: e.clientX,
+      ly: e.clientY,
       rect: { ...curRef.current },
       startDist: 0,
+      ldist: 0,
       moved: false,
       box: e.currentTarget.getBoundingClientRect(),
     };
@@ -1520,9 +1589,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     const dy = e.clientY - g.sy;
     if (!g.moved) {
       if (Math.hypot(dx, dy) < 5) return;
-      const scale = Math.max(g.box.width / curRef.current.w, g.box.height / curRef.current.h);
-      const canPan = scale > 0 && (MAP_W - g.box.width / scale > 1 || MAP_H - g.box.height / scale > 1);
-      if (!canPan && MAP_W / curRef.current.w <= 1.01) return;
+      if (curRef.current.w >= MAP_W - 1 && curRef.current.h >= MAP_H - 1) return;
       cancelAnimationFrame(rafRef.current);
       cancelAnimationFrame(wheelRafRef.current);
       wheelRafRef.current = 0;
@@ -1530,6 +1597,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       suppressRef.current = true;
       g.sx = e.clientX;
       g.sy = e.clientY;
+      g.lx = e.clientX;
+      g.ly = e.clientY;
       g.rect = { ...curRef.current };
       try {
         svg.setPointerCapture(e.pointerId);
@@ -1539,12 +1608,12 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       svg.dataset.drag = '1';
       return;
     }
-    const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
-    const upp = 1 / Math.max(0.001, scale);
+    const uppX = g.rect.w / g.box.width;
+    const uppY = g.rect.h / g.box.height;
     const next = clampRect(
       {
-        x: g.rect.x - dx * upp,
-        y: g.rect.y - dy * upp,
+        x: g.rect.x - dx * uppX,
+        y: g.rect.y - dy * uppY,
         w: g.rect.w,
         h: g.rect.h,
       },
@@ -1795,8 +1864,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     setTimeout(checkRegionsScroll, 300);
   }, [activeContinent, checkRegionsScroll]);
 
-  const isZoomed = zoom > 1.05 || activeContinent !== 'all';
-  const isGeneralView = activeContinent === 'all' && zoom <= 1.05;
+  const isZoomed = worldZoom > 1.05 || activeContinent !== 'all';
+  const isGeneralView = activeContinent === 'all' && worldZoom <= 1.05;
 
   /* ------------------------------ Render ------------------------------ */
 
@@ -1810,7 +1879,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
             value={activeContinent}
             onChange={(val) => {
               if (val === activeContinent) {
-                animateTo(PRESETS[val]);
+                animateTo(getPresetRect(val, svgRef.current?.getBoundingClientRect()));
               } else {
                 onSelectContinent(val);
               }
@@ -1846,7 +1915,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
                 className="la-chip"
                 aria-pressed={activeContinent === r.id}
                 onClick={() => {
-                  if (r.id === activeContinent) animateTo(PRESETS[r.id]);
+                  if (r.id === activeContinent) animateTo(getPresetRect(r.id, svgRef.current?.getBoundingClientRect()));
                   else onSelectContinent(r.id);
                 }}
               >
@@ -1873,7 +1942,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
             type="button"
             className="la-iconbtn"
             onClick={() => zoomBy(1.6)}
-            disabled={zoom >= MAP_W / MIN_W - 0.02}
+            disabled={zoom >= MAP_H / MIN_H - 0.05}
             aria-label="Acercar"
             title="Acercar"
           >
@@ -1927,7 +1996,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           ref={svgRef}
           className="la-svg"
           viewBox="0 0 1000 520"
-          preserveAspectRatio={isExpanded ? 'xMidYMid slice' : 'xMidYMid meet'}
+          preserveAspectRatio="xMidYMid meet"
           role="group"
           aria-label="Planisferio literario interactivo"
           data-zoom="low"
