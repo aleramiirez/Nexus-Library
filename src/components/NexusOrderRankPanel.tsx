@@ -22,9 +22,12 @@ import {
 } from 'lucide-react';
 import {
   OrderRank,
+  OrderRankId,
   ORDER_RANKS,
   ReaderLevelInfo,
-  setSelectedHonorificTitle
+  setSelectedHonorificTitle,
+  getSelectedOrderFrame,
+  setSelectedOrderFrame
 } from '../services/levelingService';
 import { UserAvatar } from './UserAvatar';
 import { soundService } from '../services/soundService';
@@ -75,9 +78,30 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
   const [currentActiveTitle, setCurrentActiveTitle] = useState(activeTitle);
   const [isTitleSelectorOpen, setIsTitleSelectorOpen] = useState(false);
 
+  const unlockedRanks = levelInfo.unlockedRanks || ORDER_RANKS.filter((r) => level >= r.minLevel);
+  const [currentActiveFrameId, setCurrentActiveFrameId] = useState<OrderRankId>(() => {
+    return getSelectedOrderFrame(rank.id, unlockedRanks);
+  });
+  const [isFrameSelectorOpen, setIsFrameSelectorOpen] = useState(false);
+
   useEffect(() => {
     setCurrentActiveTitle(activeTitle);
   }, [activeTitle]);
+
+  useEffect(() => {
+    const handleFrameChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<OrderRankId>;
+      if (customEvent.detail) {
+        setCurrentActiveFrameId(customEvent.detail);
+      } else {
+        setCurrentActiveFrameId(getSelectedOrderFrame(rank.id, unlockedRanks));
+      }
+    };
+    window.addEventListener('nexus_order_frame_changed', handleFrameChanged);
+    return () => window.removeEventListener('nexus_order_frame_changed', handleFrameChanged);
+  }, [rank.id, unlockedRanks]);
+
+  const currentActiveFrameRank = ORDER_RANKS.find((r) => r.id === currentActiveFrameId) || rank;
 
   const handleSelectTitle = (title: string) => {
     setSelectedHonorificTitle(title);
@@ -85,6 +109,14 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
     setIsTitleSelectorOpen(false);
     soundService.playBrassBell();
     onShowToast?.(`Título honorífico cambiado a «${title}»`);
+  };
+
+  const handleSelectFrame = (targetRank: OrderRank) => {
+    setSelectedOrderFrame(targetRank.id);
+    setCurrentActiveFrameId(targetRank.id);
+    setIsFrameSelectorOpen(false);
+    soundService.playBrassBell();
+    onShowToast?.(`Marco de la Orden cambiado a «${targetRank.visualFrame}»`);
   };
 
   const content = (
@@ -120,10 +152,10 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
         </div>
       </div>
 
-      {/* ─── Ficha del Escalafón Actual (Avatar, Nivel, Título y Barra) ─── */}
+      {/* ─── Ficha del Escalafón Actual (Avatar con Marco Activo, Nivel, Título y Selectores) ─── */}
       <div className="p-5 sm:p-6 rounded-2xl border border-amber-900/20 dark:border-amber-400/25 bg-gradient-to-br from-[#fbf6ea] via-[#f7eedb] to-[#efe3cd] dark:from-[#151c2b] dark:via-[#131926] dark:to-[#0f1420] shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* Avatar con marco del escalafón */}
+          {/* Avatar con marco seleccionado */}
           <div className="shrink-0">
             <UserAvatar
               avatarUrl={avatarUrl}
@@ -131,7 +163,7 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
               username={username}
               size="2xl"
               level={level}
-              rank={rank}
+              frameRank={currentActiveFrameRank}
             />
           </div>
 
@@ -156,61 +188,124 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
 
             <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <span className="text-[11px] font-semibold text-stone-600 dark:text-slate-400">
-                Marco honorífico:
+                Marco activo:
               </span>
               <span className="text-[11px] font-bold text-amber-900 dark:text-amber-300 bg-amber-500/15 border border-amber-600/25 px-2.5 py-0.5 rounded-lg">
-                {rank.visualFrame}
+                {currentActiveFrameRank.visualFrame} (Rango {currentActiveFrameRank.roman})
               </span>
             </div>
           </div>
         </div>
 
-        {/* Selector de Título Honorífico Activo */}
-        <div className="pt-3 border-t border-amber-900/15 dark:border-[#222B3D] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-xs font-semibold text-stone-700 dark:text-slate-300 block">
-              Título Honorífico Exhibido:
-            </span>
-            <span className="text-[11px] text-stone-500 dark:text-slate-400">
-              Puedes elegir cualquier título que hayas desbloqueado en tu trayectoria.
-            </span>
+        {/* Selectores de Personalización: Título y Marco */}
+        <div className="pt-3 border-t border-amber-900/15 dark:border-[#222B3D] space-y-3">
+          {/* Selector de Título Honorífico */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold text-stone-700 dark:text-slate-300 block">
+                Título Honorífico Exhibido:
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400">
+                Puedes elegir cualquier título que hayas desbloqueado en tu trayectoria.
+              </span>
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTitleSelectorOpen(!isTitleSelectorOpen);
+                  setIsFrameSelectorOpen(false);
+                }}
+                className="inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-xl border border-amber-800/25 dark:border-amber-400/30 bg-[#fffcf5] dark:bg-[#161c28] text-xs font-serif font-bold text-amber-900 dark:text-amber-300 hover:bg-amber-500/15 transition shadow-xs cursor-pointer"
+              >
+                <span>{currentActiveTitle}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </button>
+
+              {isTitleSelectorOpen && (
+                <div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl border border-amber-900/20 dark:border-slate-700 bg-[#fffcf5] dark:bg-[#161c28] shadow-2xl z-30 py-1.5 max-h-56 overflow-y-auto">
+                  <div className="px-3 py-1 text-[10px] font-mono font-bold text-stone-400 uppercase tracking-wider border-b border-stone-200 dark:border-slate-700">
+                    Títulos Desbloqueados
+                  </div>
+                  {unlockedTitles.map((t) => {
+                    const isSelected = t === currentActiveTitle;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleSelectTitle(t)}
+                        className={`w-full text-left px-3 py-2 text-xs font-serif font-semibold flex items-center justify-between transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500/20 text-amber-950 dark:text-amber-300 font-bold'
+                            : 'text-stone-700 dark:text-slate-300 hover:bg-amber-500/10'
+                        }`}
+                      >
+                        <span>{t}</span>
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsTitleSelectorOpen(!isTitleSelectorOpen)}
-              className="inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-xl border border-amber-800/25 dark:border-amber-400/30 bg-[#fffcf5] dark:bg-[#161c28] text-xs font-serif font-bold text-amber-900 dark:text-amber-300 hover:bg-amber-500/15 transition shadow-xs"
-            >
-              <span>{currentActiveTitle}</span>
-              <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-            </button>
+          {/* Selector de Marco de la Orden */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/10 dark:border-slate-800/60">
+            <div>
+              <span className="text-xs font-semibold text-stone-700 dark:text-slate-300 block">
+                Marco de la Orden Exhibido:
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400">
+                Personaliza el marco alrededor de tu avatar eligiendo entre los escalafones que has desbloqueado.
+              </span>
+            </div>
 
-            {isTitleSelectorOpen && (
-              <div className="absolute right-0 bottom-full mb-1.5 w-64 rounded-xl border border-amber-900/20 dark:border-slate-700 bg-[#fffcf5] dark:bg-[#161c28] shadow-2xl z-30 py-1.5 max-h-56 overflow-y-auto">
-                <div className="px-3 py-1 text-[10px] font-mono font-bold text-stone-400 uppercase tracking-wider border-b border-stone-200 dark:border-slate-700">
-                  Títulos Desbloqueados
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFrameSelectorOpen(!isFrameSelectorOpen);
+                  setIsTitleSelectorOpen(false);
+                }}
+                className="inline-flex items-center justify-between gap-2 px-3.5 py-1.5 rounded-xl border border-amber-800/25 dark:border-amber-400/30 bg-[#fffcf5] dark:bg-[#161c28] text-xs font-serif font-bold text-amber-900 dark:text-amber-300 hover:bg-amber-500/15 transition shadow-xs cursor-pointer"
+              >
+                <span>{currentActiveFrameRank.visualFrame}</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </button>
+
+              {isFrameSelectorOpen && (
+                <div className="absolute right-0 bottom-full mb-1.5 w-72 rounded-xl border border-amber-900/20 dark:border-slate-700 bg-[#fffcf5] dark:bg-[#161c28] shadow-2xl z-30 py-1.5 max-h-56 overflow-y-auto">
+                  <div className="px-3 py-1 text-[10px] font-mono font-bold text-stone-400 uppercase tracking-wider border-b border-stone-200 dark:border-slate-700">
+                    Marcos Desbloqueados
+                  </div>
+                  {unlockedRanks.map((r) => {
+                    const isSelected = r.id === currentActiveFrameRank.id;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => handleSelectFrame(r)}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500/20 text-amber-950 dark:text-amber-300 font-bold'
+                            : 'text-stone-700 dark:text-slate-300 hover:bg-amber-500/10'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-serif font-bold">{r.visualFrame}</div>
+                          <div className="text-[10px] text-stone-500 dark:text-slate-400 font-mono">
+                            Rango {r.roman} · {r.name}
+                          </div>
+                        </div>
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
-                {unlockedTitles.map((t) => {
-                  const isSelected = t === currentActiveTitle;
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => handleSelectTitle(t)}
-                      className={`w-full text-left px-3 py-2 text-xs font-serif font-semibold flex items-center justify-between transition ${
-                        isSelected
-                          ? 'bg-amber-500/20 text-amber-950 dark:text-amber-300 font-bold'
-                          : 'text-stone-700 dark:text-slate-300 hover:bg-amber-500/10'
-                      }`}
-                    >
-                      <span>{t}</span>
-                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
@@ -392,14 +487,15 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {ORDER_RANKS.map((r) => {
             const isUnlocked = level >= r.minLevel;
-            const isCurrent = rank.id === r.id;
+            const isCurrentRank = rank.id === r.id;
+            const isFrameEquipped = currentActiveFrameRank.id === r.id;
             const Icon = ICON_MAP[r.iconName] || BookOpen;
 
             return (
               <div
                 key={r.id}
-                className={`relative p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between space-y-2 ${
-                  isCurrent
+                className={`relative p-3.5 rounded-2xl border transition-all duration-300 flex flex-col justify-between space-y-2.5 ${
+                  isCurrentRank
                     ? 'border-amber-500/80 bg-amber-500/15 dark:bg-amber-500/10 shadow-md ring-2 ring-amber-500/30'
                     : isUnlocked
                     ? 'border-amber-900/20 dark:border-[#222B3D] bg-[#fffcf5]/90 dark:bg-[#121824]'
@@ -411,7 +507,7 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
                     <span className="font-mono text-xs font-extrabold text-amber-800 dark:text-amber-300">
                       Rango {r.roman}
                     </span>
-                    {isCurrent ? (
+                    {isCurrentRank ? (
                       <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-600 text-slate-950 uppercase">
                         Actual
                       </span>
@@ -426,15 +522,16 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
                     )}
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <div
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
-                        isUnlocked
-                          ? 'bg-amber-500/20 border-amber-600/30 text-amber-900 dark:text-amber-300'
-                          : 'bg-stone-300/30 dark:bg-slate-800 border-stone-400/30 text-stone-400'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
+                  <div className="flex items-start gap-2.5">
+                    {/* Muestra del marco de este escalafón */}
+                    <div className="shrink-0 my-0.5">
+                      <UserAvatar
+                        avatarUrl={avatarUrl}
+                        displayName={displayName}
+                        username={username}
+                        size="sm"
+                        frameRank={r}
+                      />
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-serif font-bold text-xs text-stone-900 dark:text-white leading-tight truncate">
@@ -451,18 +548,37 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-amber-900/10 dark:border-slate-800/60 flex items-center justify-between text-[10px]">
-                  <span className="text-stone-500 dark:text-slate-400 font-medium truncate">
-                    {r.visualFrame}
-                  </span>
+                <div className="pt-2 border-t border-amber-900/10 dark:border-slate-800/60 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-stone-500 dark:text-slate-400 font-medium truncate">
+                      {r.visualFrame}
+                    </span>
+                    {isUnlocked && (
+                      isFrameEquipped ? (
+                        <span className="text-amber-800 dark:text-amber-300 font-bold text-[9.5px]">
+                          ✓ Marco activo
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectFrame(r)}
+                          className="text-amber-800 dark:text-amber-300 font-bold hover:underline shrink-0 ml-1 cursor-pointer"
+                        >
+                          Usar marco
+                        </button>
+                      )
+                    )}
+                  </div>
                   {isUnlocked && r.name !== currentActiveTitle && (
-                    <button
-                      type="button"
-                      onClick={() => handleSelectTitle(r.name)}
-                      className="text-amber-800 dark:text-amber-300 font-bold hover:underline shrink-0 ml-1"
-                    >
-                      Elegir
-                    </button>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectTitle(r.name)}
+                        className="text-[9.5px] text-stone-500 hover:text-amber-700 dark:hover:text-amber-400 font-medium hover:underline cursor-pointer"
+                      >
+                        Usar título «{r.name}»
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

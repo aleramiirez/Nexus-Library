@@ -1547,6 +1547,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               displayName={profileDisplayName}
               username={profileUsername}
               onSaveAvatar={handleAvatarSelect}
+              levelInfo={readerLevelInfo}
             />
 
             {/* Modal de Exportación Oficial de Carnet */}

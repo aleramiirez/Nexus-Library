@@ -41,25 +41,25 @@ export const NexusOrderCodexModal: React.FC<NexusOrderCodexModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[92vh] flex flex-col p-0 shadow-2xl mt-2 sm:mt-4 overflow-hidden border-2 border-amber-900/30 dark:border-amber-500/30">
+      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-5 overflow-visible border border-amber-900/30 dark:border-amber-500/30">
         {/* Pestaña de latón superior */}
         <div className="catalog-brass-tab z-20 whitespace-nowrap">
           El Gran Códice de la Orden · Escalafones y Sabiduría
         </div>
 
         {/* Cabecera ceremonial */}
-        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/90 dark:bg-[#141b27]/90 rounded-t-[14px]">
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/95 dark:bg-[#141b27]/95 rounded-t-[14px]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 flex items-center justify-center font-bold shadow-sm shrink-0">
               <Crown className="w-5 h-5 drop-shadow-xs" />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-amber-800 dark:text-amber-400 font-bold flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   JERARQUÍA DEL SANTUARIO
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-mono font-bold border ${levelInfo.rank.badgeStyle}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-mono font-bold border truncate max-w-[220px] ${levelInfo.rank.badgeStyle}`}>
                   Nv. {levelInfo.level} · {levelInfo.rank.name}
                 </span>
               </div>
@@ -92,7 +92,7 @@ export const NexusOrderCodexModal: React.FC<NexusOrderCodexModalProps> = ({
         </div>
 
         {/* Pie ceremonial */}
-        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 border-t border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/95 dark:bg-[#141b27]/95">
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 border-t border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/95 dark:bg-[#141b27]/95 rounded-b-[14px]">
           <div className="text-xs font-mono text-stone-600 dark:text-slate-400">
             Total acumulado: <strong className="text-amber-900 dark:text-amber-300 font-bold">{levelInfo.totalXp.toLocaleString()} XP</strong>
           </div>

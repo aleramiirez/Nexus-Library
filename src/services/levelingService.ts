@@ -173,8 +173,6 @@ export const ORDER_RANKS: OrderRank[] = [
   }
 ];
 
-export const HONORIFIC_STORAGE_KEY = 'nexus_selected_honorific_title';
-
 /**
  * Tabla determinista de umbrales de experiencia acumulada para niveles 1..50.
  * Nivel 1 = 0 XP.
@@ -223,6 +221,7 @@ export interface ReaderLevelInfo {
   unlockedRanks: OrderRank[];
   unlockedTitles: string[];
   activeTitle: string;
+  activeFrameRank: OrderRank;
   breakdown: ReaderXpBreakdown;
 }
 
@@ -256,6 +255,7 @@ export function getDefaultReaderLevelInfo(): ReaderLevelInfo {
     unlockedRanks: [rank],
     unlockedTitles: [rank.name],
     activeTitle: rank.name,
+    activeFrameRank: rank,
     breakdown: {
       booksBaseXp: 0,
       pagesXp: 0,
@@ -282,6 +282,9 @@ export function getRankForLevel(level: number): OrderRank {
   return found || ORDER_RANKS[0];
 }
 
+export const HONORIFIC_STORAGE_KEY = 'nexus_selected_honorific_title';
+export const ORDER_FRAME_STORAGE_KEY = 'nexus_selected_order_frame';
+
 /**
  * Lee el título honorífico activo guardado en localStorage o asigna el más alto desbloqueado.
  */
@@ -306,6 +309,37 @@ export function setSelectedHonorificTitle(title: string): void {
   try {
     localStorage.setItem(HONORIFIC_STORAGE_KEY, title);
     window.dispatchEvent(new CustomEvent('nexus_honorific_changed', { detail: title }));
+  } catch {
+    // ignorar
+  }
+}
+
+/**
+ * Lee el marco de la Orden activo guardado en localStorage o asigna el del rango actual si no se ha elegido otro.
+ */
+export function getSelectedOrderFrame(defaultRankId: OrderRankId = 'I', unlockedRanks?: OrderRank[]): OrderRankId {
+  if (typeof window === 'undefined') return defaultRankId;
+  try {
+    const saved = localStorage.getItem(ORDER_FRAME_STORAGE_KEY) as OrderRankId | null;
+    if (saved && ORDER_RANKS.some((r) => r.id === saved)) {
+      if (!unlockedRanks || unlockedRanks.some((r) => r.id === saved)) {
+        return saved;
+      }
+    }
+  } catch {
+    // ignorar
+  }
+  return defaultRankId;
+}
+
+/**
+ * Guarda la preferencia de marco de la Orden activo del lector y notifica el cambio a todos los avatares.
+ */
+export function setSelectedOrderFrame(rankId: OrderRankId): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ORDER_FRAME_STORAGE_KEY, rankId);
+    window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: rankId }));
   } catch {
     // ignorar
   }
@@ -532,6 +566,10 @@ export function calculateReaderLevel(
     // Título activo (preferencia de usuario o el del rango actual)
     const activeTitle = customActiveTitle || getSelectedHonorificTitle(rank.name, unlockedTitles) || rank.name;
 
+    // Marco activo (preferencia de usuario o el del rango actual)
+    const activeFrameId = getSelectedOrderFrame(rank.id, unlockedRanks);
+    const activeFrameRank = ORDER_RANKS.find((r) => r.id === activeFrameId) || rank;
+
     const breakdown: ReaderXpBreakdown = {
       booksBaseXp,
       pagesXp,
@@ -562,6 +600,7 @@ export function calculateReaderLevel(
       unlockedRanks,
       unlockedTitles,
       activeTitle,
+      activeFrameRank,
       breakdown
     };
   } catch (err) {
