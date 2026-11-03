@@ -160,6 +160,7 @@ const NexusOrderCodexModal = React.lazy(() =>
 import { calculateReaderLevel } from './services/levelingService';
 import { useLibraryFilters, initialFilters } from './hooks/useLibraryFilters';
 import { useLibraryModals } from './hooks/useLibraryModals';
+import { useAppNotifications } from './hooks/useAppNotifications';
 
 const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
   'dashboard',
@@ -431,61 +432,14 @@ export const App: React.FC = () => {
     }
   }, [currentUser, currentUserProfile, isProfileSetupPending]);
 
-  // Estado para el Banner Flotante In-App de Notificaciones en vivo
-  interface InAppBannerData {
-    id: string;
-    title: string;
-    body: string;
-    avatarUrl?: string;
-    tab: 'recommendations' | 'friend_requests';
-  }
-  const [inAppBanner, setInAppBanner] = useState<InAppBannerData | null>(null);
-  const inAppBannerTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showInAppBanner = React.useCallback(
-    (banner: InAppBannerData) => {
-      if (inAppBannerTimeoutRef.current) {
-        clearTimeout(inAppBannerTimeoutRef.current);
-        inAppBannerTimeoutRef.current = null;
-      }
-      setInAppBanner(banner);
-      inAppBannerTimeoutRef.current = setTimeout(() => {
-        setInAppBanner((curr) => (curr?.id === banner.id ? null : curr));
-      }, 7500);
-    },
-    []
-  );
-
-  const [toast, setToast] = useState<{
-    message: string;
-    type: 'success' | 'error' | 'info';
-    action?: { label: string; onClick: () => void };
-  } | null>(null);
-  const toastTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = React.useCallback(
-    (
-      message: string,
-      optionsOrType: 'success' | 'error' | 'info' | { type?: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void }; duration?: number } = 'info'
-    ) => {
-      const opts = typeof optionsOrType === 'string' ? { type: optionsOrType } : optionsOrType;
-      const type = opts.type ?? 'info';
-      const action = opts.action;
-      const duration = opts.duration ?? 4500;
-
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = null;
-      }
-
-      setToast({ message, type, action });
-
-      toastTimeoutRef.current = setTimeout(() => {
-        setToast((curr) => (curr?.message === message ? null : curr));
-      }, duration);
-    },
-    []
-  );
+  const {
+    inAppBanner,
+    setInAppBanner,
+    showInAppBanner,
+    toast,
+    setToast,
+    showToast
+  } = useAppNotifications();
 
   const [isLoadingSample, setIsLoadingSample] = useState(false);
   const [isRemovingSample, setIsRemovingSample] = useState(false);
