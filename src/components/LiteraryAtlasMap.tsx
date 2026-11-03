@@ -424,17 +424,6 @@ const ROSE_STAR_MAIN_B = ROSE_STAR.filter((s) => s.main).map((s) => ptsToPath(s.
 const ROSE_STAR_MINOR_A = ROSE_STAR.filter((s) => !s.main).map((s) => ptsToPath(s.left)).join('');
 const ROSE_STAR_MINOR_B = ROSE_STAR.filter((s) => !s.main).map((s) => ptsToPath(s.right)).join('');
 
-const ALL_LANDS_D = LANDS.map((l) => l.d).join('');
-const EURASIA_D = LANDS.find((l) => l.id === 'eurasia')?.d ?? '';
-const CONTINENT_LANDS_D: Record<RegionId, string> = {
-  north_america: LANDS.filter((l) => l.continent === 'north_america').map((l) => l.d).join(''),
-  latam: LANDS.filter((l) => l.continent === 'latam').map((l) => l.d).join(''),
-  europe: LANDS.filter((l) => l.continent === 'europe').map((l) => l.d).join(''),
-  asia: LANDS.filter((l) => l.continent === 'asia').map((l) => l.d).join(''),
-  africa: LANDS.filter((l) => l.continent === 'africa').map((l) => l.d).join(''),
-  oceania: LANDS.filter((l) => l.continent === 'oceania').map((l) => l.d).join(''),
-};
-
 const REGION_LABELS: { id: RegionId; text: string; lon: number; lat: number; size: number }[] = [
   { id: 'north_america', text: 'AMÉRICA DEL NORTE', lon: -108, lat: 47, size: 11 },
   { id: 'latam', text: 'AMÉRICA LATINA', lon: -62, lat: -21, size: 10.5 },
@@ -562,9 +551,10 @@ function attachDragScroll(el: HTMLElement, onScrolled?: () => void): () => void 
 
 interface BaseMapProps {
   onContinent: (id: RegionId) => void;
+  isGeneralView: boolean;
 }
 
-const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
+const BaseMap = memo(function BaseMap({ onContinent, isGeneralView }: BaseMapProps) {
   return (
     <>
       <defs>
@@ -599,8 +589,12 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
         <clipPath id="la-clip-exp-flag">
           <circle cx="0" cy="0" r="6.5" />
         </clipPath>
-        <path id="la-all-lands" d={ALL_LANDS_D} />
-        <path id="la-p-eurasia" d={EURASIA_D} />
+        <clipPath id="la-clip-label-flag">
+          <rect x="0" y="0" width="16" height="11" rx="2" ry="2" />
+        </clipPath>
+        {LANDS.map((l) => (
+          <path key={l.id} id={`la-p-${l.id}`} d={l.d} />
+        ))}
       </defs>
 
       {/* Líneas de rumbo náuticas (loxodrómicas) */}
@@ -623,25 +617,33 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
         </text>
       ))}
 
-      {/* Aguas de costa (ondas de tinta unificadas en 3 trazados compuestos) */}
+      {/* Aguas de costa (ondas de tinta) */}
       <g>
-        <use href="#la-all-lands" className="la-ripple la-ripple--1" />
-        <use href="#la-all-lands" className="la-ripple la-ripple--2" />
-        <use href="#la-all-lands" className="la-ripple la-ripple--3" />
+        {LANDS.map((l) => (
+          <use key={`r1-${l.id}`} href={`#la-p-${l.id}`} className="la-ripple la-ripple--1" />
+        ))}
+        {LANDS.map((l) => (
+          <use key={`r2-${l.id}`} href={`#la-p-${l.id}`} className="la-ripple la-ripple--2" />
+        ))}
+        {LANDS.map((l) => (
+          <use key={`r3-${l.id}`} href={`#la-p-${l.id}`} className="la-ripple la-ripple--3" />
+        ))}
       </g>
 
       {/* Continentes e islas agrupados por región: interactivos SOLO en vista general */}
       <g>
         {/* América del Norte */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="north_america"
-          onClick={() => onContinent('north_america')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región América del Norte"
+          onClick={isGeneralView ? () => onContinent('north_america') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región América del Norte' : undefined}
         >
-          <path d={CONTINENT_LANDS_D.north_america} className="la-land" />
+          {LANDS.filter((l) => l.continent === 'north_america').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(-108))}
@@ -654,14 +656,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* América Latina */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="latam"
-          onClick={() => onContinent('latam')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región América Latina"
+          onClick={isGeneralView ? () => onContinent('latam') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región América Latina' : undefined}
         >
-          <path d={CONTINENT_LANDS_D.latam} className="la-land" />
+          {LANDS.filter((l) => l.continent === 'latam').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(-62))}
@@ -674,15 +678,17 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Europa */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="europe"
-          onClick={() => onContinent('europe')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Europa"
+          onClick={isGeneralView ? () => onContinent('europe') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Europa' : undefined}
         >
-          <use href="#la-p-eurasia" clipPath="url(#la-clip-europe)" className="la-land" />
-          <path d={CONTINENT_LANDS_D.europe} className="la-land" />
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-europe)" className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          {LANDS.filter((l) => l.continent === 'europe').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(33))}
@@ -695,15 +701,17 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Asia */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="asia"
-          onClick={() => onContinent('asia')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Asia & Oriente"
+          onClick={isGeneralView ? () => onContinent('asia') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Asia & Oriente' : undefined}
         >
-          <use href="#la-p-eurasia" clipPath="url(#la-clip-asia)" className="la-land" />
-          <path d={CONTINENT_LANDS_D.asia} className="la-land" />
+          <use href="#la-p-eurasia" clipPath="url(#la-clip-asia)" className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          {LANDS.filter((l) => l.continent === 'asia').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(92))}
@@ -716,14 +724,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* África */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="africa"
-          onClick={() => onContinent('africa')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región África"
+          onClick={isGeneralView ? () => onContinent('africa') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región África' : undefined}
         >
-          <path d={CONTINENT_LANDS_D.africa} className="la-land" />
+          {LANDS.filter((l) => l.continent === 'africa').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(21))}
@@ -736,14 +746,16 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
 
         {/* Oceanía */}
         <g
-          className="la-continent"
+          className={`la-continent ${isGeneralView ? 'la-continent--interactive' : ''}`}
           data-continent="oceania"
-          onClick={() => onContinent('oceania')}
-          role="button"
-          tabIndex={0}
-          aria-label="Región Oceanía"
+          onClick={isGeneralView ? () => onContinent('oceania') : undefined}
+          role={isGeneralView ? 'button' : undefined}
+          tabIndex={isGeneralView ? 0 : -1}
+          aria-label={isGeneralView ? 'Región Oceanía' : undefined}
         >
-          <path d={CONTINENT_LANDS_D.oceania} className="la-land" />
+          {LANDS.filter((l) => l.continent === 'oceania').map((l) => (
+            <use key={`l-${l.id}`} href={`#la-p-${l.id}`} className={`la-land ${isGeneralView ? 'la-land--click' : ''}`} />
+          ))}
           <text
             className="la-region-label"
             x={f1(px(136))}
@@ -754,8 +766,10 @@ const BaseMap = memo(function BaseMap({ onContinent }: BaseMapProps) {
           </text>
         </g>
 
-        {/* Tramado cartográfico vintage unificado (pointer-events: none) */}
-        <use href="#la-all-lands" className="la-hatch" />
+        {/* Tramado cartográfico vintage (pointer-events: none) */}
+        {LANDS.map((l) => (
+          <use key={`h-${l.id}`} href={`#la-p-${l.id}`} className="la-hatch" />
+        ))}
       </g>
 
       {/* Nombres de océanos */}
@@ -860,7 +874,7 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
   return (
     <g
       className={cls}
-      transform={`translate(${f1(x)} ${f1(y)})`}
+      style={{ transform: `translate(${f1(x)}px, ${f1(y)}px) scale(var(--la-s, 0.4))` }}
       role="button"
       tabIndex={dim ? -1 : 0}
       aria-label={title}
@@ -874,110 +888,109 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
       }}
     >
       <title>{title}</title>
-      <g className="la-node__scale">
-        <circle className="la-node__hit" r={16} />
-        <circle className="la-focus" r={16.5} />
+      <circle className="la-node__hit" r={16} />
+      <circle className="la-focus" r={16.5} />
 
-        {selected && (
-          <g className="la-sel">
-            <circle className="la-sel__ring la-sel__ring--a" r={18} />
-            <circle className="la-sel__ring la-sel__ring--b" r={22} />
-          </g>
-        )}
-
-        <g className="la-node__body">
-          {status === 'conquered' && (
-            <>
-              {selected && <circle className="la-pulse" r={13} />}
-              <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
-              <circle className="la-wax-ring" r={9.3} />
-              <circle className="la-wax-ring la-wax-ring--dash" r={7.4} />
-              <image
-                href={flagUrl}
-                x={-7.5}
-                y={-7.5}
-                width={15}
-                height={15}
-                preserveAspectRatio="xMidYMid slice"
-                clipPath="url(#la-clip-wax-flag)"
-              />
-              <ellipse className="la-wax-shine" cx={-4} cy={-5} rx={4.2} ry={2.2} transform="rotate(-35 -4 -5)" />
-              <g className="la-badge" transform="translate(10 -10)">
-                <circle r={5.8} />
-                <text y={0.3}>{c.readCount > 99 ? '99+' : c.readCount}</text>
-              </g>
-            </>
-          )}
-
-          {status === 'exploring' && (
-            <>
-              <circle className="la-explore__disc" r={10} />
-              <circle className="la-explore__ring" r={11.8} />
-              <circle className="la-explore__outline" r={5} />
-              <path className="la-explore__half" d={HALF_D} />
-              <image
-                href={flagUrl}
-                x={-6.5}
-                y={-6.5}
-                width={13}
-                height={13}
-                preserveAspectRatio="xMidYMid slice"
-                clipPath="url(#la-clip-exp-flag)"
-              />
-            </>
-          )}
-
-          {status === 'discover' && (
-            <>
-              <circle className="la-discover__halo" r={12} />
-              <path className="la-discover__star" d={COMPASS_STAR_D} />
-              <circle className="la-discover__dot" r={3.2} />
-            </>
-          )}
+      {selected && (
+        <g className="la-sel">
+          <circle className="la-sel__ring la-sel__ring--a" r={18} />
+          <circle className="la-sel__ring la-sel__ring--b" r={22} />
         </g>
+      )}
 
-        <g className="la-label" transform={`translate(0 ${ty})`}>
-          <rect
-            className="la-label__bg"
-            x={-labelW / 2}
-            y={selected ? -15 : -9}
-            width={labelW}
-            height={selected ? 30 : 18}
-            rx={4}
-          />
-          <g transform={`translate(${startX} ${flagY})`}>
+      <g className="la-node__body">
+        {status === 'conquered' && (
+          <>
+            {selected && <circle className="la-pulse" r={13} />}
+            <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
+            <circle className="la-wax-ring" r={9.3} />
+            <circle className="la-wax-ring la-wax-ring--dash" r={7.4} />
             <image
               href={flagUrl}
-              x={0}
-              y={0}
-              width={FLAG_W}
-              height={FLAG_H}
+              x={-7.5}
+              y={-7.5}
+              width={15}
+              height={15}
               preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#la-clip-wax-flag)"
             />
-            <rect
-              width={FLAG_W}
-              height={FLAG_H}
-              rx={1.5}
-              ry={1.5}
-              fill="none"
-              stroke="rgba(80,50,20,0.35)"
-              strokeWidth={0.7}
+            <ellipse className="la-wax-shine" cx={-4} cy={-5} rx={4.2} ry={2.2} transform="rotate(-35 -4 -5)" />
+            <g className="la-badge" transform="translate(10 -10)">
+              <circle r={5.8} />
+              <text y={0.3}>{c.readCount > 99 ? '99+' : c.readCount}</text>
+            </g>
+          </>
+        )}
+
+        {status === 'exploring' && (
+          <>
+            <circle className="la-explore__disc" r={10} />
+            <circle className="la-explore__ring" r={11.8} />
+            <circle className="la-explore__outline" r={5} />
+            <path className="la-explore__half" d={HALF_D} />
+            <image
+              href={flagUrl}
+              x={-6.5}
+              y={-6.5}
+              width={13}
+              height={13}
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#la-clip-exp-flag)"
             />
-          </g>
-          <text
-            className="la-label__name"
-            x={startX + FLAG_W + GAP}
-            y={selected ? -5 : 0.5}
-            textAnchor="start"
-          >
-            {c.name}
-          </text>
-          {selected && (
-            <text className="la-label__meta" y={8}>
-              {meta}
-            </text>
-          )}
+          </>
+        )}
+
+        {status === 'discover' && (
+          <>
+            <circle className="la-discover__halo" r={12} />
+            <path className="la-discover__star" d={COMPASS_STAR_D} />
+            <circle className="la-discover__dot" r={3.2} />
+          </>
+        )}
+      </g>
+
+      <g className="la-label" transform={`translate(0 ${ty})`}>
+        <rect
+          className="la-label__bg"
+          x={-labelW / 2}
+          y={selected ? -15 : -9}
+          width={labelW}
+          height={selected ? 30 : 18}
+          rx={4}
+        />
+        <g transform={`translate(${startX} ${flagY})`}>
+          <rect
+            width={FLAG_W}
+            height={FLAG_H}
+            rx={2}
+            ry={2}
+            fill="#dcd4c0"
+            stroke="rgba(80,50,20,0.3)"
+            strokeWidth={0.5}
+          />
+          <image
+            href={flagUrl}
+            x={0}
+            y={0}
+            width={FLAG_W}
+            height={FLAG_H}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#la-clip-label-flag)"
+          />
         </g>
+        <text
+          className="la-label__name"
+          x={startX + FLAG_W + GAP}
+          y={selected ? -5 : 0.5}
+          textAnchor="start"
+        >
+          {c.name}
+        </text>
+        {selected && (
+          <text className="la-label__meta" y={8}>
+            {meta}
+          </text>
+        )}
       </g>
     </g>
   );
@@ -991,8 +1004,7 @@ interface Gesture {
   mode: 'none' | 'drag' | 'pinch';
   sx: number;
   sy: number;
-  startX: number;
-  startY: number;
+  rect: Rect;
   startDist: number;
   moved: boolean;
   box: DOMRect | null;
@@ -1001,8 +1013,7 @@ const IDLE_GESTURE: Gesture = {
   mode: 'none',
   sx: 0,
   sy: 0,
-  startX: 0,
-  startY: 0,
+  rect: WORLD,
   startDist: 0,
   moved: false,
   box: null,
@@ -1015,7 +1026,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   propsRef.current = props;
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const nodesGroupRef = useRef<SVGGElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const regionsRef = useRef<HTMLDivElement>(null);
   const curRef = useRef<Rect>(PRESETS[activeContinent]);
@@ -1027,7 +1037,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   const lastTapRef = useRef<{ t: number; x: number; y: number }>({ t: 0, x: 0, y: 0 });
   const firstRef = useRef(true);
   const suppressRef = useRef(false);
-  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const gestureRef = useRef<Gesture>(IDLE_GESTURE);
   const wheelTimer = useRef<number | undefined>(undefined);
 
@@ -1037,16 +1046,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   );
 
   /* ------------------------------ Cámara ------------------------------ */
-
-  const setMovingAttr = useCallback((moving: boolean) => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    if (moving) {
-      if (svg.dataset.moving !== '1') svg.dataset.moving = '1';
-    } else if (svg.dataset.moving) {
-      delete svg.dataset.moving;
-    }
-  }, []);
 
   const syncZoom = useCallback(() => {
     const nextZ = Math.round((MAP_W / curRef.current.w) * 100) / 100;
@@ -1059,18 +1058,12 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     svg.setAttribute('viewBox', `${r.x.toFixed(2)} ${r.y.toFixed(2)} ${r.w.toFixed(2)} ${r.h.toFixed(2)}`);
     const z = MAP_W / r.w;
     const s = markerScale(z);
-    if (Math.abs(s - lastScaleRef.current) > 0.0025) {
+    if (Math.abs(s - lastScaleRef.current) > 0.002) {
       lastScaleRef.current = s;
-      nodesGroupRef.current?.style.setProperty('--la-s', s.toFixed(4));
+      svg.style.setProperty('--la-s', s.toFixed(4));
     }
     const lvl = z >= 2.2 ? 'high' : z > 1.12 ? 'mid' : 'low';
     if (svg.dataset.zoom !== lvl) svg.dataset.zoom = lvl;
-    const isZ = z > 1.05 || propsRef.current.activeContinent !== 'all';
-    const zoomedStr = isZ ? 'true' : 'false';
-    if (svg.dataset.zoomed !== zoomedStr) {
-      svg.dataset.zoomed = zoomedStr;
-      svg.setAttribute('preserveAspectRatio', isZ ? 'xMidYMid slice' : 'xMidYMid meet');
-    }
   }, []);
 
   const applyRect = useCallback(
@@ -1110,12 +1103,10 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduce || duration <= 0) {
-        setMovingAttr(false);
         applyRect(target);
         syncZoom();
         return;
       }
-      setMovingAttr(true);
       const t0 = performance.now();
       const tick = (now: number) => {
         const t = Math.min(1, (now - t0) / duration);
@@ -1129,13 +1120,12 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
         if (t < 1) {
           rafRef.current = requestAnimationFrame(tick);
         } else {
-          setMovingAttr(false);
           syncZoom();
         }
       };
       rafRef.current = requestAnimationFrame(tick);
     },
-    [applyRect, setMovingAttr, syncZoom],
+    [applyRect, syncZoom],
   );
 
   // Encuadre inicial y transiciones al cambiar de continente
@@ -1160,25 +1150,203 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     [],
   );
 
-  // Prevención de gestos nativos del navegador en móvil (iOS Safari GestureEvent y scroll accidental en pinch)
+  // Gestos multitáctiles nativos en móvil (TouchEvent garantiza coordenadas sincronizadas de ambos dedos sin parpadeos)
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
+
     const preventGesture = (e: Event) => e.preventDefault();
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length >= 2 || MAP_W / curRef.current.w > 1.01) {
+
+    const onTouchStart = (e: TouchEvent) => {
+      const box = el.getBoundingClientRect();
+      if (box.width <= 0 || box.height <= 0) return;
+
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        suppressRef.current = false;
+        gestureRef.current = {
+          mode: 'drag',
+          sx: t.clientX,
+          sy: t.clientY,
+          rect: { ...curRef.current },
+          startDist: 0,
+          moved: false,
+          box,
+        };
+      } else if (e.touches.length >= 2) {
         if (e.cancelable) e.preventDefault();
+        cancelAnimationFrame(rafRef.current);
+        cancelAnimationFrame(wheelRafRef.current);
+        wheelRafRef.current = 0;
+        if (pendingFlushRef.current) {
+          cancelAnimationFrame(pendingFlushRef.current);
+          pendingFlushRef.current = 0;
+          commitRectToDOM(curRef.current);
+        }
+        suppressRef.current = true;
+        const t0 = e.touches[0];
+        const t1 = e.touches[1];
+        const mx = (t0.clientX + t1.clientX) / 2 - box.left;
+        const my = (t0.clientY + t1.clientY) / 2 - box.top;
+        const dist = Math.max(16, Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY));
+        gestureRef.current = {
+          mode: 'pinch',
+          sx: mx,
+          sy: my,
+          rect: { ...curRef.current },
+          startDist: dist,
+          moved: true,
+          box,
+        };
       }
     };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const g = gestureRef.current;
+      if (g.mode === 'none' || !g.box || g.box.width <= 0 || g.box.height <= 0) return;
+
+      if (e.touches.length >= 2) {
+        if (e.cancelable) e.preventDefault();
+        const t0 = e.touches[0];
+        const t1 = e.touches[1];
+        const dist = Math.max(16, Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY));
+        const mx = (t0.clientX + t1.clientX) / 2 - g.box.left;
+        const my = (t0.clientY + t1.clientY) / 2 - g.box.top;
+
+        if (g.mode !== 'pinch') {
+          g.mode = 'pinch';
+          g.sx = mx;
+          g.sy = my;
+          g.rect = { ...curRef.current };
+          g.startDist = dist;
+          g.moved = true;
+          suppressRef.current = true;
+          return;
+        }
+
+        const nw = Math.min(MAP_W, Math.max(MIN_W, (g.rect.w * g.startDist) / dist));
+        const nh = (nw * MAP_H) / MAP_W;
+        const ux = g.rect.x + (g.sx / g.box.width) * g.rect.w;
+        const uy = g.rect.y + (g.sy / g.box.height) * g.rect.h;
+        const next = clampRect({
+          x: ux - (mx / g.box.width) * nw,
+          y: uy - (my / g.box.height) * nh,
+          w: nw,
+          h: nh,
+        });
+        targetRef.current = next;
+        scheduleRect(next);
+        return;
+      }
+
+      if (e.touches.length === 1 && g.mode === 'drag') {
+        const t = e.touches[0];
+        const dx = t.clientX - g.sx;
+        const dy = t.clientY - g.sy;
+        if (!g.moved) {
+          if (Math.hypot(dx, dy) < 6) return;
+          if (MAP_W / curRef.current.w <= 1.01) return; // en vista mundial completa sin zoom no hay paneo
+          cancelAnimationFrame(rafRef.current);
+          cancelAnimationFrame(wheelRafRef.current);
+          wheelRafRef.current = 0;
+          g.moved = true;
+          suppressRef.current = true;
+          g.sx = t.clientX;
+          g.sy = t.clientY;
+          g.rect = { ...curRef.current };
+          return;
+        }
+        if (e.cancelable) e.preventDefault();
+        const uppX = g.rect.w / g.box.width;
+        const uppY = g.rect.h / g.box.height;
+        const next = clampRect({
+          x: g.rect.x - dx * uppX,
+          y: g.rect.y - dy * uppY,
+          w: g.rect.w,
+          h: g.rect.h,
+        });
+        targetRef.current = next;
+        scheduleRect(next);
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const g = gestureRef.current;
+      if (g.mode === 'none') return;
+
+      if (e.touches.length === 0) {
+        if (pendingFlushRef.current) {
+          cancelAnimationFrame(pendingFlushRef.current);
+          pendingFlushRef.current = 0;
+          commitRectToDOM(curRef.current);
+        }
+        if (g.moved) {
+          syncZoom();
+          window.setTimeout(() => {
+            suppressRef.current = false;
+          }, 60);
+        } else if (e.changedTouches.length === 1 && g.box && !(e.target as Element | null)?.closest('.la-node')) {
+          const ct = e.changedTouches[0];
+          const now = performance.now();
+          const prev = lastTapRef.current;
+          if (now - prev.t < 290 && Math.hypot(ct.clientX - prev.x, ct.clientY - prev.y) < 28) {
+            lastTapRef.current = { t: 0, x: 0, y: 0 };
+            suppressRef.current = true;
+            const cur = curRef.current;
+            const curZ = MAP_W / cur.w;
+            if (curZ > 3.1) {
+              animateTo(PRESETS[propsRef.current.activeContinent]);
+            } else {
+              const rx = Math.max(0, Math.min(1, (ct.clientX - g.box.left) / g.box.width));
+              const ry = Math.max(0, Math.min(1, (ct.clientY - g.box.top) / g.box.height));
+              const ux = cur.x + rx * cur.w;
+              const uy = cur.y + ry * cur.h;
+              const nw = Math.max(MIN_W, cur.w / 1.85);
+              const nh = (nw * MAP_H) / MAP_W;
+              animateTo(clampRect({ x: ux - rx * nw, y: uy - ry * nh, w: nw, h: nh }));
+            }
+            window.setTimeout(() => {
+              suppressRef.current = false;
+            }, 60);
+          } else {
+            lastTapRef.current = { t: now, x: ct.clientX, y: ct.clientY };
+          }
+        }
+        gestureRef.current = IDLE_GESTURE;
+      } else if (e.touches.length === 1) {
+        if (pendingFlushRef.current) {
+          cancelAnimationFrame(pendingFlushRef.current);
+          pendingFlushRef.current = 0;
+          commitRectToDOM(curRef.current);
+        }
+        const rem = e.touches[0];
+        gestureRef.current = {
+          mode: 'drag',
+          sx: rem.clientX,
+          sy: rem.clientY,
+          rect: { ...curRef.current },
+          startDist: 0,
+          moved: true,
+          box: g.box,
+        };
+      }
+    };
+
     el.addEventListener('gesturestart', preventGesture, { passive: false });
     el.addEventListener('gesturechange', preventGesture, { passive: false });
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
     return () => {
       el.removeEventListener('gesturestart', preventGesture);
       el.removeEventListener('gesturechange', preventGesture);
+      el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [animateTo, commitRectToDOM, scheduleRect, syncZoom]);
 
   // Zoom con rueda interpolado a 60-120fps:
   // - En modo ampliado (mesa de gran formato): la rueda del ratón hace zoom directamente sin necesidad de pulsar Ctrl.
@@ -1201,7 +1369,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
         wheelRafRef.current = 0;
         lastWheelFrame = 0;
         applyRect(tgt);
-        setMovingAttr(false);
         syncZoom();
         return;
       }
@@ -1237,7 +1404,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const nh = (nw * MAP_H) / MAP_W;
       targetRef.current = clampRect({ x: ux - rx * nw, y: uy - ry * nh, w: nw, h: nh });
 
-      setMovingAttr(true);
       if (!wheelRafRef.current) {
         lastWheelFrame = 0;
         wheelRafRef.current = requestAnimationFrame(stepWheelGlide);
@@ -1245,7 +1411,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [applyRect, setMovingAttr, syncZoom, isExpanded]);
+  }, [applyRect, syncZoom, isExpanded]);
 
   const zoomBy = useCallback(
     (factor: number) => {
@@ -1283,177 +1449,79 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     if (selectedCountryCode) focusCountry(selectedCountryCode);
   }, [selectedCountryCode, focusCountry]);
 
-  /* ------------------------- Arrastre y pellizco ------------------------- */
+  /* ------------------------- Arrastre con ratón (Escritorio) ------------------------- */
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.isPrimary) {
-      pointersRef.current.clear();
-    }
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* el navegador no soporta captura en este puntero */
-    }
-    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const box = gestureRef.current.box ?? e.currentTarget.getBoundingClientRect();
-
-    if (pointersRef.current.size === 1) {
-      suppressRef.current = false;
-      gestureRef.current = {
-        mode: 'drag',
-        sx: e.clientX,
-        sy: e.clientY,
-        startX: e.clientX,
-        startY: e.clientY,
-        startDist: 0,
-        moved: false,
-        box,
-      };
-    } else if (pointersRef.current.size >= 2) {
-      cancelAnimationFrame(rafRef.current);
-      cancelAnimationFrame(wheelRafRef.current);
-      wheelRafRef.current = 0;
-      suppressRef.current = true;
-      setMovingAttr(true);
-      const [a, b] = Array.from(pointersRef.current.values());
-      const mx = (a.x + b.x) / 2 - box.left;
-      const my = (a.y + b.y) / 2 - box.top;
-      gestureRef.current = {
-        mode: 'pinch',
-        sx: mx,
-        sy: my,
-        startX: mx,
-        startY: my,
-        startDist: Math.max(12, Math.hypot(a.x - b.x, a.y - b.y)),
-        moved: true,
-        box,
-      };
-    }
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    suppressRef.current = false;
+    gestureRef.current = {
+      mode: 'drag',
+      sx: e.clientX,
+      sy: e.clientY,
+      rect: { ...curRef.current },
+      startDist: 0,
+      moved: false,
+      box: e.currentTarget.getBoundingClientRect(),
+    };
   };
 
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!pointersRef.current.has(e.pointerId)) return;
-    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (e.pointerType !== 'mouse') return;
     const g = gestureRef.current;
     const svg = svgRef.current;
-    if (!svg || g.mode === 'none' || !g.box || g.box.width <= 0 || g.box.height <= 0) return;
+    if (!svg || g.mode !== 'drag' || !g.box || g.box.width <= 0 || g.box.height <= 0) return;
 
-    if (g.mode === 'pinch' && pointersRef.current.size >= 2) {
-      const [a, b] = Array.from(pointersRef.current.values());
-      const dist = Math.max(12, Math.hypot(a.x - b.x, a.y - b.y));
-      const mx = (a.x + b.x) / 2 - g.box.left;
-      const my = (a.y + b.y) / 2 - g.box.top;
-      const cur = curRef.current;
-      const ux = cur.x + (g.sx / g.box.width) * cur.w;
-      const uy = cur.y + (g.sy / g.box.height) * cur.h;
-      const nw = Math.min(MAP_W, Math.max(MIN_W, cur.w * (g.startDist / dist)));
-      const nh = (nw * MAP_H) / MAP_W;
-      const next = clampRect({
-        x: ux - (mx / g.box.width) * nw,
-        y: uy - (my / g.box.height) * nh,
-        w: nw,
-        h: nh,
-      });
-      g.sx = mx;
-      g.sy = my;
-      g.startDist = dist;
-      targetRef.current = next;
-      scheduleRect(next);
-      return;
-    }
-
-    if (g.mode === 'drag') {
-      if (!g.moved) {
-        const totalDx = e.clientX - g.startX;
-        const totalDy = e.clientY - g.startY;
-        if (Math.hypot(totalDx, totalDy) < 5) return;
-        if (MAP_W / curRef.current.w <= 1.005) return; // sin zoom no hay nada que arrastrar
-        cancelAnimationFrame(rafRef.current);
-        cancelAnimationFrame(wheelRafRef.current);
-        wheelRafRef.current = 0;
-        g.moved = true;
-        suppressRef.current = true;
-        g.sx = e.clientX;
-        g.sy = e.clientY;
-        setMovingAttr(true);
-        svg.dataset.drag = '1';
-        return;
-      }
-      const dx = e.clientX - g.sx;
-      const dy = e.clientY - g.sy;
+    const dx = e.clientX - g.sx;
+    const dy = e.clientY - g.sy;
+    if (!g.moved) {
+      if (Math.hypot(dx, dy) < 5) return;
+      if (MAP_W / curRef.current.w <= 1.01) return; // sin zoom no hay nada que arrastrar
+      cancelAnimationFrame(rafRef.current);
+      cancelAnimationFrame(wheelRafRef.current);
+      wheelRafRef.current = 0;
+      g.moved = true;
+      suppressRef.current = true;
       g.sx = e.clientX;
       g.sy = e.clientY;
-      const cur = curRef.current;
-      const uppX = cur.w / g.box.width;
-      const uppY = cur.h / g.box.height;
-      const next = clampRect({
-        x: cur.x - dx * uppX,
-        y: cur.y - dy * uppY,
-        w: cur.w,
-        h: cur.h,
-      });
-      targetRef.current = next;
-      scheduleRect(next);
+      g.rect = { ...curRef.current };
+      try {
+        svg.setPointerCapture(e.pointerId);
+      } catch {
+        /* sin captura */
+      }
+      svg.dataset.drag = '1';
+      return;
     }
+    const uppX = g.rect.w / g.box.width;
+    const uppY = g.rect.h / g.box.height;
+    const next = clampRect({
+      x: g.rect.x - dx * uppX,
+      y: g.rect.y - dy * uppY,
+      w: g.rect.w,
+      h: g.rect.h,
+    });
+    targetRef.current = next;
+    scheduleRect(next);
   };
 
   const endPointer = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!pointersRef.current.delete(e.pointerId)) return;
+    if (e.pointerType !== 'mouse') return;
     const g = gestureRef.current;
+    if (g.mode === 'none') return;
     if (g.moved) suppressRef.current = true;
     try {
       svgRef.current?.releasePointerCapture(e.pointerId);
     } catch {
       /* sin captura activa */
     }
-    if (pointersRef.current.size === 0) {
-      if (pendingFlushRef.current) {
-        cancelAnimationFrame(pendingFlushRef.current);
-        pendingFlushRef.current = 0;
-        commitRectToDOM(curRef.current);
-      }
-      if (g.moved) {
-        syncZoom();
-      } else if (e.pointerType === 'touch' && g.box && !(e.target as Element | null)?.closest('.la-node')) {
-        const now = performance.now();
-        const prev = lastTapRef.current;
-        if (now - prev.t < 290 && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < 28) {
-          lastTapRef.current = { t: 0, x: 0, y: 0 };
-          suppressRef.current = true;
-          const cur = curRef.current;
-          const curZ = MAP_W / cur.w;
-          if (curZ > 3.1) {
-            animateTo(PRESETS[propsRef.current.activeContinent]);
-          } else {
-            const rx = Math.max(0, Math.min(1, (e.clientX - g.box.left) / g.box.width));
-            const ry = Math.max(0, Math.min(1, (e.clientY - g.box.top) / g.box.height));
-            const ux = cur.x + rx * cur.w;
-            const uy = cur.y + ry * cur.h;
-            const nw = Math.max(MIN_W, cur.w / 1.85);
-            const nh = (nw * MAP_H) / MAP_W;
-            animateTo(clampRect({ x: ux - rx * nw, y: uy - ry * nh, w: nw, h: nh }));
-          }
-        } else {
-          lastTapRef.current = { t: now, x: e.clientX, y: e.clientY };
-        }
-      }
-      if (svgRef.current) delete svgRef.current.dataset.drag;
-      if (!rafRef.current && !wheelRafRef.current) setMovingAttr(false);
-      gestureRef.current = IDLE_GESTURE;
-    } else if (pointersRef.current.size === 1) {
-      const [rem] = Array.from(pointersRef.current.values());
-      gestureRef.current = {
-        mode: 'drag',
-        sx: rem.x,
-        sy: rem.y,
-        startX: rem.x,
-        startY: rem.y,
-        startDist: 0,
-        moved: true,
-        box: g.box,
-      };
+    if (pendingFlushRef.current) {
+      cancelAnimationFrame(pendingFlushRef.current);
+      pendingFlushRef.current = 0;
+      commitRectToDOM(curRef.current);
     }
+    if (g.moved) syncZoom();
+    if (svgRef.current) delete svgRef.current.dataset.drag;
+    gestureRef.current = IDLE_GESTURE;
   };
 
   /* --------------------------- Selección --------------------------- */
@@ -1678,6 +1746,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
   }, [activeContinent, checkRegionsScroll]);
 
   const isZoomed = zoom > 1.05 || activeContinent !== 'all';
+  const isGeneralView = activeContinent === 'all' && zoom <= 1.05;
 
   /* ------------------------------ Render ------------------------------ */
 
@@ -1817,9 +1886,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           onPointerMove={onPointerMove}
           onPointerUp={endPointer}
           onPointerCancel={endPointer}
-          onLostPointerCapture={endPointer}
         >
-          <BaseMap onContinent={handleContinent} />
+          <BaseMap onContinent={handleContinent} isGeneralView={isGeneralView} />
 
           {/* Rutas de viaje literarias */}
           {routes.length > 0 && (
@@ -1834,7 +1902,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           )}
 
           {/* Países */}
-          <g ref={nodesGroupRef} className="la-nodes-layer">
+          <g>
             {orderedNodes.map((n) => (
               <CountryNode
                 key={n.c.code}
