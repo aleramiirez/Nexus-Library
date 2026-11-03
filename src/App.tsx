@@ -16,7 +16,6 @@ import {
   Sun,
   Moon,
   RotateCcw,
-  Trash2,
   Edit3,
   BookmarkCheck,
   Clock,
@@ -103,23 +102,8 @@ import { candidateToBookInput } from './services/bookMetadataService';
 import { formatFriendlyErrorMessage } from './utils/errorUtils';
 import './dashboard-panels.css';
 
-const BookDetailModal = React.lazy(() =>
-  import('./components/BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
-);
-import { PwaInstallModal } from './components/PwaInstallModal';
-const AddEditBookModal = React.lazy(() =>
-  import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
-);
+import { AppModals } from './components/AppModals';
 import { ParsedEbookFile } from './services/epubParserService';
-const ImportModal = React.lazy(() =>
-  import('./components/ImportModal').then((m) => ({ default: m.ImportModal }))
-);
-const EpubImportModal = React.lazy(() =>
-  import('./components/EpubImportModal').then((m) => ({ default: m.EpubImportModal }))
-);
-const AuthSyncModal = React.lazy(() =>
-  import('./components/AuthSyncModal').then((m) => ({ default: m.AuthSyncModal }))
-);
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
@@ -130,28 +114,13 @@ const ReadingChallengeScreen = React.lazy(() =>
   import('./components/ReadingChallengeScreen').then((m) => ({ default: m.ReadingChallengeScreen }))
 );
 import { ReadingChallengeDashboardWidget } from './components/ReadingChallengeDashboardWidget';
-const BookInboxModal = React.lazy(() =>
-  import('./components/BookInboxModal').then((m) => ({ default: m.BookInboxModal }))
-);
 const CollectionsScreen = React.lazy(() =>
   import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
 );
 import { collectionService } from './services/collectionService';
 import { readingChallengeService } from './services/readingChallengeService';
-const FirstLoginProfileModal = React.lazy(() =>
-  import('./components/FirstLoginProfileModal').then((m) => ({ default: m.FirstLoginProfileModal }))
-);
 import { ProfileSetupBanner } from './components/ProfileSetupBanner';
 import type { SettingsTab } from './components/SettingsScreen';
-const BookFinishedCelebrationModal = React.lazy(() =>
-  import('./components/BookFinishedCelebrationModal').then((m) => ({ default: m.BookFinishedCelebrationModal }))
-);
-const ShareBookCardModal = React.lazy(() =>
-  import('./components/ShareBookCardModal').then((m) => ({ default: m.ShareBookCardModal }))
-);
-const NexusOrderCodexModal = React.lazy(() =>
-  import('./components/NexusOrderCodexModal').then((m) => ({ default: m.NexusOrderCodexModal }))
-);
 import { calculateReaderLevel } from './services/levelingService';
 import { useLibraryFilters, initialFilters } from './hooks/useLibraryFilters';
 import { useLibraryModals } from './hooks/useLibraryModals';
@@ -273,6 +242,7 @@ export const App: React.FC = () => {
     filteredBooks
   } = useLibraryFilters(books);
 
+  const modals = useLibraryModals();
   const {
     detailBookId,
     setDetailBookId,
@@ -319,7 +289,7 @@ export const App: React.FC = () => {
     isFirstLoginModalOpen,
     setIsFirstLoginModalOpen,
     isAnyLibraryModalOpen
-  } = useLibraryModals();
+  } = modals;
 
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -1016,11 +986,6 @@ export const App: React.FC = () => {
     }
   }, [darkMode]);
 
-  const activeDetailBook = useMemo(
-    () => books.find((b) => b.id === detailBookId) || null,
-    [books, detailBookId]
-  );
-
   const metrics = useMemo(() => {
     let unread = 0;
     let reading = 0;
@@ -1666,287 +1631,31 @@ export const App: React.FC = () => {
         })}
       </nav>
 
-      <React.Suspense fallback={null}>
-        {activeDetailBook && (
-          <BookDetailModal
-            book={activeDetailBook}
-            onClose={() => setDetailBookId(null)}
-            onEdit={handleOpenEditBook}
-            onDelete={(b) => setBookToDelete(b)}
-            onStatusChange={handleBookStatusChange}
-            onRatingChange={updateBookQuickRating}
-            onDatesChange={updateBookQuickDates}
-            currentUserId={currentUser?.id}
-            readerName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
-            onShowToast={showToast}
-          />
-        )}
-
-        {isAddEditOpen && (
-          <AddEditBookModal
-            isOpen={isAddEditOpen}
-            editingBook={editingBook}
-            initialCandidate={selectedInitialCandidate}
-            initialParsedEbook={selectedParsedEbook}
-            sagas={sagas}
-            existingBooks={books}
-            onClose={() => {
-              setIsAddEditOpen(false);
-              setSelectedInitialCandidate(null);
-              setSelectedParsedEbook(null);
-            }}
-            onSave={async (data, id) => {
-              const previousBook = id ? books.find((b) => b.id === id) : null;
-              const savedId = await saveBookRecord(data, id);
-              if (data.progreso === '✅ Leído' && (!previousBook || previousBook.progreso !== '✅ Leído')) {
-                const fullBook = { ...(previousBook || {}), ...data, id: id || savedId } as Book;
-                setCelebrationBook(fullBook);
-              }
-            }}
-            onOpenMultiEpubImport={(files) => {
-              setInitialEpubFiles(files);
-              setIsEpubImportOpen(true);
-            }}
-          />
-        )}
-
-        {isEpubImportOpen && (
-          <EpubImportModal
-            isOpen={isEpubImportOpen}
-            existingBooks={books}
-            sagas={sagas}
-            initialFiles={initialEpubFiles}
-            onClose={() => {
-              setIsEpubImportOpen(false);
-              setInitialEpubFiles(undefined);
-            }}
-            onSaveBook={async (data, id) => {
-              await saveBookRecord(data, id);
-            }}
-            onOpenInEditor={(parsed) => {
-              setIsEpubImportOpen(false);
-              setInitialEpubFiles(undefined);
-              setEditingBook(null);
-              setSelectedInitialCandidate(null);
-              setSelectedParsedEbook(parsed);
-              setIsAddEditOpen(true);
-            }}
-            onShowToast={(msg) => showToast(msg, 'success')}
-          />
-        )}
-
-        {isImportOpen && (
-          <ImportModal
-            isOpen={isImportOpen}
-            books={books}
-            sagas={sagas}
-            onClose={() => setIsImportOpen(false)}
-            onOpenEpubImport={() => {
-              setInitialEpubFiles(undefined);
-              setIsEpubImportOpen(true);
-            }}
-          />
-        )}
-
-        {isAuthModalOpen && (
-          <AuthSyncModal
-            isOpen={isAuthModalOpen}
-            user={currentUser}
-            syncResult={syncResult}
-            isSyncing={isSyncing}
-            onTriggerSync={runCloudSync}
-            onClose={() => setIsAuthModalOpen(false)}
-          />
-        )}
-
-
-        {isInboxOpen && (
-          <BookInboxModal
-            isOpen={isInboxOpen}
-            currentUserId={currentUser?.id}
-            userProfile={currentUserProfile}
-            initialTab={inboxInitialTab}
-            onClose={() => {
-              setIsInboxOpen(false);
-              refreshInboxCount();
-            }}
-            onAddBookToLibrary={handleAddRecommendedBook}
-            onShowToast={showToast}
-            onInboxUpdated={refreshInboxCount}
-            onNavigateToSettingsAccount={handleNavigateToSettingsAccount}
-          />
-        )}
-
-      {isFirstLoginModalOpen && currentUser && currentUserProfile && (
-        <FirstLoginProfileModal
-          isOpen={isFirstLoginModalOpen}
-          onClose={() => setIsFirstLoginModalOpen(false)}
-          userProfile={currentUserProfile}
-          userId={currentUser.id}
-          onUpdateProfile={handleUpdateProfile}
-          onGoToSettings={handleNavigateToSettingsAccount}
-          onShowToast={showToast}
-        />
-      )}
-
-      {celebrationBook && (
-        <BookFinishedCelebrationModal
-          isOpen={Boolean(celebrationBook)}
-          book={celebrationBook}
-          books={books}
-          sagas={sagas}
-          booksReadCount={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length + 1}
-          readerDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
-          readerUsername={currentUserProfile?.username}
-          onClose={() => setCelebrationBook(null)}
-          onOpenShareCard={(book) => {
-            setCelebrationBook(null);
-            setShareCardBook(book);
-          }}
-          onOpenChallenge={() => {
-            setCelebrationBook(null);
-            setDetailBookId(null);
-            setIsAddEditOpen(false);
-            setEditingBook(null);
-            handleNavigate('stats');
-          }}
-          onShowToast={showToast}
-        />
-      )}
-
-      {shareCardBook && (
-        <ShareBookCardModal
-          isOpen={Boolean(shareCardBook)}
-          book={shareCardBook}
-          readerDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
-          readerUsername={currentUserProfile?.username}
-          onClose={() => setShareCardBook(null)}
-          onShowToast={showToast}
-        />
-      )}
-
-      {isOrderModalOpen && (
-        <NexusOrderCodexModal
-          isOpen={isOrderModalOpen}
-          onClose={() => setIsOrderModalOpen(false)}
-          levelInfo={readerLevelInfo}
-          avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
-          displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
-          username={currentUserProfile?.username}
-          onShowToast={showToast}
-        />
-      )}
-      </React.Suspense>
-
-      {bookToDelete &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-dialog-title"
-            onClick={() => setBookToDelete(null)}
-          >
-            <div
-              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 id="delete-dialog-title" className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
-                    Confirmar eliminación
-                  </h3>
-                  <p className="text-xs text-stone-500 dark:text-slate-400">
-                    Esta acción no se puede deshacer
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-                ¿Seguro que deseas eliminar <strong>"{bookToDelete.nombre}"</strong> de tu biblioteca?
-              </p>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setBookToDelete(null)}
-                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDeleteBook}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
-                >
-                  Eliminar definitivamente
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {sagaToDelete &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-saga-dialog-title"
-            onClick={() => setSagaToDelete(null)}
-          >
-            <div
-              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 id="delete-saga-dialog-title" className="font-serif text-lg font-bold text-rose-700 dark:text-rose-400">
-                    Confirmar eliminación de saga
-                  </h3>
-                  <p className="text-xs text-stone-500 dark:text-slate-400">
-                    Los libros asociados se conservarán
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-                ¿Eliminar la saga <strong>"{sagaToDelete.nombre}"</strong>? Los libros asociados se conservarán en tu biblioteca como libros independientes.
-              </p>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSagaToDelete(null)}
-                  className="rounded-xl border border-stone-300 dark:border-slate-700 px-4 py-2 text-xs text-stone-700 dark:text-slate-300 hover:bg-stone-200/50 dark:hover:bg-slate-800 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDeleteSaga}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 text-xs transition shadow-sm"
-                >
-                  Eliminar saga
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      <PwaInstallModal
-        isOpen={isInstallModalOpen}
-        onClose={() => setIsInstallModalOpen(false)}
+      <AppModals
+        modals={modals}
+        books={books}
+        sagas={sagas}
+        currentUser={currentUser}
+        currentUserProfile={currentUserProfile}
+        guestAlias={guestAlias}
+        guestAvatar={guestAvatar}
+        readerLevelInfo={readerLevelInfo}
+        syncResult={syncResult}
+        isSyncing={isSyncing}
+        runCloudSync={runCloudSync}
+        refreshInboxCount={refreshInboxCount}
+        showToast={showToast}
+        onOpenEditBook={handleOpenEditBook}
+        onBookStatusChange={handleBookStatusChange}
+        updateBookQuickRating={updateBookQuickRating}
+        updateBookQuickDates={updateBookQuickDates}
+        saveBookRecord={saveBookRecord}
+        handleAddRecommendedBook={handleAddRecommendedBook}
+        handleUpdateProfile={handleUpdateProfile}
+        handleNavigateToSettingsAccount={handleNavigateToSettingsAccount}
+        handleNavigate={handleNavigate}
+        confirmDeleteBook={confirmDeleteBook}
+        confirmDeleteSaga={confirmDeleteSaga}
       />
 
       {/* ─── Banner Flotante In-App estilo Instagram / Notificación Nativa ─── */}
