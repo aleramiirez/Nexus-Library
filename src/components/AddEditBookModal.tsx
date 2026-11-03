@@ -1669,13 +1669,13 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                       'relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ' +
                       (isActive
                         ? 'text-amber-800 dark:text-amber-300'
-                        : 'text-stone-500 dark:text-slate-500 hover:text-stone-800 dark:hover:text-slate-200')
+                        : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-100')
                     }
                   >
                     <Icon className="w-4 h-4" />
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className="sm:hidden">{tab.shortLabel}</span>
-                    <span className="ml-1 text-[10px] font-normal text-stone-400 dark:text-slate-600">
+                    <span className="ml-1 text-[10px] font-normal text-stone-500 dark:text-slate-400">
                       {i + 1}/{TABS.length}
                     </span>
                     {isActive && (

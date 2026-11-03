@@ -1122,7 +1122,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           {book.genero}
                         </span>
                       ) : (
-                        <span className="text-[11px] text-stone-500 dark:text-slate-500 italic">
+                        <span className="text-[11px] text-stone-600 dark:text-slate-400 italic">
                           Sin género
                         </span>
                       )}
@@ -1306,7 +1306,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                         Registro de Lectura
                       </span>
-                      <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
+                      <span className="text-[10px] uppercase tracking-widest text-stone-600 dark:text-slate-400 font-mono">
                         NEXUS
                       </span>
                     </div>
@@ -1423,7 +1423,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
                           <span className={item.isMono ? 'font-mono text-[10px] text-stone-500 dark:text-slate-400' : ''}>
                             {item.label ? (
-                              <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-400 dark:text-slate-500 mr-1">
+                              <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-600 dark:text-slate-400 mr-1">
                                 {item.label}
                               </span>
                             ) : null}
@@ -1560,7 +1560,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                     <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                                     Registro de Lectura
                                   </span>
-                                  <span className="text-[9px] uppercase tracking-widest text-stone-500 dark:text-slate-500 font-mono">
+                                  <span className="text-[9px] uppercase tracking-widest text-stone-600 dark:text-slate-400 font-mono">
                                     NEXUS
                                   </span>
                                 </div>
@@ -1914,7 +1914,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             {book.genero}
                           </span>
                         ) : (
-                          <span className="text-xs text-stone-500 dark:text-slate-500 italic">
+                          <span className="text-xs text-stone-600 dark:text-slate-400 italic">
                             Sin género asignado
                           </span>
                         )}
@@ -1971,7 +1971,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
                               <span className={item.isMono ? 'font-mono text-[10.5px] text-stone-500 dark:text-slate-400' : ''}>
                                 {item.label ? (
-                                  <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-400 dark:text-slate-500 mr-1">
+                                  <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-600 dark:text-slate-400 mr-1">
                                     {item.label}
                                   </span>
                                 ) : null}
