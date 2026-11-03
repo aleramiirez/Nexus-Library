@@ -241,7 +241,42 @@ export interface BookXpDetail {
 /**
  * Devuelve el escalafón correspondiente a un nivel (1..50).
  */
+export function getDefaultReaderLevelInfo(): ReaderLevelInfo {
+  const rank = ORDER_RANKS[0];
+  return {
+    level: 1,
+    rank,
+    totalXp: 0,
+    currentLevelBaseXp: 0,
+    nextLevelXp: LEVEL_THRESHOLDS[1] || 400,
+    xpInLevel: 0,
+    xpNeededForNext: LEVEL_THRESHOLDS[1] || 400,
+    progressPercent: 0,
+    isMaxLevel: false,
+    unlockedRanks: [rank],
+    unlockedTitles: [rank.name],
+    activeTitle: rank.name,
+    breakdown: {
+      booksBaseXp: 0,
+      pagesXp: 0,
+      ratingsXp: 0,
+      reviewsXp: 0,
+      quotesXp: 0,
+      countriesXp: 0,
+      sagasXp: 0,
+      challengeXp: 0,
+      totalXp: 0,
+      booksReadCount: 0,
+      totalPagesRead: 0,
+      countriesCount: 0,
+      completedSagasCount: 0,
+      isChallengeCompleted: false
+    }
+  };
+}
+
 export function getRankForLevel(level: number): OrderRank {
+  if (typeof level !== 'number' || isNaN(level)) return ORDER_RANKS[0];
   const safeLevel = Math.max(1, Math.min(50, Math.floor(level)));
   const found = ORDER_RANKS.find((r) => safeLevel >= r.minLevel && safeLevel <= r.maxLevel);
   return found || ORDER_RANKS[0];
@@ -279,7 +314,19 @@ export function setSelectedHonorificTitle(title: string): void {
 /**
  * Calcula el XP individual otorgado por un libro específico y si desbloqueó un nuevo país.
  */
-export function calculateBookXp(book: Book, otherBooks: Book[] = []): BookXpDetail {
+export function calculateBookXp(book?: Book | null, otherBooks: Book[] = []): BookXpDetail {
+  if (!book || typeof book !== 'object') {
+    return {
+      baseXp: 0,
+      pagesXp: 0,
+      ratingXp: 0,
+      reviewXp: 0,
+      quotesXp: 0,
+      countryBonusXp: 0,
+      totalXp: 0,
+      isNewCountry: false
+    };
+  }
   const isRead = isBookRead(book);
   if (!isRead) {
     return {
@@ -297,7 +344,8 @@ export function calculateBookXp(book: Book, otherBooks: Book[] = []): BookXpDeta
   const baseXp = 100;
 
   // Páginas leídas: 1 XP por página (defecto 200 si no consta, tope 2000)
-  const rawPages = book.paginas && book.paginas > 0 ? book.paginas : 200;
+  const numPages = typeof book.paginas === 'number' && !isNaN(book.paginas) ? book.paginas : 0;
+  const rawPages = numPages > 0 ? numPages : 200;
   const pagesXp = Math.min(2000, rawPages);
 
   // Valoración con estrellas
@@ -305,7 +353,7 @@ export function calculateBookXp(book: Book, otherBooks: Book[] = []): BookXpDeta
   const ratingXp = hasRating ? 25 : 0;
 
   // Notas personales / Reseña
-  const hasReview = Boolean(book.notasPersonales && book.notasPersonales.trim().length > 0);
+  const hasReview = Boolean(typeof book.notasPersonales === 'string' && book.notasPersonales.trim().length > 0);
   const reviewXp = hasReview ? 50 : 0;
 
   // Citas (tope de 5 citas = 75 XP máx)
@@ -315,21 +363,28 @@ export function calculateBookXp(book: Book, otherBooks: Book[] = []): BookXpDeta
   const quotesXp = Math.min(5, validQuotes.length) * 15;
 
   // Comprobar si el libro aporta un nuevo país al atlas
-  const country = literaryGeographyService.resolveBookCountry(book);
   let isNewCountry = false;
   let countryBonusXp = 0;
   let countryName: string | undefined;
 
-  if (country) {
-    countryName = country.name;
-    const countryCode = country.code.toUpperCase();
-    const otherHasCountry = otherBooks.some(
-      (b) => b.id !== book.id && isBookRead(b) && literaryGeographyService.resolveBookCountry(b)?.code.toUpperCase() === countryCode
-    );
-    if (!otherHasCountry) {
-      isNewCountry = true;
-      countryBonusXp = 150;
+  try {
+    const country = literaryGeographyService.resolveBookCountry(book);
+    if (country) {
+      countryName = country.name;
+      const countryCode = country.code.toUpperCase();
+      const safeOthers = Array.isArray(otherBooks)
+        ? otherBooks.filter((b) => Boolean(b && typeof b === 'object' && b.id))
+        : [];
+      const otherHasCountry = safeOthers.some(
+        (b) => b.id !== book.id && isBookRead(b) && literaryGeographyService.resolveBookCountry(b)?.code.toUpperCase() === countryCode
+      );
+      if (!otherHasCountry) {
+        isNewCountry = true;
+        countryBonusXp = 150;
+      }
     }
+  } catch (err) {
+    // Si falla la geografía, no bloquear
   }
 
   const totalXp = baseXp + pagesXp + ratingXp + reviewXp + quotesXp + countryBonusXp;
@@ -348,7 +403,7 @@ export function calculateBookXp(book: Book, otherBooks: Book[] = []): BookXpDeta
 }
 
 /**
- * Motor central de niveles de la Orden: determinista y retroactivo.
+ * Motor central de niveles de la Orden: determinista, retroactivo y 100% resiliente a datos corruptos.
  */
 export function calculateReaderLevel(
   books: Book[] = [],
@@ -356,128 +411,161 @@ export function calculateReaderLevel(
   currentYearGoalOverride?: number,
   customActiveTitle?: string
 ): ReaderLevelInfo {
-  let booksBaseXp = 0;
-  let pagesXp = 0;
-  let ratingsXp = 0;
-  let reviewsXp = 0;
-  let quotesXp = 0;
-  let booksReadCount = 0;
-  let totalPagesRead = 0;
+  try {
+    const safeBooks = Array.isArray(books)
+      ? books.filter((b) => Boolean(b && typeof b === 'object' && b.id))
+      : [];
+    const safeSagas = Array.isArray(sagas)
+      ? sagas.filter((s) => Boolean(s && typeof s === 'object' && s.id))
+      : [];
 
-  // 1. Libros leídos y profundidad
-  books.forEach((b) => {
-    if (!isBookRead(b)) return;
-    booksReadCount++;
+    let booksBaseXp = 0;
+    let pagesXp = 0;
+    let ratingsXp = 0;
+    let reviewsXp = 0;
+    let quotesXp = 0;
+    let booksReadCount = 0;
+    let totalPagesRead = 0;
 
-    booksBaseXp += 100;
+    // 1. Libros leídos y profundidad
+    safeBooks.forEach((b) => {
+      if (!isBookRead(b)) return;
+      booksReadCount++;
 
-    const rawPages = b.paginas && b.paginas > 0 ? b.paginas : 200;
-    const bookPagesXp = Math.min(2000, rawPages);
-    pagesXp += bookPagesXp;
-    totalPagesRead += b.paginas && b.paginas > 0 ? b.paginas : 0;
+      booksBaseXp += 100;
 
-    if (b.puntuacion !== null && b.puntuacion !== undefined && String(b.puntuacion).trim() !== '') {
-      ratingsXp += 25;
-    }
+      const numPages = typeof b.paginas === 'number' && !isNaN(b.paginas) ? b.paginas : 0;
+      const rawPages = numPages > 0 ? numPages : 200;
+      const bookPagesXp = Math.min(2000, rawPages);
+      pagesXp += bookPagesXp;
+      totalPagesRead += numPages > 0 ? numPages : 0;
 
-    if (b.notasPersonales && b.notasPersonales.trim().length > 0) {
-      reviewsXp += 50;
-    }
+      if (b.puntuacion !== null && b.puntuacion !== undefined && String(b.puntuacion).trim() !== '') {
+        ratingsXp += 25;
+      }
 
-    if (Array.isArray(b.citas)) {
-      const valid = b.citas.filter((c) => Boolean(c && typeof c === 'string' && c.trim().length > 0));
-      quotesXp += Math.min(5, valid.length) * 15;
-    }
-  });
+      if (typeof b.notasPersonales === 'string' && b.notasPersonales.trim().length > 0) {
+        reviewsXp += 50;
+      }
 
-  // 2. Atlas Literario (países conquistados: +150 XP cada uno)
-  const passport = literaryGeographyService.calculatePassport(books);
-  const countriesCount = passport.totalCountriesStamped;
-  const countriesXp = countriesCount * 150;
-
-  // 3. Sagas completadas (+300 XP por saga con >= 2 libros y 100% leídos)
-  let completedSagasCount = 0;
-  if (Array.isArray(sagas) && sagas.length > 0) {
-    sagas.forEach((saga) => {
-      const sagaBooks = books.filter((b) => b.sagaId === saga.id);
-      if (sagaBooks.length >= 2 && sagaBooks.every((b) => isBookRead(b))) {
-        completedSagasCount++;
+      if (Array.isArray(b.citas)) {
+        const valid = b.citas.filter((c) => Boolean(c && typeof c === 'string' && c.trim().length > 0));
+        quotesXp += Math.min(5, valid.length) * 15;
       }
     });
-  }
-  const sagasXp = completedSagasCount * 300;
 
-  // 4. Reto Anual de lectura
-  let challengeXp = 0;
-  let isChallengeCompleted = false;
-  const currentYear = new Date().getFullYear();
-  const targetGoal = currentYearGoalOverride !== undefined ? currentYearGoalOverride : readingChallengeService.getGoal(currentYear);
-  if (targetGoal > 0) {
-    const stats = readingChallengeService.calculateStats(books, currentYear, undefined, targetGoal);
-    if (stats.completedCount >= targetGoal) {
-      isChallengeCompleted = true;
-      challengeXp = Math.min(1000, targetGoal * 50);
+    // 2. Atlas Literario (países conquistados: +150 XP cada uno)
+    let countriesCount = 0;
+    try {
+      const passport = literaryGeographyService.calculatePassport(safeBooks);
+      countriesCount = Number(passport?.totalCountriesStamped) || 0;
+    } catch (err) {
+      console.warn('[levelingService] Error en calculatePassport:', err);
     }
-  }
+    const countriesXp = countriesCount * 150;
 
-  const totalXp = booksBaseXp + pagesXp + ratingsXp + reviewsXp + quotesXp + countriesXp + sagasXp + challengeXp;
-
-  // 5. Determinar el nivel según la tabla de umbrales (1 a 50)
-  let level = 1;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (totalXp >= LEVEL_THRESHOLDS[i]) {
-      level = i + 1;
-      break;
+    // 3. Sagas completadas (+300 XP por saga con >= 2 libros y 100% leídos)
+    let completedSagasCount = 0;
+    try {
+      if (safeSagas.length > 0) {
+        safeSagas.forEach((saga) => {
+          const sagaBooks = safeBooks.filter((b) => b.sagaId === saga.id);
+          if (sagaBooks.length >= 2 && sagaBooks.every((b) => isBookRead(b))) {
+            completedSagasCount++;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('[levelingService] Error en sagas:', err);
     }
+    const sagasXp = completedSagasCount * 300;
+
+    // 4. Reto Anual de lectura
+    let challengeXp = 0;
+    let isChallengeCompleted = false;
+    try {
+      const currentYear = new Date().getFullYear();
+      const targetGoal =
+        typeof currentYearGoalOverride === 'number' && currentYearGoalOverride > 0
+          ? currentYearGoalOverride
+          : readingChallengeService.getGoal(currentYear);
+
+      if (typeof targetGoal === 'number' && targetGoal > 0) {
+        const stats = readingChallengeService.calculateStats(safeBooks, currentYear, undefined, targetGoal);
+        if (stats && stats.completedCount >= targetGoal) {
+          isChallengeCompleted = true;
+          challengeXp = Math.min(1000, targetGoal * 50);
+        }
+      }
+    } catch (err) {
+      console.warn('[levelingService] Error en reto anual:', err);
+    }
+
+    const totalXp = Math.max(
+      0,
+      booksBaseXp + pagesXp + ratingsXp + reviewsXp + quotesXp + countriesXp + sagasXp + challengeXp
+    );
+
+    // 5. Determinar el nivel según la tabla de umbrales (1 a 50)
+    let level = 1;
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (totalXp >= LEVEL_THRESHOLDS[i]) {
+        level = i + 1;
+        break;
+      }
+    }
+    level = Math.max(1, Math.min(50, Math.floor(level) || 1));
+
+    const isMaxLevel = level === 50;
+    const currentLevelBaseXp = LEVEL_THRESHOLDS[level - 1] || 0;
+    const nextLevelXp = isMaxLevel ? currentLevelBaseXp : LEVEL_THRESHOLDS[level] || currentLevelBaseXp + 400;
+    const xpInLevel = Math.max(0, totalXp - currentLevelBaseXp);
+    const xpNeededForNext = isMaxLevel ? 1 : Math.max(1, nextLevelXp - currentLevelBaseXp);
+    const progressPercent = isMaxLevel ? 100 : Math.min(100, Math.max(0, Math.round((xpInLevel / xpNeededForNext) * 100)));
+
+    const rank = getRankForLevel(level);
+
+    // Rangos y títulos desbloqueados hasta el nivel actual
+    const unlockedRanks = ORDER_RANKS.filter((r) => level >= r.minLevel);
+    const unlockedTitles = unlockedRanks.map((r) => r.name);
+
+    // Título activo (preferencia de usuario o el del rango actual)
+    const activeTitle = customActiveTitle || getSelectedHonorificTitle(rank.name, unlockedTitles) || rank.name;
+
+    const breakdown: ReaderXpBreakdown = {
+      booksBaseXp,
+      pagesXp,
+      ratingsXp,
+      reviewsXp,
+      quotesXp,
+      countriesXp,
+      sagasXp,
+      challengeXp,
+      totalXp,
+      booksReadCount,
+      totalPagesRead,
+      countriesCount,
+      completedSagasCount,
+      isChallengeCompleted
+    };
+
+    return {
+      level,
+      rank,
+      totalXp,
+      currentLevelBaseXp,
+      nextLevelXp,
+      xpInLevel,
+      xpNeededForNext,
+      progressPercent,
+      isMaxLevel,
+      unlockedRanks,
+      unlockedTitles,
+      activeTitle,
+      breakdown
+    };
+  } catch (err) {
+    console.error('[levelingService] Error fatal en calculateReaderLevel:', err);
+    return getDefaultReaderLevelInfo();
   }
-  level = Math.max(1, Math.min(50, level));
-
-  const isMaxLevel = level === 50;
-  const currentLevelBaseXp = LEVEL_THRESHOLDS[level - 1];
-  const nextLevelXp = isMaxLevel ? currentLevelBaseXp : LEVEL_THRESHOLDS[level];
-  const xpInLevel = totalXp - currentLevelBaseXp;
-  const xpNeededForNext = isMaxLevel ? 1 : nextLevelXp - currentLevelBaseXp;
-  const progressPercent = isMaxLevel ? 100 : Math.min(100, Math.max(0, Math.round((xpInLevel / xpNeededForNext) * 100)));
-
-  const rank = getRankForLevel(level);
-
-  // Rangos y títulos desbloqueados hasta el nivel actual
-  const unlockedRanks = ORDER_RANKS.filter((r) => level >= r.minLevel);
-  const unlockedTitles = unlockedRanks.map((r) => r.name);
-
-  // Título activo (preferencia de usuario o el del rango actual)
-  const activeTitle = customActiveTitle || getSelectedHonorificTitle(rank.name, unlockedTitles);
-
-  const breakdown: ReaderXpBreakdown = {
-    booksBaseXp,
-    pagesXp,
-    ratingsXp,
-    reviewsXp,
-    quotesXp,
-    countriesXp,
-    sagasXp,
-    challengeXp,
-    totalXp,
-    booksReadCount,
-    totalPagesRead,
-    countriesCount,
-    completedSagasCount,
-    isChallengeCompleted
-  };
-
-  return {
-    level,
-    rank,
-    totalXp,
-    currentLevelBaseXp,
-    nextLevelXp,
-    xpInLevel,
-    xpNeededForNext,
-    progressPercent,
-    isMaxLevel,
-    unlockedRanks,
-    unlockedTitles,
-    activeTitle,
-    breakdown
-  };
 }

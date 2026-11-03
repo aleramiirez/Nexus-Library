@@ -1592,10 +1592,14 @@ export const App: React.FC = () => {
     .charAt(0)
     .toUpperCase();
 
-  const readerLevelInfo = React.useMemo(
-    () => calculateReaderLevel(books, sagas),
-    [books, sagas]
-  );
+  const readerLevelInfo = React.useMemo(() => {
+    try {
+      return calculateReaderLevel(books, sagas);
+    } catch (err) {
+      console.warn('[App] Error al calcular nivel del lector:', err);
+      return calculateReaderLevel([], []);
+    }
+  }, [books, sagas]);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f7f0df] dark:bg-[#080C15] text-stone-900 dark:text-slate-100 relative">

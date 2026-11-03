@@ -1,5 +1,5 @@
 // Service Worker para Nexus Library (PWA + Push Notifications)
-const CACHE_NAME = 'nexus-library-v1.0.6';
+const CACHE_NAME = 'nexus-library-v1.0.8';
 
 // Recursos críticos estáticos que deben estar disponibles offline
 const PRECACHE_ASSETS = [
@@ -24,6 +24,12 @@ const PRECACHE_ASSETS = [
 ];
 
 // 1. Ciclo de vida: Instalación y activación inmediata
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches

@@ -382,7 +382,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                       ? (userDisplayName || userEmail || 'Mi Cuenta')
                       : (userDisplayName || 'Lector Invitado')}
                   </p>
-                  {levelInfo && (
+                  {levelInfo && typeof levelInfo.level === 'number' && (
                     <span className="font-mono text-[9px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
                       Nv. {levelInfo.level}
                     </span>
@@ -392,18 +392,18 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                 {levelInfo ? (
                   <div className="space-y-1 mt-0.5">
                     <p className="text-[10px] font-serif font-bold text-amber-800 dark:text-amber-300 truncate leading-none">
-                      {levelInfo.activeTitle}
+                      {levelInfo.activeTitle || levelInfo.rank?.name || 'Aprendiz de Pergamino'}
                     </p>
                     {/* Barra dorada de progreso de XP */}
                     <div className="flex items-center gap-1.5">
                       <div className="flex-1 h-1 rounded-full bg-amber-900/15 dark:bg-amber-500/20 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
-                          style={{ width: `${levelInfo.progressPercent}%` }}
+                          style={{ width: `${Math.max(0, Math.min(100, levelInfo.progressPercent || 0))}%` }}
                         />
                       </div>
                       <span className="text-[8.5px] font-mono text-stone-500 dark:text-slate-400 shrink-0 leading-none">
-                        {levelInfo.isMaxLevel ? 'MAX' : `${levelInfo.xpInLevel}/${levelInfo.xpNeededForNext}`}
+                        {levelInfo.isMaxLevel ? 'MAX' : `${levelInfo.xpInLevel || 0}/${levelInfo.xpNeededForNext || 1}`}
                       </span>
                     </div>
                   </div>

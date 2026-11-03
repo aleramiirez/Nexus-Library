@@ -47,9 +47,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
   const iconSizeClass = ICON_SIZE_MAP[size] || ICON_SIZE_MAP.md;
 
-  const initial = (displayName || username || 'L').trim().charAt(0).toUpperCase();
+  const safeName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : typeof username === 'string' && username.trim() ? username.trim() : 'L';
+  const initial = safeName.charAt(0).toUpperCase() || 'L';
   const preset = getAvatarPreset(avatarUrl);
-  const activeRank = rankProp || (level !== undefined ? getRankForLevel(level) : undefined);
+  const validLevel = typeof level === 'number' && !isNaN(level) ? level : undefined;
+  const activeRank = rankProp || (validLevel !== undefined ? getRankForLevel(validLevel) : undefined);
 
   const renderContent = () => {
     // 1. Caso Sello Clásico (Preset)
@@ -100,7 +102,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     );
   };
 
-  if (!activeRank && level === undefined) {
+  if (!activeRank && validLevel === undefined) {
     return <div className={`relative inline-flex shrink-0 ${className}`}>{renderContent()}</div>;
   }
 
@@ -110,12 +112,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <div
       className={`relative inline-flex shrink-0 items-center justify-center rounded-2xl ${ringClass} ${className}`}
-      title={activeRank ? `${activeRank.name} (Rango ${activeRank.roman}${level !== undefined ? ` · Nivel ${level}` : ''})` : undefined}
+      title={activeRank ? `${activeRank.name} (Rango ${activeRank.roman}${validLevel !== undefined ? ` · Nivel ${validLevel}` : ''})` : undefined}
     >
       {renderContent()}
 
       {/* Badge de nivel tipo sello de lacre en miniatura */}
-      {showLevelBadge && level !== undefined && size !== 'xs' && (
+      {showLevelBadge && validLevel !== undefined && size !== 'xs' && (
         <span
           className={`absolute -bottom-1 -right-1 font-mono font-bold tracking-tight rounded-full shadow-md border leading-none z-10 flex items-center justify-center ${
             size === 'sm'
@@ -125,7 +127,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
               : 'text-[11px] px-2 py-0.5'
           } ${activeRank?.badgeStyle || 'bg-amber-600 text-slate-950 border-amber-400'}`}
         >
-          {level}
+          {validLevel}
         </span>
       )}
     </div>
