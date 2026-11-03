@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexus Library · Diagrama de arquitectura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1E7D3;--sf:#FAF3E4;--card:#FFFCF3;--bd:#D8C7A3;--tx:#2A2017;--mu:#6A5A46;--gold:#A46F1B;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1017;--sf:#151A24;--card:#1B2230;--bd:#283246;--tx:#EDE3CF;--mu:#9AA3B5;--gold:#E5C158;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D1017;--sf:#151A24;--card:#1B2230;--bd:#283246;--tx:#EDE3CF;--mu:#9AA3B5;--gold:#E5C158;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 .95rem/1.5 "Plus Jakarta Sans",system-ui,sans-serif}
+header,main{max-width:1180px;margin:0 auto;padding:0 1rem}
+header{padding-top:1.4rem;padding-bottom:.6rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+h1{font:700 2.3rem/1.1 "Cormorant Garamond",Georgia,serif;margin:0;color:var(--gold)}
+header p{margin:.2rem 0 0;color:var(--mu)}
+.sc{overflow-x:auto;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
+svg{display:block;width:100%;min-width:820px;height:auto}
+svg text{font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.z{fill:var(--bg);fill-opacity:.55;stroke:var(--bd);stroke-width:1.5;stroke-dasharray:5 5}
+.zt{font-size:11px;font-weight:600;letter-spacing:.08em;fill:var(--mu)}
+.n{cursor:pointer;transition:opacity .25s}
+.n .b{fill:var(--card);stroke:var(--c);stroke-width:1.5}
+.n .sp{fill:var(--c)}
+.n:hover .b,.n:focus-visible .b{stroke:var(--gold);stroke-width:2.5}
+.n:focus-visible{outline:none}
+.n.on .b{stroke:var(--gold);stroke-width:2.5;filter:drop-shadow(0 0 7px var(--gold))}
+.nt{font-size:14px;font-weight:700;fill:var(--tx)}
+.ns{font-size:11px;fill:var(--mu)}
+.ni{font-size:16px}
+.e{transition:opacity .25s}
+.p{fill:none;stroke:var(--mu);stroke-width:1.6;stroke-linecap:round;marker-end:url(#ah)}
+.dash .p{stroke-dasharray:6 5}
+.hit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
+.e:hover .p,.e.on .p{stroke:var(--gold);stroke-width:2.6;marker-end:url(#ag)}
+.pl{fill:var(--bg);stroke:var(--bd)}
+.lt{font-size:10px;font-weight:600;fill:var(--mu);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.e.on .lt{fill:var(--tx)}
+.dot{fill:var(--gold);opacity:.5;pointer-events:none}
+.e.on .dot{opacity:1}
+.bg circle{fill:var(--gold)}.bg text{font-size:11px;font-weight:700;fill:var(--bg);text-anchor:middle;dominant-baseline:central}
+.f .n:not(.on){opacity:.28}.f .e:not(.on){opacity:.1}
+.lg{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin:.7rem 0;color:var(--mu);font-size:.8rem}
+.lg b{color:var(--gold)}
+#info{background:var(--card);border:1px solid var(--bd);border-top:4px solid var(--gold);border-radius:8px;padding:1rem 1.2rem;margin:.4rem 0 2rem}
+#info small{color:var(--mu);text-transform:uppercase;letter-spacing:.08em;font-size:.7rem;font-weight:600}
+#info h3{font:700 1.6rem/1.15 "Cormorant Garamond",Georgia,serif;margin:.2rem 0 .5rem;color:var(--gold)}
+#info h4{margin:.8rem 0 .3rem;font-size:.72rem;color:var(--mu);text-transform:uppercase;letter-spacing:.06em}
+#info p{margin:.3rem 0}.fi{font:.75rem/1.5 ui-monospace,Menlo,monospace;color:var(--mu);word-break:break-word}
+.fb,.ch{font:600 .8rem "Plus Jakarta Sans",system-ui,sans-serif;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:999px;padding:.4rem .8rem;cursor:pointer;margin:0 .3rem .4rem 0}
+.fb:hover,.ch:hover{border-color:var(--gold)}.fb:disabled{opacity:.4;cursor:default}
+.fb:focus-visible,.ch:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:700px){h1{font-size:1.8rem}}
+</style></head><body>
+<header><div><h1>Nexus Library</h1><p>Diagrama de arquitectura · pulsa un componente o una flecha</p></div><button id="th" class="fb" aria-label="Cambiar entre tema claro y oscuro">◐ Tema</button></header>
+<main>
+<div class="sc"><svg id="d" viewBox="0 0 1140 850" role="img" aria-label="Diagrama de arquitectura de Nexus Library"><defs>
+<marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" style="fill:var(--mu)"/></marker>
+<marker id="ag" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" style="fill:var(--gold)"/></marker></defs></svg></div>
+<div class="lg"><span>━▶ llamada o flujo de datos</span><span>╌▶ evento o sincronización</span><span><b>●</b> paquete viajando por la flecha</span><span>Colores: ámbar interfaz · carmesí lógica · verde datos locales · azul nube · violeta exterior · oliva taller</span></div>
+<section id="info" aria-live="polite"></section>
+</main>
+<script>
+const $=s=>document.querySelector(s),NS="http://www.w3.org/2000/svg",svg=$("#d"),info=$("#info");
+const C={ui:"#D49B4B",lg:"#C2485A",lo:"#4FA89B",cl:"#6C8EF5",ex:"#9B7FD1",dv:"#8FA05A"};
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+const tx=(p,x,y,s,c)=>{const t=mk("text",{x,y,class:c},p);t.textContent=s;return t};
+const Z=[[20,12,690,93,"TALLER Y DESPLIEGUE"],[20,130,640,450,"NAVEGADOR DEL USUARIO · PWA"],[740,450,340,380,"SUPABASE · NUBE"]];
+const NL=[
+["gh","dv","🚀",40,40,170,50,"GitHub",["Código fuente"],"Donde vive el código del proyecto. De aquí sale cada versión que se compila y se publica.","package.json · .git"],
+["vite","dv","⚙️",270,40,170,50,"Vite + TypeScript",["tsc → vite build"],"Comprueba los tipos con tsc y genera la carpeta dist/ con HTML, JS dividido en trozos (carga perezosa) y CSS de Tailwind.","vite.config.ts · tsconfig.json · dist/"],
+["net","dv","🌍",500,40,190,50,"Vercel",["Hosting estático · HTTPS"],"Publica la web compilada. No ejecuta código tuyo en servidor: toda la lógica corre en el navegador y en Supabase.","Proyecto en Vercel"],
+["ui","ui","📚",40,170,230,90,"Interfaz React",["App.tsx + ~45 componentes","React 18 · Tailwind 3 · lucide"],"Todo lo que ves: estantería, ficha de libro, atlas, comunidad, retos y ajustes. App.tsx orquesta las pantallas y lee Dexie en vivo con useLiveQuery.","src/App.tsx · src/components/*.tsx · *.css"],
+["sw","ui","🛡️",400,170,220,100,"Service Worker",["sw.js · Cache Storage","offline + notificaciones push"],"Guarda la app en caché (nexus-library-v1.1.2) para abrir rápido y sin conexión, recibe los push y gestiona el clic sobre la notificación.","public/sw.js · public/manifest.json"],
+["dex","lo","🗄️",40,320,230,90,"Dexie · IndexedDB",["tablas books y sagas","copia local de tu biblioteca"],"La base de datos del navegador. Guarda tus libros y sagas en tu dispositivo y se sincroniza con Supabase al iniciar sesión.","src/db/database.ts"],
+["svc","lg","🧠",400,320,220,90,"Servicios",["src/services · 17 módulos","metadatos · social · retos · atlas…"],"La lógica de la app: buscar metadatos y portadas, importar EPUB, amistades y recomendaciones, niveles y retos, geografía literaria, push y PWA.","bookMetadataService · friendshipService · levelingService · literaryGeographyService…"],
+["sc","lg","🔌",220,480,220,80,"Cliente Supabase",["supabaseClient.ts","supabase-js 2.x"],"Un único cliente configurado con la URL y la clave pública (variables VITE_). Es la puerta de toda la comunicación con la nube.","src/services/supabaseClient.ts · .env"],
+["wp","ex","📬",760,170,300,60,"Servicio Web Push",["del navegador (FCM, Apple, Mozilla…)"],"Infraestructura del propio navegador que entrega los mensajes push a cada dispositivo, aunque la app esté cerrada.","Estándar Web Push + VAPID"],
+["ext","ex","🌐",760,320,300,80,"APIs públicas",["Open Library · Wikipedia ES · flagcdn","Google · weserv · allorigins"],"Servicios de terceros que consultan los servicios: Open Library (datos y sobre todo portadas), Wikipedia en español, banderas, traducción de Google y proxies de imagen y CORS.","covers.openlibrary.org · es.wikipedia.org · flagcdn.com …"],
+["edge","cl","🔔",760,485,300,60,"Edge Function send-push",["Deno + web-push (VAPID)"],"Función serverless que envía notificaciones Web Push cuando se crea una amistad o una recomendación.","supabase/functions/send-push/index.ts"],
+["pg","cl","🐘",760,570,300,100,"Postgres + RLS",["books · sagas · profiles","friendships · book_recommendations","push_subscriptions"],"La base de datos en la nube. Cada libro se guarda entero en una columna JSONB, y la seguridad por filas (RLS) hace que books y sagas solo los vea su dueño.","supabase/migrations (no están versionadas en git)"],
+["rt","cl","⚡",760,695,300,50,"Realtime + Storage",["canales en vivo · archivos"],"Canales WebSocket para recibir cambios al instante y almacén de archivos de Supabase. La app los usa en 4 puntos cada uno.","supabase.channel(…) · supabase.storage"],
+["auth","cl","🔐",760,765,300,50,"Auth",["correo y contraseña"],"Registro, inicio de sesión y recuperación de contraseña. Su identidad (auth.uid) es la que aplican las políticas RLS.","AuthScreen · ResetPasswordModal"]];
+const EL=[
+["gh_vite","gh","vite","M210 65L268 65","código",239,65,0,"Subes tu código a GitHub y de ahí sale el build."],
+["vite_net","vite","net","M440 65L498 65","dist/",469,65,0,"vite build genera la carpeta dist/ y esa carpeta es lo que se publica en Vercel."],
+["net_br","net","ui","M595 90L595 128","sirve la app",655,110,0,"Vercel sirve los ficheros estáticos por HTTPS. Al abrir la web, el navegador descarga index.html, el JS, el manifest y sw.js."],
+["sw_ui","sw","ui","M400 205L272 205","abre la app",336,205,0,"Al pulsar una notificación, el Service Worker gestiona el clic (notificationclick) y lleva al usuario a la app."],
+["ui_svc","ui","svc","M270 238L398 338","llama",334,288,0,"Los componentes piden casi todo a los servicios: metadatos, comunidad, retos, importación…"],
+["ui_dex","ui","dex","M155 260L155 318","useLiveQuery",155,289,0,"App.tsx lee Dexie en vivo con useLiveQuery y 7 ficheros de la interfaz importan la base local directamente, así la pantalla se actualiza sola."],
+["svc_dex","svc","dex","M400 372L272 372","lee / escribe",336,372,0,"Los servicios guardan y leen libros y sagas en IndexedDB."],
+["svc_sw","svc","sw","M510 320L510 272","registro · push",510,296,0,"serviceWorkerRegistration registra el Service Worker y pushNotificationService crea la suscripción push del dispositivo."],
+["svc_sc","svc","sc","M470 410L408 478","supabase-js",439,444,0,"Todo lo que va a la nube pasa por el cliente Supabase."],
+["dex_sc","dex","sc","M150 410L252 478","sincroniza",201,444,1,"Al iniciar sesión, syncAndMigrateWithSupabase() sube los libros y sagas locales evitando duplicados (por ID, ISBN o título más autor) y mantiene ambas copias al día."],
+["svc_ext","svc","ext","M620 365L758 360","fetch · HTTPS",690,362,0,"Peticiones HTTPS desde el navegador a Open Library, Wikipedia, banderas, Google Translate y proxies de imagen y CORS."],
+["wp_sw","wp","sw","M760 200L622 200","Web Push",691,200,0,"El servicio push del navegador entrega el mensaje al Service Worker, aunque la app esté cerrada."],
+["edge_wp","edge","wp","M1060 515C1112 515 1112 200 1060 200","",0,0,0,"La función firma el mensaje con las claves VAPID y lo envía, con la librería web-push, a la suscripción de cada dispositivo."],
+["pg_edge","pg","edge","M910 570L910 547","webhook",958,558,1,"Un webhook de base de datos avisa a la función cuando se inserta una fila en friendships o book_recommendations."],
+["sc_edge","sc","edge","M440 520C600 520 600 515 760 515","functions.invoke",690,516,1,"pushNotificationService también puede invocar send-push directamente con supabase.functions.invoke."],
+["sc_pg","sc","pg","M440 520C600 520 600 620 760 620","PostgREST",690,612,0,"Lecturas y escrituras de books, sagas, perfiles, amistades, recomendaciones y suscripciones push, siempre bajo RLS."],
+["sc_rt","sc","rt","M440 520C600 520 600 720 760 720","WebSocket",690,705,0,"Canales en tiempo real por WebSocket y subida y descarga de archivos en Storage."],
+["sc_auth","sc","auth","M440 520C600 520 600 790 760 790","Auth API",690,769,0,"Registro, login y recuperación de contraseña con correo."]];
+const FL=[
+{t:"Publicar y abrir la app",s:[["gh_vite","Subes el código a GitHub."],["vite_net","tsc revisa los tipos y vite build genera dist/ (HTML, JS en trozos y CSS)."],["net_br","Vercel sirve esos ficheros por HTTPS cuando alguien abre la web."],["svc_sw","La app registra el Service Worker, que cachea todo para poder abrir sin conexión."]]},
+{t:"Añadir un libro",s:[["ui_svc","Rellenas el formulario; la interfaz pide los datos a los servicios."],["svc_ext","El servicio busca metadatos y portada en Open Library y otras APIs."],["svc_dex","El libro se guarda en tu copia local de Dexie."],["dex_sc","Con la sesión iniciada, la sincronización lo envía por el cliente Supabase."],["sc_pg","Postgres lo guarda en books, protegido por RLS."]]},
+{t:"Recomendar un libro",s:[["ui_svc","Eliges amigo y libro en la interfaz."],["svc_sc","El servicio de recomendaciones usa el cliente Supabase."],["sc_pg","Se inserta una fila en book_recommendations."],["pg_edge","Un webhook de base de datos dispara send-push."],["edge_wp","La función firma con VAPID y envía el push."],["wp_sw","El servicio push del navegador lo entrega al Service Worker."],["sw_ui","Al pulsar la notificación, se abre la app."]]}];
+const N={},E={};
+Z.forEach(([x,y,w,h,l])=>{mk("rect",{class:"z",x,y,width:w,height:h,rx:14});tx(svg,x+14,y+20,l,"zt")});
+EL.forEach(([id,a,b,d,l,x,y,ds,t])=>E[id]={id,a,b,d,l,x,y,ds,t});
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+Object.values(E).forEach(e=>{const g=mk("g",{class:"e"+(e.ds?" dash":""),"data-id":e.id});e.g=g;
+ const p=mk("path",{class:"p",d:e.d,id:"p-"+e.id},g);mk("path",{class:"hit",d:e.d},g);
+ if(e.l){const w=e.l.length*5.6+14;mk("rect",{class:"pl",x:e.x-w/2,y:e.y-9,width:w,height:18,rx:9},g);tx(g,e.x,e.y,e.l,"lt");e.w=w}
+ else{tx(g,1126,360,"web-push · VAPID","lt").setAttribute("transform","rotate(-90 1126 360)");e.x=1100;e.y=360;e.w=0}
+ const bg=mk("g",{class:"bg",style:"display:none"},g);mk("circle",{cx:e.x-e.w/2-4,cy:e.y-9,r:9},bg);e.bt=tx(bg,e.x-e.w/2-4,e.y-9,"","");e.bg=bg;
+ if(!reduce){const c=mk("circle",{class:"dot",r:3.2},g),len=p.getTotalLength(),m=mk("animateMotion",{dur:Math.max(2.4,len/60)+"s",repeatCount:"indefinite",begin:(Math.random()*-2)+"s"},c);mk("mpath",{href:"#p-"+e.id},m)}});
+NL.forEach(([id,ty,i,x,y,w,h,t,s,d,f])=>{N[id]={id,ty,i,x,y,w,h,t,s,d,f};
+ const g=mk("g",{class:"n",tabindex:0,role:"button","data-id":id,"aria-label":t});g.style.setProperty("--c",C[ty]);
+ mk("rect",{class:"b",x,y,width:w,height:h,rx:10},g);mk("rect",{class:"sp",x,y,width:6,height:h,rx:3},g);
+ tx(g,x+18,y+23,t,"nt");s.forEach((l,k)=>tx(g,x+18,y+42+k*16,l,"ns"));tx(g,x+w-28,y+24,i,"ni")});
+let sel=null,fl=null,st=0;
+function apply(){const ns=new Set(),es=new Set(),bd={};
+ if(fl!==null){FL[fl].s.slice(0,st+1).forEach(([id],i)=>{es.add(id);ns.add(E[id].a);ns.add(E[id].b);bd[id]=i+1})}
+ else if(sel&&sel.k==="n"){ns.add(sel.id);Object.values(E).forEach(e=>{if(e.a===sel.id||e.b===sel.id){es.add(e.id);ns.add(e.a);ns.add(e.b)}})}
+ else if(sel&&sel.k==="e"){es.add(sel.id);ns.add(E[sel.id].a);ns.add(E[sel.id].b)}
+ svg.classList.toggle("f",ns.size>0);
+ document.querySelectorAll(".n").forEach(g=>g.classList.toggle("on",ns.has(g.dataset.id)));
+ Object.values(E).forEach(e=>{e.g.classList.toggle("on",es.has(e.id));e.bg.style.display=bd[e.id]?"":"none";e.bt.textContent=bd[e.id]||""});
+ panel()}
+function panel(){const T=id=>N[id].t;
+ if(fl!==null){const F=FL[fl],[id,tt]=F.s[st],e=E[id];
+  info.innerHTML=`<small>Recorrido · paso ${st+1} de ${F.s.length}</small><h3>${F.t}</h3><p><b>${T(e.a)} → ${T(e.b)}</b></p><p>${tt}</p><p><button class="fb" data-pv ${st?"":"disabled"}>◂ Anterior</button><button class="fb" data-nx ${st<F.s.length-1?"":"disabled"}>Siguiente ▸</button><button class="fb" data-x>Salir</button></p>`;return}
+ if(sel&&sel.k==="n"){const n=N[sel.id],out=Object.values(E).filter(e=>e.a===n.id),inc=Object.values(E).filter(e=>e.b===n.id),
+  chips=(l,f)=>l.length?`<h4>${f==="o"?"Habla con":"Recibe de"}</h4><div>${l.map(e=>`<button class="ch" data-e="${e.id}">${f==="o"?"→ "+T(e.b):"← "+T(e.a)}${e.l?" · "+e.l:""}</button>`).join("")}</div>`:"";
+  info.innerHTML=`<small>Componente</small><h3>${n.i} ${n.t}</h3><p>${n.d}</p><h4>Dónde vive</h4><p class="fi">${n.f}</p>${chips(out,"o")}${chips(inc,"i")}`;return}
+ if(sel&&sel.k==="e"){const e=E[sel.id];info.innerHTML=`<small>Conexión</small><h3>${T(e.a)} → ${T(e.b)}${e.l?" · "+e.l:""}</h3><p>${e.t}</p><p><button class="ch" data-n="${e.a}">${T(e.a)}</button><button class="ch" data-n="${e.b}">${T(e.b)}</button></p>`;return}
+ info.innerHTML=`<small>Bienvenida</small><h3>Cómo encaja todo</h3><p>Nexus Library no tiene servidor propio: la app corre entera en el navegador (interfaz, lógica y una copia local de tus libros), se apoya en Supabase para cuenta, datos compartidos y notificaciones, y consulta APIs públicas para metadatos y portadas.</p><p>Pulsa un componente para ver qué hace y con quién habla, pulsa una flecha para ver qué viaja por ella, o sigue un recorrido:</p><div>${FL.map((f,i)=>`<button class="fb" data-f="${i}">▸ ${f.t}</button>`).join("")}</div>`}
+function pick(el){const n=el.closest(".n"),e=el.closest(".e");
+ if(n){fl=null;sel=sel&&sel.k==="n"&&sel.id===n.dataset.id?null:{k:"n",id:n.dataset.id}}
+ else if(e){fl=null;sel={k:"e",id:e.dataset.id}}
+ else{sel=null;fl=null;st=0}apply()}
+svg.addEventListener("click",ev=>pick(ev.target));
+svg.addEventListener("keydown",ev=>{if((ev.key==="Enter"||ev.key===" ")&&ev.target.closest(".n")){ev.preventDefault();pick(ev.target)}});
+document.addEventListener("click",ev=>{const t=ev.target.closest("button");if(!t)return;const d=t.dataset;
+ if(t.id==="th"){const r=document.documentElement,dk=(r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"))==="dark";r.dataset.theme=dk?"light":"dark";return}
+ if(d.f!==undefined){fl=+d.f;st=0;sel=null}
+ else if("pv" in d){if(st>0)st--}
+ else if("nx" in d){if(fl!==null&&st<FL[fl].s.length-1)st++}
+ else if("x" in d){fl=null;st=0;sel=null}
+ else if(d.e){fl=null;sel={k:"e",id:d.e}}
+ else if(d.n){fl=null;sel={k:"n",id:d.n}}
+ else return;apply()});
+apply();
+</script></body></html>

@@ -34,7 +34,18 @@ npm run preview
   - Al abrir la aplicación se presenta la pantalla de inicio de sesión y registro con correo y contraseña (`AuthScreen`).
   - Al autenticarse, `syncAndMigrateWithSupabase()` migra las sagas y libros locales de IndexedDB/Dexie hacia Supabase evitando duplicados (por ID, ISBN o título+autor), verifica la escritura en el servidor y mantiene la copia local en IndexedDB sincronizada.
 
-## 5. Licencia y Derechos de Autor
+## 5. Arquitectura del Proyecto y Diagramas Interactivos
+
+El repositorio incluye dos diagramas visuales interactivos (con soporte para tema claro/oscuro, inspección de dependencias y recorridos paso a paso) para explorar la arquitectura de Nexus Library:
+
+- **Atlas de arquitectura**: mapa estratificado en 6 capas (interfaz, servicios, dispositivo local, nube Supabase, mundo exterior y taller).
+  - [Ver archivo](docs/architecture/atlas-arquitectura.html) · [Abrir vista interactiva](https://htmlpreview.github.io/?https://github.com/aleramiirez/Nexus-Library/blob/main/docs/architecture/atlas-arquitectura.html)
+- **Diagrama de arquitectura**: flujo de llamadas, sincronización reactiva y servicios entre navegador, APIs externas y Supabase.
+  - [Ver archivo](docs/architecture/diagrama-arquitectura.html) · [Abrir vista interactiva](https://htmlpreview.github.io/?https://github.com/aleramiirez/Nexus-Library/blob/main/docs/architecture/diagrama-arquitectura.html)
+
+Para más detalles, consulta la documentación en [docs/architecture/README.md](docs/architecture/README.md).
+
+## 6. Licencia y Derechos de Autor
 
 Copyright © 2026 **Alejandro Ramírez**. Todos los derechos reservados.
 

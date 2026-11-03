@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexus Library · Atlas de arquitectura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1E7D3;--sf:#FAF3E4;--card:#FFFCF3;--bd:#D8C7A3;--tx:#2A2017;--mu:#6A5A46;--gold:#A46F1B;--sh:#B58848;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1017;--sf:#151A24;--card:#1B2230;--bd:#283246;--tx:#EDE3CF;--mu:#9AA3B5;--gold:#E5C158;--sh:#7A5230;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0D1017;--sf:#151A24;--card:#1B2230;--bd:#283246;--tx:#EDE3CF;--mu:#9AA3B5;--gold:#E5C158;--sh:#7A5230;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 .95rem/1.5 "Plus Jakarta Sans",system-ui,sans-serif}
+header{max-width:1180px;margin:0 auto;padding:1.4rem 1rem .6rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+h1{font:700 2.4rem/1.1 "Cormorant Garamond",Georgia,serif;margin:0;color:var(--gold)}
+header p{margin:.2rem 0 0;color:var(--mu)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 1rem 2rem;display:grid;grid-template-columns:1fr;gap:1.2rem}
+@media(min-width:900px){.wrap{grid-template-columns:1fr 330px}}
+#map{position:relative;display:flex;flex-direction:column;gap:1.5rem}
+#ln{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:0}
+#ln path{fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-dasharray:8 6;animation:mv 1s linear infinite}
+@keyframes mv{to{stroke-dashoffset:-14}}
+h2{font:700 1.3rem "Cormorant Garamond",Georgia,serif;margin:0 0 .45rem;display:flex;wrap:wrap;align-items:baseline;gap:.5rem}
+h2 span{color:var(--c);min-width:2rem}
+h2 small{font:400 .75rem "Plus Jakarta Sans",system-ui,sans-serif;color:var(--mu)}
+.sh{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;padding:.9rem;background:var(--sf);border-radius:6px 6px 2px 2px;box-shadow:0 7px 0 var(--sh)}
+.nd{position:relative;z-index:1;display:flex;gap:.5rem;align-items:center;background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--c);border-radius:6px;padding:.6rem .7rem;color:var(--tx);font:600 .82rem/1.25 "Plus Jakarta Sans",system-ui,sans-serif;cursor:pointer;text-align:left;transition:transform .2s,opacity .25s,box-shadow .2s}
+.nd i{font-style:normal;font-size:1.15rem}
+.nd:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.nd:focus-visible,.fb:focus-visible,.ch:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.nd.dim{opacity:.3}
+.nd.rel{border-color:var(--c)}
+.nd.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 18px var(--gold)}
+.nd[data-n]::after{content:attr(data-n);position:absolute;top:-9px;right:-7px;background:var(--gold);color:var(--bg);border-radius:50%;width:20px;height:20px;display:grid;place-items:center;font-size:.7rem;font-weight:700}
+#pn{position:sticky;top:calc(env(safe-area-inset-top,0px) + 1rem);align-self:start;background:var(--card);border:1px solid var(--bd);border-top:4px solid var(--gold);border-radius:8px;padding:1rem;max-height:calc(100vh - 2rem);overflow:auto}
+#pn small{color:var(--mu);text-transform:uppercase;letter-spacing:.08em;font-size:.7rem;font-weight:600}
+#pn h3{font:700 1.5rem/1.15 "Cormorant Garamond",Georgia,serif;margin:.2rem 0 .5rem;color:var(--gold)}
+#pn h4{margin:.8rem 0 .25rem;font-size:.75rem;color:var(--mu);text-transform:uppercase;letter-spacing:.06em}
+#pn p{margin:.3rem 0}
+.fi{font:.75rem/1.5 ui-monospace,Menlo,monospace;color:var(--mu);word-break:break-word}
+.fb,.ch{font:600 .8rem "Plus Jakarta Sans",system-ui,sans-serif;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:999px;padding:.4rem .8rem;cursor:pointer;margin:0 .3rem .4rem 0}
+.fb:hover,.ch:hover{border-color:var(--gold)}
+.fb:disabled{opacity:.4;cursor:default}
+.x{float:right;background:none;border:0;color:var(--mu);font-size:1rem;cursor:pointer}
+.st{color:var(--mu);font-size:.8rem}
+@media(max-width:899px){
+ #pn{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:5;max-height:42vh;border-radius:14px 14px 0 0;padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))}
+ body{padding-bottom:44vh}h1{font-size:1.9rem}}
+@media(prefers-reduced-motion:reduce){#ln path{animation:none}.nd{transition:none}}
+</style></head><body>
+<header><div><h1>Nexus Library</h1><p>Atlas de arquitectura · pulsa una pieza o sigue un recorrido</p></div><button id="th" class="fb" aria-label="Cambiar entre tema claro y oscuro">◐ Tema</button></header>
+<div class="wrap"><main id="map"><svg id="ln" aria-hidden="true"></svg></main><aside id="pn" aria-live="polite"></aside></div>
+<script>
+const $=s=>document.querySelector(s),map=$("#map"),svg=$("#ln"),pn=$("#pn");
+const L=[
+{n:"I",t:"Interfaz",s:"Lo que ves y tocas · React 18 · TypeScript · Tailwind",c:"#D49B4B",k:["app","shelf","detail","disc","atlas","comm","prog","acct"]},
+{n:"II",t:"Servicios",s:"La lógica de la app · src/services",c:"#C2485A",k:["sMeta","sImp","sGeo","sSoc","sGame","sPwa"]},
+{n:"III",t:"En tu dispositivo",s:"Datos y caché locales",c:"#4FA89B",k:["dex","sw"]},
+{n:"IV",t:"Nube",s:"Supabase",c:"#6C8EF5",k:["auth","pg","rt","edge"]},
+{n:"V",t:"Mundo exterior",s:"Servicios de terceros",c:"#9B7FD1",k:["ol","ext"]},
+{n:"VI",t:"Taller",s:"Cómo se construye y se publica",c:"#8FA05A",k:["repo","skills"]}];
+const N={
+app:{i:"🎼",t:"App.tsx",d:"El director de orquesta. Decide qué pantalla se muestra y reparte libros, sagas y sesión al resto de la interfaz. Es el fichero más grande del proyecto (unas 3.300 líneas).",f:"src/App.tsx · main.tsx · ErrorBoundary.tsx",k:["shelf","detail","disc","atlas","comm","prog","acct"]},
+shelf:{i:"📚",t:"Biblioteca y estantería",d:"Tu biblioteca: la estantería de madera, el menú lateral con aspecto de libro abierto, tarjetas y portadas, sagas y los paneles del inicio (lectura actual y favoritos).",f:"BookShelf · BookSidebar · BookCard · BookCover · SagaShelf · Dashboard*",k:["dex"]},
+detail:{i:"📖",t:"Ficha y edición",d:"La ficha de cada libro y el formulario para añadirlo o editarlo: estado de lectura, selector de portada y edición de metadatos por lotes.",f:"BookDetailModal · AddEditBookModal · BookCoverPickerModal · BatchMetadataModal",k:["sMeta","dex"]},
+disc:{i:"🔭",t:"Descubrir y colecciones",d:"Para encontrar libros nuevos y agruparlos en colecciones propias.",f:"DiscoverBooksScreen · CollectionsScreen · AddToCollectionModal",k:["sMeta"]},
+atlas:{i:"🗺️",t:"Atlas literario",d:"El mapa SVG interactivo con zoom por continentes y sellos de lacre por país, además del pasaporte literario.",f:"LiteraryAtlasView · LiteraryAtlasMap · LiteraryPassportModal · literary-atlas.css",k:["sGeo"]},
+comm:{i:"👥",t:"Comunidad",d:"La parte social: lectores de la comunidad, amistades, recomendar un libro a un amigo, la bandeja de recomendaciones y las tarjetas para compartir.",f:"CommunityReadersView · RecommendBookModal · BookInboxModal · ShareBookCardModal · ShareReaderCardModal",k:["sSoc"]},
+prog:{i:"🏆",t:"Progreso y logros",d:"Tu avance: reto de lectura, rango de la Orden Nexus, resumen anual (Wrapped) y la celebración al terminar un libro.",f:"ReadingChallengeScreen · NexusOrderRankPanel · ReadingWrappedModal · BookFinishedCelebrationModal",k:["sGame"]},
+acct:{i:"🔑",t:"Cuenta y ajustes",d:"Inicio de sesión y registro, ajustes, elección de avatar, importación de libros e instalación de la app como PWA.",f:"AuthScreen · SettingsScreen · AvatarPickerModal · ImportModal · EpubImportModal · PwaInstallModal",k:["auth","sImp","sPwa"]},
+sMeta:{i:"🔎",t:"Metadatos y portadas",d:"Busca información de un libro y su portada fuera de la app y la normaliza para guardarla en tu biblioteca.",f:"bookMetadataService · coverService",k:["ol","ext"]},
+sImp:{i:"📥",t:"Importar y exportar",d:"Lee ficheros EPUB, importa y exporta tu biblioteca y carga una biblioteca de ejemplo.",f:"epubParserService · importExportService · sampleLibraryService",k:["dex"]},
+sGeo:{i:"🧭",t:"Geografía literaria",d:"Convierte libros y autores en países para que el Atlas sepa dónde poner cada sello.",f:"literaryGeographyService",k:["ext"]},
+sSoc:{i:"💌",t:"Social",d:"Habla con Supabase para perfiles, amistades, comunidad y recomendaciones entre lectores.",f:"friendshipService · communityService · recommendationInboxService · profileService",k:["pg","rt"]},
+sGame:{i:"⭐",t:"Niveles y retos",d:"Calcula niveles y rangos, el avance del reto de lectura y gestiona los sonidos de la app.",f:"levelingService · readingChallengeService · soundService",k:["dex"]},
+sPwa:{i:"📲",t:"PWA y push",d:"Registra el service worker, gestiona la instalación como app y guarda tu suscripción a las notificaciones push.",f:"pushNotificationService · pwaInstallService · serviceWorkerRegistration",k:["sw","pg"]},
+dex:{i:"🗄️",t:"Dexie · IndexedDB",d:"Tu copia local en el navegador, con las tablas books y sagas. Al iniciar sesión se sincroniza con Supabase evitando duplicados (por ID, ISBN o título más autor).",f:"src/db/database.ts",k:["pg"]},
+sw:{i:"🛡️",t:"Service Worker",d:"Guarda la app en caché (versión nexus-library-v1.1.2) para abrir rápido y sin conexión, recibe las notificaciones push y gestiona el clic sobre ellas.",f:"public/sw.js · manifest.json",k:[]},
+auth:{i:"🔐",t:"Auth",d:"Supabase Auth: registro, inicio de sesión con correo y contraseña y recuperación de contraseña.",f:"supabaseClient.ts · AuthScreen · ResetPasswordModal",k:["pg"]},
+pg:{i:"🐘",t:"Postgres + RLS",d:"La base de datos: books (cada libro entero en JSONB), sagas, profiles, friendships, book_recommendations y push_subscriptions. Con seguridad por filas, books y sagas solo los ve su dueño.",f:"supabase/migrations (sin versionar en git)",k:["edge"]},
+rt:{i:"⚡",t:"Realtime + Storage",d:"Canales en vivo (la app los usa en 4 puntos) y almacén de archivos de Supabase (otros 4 usos).",f:"supabase.channel(…) · supabase.storage",k:[]},
+edge:{i:"🔔",t:"Edge Function send-push",d:"Función en Deno que envía notificaciones Web Push (librería web-push, claves VAPID) cuando se crea una amistad o una recomendación.",f:"supabase/functions/send-push/index.ts",k:["sw"]},
+ol:{i:"📕",t:"Open Library",d:"Búsqueda de libros y, sobre todo, las portadas (covers.openlibrary.org).",f:"API pública externa",k:[]},
+ext:{i:"🌐",t:"Otras APIs",d:"Wikipedia en español, banderas de flagcdn, servicios de Google (googleapis y Translate) y proxies de imagen y CORS (weserv, allorigins).",f:"APIs públicas externas",k:[]},
+repo:{i:"🚀",t:"Código y despliegue",d:"Vite compila (tsc + vite build) a la carpeta dist. El código vive en GitHub y la web publicada en Vercel.",f:"package.json · vite.config.ts · dist/",k:[]},
+skills:{i:"🧰",t:"Skills del agente",d:"Las skills de .agents/skills (impeccable, taste y las de Vercel) no forman parte de la app: guían a tu agente de código al programar.",f:".agents/skills · skills-lock.json",k:["repo"]}};
+const FL=[
+{t:"Añadir un libro",s:[["detail","Rellenas la ficha con título, autor o ISBN en AddEditBookModal."],["sMeta","El servicio de metadatos busca el libro y su portada para completar los datos."],["ol","Open Library responde con la información y la imagen de portada."],["dex","El libro se guarda primero en tu copia local de IndexedDB."],["pg","Con tu sesión iniciada, la copia viaja a la tabla books de Supabase, protegida por RLS."]]},
+{t:"Recomendar un libro",s:[["comm","Eliges a un amigo y un libro desde RecommendBookModal."],["sSoc","El servicio de recomendaciones crea el registro."],["pg","Postgres lo guarda en book_recommendations."],["edge","Un webhook al insertar dispara la función send-push, que envía el Web Push."],["sw","El Service Worker del dispositivo de tu amigo muestra la notificación y abre la app al pulsarla."]]},
+{t:"Entrar y sincronizar",s:[["acct","AuthScreen pide correo y contraseña."],["auth","Supabase Auth valida los datos y abre la sesión."],["dex","syncAndMigrateWithSupabase() recoge tus libros y sagas locales."],["pg","Los sube evitando duplicados (ID, ISBN o título más autor) y comprueba que se escribieron."]]}];
+let cur=null,fl=null,st=0;
+const DEFS='<defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--gold)" stroke="none"/></marker></defs>';
+const layerOf=id=>L.find(l=>l.k.includes(id));
+L.forEach(l=>{const s=document.createElement("section");s.style.setProperty("--c",l.c);
+ s.innerHTML=`<h2><span>${l.n}</span>${l.t}<small>${l.s}</small></h2><div class="sh">${l.k.map(id=>`<button class="nd" id="n-${id}" data-id="${id}"><i>${N[id].i}</i>${N[id].t}</button>`).join("")}</div>`;svg.before(s)});
+function pt(id){const r=$("#n-"+id).getBoundingClientRect(),m=map.getBoundingClientRect();return{x:r.left-m.left+r.width/2,y:r.top-m.top+r.height/2,w:r.width/2,h:r.height/2}}
+function draw(ps){svg.setAttribute("width",map.offsetWidth);svg.setAttribute("height",map.offsetHeight);svg.innerHTML=DEFS;
+ ps.forEach(([a,b])=>{const A=pt(a),B=pt(b);let x1=A.x,x2=B.x,y1,y2,d;
+  if(Math.abs(A.y-B.y)<10){const r=A.x<B.x;x1+=r?A.w:-A.w;x2+=r?-B.w:B.w;y1=A.y;y2=B.y;const m=(x1+x2)/2;d=`M${x1} ${y1}C${m} ${y1-45},${m} ${y2-45},${x2} ${y2}`}
+  else{const dn=B.y>A.y;y1=A.y+(dn?A.h:-A.h);y2=B.y+(dn?-B.h:B.h);const m=(y1+y2)/2;d=`M${x1} ${y1}C${x1} ${m},${x2} ${m},${x2} ${y2}`}
+  svg.insertAdjacentHTML("beforeend",`<path d="${d}" marker-end="url(#ar)"/>`)})}
+function panel(){
+ if(fl!==null){const F=FL[fl],id=F.s[st][0];pn.innerHTML=`<button class="x" data-x aria-label="Cerrar">✕</button><small>Recorrido</small><h3>${F.t}</h3><p class="st">Paso ${st+1} de ${F.s.length} · <b>${N[id].t}</b></p><p>${F.s[st][1]}</p><p><button class="fb" data-pv ${st?"":"disabled"}>◂ Anterior</button><button class="fb" data-nx ${st<F.s.length-1?"":"disabled"}>Siguiente ▸</button></p>`;return}
+ if(cur){const n=N[cur],l=layerOf(cur),inc=Object.keys(N).filter(k=>N[k].k.includes(cur)),ch=[...new Set([...n.k,...inc])].map(k=>`<button class="ch" data-go="${k}">${N[k].t}</button>`).join("");
+  pn.innerHTML=`<button class="x" data-x aria-label="Cerrar">✕</button><small style="color:${l.c}">${l.n} · ${l.t}</small><h3>${n.i} ${n.t}</h3><p>${n.d}</p><h4>Dónde vive</h4><p class="fi">${n.f}</p>${ch?`<h4>Se conecta con</h4><div>${ch}</div>`:""}`;return}
+ pn.innerHTML=`<small>Bienvenida</small><h3>Así está construida</h3><p>Tu app vive en el navegador (interfaz, servicios y copia local), se apoya en Supabase en la nube y consulta APIs externas.</p><p>Pulsa cualquier pieza para ver qué hace, o elige un recorrido:</p><div>${FL.map((f,i)=>`<button class="fb" data-f="${i}">▸ ${f.t}</button>`).join("")}</div>`}
+function refresh(){
+ const bs=document.querySelectorAll(".nd");let ps=[];bs.forEach(b=>{b.className="nd";b.removeAttribute("data-n")});
+ if(fl!==null){const act=FL[fl].s.slice(0,st+1).map(x=>x[0]);bs.forEach(b=>b.classList.add("dim"));
+  act.forEach((id,i)=>{const b=$("#n-"+id);b.classList.remove("dim");b.classList.add(i===st?"on":"rel");b.dataset.n=i+1;if(i)ps.push([act[i-1],id])})}
+ else if(cur){const rel=new Set([cur]);N[cur].k.forEach(k=>{rel.add(k);ps.push([cur,k])});
+  Object.keys(N).forEach(k=>{if(N[k].k.includes(cur)){rel.add(k);ps.push([k,cur])}});
+  bs.forEach(b=>{const id=b.dataset.id;b.classList.add(rel.has(id)?(id===cur?"on":"rel"):"dim")})}
+ panel();draw(ps)}
+document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+ if(t.id==="th"){const r=document.documentElement,dk=(r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"))==="dark";r.dataset.theme=dk?"light":"dark";return}
+ if(d.id){fl=null;cur=cur===d.id?null:d.id}
+ else if(d.go){fl=null;cur=d.go}
+ else if(d.f!==undefined){fl=+d.f;st=0;cur=null}
+ else if("pv" in d){if(st>0)st--}
+ else if("nx" in d){if(fl!==null&&st<FL[fl].s.length-1)st++}
+ else if("x" in d){cur=null;fl=null;st=0}
+ else return;
+ refresh()});
+addEventListener("resize",refresh);
+(document.fonts?document.fonts.ready:Promise.resolve()).then(refresh);
+refresh();
+</script></body></html>
