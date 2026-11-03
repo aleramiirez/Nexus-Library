@@ -35,6 +35,7 @@ export interface NexusOrderRankPanelProps {
   displayName?: string | null;
   username?: string | null;
   onShowToast?: (message: string) => void;
+  variant?: 'card' | 'embedded';
 }
 
 const ICON_MAP = {
@@ -55,7 +56,8 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
   avatarUrl,
   displayName,
   username,
-  onShowToast
+  onShowToast,
+  variant = 'card'
 }) => {
   const {
     level,
@@ -85,12 +87,8 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
     onShowToast?.(`Título honorífico cambiado a «${title}»`);
   };
 
-  return (
-    <section className="catalog-card-panel relative pt-8 sm:pt-9 p-6 sm:p-8 shadow-xl mt-6 space-y-6">
-      <div className="catalog-brass-tab" aria-hidden="true">
-        Jerarquía Bibliotecaria · La Orden del Nexus
-      </div>
-
+  const content = (
+    <div className="space-y-6">
       {/* ─── Encabezado del Panel ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3D] pb-5">
         <div className="space-y-1">
@@ -134,7 +132,6 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
               size="2xl"
               level={level}
               rank={rank}
-              showLevelBadge={true}
             />
           </div>
 
@@ -473,6 +470,19 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
           })}
         </div>
       </div>
+    </div>
+  );
+
+  if (variant === 'embedded') {
+    return content;
+  }
+
+  return (
+    <section className="catalog-card-panel relative pt-8 sm:pt-9 p-6 sm:p-8 shadow-xl mt-6">
+      <div className="catalog-brass-tab" aria-hidden="true">
+        Jerarquía Bibliotecaria · La Orden del Nexus
+      </div>
+      {content}
     </section>
   );
 };

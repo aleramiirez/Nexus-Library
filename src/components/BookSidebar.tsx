@@ -62,6 +62,7 @@ interface BookSidebarProps {
   onOpenInbox?: () => void;
   onOpenInstallModal?: () => void;
   levelInfo?: ReaderLevelInfo;
+  onOpenOrderModal?: () => void;
 }
 
 interface NavItemProps {
@@ -147,7 +148,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   inboxUnreadCount = 0,
   onOpenInbox,
   onOpenInstallModal,
-  levelInfo
+  levelInfo,
+  onOpenOrderModal
 }) => {
   const [isStandalone, setIsStandalone] = React.useState<boolean>(
     () => pwaInstallService.getState().isStandalone
@@ -354,48 +356,69 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
 
           {/* Pie de página unificado: Perfil y Ajustes */}
           <div className="p-2.5 pr-4 border-t border-amber-600/20">
-            <button
-              type="button"
-              onClick={() => handleSelectSection('settings')}
-              aria-label="Ajustes de la biblioteca y cuenta"
+            <div
               className={
-                'w-full flex items-center gap-2.5 rounded-xl border p-2 text-left transition group ' +
+                'w-full flex items-center gap-2.5 rounded-xl border p-2 text-left transition ' +
                 (activeSection === 'settings'
                   ? 'border-amber-600/70 bg-amber-500/20 shadow-sm'
                   : 'border-stone-300 dark:border-[#283246] bg-white/40 dark:bg-[#151C2B] hover:border-amber-500/50 hover:bg-amber-500/5')
               }
             >
-              <UserAvatar
-                avatarUrl={avatarUrl}
-                displayName={userDisplayName}
-                username={username}
-                size="sm"
-                className="shrink-0"
-                level={levelInfo?.level}
-                rank={levelInfo?.rank}
-              />
+              {/* Avatar: click to open settings */}
+              <button
+                type="button"
+                onClick={() => handleSelectSection('settings')}
+                className="shrink-0 cursor-pointer transition hover:opacity-85 focus:outline-hidden"
+                aria-label="Ir a Ajustes y Perfil"
+              >
+                <UserAvatar
+                  avatarUrl={avatarUrl}
+                  displayName={userDisplayName}
+                  username={username}
+                  size="sm"
+                  className="shrink-0"
+                  level={levelInfo?.level}
+                  rank={levelInfo?.rank}
+                />
+              </button>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-1">
-                  <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
+                {/* User name: click to open settings */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectSection('settings')}
+                  className="w-full text-left cursor-pointer group/name focus:outline-hidden"
+                  aria-label="Ir a Ajustes y Perfil"
+                >
+                  <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100 group-hover/name:text-amber-800 dark:group-hover/name:text-amber-300 transition">
                     {hasUser
                       ? (userDisplayName || userEmail || 'Mi Cuenta')
                       : (userDisplayName || 'Lector Invitado')}
                   </p>
-                  {levelInfo && typeof levelInfo.level === 'number' && (
-                    <span className="font-mono text-[9px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
-                      Nv. {levelInfo.level}
-                    </span>
-                  )}
-                </div>
+                </button>
 
                 {levelInfo ? (
-                  <div className="space-y-1 mt-0.5">
-                    <p className="text-[10px] font-serif font-bold text-amber-800 dark:text-amber-300 truncate leading-none">
-                      {levelInfo.activeTitle || levelInfo.rank?.name || 'Aprendiz de Pergamino'}
-                    </p>
+                  /* Nivel y progreso: al pulsar abre el Códice de la Orden */
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenOrderModal?.();
+                    }}
+                    title="Abrir el Códice de la Orden del Nexus (Rango, Escalafones y Progreso)"
+                    className="w-full text-left mt-0.5 group/level cursor-pointer rounded-md p-0.5 -mx-0.5 hover:bg-amber-500/10 transition focus:outline-hidden"
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-[10px] font-serif font-bold text-amber-800 dark:text-amber-300 truncate leading-none group-hover/level:text-amber-900 dark:group-hover/level:text-amber-200">
+                        {levelInfo.activeTitle || levelInfo.rank?.name || 'Aprendiz de Pergamino'}
+                      </p>
+                      <span className="font-mono text-[9px] font-bold text-amber-700 dark:text-amber-400 shrink-0 group-hover/level:scale-105 transition-transform">
+                        Nv. {levelInfo.level}
+                      </span>
+                    </div>
+
                     {/* Barra dorada de progreso de XP */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 mt-1">
                       <div className="flex-1 h-1 rounded-full bg-amber-900/15 dark:bg-amber-500/20 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
@@ -406,42 +429,52 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                         {levelInfo.isMaxLevel ? 'MAX' : `${levelInfo.xpInLevel || 0}/${levelInfo.xpNeededForNext || 1}`}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-[10px]">
-                    {hasUser ? (
-                      isSyncing ? (
-                        <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-amber-700 dark:text-amber-400 font-medium">Sincronizando...</span>
-                        </>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectSection('settings')}
+                    className="w-full text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 text-[10px]">
+                      {hasUser ? (
+                        isSyncing ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            <span className="text-amber-700 dark:text-amber-400 font-medium">Sincronizando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
+                              {username ? `@${username}` : 'Nube al día'}
+                            </span>
+                          </>
+                        )
                       ) : (
-                        <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
-                            {username ? `@${username}` : 'Nube al día'}
-                          </span>
-                        </>
-                      )
-                    ) : (
-                      <span className="text-stone-500 dark:text-slate-400">Toca para crear cuenta</span>
-                    )}
-                  </div>
+                        <span className="text-stone-500 dark:text-slate-400">Toca para crear cuenta</span>
+                      )}
+                    </div>
+                  </button>
                 )}
               </div>
 
-              <div
+              {/* Botón de Ajustes */}
+              <button
+                type="button"
+                onClick={() => handleSelectSection('settings')}
                 className={
-                  'p-1.5 rounded-lg transition shrink-0 ' +
+                  'p-1.5 rounded-lg transition shrink-0 cursor-pointer ' +
                   (activeSection === 'settings'
                     ? 'text-amber-800 dark:text-amber-300 bg-amber-500/20'
-                    : 'text-stone-400 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400')
+                    : 'text-stone-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400')
                 }
                 title="Ajustes de la Biblioteca"
+                aria-label="Ajustes de la biblioteca y cuenta"
               >
                 <Settings className="w-4 h-4" />
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
         </div>
       </aside>

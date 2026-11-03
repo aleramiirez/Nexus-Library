@@ -103,6 +103,7 @@ interface SettingsScreenProps {
   onOpenEpubImport?: () => void;
   onNavigateToLibrary?: () => void;
   onOpenBookDetail?: (book: Book) => void;
+  onOpenOrderModal?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -123,7 +124,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   initialTab = 'account',
   onOpenEpubImport,
   onNavigateToLibrary,
-  onOpenBookDetail
+  onOpenBookDetail,
+  onOpenOrderModal
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
@@ -1126,14 +1128,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
                     <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1 justify-center sm:justify-start">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs ${readerLevelInfo.rank.badgeStyle}`}>
+                      <button
+                        type="button"
+                        onClick={onOpenOrderModal}
+                        title="Ver Códice de la Orden, Rango y Escalafones"
+                        className="flex flex-wrap items-center gap-2 mb-1 justify-center sm:justify-start group/rank cursor-pointer hover:opacity-95 text-left focus:outline-hidden"
+                      >
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs transition group-hover/rank:scale-105 ${readerLevelInfo.rank.badgeStyle}`}>
                           Rango {readerLevelInfo.rank.roman} · Nivel {readerLevelInfo.level}
+                          <Compass className="w-3 h-3 text-amber-500/80 ml-0.5" />
                         </span>
-                        <span className="font-serif italic text-xs font-bold text-amber-900 dark:text-amber-300">
+                        <span className="font-serif italic text-xs font-bold text-amber-900 dark:text-amber-300 group-hover/rank:underline decoration-amber-500/60 underline-offset-2">
                           {readerLevelInfo.activeTitle}
                         </span>
-                      </div>
+                      </button>
                       <h3 className="font-serif text-xl sm:text-2xl font-black text-amber-950 dark:text-amber-100 tracking-tight">
                         {profileDisplayName.trim() || (currentUser ? currentUser.email : 'Lector Invitado')}
                       </h3>

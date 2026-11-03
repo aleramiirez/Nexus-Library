@@ -146,6 +146,7 @@ import { ProfileSetupBanner } from './components/ProfileSetupBanner';
 import { SettingsTab } from './components/SettingsScreen';
 import { BookFinishedCelebrationModal } from './components/BookFinishedCelebrationModal';
 import { ShareBookCardModal } from './components/ShareBookCardModal';
+import { NexusOrderCodexModal } from './components/NexusOrderCodexModal';
 import { calculateReaderLevel } from './services/levelingService';
 
 const initialFilters: LibraryFilters = {
@@ -343,6 +344,7 @@ export const App: React.FC = () => {
   const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
   const [celebrationBook, setCelebrationBook] = useState<Book | null>(null);
   const [shareCardBook, setShareCardBook] = useState<Book | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const lastAuthUserIdRef = useRef<string | null | undefined>(undefined);
@@ -1629,6 +1631,7 @@ export const App: React.FC = () => {
         onOpenInbox={() => setIsInboxOpen(true)}
         onOpenInstallModal={() => setIsInstallModalOpen(true)}
         levelInfo={readerLevelInfo}
+        onOpenOrderModal={() => setIsOrderModalOpen(true)}
       />
 
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-amber-900/20 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -2805,6 +2808,7 @@ export const App: React.FC = () => {
                 }}
                 onNavigateToLibrary={() => handleNavigate('library')}
                 onOpenBookDetail={handleOpenCardDetail}
+                onOpenOrderModal={() => setIsOrderModalOpen(true)}
               />
             </React.Suspense>
           )}
@@ -3035,6 +3039,16 @@ export const App: React.FC = () => {
           onShowToast={showToast}
         />
       )}
+
+      <NexusOrderCodexModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        levelInfo={readerLevelInfo}
+        avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
+        displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
+        username={currentUserProfile?.username}
+        onShowToast={showToast}
+      />
 
       {bookToDelete &&
         typeof document !== 'undefined' &&
