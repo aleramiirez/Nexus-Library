@@ -41,10 +41,10 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Scripts y migraciones SQL
+# Scripts y migraciones SQL (versionar migraciones oficiales en supabase/migrations/)
 *.sql
+!supabase/migrations/*.sql
 src/db/migrations/
-supabase/migrations/
 
 # Supabase CLI temp
 supabase/.temp/
@@ -53,4 +53,3 @@ supabase/.temp/
 test-results/
 playwright-report/
 blob-report/
-
