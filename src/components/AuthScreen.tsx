@@ -377,13 +377,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
+                <label htmlFor="auth-email" className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
                   Correo electrónico
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="email"
+                    id="auth-email" type="email"
                     required
                     autoComplete="email"
                     value={email}
@@ -397,7 +397,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               {mode !== 'forgot' && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300">
+                    <label htmlFor="auth-password" className="block text-xs font-semibold text-stone-700 dark:text-slate-300">
                       Contraseña
                     </label>
                     {mode === 'login' && (
@@ -417,7 +417,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                   <div className="relative">
                     <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      id="auth-password" type={showPassword ? 'text' : 'password'}
                       required
                       minLength={6}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -440,13 +440,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
 
               {mode === 'signup' && (
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
+                  <label htmlFor="auth-confirm-password" className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
                     Repetir contraseña
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      id="auth-confirm-password" type={showPassword ? 'text' : 'password'}
                       required
                       minLength={6}
                       autoComplete="new-password"

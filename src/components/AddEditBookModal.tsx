@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import {
   Search,
   Loader2,
@@ -150,6 +151,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const ebookInputRef = useRef<HTMLInputElement>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const focusTrapRef = useFocusTrap({ isOpen, onClose });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -674,21 +676,14 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         {/* Title & Author */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>
-              Nombre (Título del libro) *
-            </label>
-            <input
-              type="text"
-              required
+            <label htmlFor="add-book-nombre" className={labelCls}>Nombre (Título del libro) *</label><input id="add-book-nombre" type="text" required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               className={inputCls}
             />
           </div>
           <div>
-            <label className={labelCls}>Autor</label>
-            <input
-              type="text"
+            <label htmlFor="add-book-autor" className={labelCls}>Autor</label><input id="add-book-autor" type="text"
               value={autor}
               onChange={(e) => setAutor(e.target.value)}
               className={inputCls}
@@ -871,18 +866,14 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           />
         </div>
         <div>
-          <label className={labelCls}>Fecha Inicio</label>
-          <input
-            type="date"
+          <label htmlFor="add-book-fecha-inicio" className={labelCls}>Fecha Inicio</label><input id="add-book-fecha-inicio" type="date"
             value={fechaInicio}
             onChange={(e) => setFechaInicio(e.target.value)}
             className={inputCls}
           />
         </div>
         <div>
-          <label className={labelCls}>Fecha Fin</label>
-          <input
-            type="date"
+          <label htmlFor="add-book-fecha-fin" className={labelCls}>Fecha Fin</label><input id="add-book-fecha-fin" type="date"
             value={fechaFin}
             onChange={(e) => setFechaFin(e.target.value)}
             className={inputCls}
@@ -893,8 +884,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       {/* Formato y Tiempo de lectura calculado */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Formato de lectura</label>
-          <select
+          <label htmlFor="add-book-formato" className={labelCls}>Formato de lectura</label><select id="add-book-formato"
             value={
               lecturaVirtual.startsWith('http')
                 ? 'url'
@@ -1301,7 +1291,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
               {/* Input del Volumen (#) */}
               <div className="sm:col-span-4">
-                <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
+                <label htmlFor="add-book-volumen" className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
                   Volumen en la saga (#)
                 </label>
                 <div className="relative">
@@ -1309,6 +1299,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                     #
                   </span>
                   <input
+                    id="add-book-volumen"
                     type="number"
                     min="1"
                     step="1"
@@ -1342,9 +1333,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       {/* Año Publicación & Páginas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Año Publicación</label>
-          <input
-            type="number"
+          <label htmlFor="add-book-year" className={labelCls}>Año Publicación</label><input id="add-book-year" type="number"
             value={fechaPublicacion}
             onChange={(e) => setFechaPublicacion(e.target.value)}
             placeholder="Ej. 2007"
@@ -1352,9 +1341,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           />
         </div>
         <div>
-          <label className={labelCls}>Páginas</label>
-          <input
-            type="number"
+          <label htmlFor="add-book-pages" className={labelCls}>Páginas</label><input id="add-book-pages" type="number"
             min="1"
             value={paginas}
             onChange={(e) => setPaginas(e.target.value)}
@@ -1367,9 +1354,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       {/* Editorial, País de origen / autor */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Editorial</label>
-          <input
-            type="text"
+          <label htmlFor="add-book-editorial" className={labelCls}>Editorial</label><input id="add-book-editorial" type="text"
             value={editorial}
             onChange={(e) => setEditorial(e.target.value)}
             placeholder="Ej. Alfaguara, Cátedra..."
@@ -1377,8 +1362,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           />
         </div>
         <div>
-          <label className={labelCls}>País de origen / autor</label>
-          <select
+          <label htmlFor="add-book-pais" className={labelCls}>País de origen / autor</label><select id="add-book-pais"
             value={pais}
             onChange={(e) => setPais(e.target.value)}
             className={inputCls}
@@ -1398,9 +1382,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       {/* Idioma & ISBN */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Idioma</label>
-          <input
-            type="text"
+          <label htmlFor="add-book-idioma" className={labelCls}>Idioma</label><input id="add-book-idioma" type="text"
             value={idioma}
             onChange={(e) => setIdioma(e.target.value)}
             placeholder="Ej. Español, Inglés..."
@@ -1408,9 +1390,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           />
         </div>
         <div>
-          <label className={labelCls}>ISBN (opcional)</label>
-          <input
-            type="text"
+          <label htmlFor="add-book-isbn" className={labelCls}>ISBN (opcional)</label><input id="add-book-isbn" type="text"
             value={isbn}
             onChange={(e) => setIsbn(e.target.value)}
             placeholder="ISBN-13 o ISBN-10"
@@ -1421,11 +1401,12 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
       {/* Cover URL */}
       <div>
-        <label className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
+        <label htmlFor="add-book-portada-url" className="block text-[11px] text-stone-600 dark:text-slate-400 mb-1">
           URL de portada (autocompletada o personalizada)
         </label>
         <div className="flex gap-2">
           <input
+            id="add-book-portada-url"
             type="url"
             value={portadaUrl}
             onChange={(e) => setPortadaUrl(e.target.value)}
@@ -1445,8 +1426,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
       {/* Synopsis */}
       <div>
-        <label className={labelCls}>Sinopsis</label>
-        <textarea
+        <label htmlFor="add-book-sinopsis" className={labelCls}>Sinopsis</label><textarea id="add-book-sinopsis"
           rows={4}
           value={sinopsis}
           onChange={(e) => setSinopsis(e.target.value)}
@@ -1456,8 +1436,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
       {/* Notas Personales y Reseña */}
       <div>
-        <label className={labelCls}>Notas personales, reflexiones o reseña</label>
-        <textarea
+        <label htmlFor="add-book-notas" className={labelCls}>Notas personales, reflexiones o reseña</label><textarea id="add-book-notas"
           rows={3}
           value={notasPersonales}
           onChange={(e) => setNotasPersonales(e.target.value)}
@@ -1473,9 +1452,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
+      ref={focusTrapRef} role="dialog" aria-modal="true" onClick={onClose}
     >
       <div
         className="relative w-full max-w-5xl h-[92dvh] sm:h-[86vh] max-h-[94dvh] sm:max-h-[88vh] flex flex-col rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-auto"

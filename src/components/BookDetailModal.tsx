@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { soundService } from '../services/soundService';
 import {
   X,
@@ -462,6 +463,8 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }, isMobile ? 260 : 680);
   }, [book?.id, isClosing, onClose]);
 
+  const focusTrapRef = useFocusTrap({ isOpen: Boolean(book), onClose: handleRequestClose });
+
   const handleShellAnimationEnd = useCallback(
     (e: React.AnimationEvent<HTMLDivElement>) => {
       if (isClosing && e.target === e.currentTarget) {
@@ -622,8 +625,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
         {/* Hermano independiente para el fade del fondo sin afectar el contexto 3D del libro */}
         <div className="open-book-backdrop-fill" aria-hidden="true" />
 
-        <div
-          className="open-book-stage relative w-full max-w-5xl md:my-auto"
+        <div ref={focusTrapRef} className="open-book-stage relative w-full max-w-5xl md:my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Contenedor del Libro (en móvil actúa como hoja editorial; en escritorio como libro 3D a doble página) */}
@@ -1312,11 +1314,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     {(book.fechaInicio || book.fechaFin || !readOnly) && (
                       <div className="grid grid-cols-2 gap-2.5">
                         <div>
-                          <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                          <label htmlFor="detail-fecha-inicio" className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
                             Fecha Inicio
                           </label>
                           {!readOnly && onDatesChange ? (
                             <input
+                              id="detail-fecha-inicio"
                               type="date"
                               value={book.fechaInicio || ''}
                               onChange={(e) =>
@@ -1332,11 +1335,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         </div>
 
                         <div>
-                          <label className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
+                          <label htmlFor="detail-fecha-fin" className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
                             Fecha Fin
                           </label>
                           {!readOnly && onDatesChange ? (
                             <input
+                              id="detail-fecha-fin"
                               type="date"
                               value={book.fechaFin || ''}
                               onChange={(e) =>

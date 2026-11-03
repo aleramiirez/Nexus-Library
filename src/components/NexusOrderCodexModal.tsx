@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { X, Crown, Sparkles } from 'lucide-react';
 import { ReaderLevelInfo } from '../services/levelingService';
 import { NexusOrderRankPanel } from './NexusOrderRankPanel';
@@ -23,6 +24,7 @@ export const NexusOrderCodexModal: React.FC<NexusOrderCodexModalProps> = ({
   username,
   onShowToast
 }) => {
+  const modalRef = useFocusTrap({ isOpen, onClose });
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,7 +43,7 @@ export const NexusOrderCodexModal: React.FC<NexusOrderCodexModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-5 overflow-visible border border-amber-900/30 dark:border-amber-500/30">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="codex-modal-title" className="catalog-card-panel relative w-full max-w-4xl max-h-[90vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-5 overflow-visible border border-amber-900/30 dark:border-amber-500/30">
         {/* Pestaña de latón superior */}
         <div className="catalog-brass-tab z-20 whitespace-nowrap">
           El Gran Códice de la Orden · Escalafones y Sabiduría
