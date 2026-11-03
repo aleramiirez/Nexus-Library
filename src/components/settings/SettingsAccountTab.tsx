@@ -245,12 +245,8 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
 
           {/* Contenido: Avatar + Datos del lector */}
           <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
-            {/* Avatar heráldico interactivo con botón de edición */}
-            <div
-              onClick={() => setIsAvatarModalOpen(true)}
-              title="Haz clic para personalizar tu Sello o Avatar"
-              className="relative group shrink-0 cursor-pointer"
-            >
+            {/* Avatar heráldico con botón de edición */}
+            <div className="relative group shrink-0">
               <div className="p-1 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-md transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg">
                 <UserAvatar
                   avatarUrl={currentUser ? userProfile?.avatarUrl : guestAvatar}
@@ -264,11 +260,9 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
               </div>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsAvatarModalOpen(true);
-                }}
+                onClick={() => setIsAvatarModalOpen(true)}
                 title="Personalizar Sello o Avatar"
+                aria-label="Personalizar Sello o Avatar"
                 className="absolute -bottom-2 -right-2 inline-flex items-center gap-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1 text-[10px] shadow-lg border-2 border-white dark:border-[#131926] transition transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Sparkles className="w-3 h-3" />
@@ -551,10 +545,10 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
             {/* Selector de Privacidad de la Estantería */}
             {currentUser && (
               <div className="space-y-2 pt-1">
-                <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+                <span id="privacy-group-label" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
                   Privacidad de tu estantería y lecturas
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                </span>
+                <div role="group" aria-labelledby="privacy-group-label" className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Opción 1: Público */}
                   <button
                     type="button"

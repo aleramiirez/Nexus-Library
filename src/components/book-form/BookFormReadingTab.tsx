@@ -92,8 +92,10 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
       {/* Rating & Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label className={labelCls}>Puntuación</label>
+          <span id="add-book-puntuacion-label" className={labelCls}>Puntuación</span>
           <LibrarySelect
+            id="add-book-puntuacion"
+            ariaLabel="Puntuación"
             value={puntuacion ?? ''}
             onChange={(val) =>
               setPuntuacion(
@@ -192,7 +194,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
         </div>
 
         <div>
-          <label className={labelCls}>Tiempo de lectura estimado / real</label>
+          <span className={labelCls}>Tiempo de lectura estimado / real</span>
           <div className="rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-3.5 py-2.5 flex flex-col justify-between min-h-[42px]">
             <div className="flex items-center justify-between">
               <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 flex items-center gap-1.5">
@@ -345,9 +347,9 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
           {/* Selector personalizado estilo catálogo literario */}
           <div className="sm:col-span-8 relative" ref={sagaPickerRef}>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
+              <span id="saga-assigned-label" className="block text-xs font-semibold text-stone-800 dark:text-slate-200">
                 Saga asignada
-              </label>
+              </span>
               {selectedSagaId && !isEditingSagaName && (
                 <button
                   type="button"
@@ -371,6 +373,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                       if (!selectedSagaId) setSagaMode('new');
                     }}
                     placeholder="Nombre de la saga (Ej. El Archivo de las Tormentas)..."
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus
                     className="w-full rounded-xl border border-amber-600 dark:border-amber-400 bg-white dark:bg-[#0D1017] px-3.5 py-2 text-xs font-serif text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                   />
@@ -388,44 +391,52 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
             ) : (
               /* Botón selector con estética de librería (NO <select> nativo) */
               <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSagaPickerOpen(!isSagaPickerOpen);
-                    setSagaSearchFilter('');
-                  }}
-                  className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-xs transition text-left cursor-pointer ${
-                    hasSaga
-                      ? 'border-amber-600/50 dark:border-amber-500/40 bg-white dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-sm'
-                      : 'border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] text-stone-600 dark:text-slate-400 hover:border-amber-500/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className={`truncate font-serif ${hasSaga ? 'font-bold text-sm text-stone-900 dark:text-white' : 'italic text-stone-500'}`}>
-                      {hasSaga ? activeSagaDisplayName : 'Buscar o elegir una saga de tu biblioteca...'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {hasSaga && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedSagaId('');
-                          setNewSagaName('');
-                          setVolumen('');
-                          setSagaMode('none');
-                        }}
-                        title="Quitar de la saga"
-                        className="p-1 rounded-md hover:bg-stone-200 dark:hover:bg-slate-800 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSagaPickerOpen(!isSagaPickerOpen);
+                      setSagaSearchFilter('');
+                    }}
+                    aria-expanded={isSagaPickerOpen}
+                    aria-labelledby="saga-assigned-label"
+                    className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-xs transition text-left cursor-pointer ${
+                      hasSaga ? 'pr-9' : ''
+                    } ${
+                      hasSaga
+                        ? 'border-amber-600/50 dark:border-amber-500/40 bg-white dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-sm'
+                        : 'border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#141A26] text-stone-600 dark:text-slate-400 hover:border-amber-500/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span className={`truncate font-serif ${hasSaga ? 'font-bold text-sm text-stone-900 dark:text-white' : 'italic text-stone-500'}`}>
+                        {hasSaga ? activeSagaDisplayName : 'Buscar o elegir una saga de tu biblioteca...'}
                       </span>
-                    )}
-                    <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform ${isSagaPickerOpen ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform ${isSagaPickerOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {hasSaga && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedSagaId('');
+                        setNewSagaName('');
+                        setVolumen('');
+                        setSagaMode('none');
+                      }}
+                      title="Quitar de la saga"
+                      aria-label="Quitar de la saga"
+                      className="absolute right-8 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-stone-200 dark:hover:bg-slate-800 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
                 {/* Menú desplegable temático con buscador */}
                 {isSagaPickerOpen && (
@@ -438,6 +449,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                         value={sagaSearchFilter}
                         onChange={(e) => setSagaSearchFilter(e.target.value)}
                         placeholder="Buscar saga o escribir una nueva..."
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
                         autoFocus
                         className="w-full rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#0D1017] pl-8 pr-3 py-1.5 text-xs text-stone-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
                       />

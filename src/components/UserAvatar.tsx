@@ -135,6 +135,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     // 2. Caso Imagen personalizada (URL o DataURL)
     if (avatarUrl && !imageError && (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:image/'))) {
       return (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <img
           src={avatarUrl}
           alt={displayName || username || 'Avatar'}

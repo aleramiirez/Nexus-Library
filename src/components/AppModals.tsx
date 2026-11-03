@@ -283,15 +283,20 @@ export const AppModals: React.FC<AppModalsProps> = ({
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-150"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-dialog-title"
-            onClick={() => modals.setBookToDelete(null)}
           >
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label="Cancelar y cerrar diálogo"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-default border-0 p-0"
+              onClick={() => modals.setBookToDelete(null)}
+            />
             <div
-              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl z-10"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">
@@ -337,15 +342,20 @@ export const AppModals: React.FC<AppModalsProps> = ({
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-150"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-saga-dialog-title"
-            onClick={() => modals.setSagaToDelete(null)}
           >
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label="Cancelar y cerrar diálogo"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-default border-0 p-0"
+              onClick={() => modals.setSagaToDelete(null)}
+            />
             <div
-              className="w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-2xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-6 space-y-4 shadow-2xl z-10"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400">

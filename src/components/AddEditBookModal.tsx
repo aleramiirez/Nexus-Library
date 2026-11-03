@@ -9,19 +9,11 @@ import {
   AlertCircle,
   BookPlus,
   BookOpen,
-  Library,
   Info,
   ChevronRight,
   ChevronLeft,
-  ChevronDown,
-  Layers,
-  Check,
-  Plus,
-  Edit2,
-  Hash,
   Images,
-  FileUp,
-  Clock
+  FileUp
 } from 'lucide-react';
 import { calculateReadingTime } from '../utils/readingTime';
 import {
@@ -31,11 +23,8 @@ import {
   StarRating
 } from '../types/models';
 import {
-  GENRES,
   Genre,
-  READING_STATUSES,
   ReadingStatus,
-  STAR_OPTIONS,
   SUBGENRES,
   Subgenre,
   getRecommendedSubgenres,
@@ -52,7 +41,6 @@ import {
   ParsedEbookFile,
   parseEbookFile
 } from '../services/epubParserService';
-import { LibrarySelect } from './LibrarySelect';
 import {
   COUNTRIES_CATALOG,
   literaryGeographyService
@@ -287,6 +275,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setCoverBadgeMsg(null);
       setParsedFileBadge(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editingBook, initialCandidate, initialParsedEbook]);
 
   useEffect(() => {
@@ -327,6 +316,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     }, 380);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, isOpen]);
 
   const applyCandidate = (cand: BibliographicCandidate) => {
@@ -598,7 +588,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           isbn: isbn.trim(),
           editorial: editorial.trim(),
           idioma: idioma.trim(),
-          edicion: editingBook?.edicion || '',
+          edicion: edicion.trim() || editingBook?.edicion || '',
           pais: pais.trim().toUpperCase() || undefined,
           sinopsis: sinopsis.trim(),
           notasPersonales: notasPersonales.trim(),
@@ -623,12 +613,21 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
-      ref={focusTrapRef} role="dialog" aria-modal="true" onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto"
+      ref={focusTrapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-add-edit-book-title"
     >
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Cerrar modal"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-default border-0 p-0"
+        onClick={onClose}
+      />
       <div
-        className="relative w-full max-w-5xl h-[92dvh] sm:h-[86vh] max-h-[94dvh] sm:max-h-[88vh] flex flex-col rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="relative z-10 w-full max-w-5xl h-[92dvh] sm:h-[86vh] max-h-[94dvh] sm:max-h-[88vh] flex flex-col rounded-t-2xl sm:rounded-2xl border-t sm:border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-900 dark:text-slate-100 shadow-2xl overflow-hidden sm:my-auto"
       >
         {/* ─── Header (Fixed / Pinned top) ─── */}
         <div className="shrink-0 flex items-center justify-between border-b border-amber-900/20 dark:border-[#242E42] px-4 py-3 sm:px-6 sm:py-3.5 bg-[#f0e5cc] dark:bg-[#101520]">
@@ -638,7 +637,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-slate-100 leading-tight">
+                <h2 id="modal-add-edit-book-title" className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-slate-100 leading-tight">
                   {editingBook ? 'Editar Ficha del Libro' : 'Nuevo Registro Bibliográfico'}
                 </h2>
                 <span className="hidden sm:inline-flex items-center text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/25">
@@ -666,7 +665,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             {/* ─── Search section (always visible) ─── */}
           <div className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-              <label className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold">
+              <label htmlFor="add-book-search-input" className="block text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 font-semibold">
                 Búsqueda Bibliográfica o Carga desde Archivo
               </label>
               <div className="flex items-center gap-2">
@@ -712,6 +711,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
             <div className="relative">
               <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="add-book-search-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -720,7 +720,6 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                 }}
                 placeholder="Escribe un título, autor o pega un ISBN (ej. El nombre del viento, Brandon Sanderson, 9788401352836)..."
                 className="w-full rounded-xl border border-amber-900/25 dark:border-[#2E3B52] bg-[#fffcf5] dark:bg-[#0D1017]/90 pl-10 pr-10 py-2.5 text-sm text-stone-900 dark:text-white placeholder-stone-400 dark:placeholder-slate-400 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                autoFocus={!editingBook}
               />
               {isSearching && (
                 <Loader2 className="w-4 h-4 text-amber-700 dark:text-amber-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />

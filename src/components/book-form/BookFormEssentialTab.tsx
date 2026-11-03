@@ -69,10 +69,12 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
       {/* Cover preview */}
       <div className="md:col-span-3 flex flex-col items-center">
-        <div
-          className="group relative w-40 md:w-full max-w-[190px] cursor-pointer rounded-xl overflow-hidden transition-transform duration-200 hover:scale-[1.02] shadow-md"
+        <button
+          type="button"
           onClick={onOpenCoverPicker}
+          aria-label="Cambiar portada del libro"
           title="Haz clic para elegir otra portada de este libro"
+          className="group relative w-40 md:w-full max-w-[190px] cursor-pointer rounded-xl overflow-hidden transition-transform duration-200 hover:scale-[1.02] shadow-md text-left p-0 border-0 bg-transparent block"
         >
           <BookCover
             nombre={nombre || 'Título del libro'}
@@ -82,7 +84,7 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
             portadaDataUrl={customDataUrl}
           />
           {/* Overlay interactivo en hover */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-3 text-center text-white">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-3 text-center text-white pointer-events-none">
             <div className="p-2 rounded-full bg-amber-500 text-stone-950 shadow-md">
               <Images className="w-4 h-4" />
             </div>
@@ -93,7 +95,7 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
               Ver otras ediciones
             </span>
           </div>
-        </div>
+        </button>
 
         {/* Botón explícito debajo de la portada */}
         <button
@@ -146,10 +148,12 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
         {/* Genre & Reading status */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>
+            <span id="add-book-genero-label" className={labelCls}>
               Género (Selección única)
-            </label>
+            </span>
             <LibrarySelect
+              id="add-book-genero"
+              ariaLabel="Género (Selección única)"
               value={genero}
               onChange={(val) => setGenero(val as Genre | '')}
               placeholder="— Sin seleccionar —"
@@ -162,8 +166,8 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
           </div>
 
           <div>
-            <label className={labelCls}>Estado de lectura</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <span id="reading-status-group-label" className={labelCls}>Estado de lectura</span>
+            <div role="group" aria-labelledby="reading-status-group-label" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {READING_STATUSES.map((st) => (
                 <button
                   key={st}

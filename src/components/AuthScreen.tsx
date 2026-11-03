@@ -12,9 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Library,
-  Compass,
-  BookOpen
+  Library
 } from 'lucide-react';
 import {
   fetchSupabaseAuthSettings,
@@ -429,7 +427,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      tabIndex={-1}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 dark:text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 p-1"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

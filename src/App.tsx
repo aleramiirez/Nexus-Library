@@ -1,42 +1,20 @@
-import React, { useEffect, useMemo, useState, useDeferredValue, useRef, startTransition, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LayoutDashboard,
   Library,
   Layers,
-  BarChart3,
   Trophy,
   Compass,
   Plus,
-  Search,
-  Grid,
-  List,
-  Rows3,
-  Sun,
-  Moon,
-  RotateCcw,
-  Edit3,
-  BookmarkCheck,
-  Clock,
-  PauseCircle,
-  BookMarked,
-  HardDrive,
-  Cloud,
-  ChevronRight,
-  ChevronDown,
-  SlidersHorizontal,
-  ArrowUpDown,
   AlertTriangle,
-  LogIn,
   Menu,
   Settings,
   Mail,
-  FileUp,
   X,
   Sparkles,
-  Users,
-  Loader2
+  Users
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { triggerBackgroundFallbackNotification, syncPushSubscriptionWithDatabase } from './services/pushNotificationService';
@@ -67,30 +45,16 @@ import {
 import {
   BibliographicCandidate,
   Book,
-  BookRecommendation,
   BookRecommendationPayload,
-  LibraryFilters,
   Saga,
-  SortField,
-  StarRating,
   UserProfile
 } from './types/models';
 import { profileService } from './services/profileService';
 import { recommendationInboxService } from './services/recommendationInboxService';
 import {
-  formatStars,
-  GENRES,
   Genre,
-  READING_STATUSES,
-  ReadingStatus,
-  STAR_OPTIONS,
-  SUBGENRES,
-  Subgenre,
-  getRecommendedSubgenres,
-  normalizeText
+  ReadingStatus
 } from './constants/catalogs';
-import { BookCard } from './components/BookCard';
-import { BookCover } from './components/BookCover';
 import { AuthScreen } from './components/AuthScreen';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { AnimatedBackground } from './components/AnimatedBackground';
@@ -103,7 +67,6 @@ import { formatFriendlyErrorMessage } from './utils/errorUtils';
 import './dashboard-panels.css';
 
 import { AppModals } from './components/AppModals';
-import { ParsedEbookFile } from './services/epubParserService';
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
@@ -113,16 +76,14 @@ const SettingsScreen = React.lazy(() =>
 const ReadingChallengeScreen = React.lazy(() =>
   import('./components/ReadingChallengeScreen').then((m) => ({ default: m.ReadingChallengeScreen }))
 );
-import { ReadingChallengeDashboardWidget } from './components/ReadingChallengeDashboardWidget';
 const CollectionsScreen = React.lazy(() =>
   import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
 );
 import { collectionService } from './services/collectionService';
 import { readingChallengeService } from './services/readingChallengeService';
-import { ProfileSetupBanner } from './components/ProfileSetupBanner';
 import type { SettingsTab } from './components/SettingsScreen';
 import { calculateReaderLevel } from './services/levelingService';
-import { useLibraryFilters, initialFilters } from './hooks/useLibraryFilters';
+import { useLibraryFilters } from './hooks/useLibraryFilters';
 import { useLibraryModals } from './hooks/useLibraryModals';
 import { useAppNotifications } from './hooks/useAppNotifications';
 
@@ -248,26 +209,18 @@ export const App: React.FC = () => {
     setDetailBookId,
     handleOpenBookDetail,
     handleOpenCardDetail,
-    handleCloseBookDetail,
     isAddEditOpen,
     setIsAddEditOpen,
-    editingBook,
-    setEditingBook,
-    selectedInitialCandidate,
     setSelectedInitialCandidate,
-    selectedParsedEbook,
     setSelectedParsedEbook,
     handleOpenCreateBook,
     handleOpenEditBook,
     handleCustomizeFromDiscover,
-    handleCloseAddEdit,
     isImportOpen,
     setIsImportOpen,
     isEpubImportOpen,
     setIsEpubImportOpen,
-    initialEpubFiles,
     setInitialEpubFiles,
-    handleCloseEpubImport,
     isAuthModalOpen,
     setIsAuthModalOpen,
     isInstallModalOpen,
@@ -276,17 +229,11 @@ export const App: React.FC = () => {
     setBookToDelete,
     sagaToDelete,
     setSagaToDelete,
-    celebrationBook,
     setCelebrationBook,
-    shareCardBook,
-    setShareCardBook,
-    isOrderModalOpen,
     setIsOrderModalOpen,
     isInboxOpen,
     setIsInboxOpen,
-    inboxInitialTab,
     setInboxInitialTab,
-    isFirstLoginModalOpen,
     setIsFirstLoginModalOpen,
     isAnyLibraryModalOpen
   } = modals;
@@ -325,29 +272,13 @@ export const App: React.FC = () => {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
-  const [discoverInitialTab, setDiscoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
+  const [discoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
 
   const handleNavigateToSettingsAccount = React.useCallback(() => {
     setSettingsInitialTab('account');
     setActiveSection('settings');
     setIsInboxOpen(false);
     setIsFirstLoginModalOpen(false);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-    }
-  }, []);
-
-  const handleNavigateToAtlas = React.useCallback(() => {
-    setDiscoverInitialTab('atlas');
-    setActiveSection('discover');
-    try {
-      localStorage.setItem('nexus_discover_tab', 'atlas');
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', 'atlas');
-      window.history.replaceState({}, '', url.toString());
-    } catch {
-      // ignorar
-    }
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     }
@@ -1020,18 +951,6 @@ export const App: React.FC = () => {
       ratedCount,
       avgRating: ratedCount > 0 ? totalScore / ratedCount : null
     };
-  }, [books]);
-
-  const topAuthors = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const b of books) {
-      const a = b.autor.trim();
-      if (!a) continue;
-      counts.set(a, (counts.get(a) || 0) + 1);
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6);
   }, [books]);
 
   const sagasWithBooks = useMemo(() => {
