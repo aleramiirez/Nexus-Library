@@ -15,12 +15,21 @@ export interface UserAvatarProps {
 }
 
 const SIZE_MAP = {
-  xs: 'w-5 h-5 text-[10px] rounded-md',
-  sm: 'w-7 h-7 text-xs rounded-lg',
-  md: 'w-9 h-9 text-sm rounded-xl',
-  lg: 'w-12 h-12 text-base rounded-2xl',
-  xl: 'w-16 h-16 text-xl rounded-2xl',
-  '2xl': 'w-24 h-24 text-3xl rounded-3xl'
+  xs: 'w-5 h-5 text-[10px]',
+  sm: 'w-8 h-8 text-xs',
+  md: 'w-10 h-10 text-sm',
+  lg: 'w-12 h-12 text-base',
+  xl: 'w-16 h-16 text-xl',
+  '2xl': 'w-24 h-24 text-3xl'
+};
+
+const RADIUS_MAP = {
+  xs: 'rounded-md',
+  sm: 'rounded-xl',
+  md: 'rounded-xl',
+  lg: 'rounded-2xl',
+  xl: 'rounded-2xl',
+  '2xl': 'rounded-3xl'
 };
 
 const ICON_SIZE_MAP = {
@@ -44,6 +53,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
+  const radiusClass = RADIUS_MAP[size] || RADIUS_MAP.md;
   const iconSizeClass = ICON_SIZE_MAP[size] || ICON_SIZE_MAP.md;
 
   const safeName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : typeof username === 'string' && username.trim() ? username.trim() : 'L';
@@ -52,16 +62,24 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const validLevel = typeof level === 'number' && !isNaN(level) ? level : undefined;
   const activeRank = rankProp || (validLevel !== undefined ? getRankForLevel(validLevel) : undefined);
 
-  const renderContent = () => {
+  // Marco distinguido de la Orden o ribete clásico
+  const borderClass = activeRank
+    ? activeRank.avatarRingClass
+    : showBorder
+    ? (preset ? `border ${preset.borderColor}` : 'border border-amber-600/40')
+    : '';
+
+  const titleText = activeRank
+    ? `${activeRank.name} (Rango ${activeRank.roman}${validLevel !== undefined ? ` · Nivel ${validLevel}` : ''})`
+    : displayName || username || 'Lector';
+
+  const renderInner = () => {
     // 1. Caso Sello Clásico (Preset)
     if (preset) {
       const Icon = preset.icon;
       return (
         <div
-          className={`relative inline-flex items-center justify-center shrink-0 bg-gradient-to-br ${
-            preset.gradient
-          } ${showBorder && !activeRank ? `border ${preset.borderColor}` : ''} shadow-md overflow-hidden select-none ${sizeClass}`}
-          title={preset.title}
+          className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${preset.gradient} relative select-none`}
         >
           <div className="absolute inset-0 bg-radial from-white/10 to-transparent pointer-events-none" />
           <Icon className={`${iconSizeClass} ${preset.iconColor} drop-shadow`} />
@@ -72,28 +90,19 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     // 2. Caso Imagen personalizada (URL o DataURL)
     if (avatarUrl && !imageError && (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:image/'))) {
       return (
-        <div
-          className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden bg-stone-900 ${
-            showBorder && !activeRank ? 'border border-amber-500/40' : ''
-          } shadow-md ${sizeClass}`}
-        >
-          <img
-            src={avatarUrl}
-            alt={displayName || username || 'Avatar'}
-            onError={() => setImageError(true)}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <img
+          src={avatarUrl}
+          alt={displayName || username || 'Avatar'}
+          onError={() => setImageError(true)}
+          className="w-full h-full object-cover"
+        />
       );
     }
 
     // 3. Fallback Monograma Clásico con gradiente de cuero y relieve
     return (
       <div
-        className={`relative inline-flex items-center justify-center shrink-0 bg-gradient-to-br from-[#7a3e14] via-[#542908] to-[#2c1303] text-amber-200 font-serif font-bold ${
-          showBorder && !activeRank ? 'border border-amber-600/40' : ''
-        } shadow-md select-none ${sizeClass}`}
-        title={displayName || username || 'Lector'}
+        className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#7a3e14] via-[#542908] to-[#2c1303] text-amber-200 font-serif font-bold relative select-none"
       >
         <div className="absolute inset-0 bg-radial from-amber-400/10 to-transparent pointer-events-none" />
         <span className="drop-shadow leading-none">{initial}</span>
@@ -101,19 +110,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     );
   };
 
-  if (!activeRank && validLevel === undefined) {
-    return <div className={`relative inline-flex shrink-0 ${className}`}>{renderContent()}</div>;
-  }
-
-  // Si tiene nivel o rango, se aplica el ribete distintivo del escalafón de la Orden
-  const ringClass = activeRank?.avatarRingClass || 'ring-2 ring-amber-600';
-
   return (
     <div
-      className={`relative inline-flex shrink-0 items-center justify-center rounded-2xl ${ringClass} ${className}`}
-      title={activeRank ? `${activeRank.name} (Rango ${activeRank.roman}${validLevel !== undefined ? ` · Nivel ${validLevel}` : ''})` : undefined}
+      className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden select-none shadow-md ${sizeClass} ${radiusClass} ${borderClass} ${className}`}
+      title={titleText}
     >
-      {renderContent()}
+      {renderInner()}
     </div>
   );
 };

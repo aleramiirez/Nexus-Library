@@ -31,7 +31,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 4,
     color: '#8c6b3e',
     badgeStyle: 'bg-stone-500/15 text-stone-800 dark:text-stone-300 border-stone-600/30',
-    avatarRingClass: 'ring-2 ring-stone-400 dark:ring-stone-500 ring-offset-1 dark:ring-offset-stone-900 border-2 border-stone-400/80',
+    avatarRingClass: 'border-2 border-stone-400 dark:border-stone-500 shadow-sm',
     description: 'Primeros pasos en los archivos de la biblioteca. Manos que aprenden el tacto y el aroma del papiro.',
     frameGradient: 'from-stone-600 via-stone-500 to-stone-700',
     iconName: 'Feather'
@@ -46,7 +46,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 9,
     color: '#92400e',
     badgeStyle: 'bg-amber-800/20 text-amber-950 dark:text-amber-200 border-amber-700/40',
-    avatarRingClass: 'ring-2 ring-amber-800 dark:ring-amber-700 ring-offset-2 dark:ring-offset-stone-900 border-2 border-amber-900/60 shadow-md',
+    avatarRingClass: 'border-2 border-amber-800 dark:border-amber-600 shadow-md',
     description: 'Asiduo devorador de volúmenes que encuentra su hogar entre anaqueles y páginas encuadernadas.',
     frameGradient: 'from-amber-900 via-amber-800 to-amber-950',
     iconName: 'BookOpen'
@@ -61,7 +61,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 14,
     color: '#d97706',
     badgeStyle: 'bg-amber-600/20 text-amber-900 dark:text-amber-200 border-amber-500/40',
-    avatarRingClass: 'ring-2 ring-amber-600 dark:ring-amber-500 ring-offset-2 dark:ring-offset-stone-900 border-2 border-[#d97706] shadow-md',
+    avatarRingClass: 'border-2 border-amber-600 dark:border-amber-500 shadow-md',
     description: 'Viajero incansable que recorre universos enteros guiado por la brújula del saber y las letras.',
     frameGradient: 'from-amber-600 via-amber-500 to-yellow-600',
     iconName: 'Compass'
@@ -76,7 +76,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 19,
     color: '#ca8a04',
     badgeStyle: 'bg-yellow-700/20 text-yellow-950 dark:text-yellow-200 border-yellow-600/40',
-    avatarRingClass: 'ring-2 ring-yellow-600 dark:ring-yellow-500 ring-offset-2 dark:ring-offset-stone-900 border-2 border-amber-500 shadow-lg',
+    avatarRingClass: 'border-2 border-yellow-600 dark:border-yellow-500 shadow-lg',
     description: 'Guardián del buen estado de las obras, catalogando ediciones singulares con reverencia y esmero.',
     frameGradient: 'from-yellow-600 via-amber-600 to-yellow-700',
     iconName: 'ShieldCheck'
@@ -91,7 +91,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 24,
     color: '#94a3b8',
     badgeStyle: 'bg-slate-300/30 text-slate-800 dark:text-slate-100 border-slate-400/50',
-    avatarRingClass: 'ring-2 ring-slate-300 dark:ring-slate-300 ring-offset-2 dark:ring-offset-stone-900 border-2 border-slate-200 shadow-xl shadow-slate-400/20',
+    avatarRingClass: 'border-2 border-slate-300 dark:border-slate-300 shadow-md shadow-slate-400/20',
     description: 'Protector de manuscritos venerables e índices secretos que solo los iniciados más leales conocen.',
     frameGradient: 'from-slate-400 via-slate-100 to-slate-400',
     iconName: 'Key'
@@ -106,7 +106,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 29,
     color: '#eab308',
     badgeStyle: 'bg-amber-400/25 text-amber-950 dark:text-amber-100 border-amber-300/50',
-    avatarRingClass: 'ring-2 ring-amber-400 dark:ring-amber-300 ring-offset-2 dark:ring-offset-stone-900 border-2 border-amber-300 shadow-xl shadow-amber-500/30',
+    avatarRingClass: 'border-2 border-amber-400 dark:border-amber-300 shadow-lg shadow-amber-500/20',
     description: 'Artífice supremo que une hojas sueltas en volúmenes inmortales engarzados en piel y pan de oro.',
     frameGradient: 'from-amber-400 via-yellow-200 to-amber-500',
     iconName: 'Scroll'
@@ -121,7 +121,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 34,
     color: '#dc2626',
     badgeStyle: 'bg-red-600/20 text-red-950 dark:text-red-200 border-red-500/40',
-    avatarRingClass: 'ring-3 ring-red-700 dark:ring-red-600 ring-offset-2 dark:ring-offset-stone-900 border-2 border-red-500 shadow-xl shadow-red-600/30',
+    avatarRingClass: 'border-2 border-red-600 dark:border-red-500 shadow-lg shadow-red-600/20',
     description: 'Poseedor de una visión panorámica de la literatura de todos los continentes, épocas y lenguas.',
     frameGradient: 'from-red-800 via-rose-600 to-red-950',
     iconName: 'Landmark'
@@ -136,7 +136,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 39,
     color: '#0284c7',
     badgeStyle: 'bg-sky-500/20 text-sky-950 dark:text-sky-200 border-sky-400/40',
-    avatarRingClass: 'ring-3 ring-sky-500 dark:ring-sky-400 ring-offset-2 dark:ring-offset-stone-900 border-2 border-amber-300 shadow-2xl shadow-sky-500/30',
+    avatarRingClass: 'border-2 border-sky-500 dark:border-sky-400 ring-1 ring-amber-400/70 shadow-xl shadow-sky-500/20',
     description: 'Relator supremo cuyas palabras tejen la memoria viva de cada obra leída en los anales del tiempo.',
     frameGradient: 'from-amber-400 via-sky-400 to-amber-500',
     iconName: 'Gem'
@@ -151,7 +151,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 44,
     color: '#4f46e5',
     badgeStyle: 'bg-indigo-600/20 text-indigo-950 dark:text-indigo-200 border-indigo-400/40',
-    avatarRingClass: 'ring-3 ring-indigo-500 dark:ring-indigo-400 ring-offset-2 dark:ring-offset-stone-900 border-2 border-amber-400 shadow-2xl shadow-indigo-600/40',
+    avatarRingClass: 'border-2 border-indigo-500 dark:border-indigo-400 ring-1 ring-amber-400/80 shadow-xl shadow-indigo-600/30',
     description: 'Luminaria de la Orden con acceso a las estancias vedadas donde reposa el saber primordial.',
     frameGradient: 'from-indigo-700 via-amber-400 to-indigo-900',
     iconName: 'Crown'
@@ -166,7 +166,7 @@ export const ORDER_RANKS: OrderRank[] = [
     maxLevel: 50,
     color: '#e11d48',
     badgeStyle: 'bg-gradient-to-r from-amber-500/30 via-rose-500/30 to-amber-500/30 text-amber-950 dark:text-amber-100 border-amber-400/60 font-black',
-    avatarRingClass: 'ring-4 ring-amber-400 dark:ring-amber-300 ring-offset-2 dark:ring-offset-stone-900 border-2 border-rose-500 shadow-2xl shadow-amber-500/50',
+    avatarRingClass: 'border-2 border-amber-300 dark:border-amber-300 ring-2 ring-rose-500/70 shadow-2xl shadow-amber-500/40',
     description: 'Custodio legendario del Nexus. Su nombre queda cincelado con letras de oro en el Gran Códice.',
     frameGradient: 'from-amber-400 via-rose-500 to-amber-300',
     iconName: 'Sparkles'
