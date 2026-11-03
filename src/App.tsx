@@ -197,6 +197,9 @@ export const App: React.FC = () => {
   const [, startTransition] = React.useTransition();
 
   const handleNavigate = (section: NavigationSection) => {
+    if (section === 'settings') {
+      setSettingsInitialTab('account');
+    }
     startTransition(() => {
       setActiveSection(section);
     });
@@ -377,7 +380,7 @@ export const App: React.FC = () => {
   const [inboxInitialTab, setInboxInitialTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
-  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('appearance');
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
   const [discoverInitialTab, setDiscoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
   const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState(false);
 
