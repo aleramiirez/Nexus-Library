@@ -2758,7 +2758,6 @@ export const App: React.FC = () => {
                 onOpenBookDetail={handleOpenCardDetail}
                 onShowToast={showToast}
                 onUpdateBookDates={updateBookQuickDates}
-                onOpenAtlas={handleNavigateToAtlas}
               />
             </React.Suspense>
           )}

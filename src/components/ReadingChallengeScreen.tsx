@@ -17,8 +17,7 @@ import {
   AlertCircle,
   Plus,
   Minus,
-  X,
-  Compass
+  X
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
 import {
@@ -28,7 +27,6 @@ import {
 } from '../services/readingChallengeService';
 import { BookCover } from './BookCover';
 import { ReadingWrappedModal } from './ReadingWrappedModal';
-import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { formatStars } from '../constants/catalogs';
 import '../dashboard-panels.css';
 
@@ -44,7 +42,6 @@ interface ReadingChallengeScreenProps {
   onOpenBookDetail?: (book: Book) => void;
   onShowToast?: (message: string) => void;
   onUpdateBookDates?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
-  onOpenAtlas?: () => void;
 }
 
 function formatReadingDates(fechaInicio?: string, fechaFin?: string): string {
@@ -82,8 +79,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   darkMode = false,
   onOpenBookDetail,
   onShowToast,
-  onUpdateBookDates,
-  onOpenAtlas
+  onUpdateBookDates
 }) => {
   const currentYear = new Date().getFullYear();
   const availableYears = useMemo(
@@ -101,7 +97,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalModalValue, setGoalModalValue] = useState<number>(10);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
-  const [isPassportOpen, setIsPassportOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthCadence | null>(null);
   const [showAllCompleted, setShowAllCompleted] = useState(false);
 
@@ -214,16 +209,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Memoria {selectedYear === 'all' ? 'Total' : selectedYear}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenAtlas || (() => setIsPassportOpen(true))}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-700/30 dark:border-amber-500/30 bg-[#fffcf5] dark:bg-[#151D2A] hover:bg-amber-500/15 text-stone-800 dark:text-amber-200 font-bold text-xs shadow-sm transition active:scale-95"
-            title="Abrir Atlas Literario Mundial y Visados Consulares"
-          >
-            <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Atlas Literario</span>
           </button>
         </div>
       </div>
@@ -1008,21 +993,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           userName={userName}
           onShowToast={onShowToast}
           darkMode={darkMode}
-        />
-      )}
-
-      {/* ─── Modal Pasaporte Literario y Visados Consulares ─── */}
-      {isPassportOpen && (
-        <LiteraryPassportModal
-          isOpen={isPassportOpen}
-          onClose={() => setIsPassportOpen(false)}
-          books={books}
-          displayName={userName}
-          username={username}
-          avatarUrl={avatarUrl}
-          memberId={memberId || currentUserId}
-          onOpenBookDetail={onOpenBookDetail}
-          onShowToast={onShowToast}
         />
       )}
     </div>
