@@ -74,95 +74,20 @@ export interface BookDetailModalProps {
   readerName?: string;
 }
 
-export interface BookFlipValues {
-  fromX: string;
-  fromY: string;
-  fromScale: string;
-}
+import {
+  type BookFlipValues,
+  getBookFlipValues,
+  computeBookFlipVars,
+  applyBookFlipVarsToElement,
+} from './book-detail/flipAnimation';
+import { BookDetailColophon } from './book-detail/BookDetailColophon';
+import { BookDetailReadingRecord } from './book-detail/BookDetailReadingRecord';
+import { BookDetailMetricsGrid } from './book-detail/BookDetailMetricsGrid';
+import { BookDetailSynopsisView } from './book-detail/BookDetailSynopsisView';
+import { BookDetailNotesView } from './book-detail/BookDetailNotesView';
 
-export function getBookFlipValues(bookId?: string | null): BookFlipValues {
-  const fallback: BookFlipValues = {
-    fromX: '0px',
-    fromY: '24px',
-    fromScale: '0.28'
-  };
-
-  if (typeof window === 'undefined' || typeof document === 'undefined' || !bookId) {
-    return fallback;
-  }
-
-  // En móvil o usuarios con preferencia de movimiento reducido usamos animación nativa sin cálculo FLIP
-  if (
-    window.innerWidth < 768 ||
-    (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  ) {
-    return fallback;
-  }
-
-  let sourceEl: Element | null = null;
-  try {
-    const escapedId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(bookId) : bookId.replace(/"/g, '\\"');
-    const container = document.querySelector(`[data-book-id="${escapedId}"]`);
-    sourceEl = container ? (container.querySelector('.book-cover') || container) : null;
-  } catch {
-    sourceEl = null;
-  }
-
-  if (!sourceEl) return fallback;
-
-  const rect = sourceEl.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return fallback;
-
-  // Si la tarjeta o libro de origen está fuera de los límites visibles de la pantalla,
-  // usar la animación fallback centrada para evitar que la animación salga disparada hacia fuera del viewport
-  const isOutOfViewport =
-    rect.bottom < -60 ||
-    rect.top > window.innerHeight + 60 ||
-    rect.right < -60 ||
-    rect.left > window.innerWidth + 60;
-
-  if (isOutOfViewport) return fallback;
-
-  const stageWidth = Math.min(window.innerWidth - 48, 1024);
-  const closedBookWidth = stageWidth * 0.5;
-
-  const fromX = rect.left + rect.width / 2 - window.innerWidth / 2;
-  const fromY = rect.top + rect.height / 2 - window.innerHeight / 2;
-  const fromScale = Math.max(0.18, Math.min(0.75, rect.width / closedBookWidth));
-
-  return {
-    fromX: `${Math.round(fromX)}px`,
-    fromY: `${Math.round(fromY)}px`,
-    fromScale: fromScale.toFixed(3)
-  };
-}
-
-/**
- * Calcula las variables CSS (--from-x, --from-y, --from-scale) desde la coordenada exacta
- * del libro en la estantería o tarjeta hasta el centro del viewport.
- */
-export function computeBookFlipVars(bookId?: string | null): React.CSSProperties {
-  const { fromX, fromY, fromScale } = getBookFlipValues(bookId);
-  return {
-    '--from-x': fromX,
-    '--from-y': fromY,
-    '--from-scale': fromScale
-  } as React.CSSProperties;
-}
-
-/**
- * Escribe directamente las coordenadas FLIP en el nodo DOM sin provocar un re-render de React.
- */
-export function applyBookFlipVarsToElement(
-  el: HTMLElement | null,
-  bookId?: string | null
-): void {
-  if (!el) return;
-  const { fromX, fromY, fromScale } = getBookFlipValues(bookId);
-  el.style.setProperty('--from-x', fromX);
-  el.style.setProperty('--from-y', fromY);
-  el.style.setProperty('--from-scale', fromScale);
-}
+export type { BookFlipValues };
+export { getBookFlipValues, computeBookFlipVars, applyBookFlipVarsToElement };
 
 export type BookModalTab = 'details' | 'synopsis' | 'notes';
 
@@ -803,283 +728,46 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
               {/* Cuerpo deslizable de la ficha en móvil */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                 {activeTab === 'synopsis' ? (
-                  <div className="mobile-page-transition-forward space-y-4">
-                    <div className="border-b border-amber-900/15 dark:border-[#242E42] pb-3">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
-                        fol. III · Sinopsis Literaria
-                      </span>
-                      <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-white mt-0.5">
-                        {book.nombre}
-                      </h2>
-                      <p className="font-serif italic text-xs text-stone-600 dark:text-slate-400">
-                        {book.autor || 'Autor no especificado'}
-                      </p>
-                    </div>
-
-                    {currentSynopsis ? (
-                      <div className="space-y-3">
-                        {isCurrentSynopsisEnglish && (
-                          <div className="p-3 rounded-xl border border-amber-600/35 bg-amber-500/15 flex items-center justify-between gap-2.5 text-xs">
-                            <div className="flex items-center gap-1.5 min-w-0 text-amber-950 dark:text-amber-200">
-                              <Languages className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                              <span className="font-semibold truncate">Sinopsis en inglés detectada</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleTranslateCurrentSynopsis}
-                              disabled={isTranslatingSynopsis}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0 transition"
-                            >
-                              {isTranslatingSynopsis ? 'Traduciendo...' : 'Traducir al español'}
-                            </button>
-                          </div>
-                        )}
-                        <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 shadow-sm">
-                          <p className="font-serif text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line first-letter:float-left first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-2.5 first-letter:leading-none">
-                            {currentSynopsis}
-                          </p>
-                        </div>
-                        <div className="flex justify-end pt-0.5">
-                          <button
-                            type="button"
-                            onClick={handleAutoFetchSynopsis}
-                            disabled={isFetchingSynopsis}
-                            className="inline-flex items-center gap-1 text-[11px] text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            <span>{isFetchingSynopsis ? 'Buscando...' : 'Actualizar sinopsis'}</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-8 px-4 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
-                        <BookOpen className="w-8 h-8 text-amber-700/60 dark:text-amber-400/60 mx-auto" />
-                        <p className="font-serif text-sm text-stone-700 dark:text-slate-300">
-                          Esta edición no incluye una sinopsis registrada.
-                        </p>
-                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleAutoFetchSynopsis}
-                            disabled={isFetchingSynopsis}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm disabled:opacity-50"
-                          >
-                            {isFetchingSynopsis ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3.5 h-3.5" />
-                            )}
-                            <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
-                          </button>
-                          {!readOnly && onEdit && (
-                            <button
-                              type="button"
-                              onClick={() => onEdit(book)}
-                              disabled={isFetchingSynopsis}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800 text-stone-800 dark:text-slate-200 transition"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Escribir manual</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={handleTurnToDetails}
-                        title="Volver a la ficha del libro"
-                        aria-label="Volver a la ficha del libro"
-                        className="py-2.5 px-3 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 text-xs font-semibold transition"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                        <span>Ficha técnica</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleTurnToNotes}
-                        title="Ir al Diario de Lectura & Citas"
-                        className="py-2.5 px-3 rounded-xl border border-amber-600/35 bg-amber-500/20 text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 text-xs font-semibold transition"
-                      >
-                        <span>Diario & Citas</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  <BookDetailSynopsisView
+                    book={book}
+                    currentSynopsis={currentSynopsis}
+                    isCurrentSynopsisEnglish={isCurrentSynopsisEnglish}
+                    isTranslatingSynopsis={isTranslatingSynopsis}
+                    isFetchingSynopsis={isFetchingSynopsis}
+                    onTranslateCurrentSynopsis={handleTranslateCurrentSynopsis}
+                    onAutoFetchSynopsis={handleAutoFetchSynopsis}
+                    onTurnToDetails={handleTurnToDetails}
+                    onTurnToNotes={handleTurnToNotes}
+                    onEdit={onEdit}
+                    readOnly={readOnly}
+                    variant="mobile"
+                  />
                 ) : activeTab === 'notes' ? (
-                  <div className="mobile-page-transition-forward space-y-4">
-                    <div className="border-b border-amber-900/15 dark:border-[#242E42] pb-3">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
-                        fol. IV · Diario de Lectura & Citas
-                      </span>
-                      <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-white mt-0.5">
-                        {book.nombre}
-                      </h2>
-                      <p className="font-serif italic text-xs text-stone-600 dark:text-slate-400">
-                        {book.autor || 'Autor no especificado'}
-                      </p>
-                    </div>
-
-                    {/* Reseña & Notas personales */}
-                    <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffcf5]/90 dark:bg-[#161D2B]/80 p-4 space-y-2.5 shadow-sm">
-                      <div className="flex items-center justify-between gap-2 border-b border-amber-900/10 dark:border-[#20293A] pb-2">
-                        <span className="font-serif font-bold text-xs text-stone-900 dark:text-white flex items-center gap-1.5">
-                          <PenLine className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          Reseña & Notas Personales
-                        </span>
-                        {!readOnly && (
-                          <button
-                            type="button"
-                            onClick={() => handleSaveNotes(undefined, true)}
-                            disabled={isSavingNotes}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition"
-                          >
-                            {isSavingNotes ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : notesSavedSuccess ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                              <Save className="w-3.5 h-3.5" />
-                            )}
-                            <span>{notesSavedSuccess ? 'Guardado' : 'Guardar'}</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {readOnly ? (
-                        <p className="font-serif text-xs leading-relaxed text-stone-700 dark:text-slate-300 italic whitespace-pre-line">
-                          {localNotes || 'Sin notas registradas.'}
-                        </p>
-                      ) : (
-                        <textarea
-                          rows={4}
-                          value={localNotes}
-                          onChange={(e) => setLocalNotes(e.target.value)}
-                          onBlur={() => handleSaveNotes()}
-                          placeholder="Escribe tus reflexiones, impresiones o reseña personal de esta obra..."
-                          className="w-full rounded-xl border border-amber-900/20 dark:border-[#2A354B] bg-[#fbf6ea]/70 dark:bg-[#0D111A] p-2.5 text-xs font-serif text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition leading-relaxed resize-y"
-                        />
-                      )}
-                    </div>
-
-                    {/* Citas Memorables */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-serif font-bold text-xs text-stone-900 dark:text-white flex items-center gap-1.5">
-                          <Quote className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          Citas Memorables ({localQuotes.length})
-                        </span>
-                      </div>
-
-                      {!readOnly && (
-                        <div className="rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-[#121824]/60 p-3 space-y-2">
-                          <textarea
-                            rows={2}
-                            value={newQuoteText}
-                            onChange={(e) => setNewQuoteText(e.target.value)}
-                            placeholder="«Escribe aquí una cita inolvidable de la obra...»"
-                            className="w-full rounded-lg border border-amber-900/20 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0D111A] p-2 text-xs font-serif italic text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition resize-none"
-                          />
-                          <div className="flex items-center justify-between gap-2">
-                            <input
-                              type="text"
-                              value={newQuotePage}
-                              onChange={(e) => setNewQuotePage(e.target.value)}
-                              placeholder="Pág. o ubicación (ej: pág. 120)"
-                              className="rounded-lg border border-amber-900/20 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0D111A] px-2 py-1 text-xs text-stone-900 dark:text-slate-200 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-600 max-w-[160px]"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleAddQuote}
-                              disabled={!newQuoteText.trim()}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs transition active:scale-95"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Añadir</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {localQuotes.length === 0 ? (
-                        <div className="py-5 px-3 rounded-xl border border-dashed border-amber-900/20 dark:border-[#232D40] text-center text-xs text-stone-500 dark:text-slate-400 font-serif italic">
-                          Aún no has guardado citas de este libro.
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[35vh] overflow-y-auto overscroll-contain pr-0.5">
-                          {localQuotes.map((quote, idx) => (
-                            <div
-                              key={idx}
-                              className="group relative rounded-xl border border-amber-900/15 dark:border-[#222B3C] bg-[#fffcf5]/85 dark:bg-[#141A26]/85 p-3"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <blockquote className="font-serif italic text-xs text-stone-800 dark:text-slate-200 leading-relaxed pl-2 border-l-2 border-amber-600/60 dark:border-amber-400/60">
-                                  «{quote}»
-                                </blockquote>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedQuoteForCard(quote);
-                                      setIsShareCardOpen(true);
-                                    }}
-                                    className="p-1 rounded-md text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
-                                    title="Crear tarjeta para redes con esta cita"
-                                  >
-                                    <Share2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyQuote(quote, idx)}
-                                    className="p-1 rounded-md text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 transition"
-                                    title="Copiar cita"
-                                  >
-                                    {copiedQuoteIndex === idx ? (
-                                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                    ) : (
-                                      <Copy className="w-3.5 h-3.5" />
-                                    )}
-                                  </button>
-                                  {!readOnly && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteQuote(idx)}
-                                      className="p-1 rounded-md text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 transition"
-                                      title="Eliminar cita"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={handleTurnToSynopsis}
-                        className="py-2.5 px-3 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 text-xs font-semibold transition"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                        <span>Sinopsis</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleTurnToDetails}
-                        className="py-2.5 px-3 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] dark:bg-[#1A2232] text-amber-950 dark:text-amber-200 flex items-center justify-center gap-1.5 text-xs font-semibold transition"
-                      >
-                        <span>Ficha técnica</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  <BookDetailNotesView
+                    book={book}
+                    localNotes={localNotes}
+                    setLocalNotes={setLocalNotes}
+                    localQuotes={localQuotes}
+                    isSavingNotes={isSavingNotes}
+                    notesSavedSuccess={notesSavedSuccess}
+                    onSaveNotes={handleSaveNotes}
+                    newQuoteText={newQuoteText}
+                    setNewQuoteText={setNewQuoteText}
+                    newQuotePage={newQuotePage}
+                    setNewQuotePage={setNewQuotePage}
+                    onAddQuote={handleAddQuote}
+                    onDeleteQuote={handleDeleteQuote}
+                    onCopyQuote={handleCopyQuote}
+                    copiedQuoteIndex={copiedQuoteIndex}
+                    onShareQuote={(quote) => {
+                      setSelectedQuoteForCard(quote);
+                      setIsShareCardOpen(true);
+                    }}
+                    onTurnToSynopsis={handleTurnToSynopsis}
+                    onTurnToDetails={handleTurnToDetails}
+                    readOnly={readOnly}
+                    variant="mobile"
+                  />
                 ) : (
                   <div className="mobile-page-transition-backward space-y-4">
                 {/* Cabecera Principal: Portada + Título + Autor + Saga */}
@@ -1299,140 +987,21 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 </button>
 
                 {/* Registro de Lectura (Fechas y Lectura Virtual) */}
-                {(!readOnly || Boolean(book.fechaInicio || book.fechaFin || book.lecturaVirtual)) && (
-                  <div className="rounded-2xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-3.5 space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1.5">
-                      <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                        Registro de Lectura
-                      </span>
-                      <span className="text-[10px] uppercase tracking-widest text-stone-600 dark:text-slate-400 font-mono">
-                        NEXUS
-                      </span>
-                    </div>
+                <BookDetailReadingRecord
+                  book={book}
+                  onDatesChange={onDatesChange}
+                  readOnly={readOnly}
+                  variant="mobile"
+                />
 
-                    {(book.fechaInicio || book.fechaFin || !readOnly) && (
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div>
-                          <label htmlFor="detail-fecha-inicio" className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
-                            Fecha Inicio
-                          </label>
-                          {!readOnly && onDatesChange ? (
-                            <input
-                              id="detail-fecha-inicio"
-                              type="date"
-                              value={book.fechaInicio || ''}
-                              onChange={(e) =>
-                                onDatesChange(book.id, e.target.value, book.fechaFin)
-                              }
-                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                            />
-                          ) : (
-                            <span className="font-semibold text-xs block">
-                              {book.fechaInicio || '—'}
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
-                          <label htmlFor="detail-fecha-fin" className="text-[11px] text-stone-600 dark:text-slate-400 block mb-1">
-                            Fecha Fin
-                          </label>
-                          {!readOnly && onDatesChange ? (
-                            <input
-                              id="detail-fecha-fin"
-                              type="date"
-                              value={book.fechaFin || ''}
-                              onChange={(e) =>
-                                onDatesChange(book.id, book.fechaInicio, e.target.value)
-                              }
-                              className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2.5 py-1.5 text-xs font-medium focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                            />
-                          ) : (
-                            <span className="font-semibold text-xs block">
-                              {book.fechaFin || '—'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {book.lecturaVirtual && (
-                      <div className="pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-stone-600 dark:text-slate-400 shrink-0">
-                          Formato
-                        </span>
-                        {isUrl ? (
-                          <a
-                            href={book.lecturaVirtual}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate"
-                          >
-                            Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
-                          </a>
-                        ) : (
-                          <span className="font-medium text-xs truncate">
-                            {formatReadingType(book.lecturaVirtual)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Ficha métrica compacta protagonista (Año · Páginas · Tiempo de lectura) */}
+                {/* Ficha métrica compacta protagonista (Año · Páginas · Tiempo de lectura) y Colofón */}
                 <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/50 dark:bg-[#101520]/60 p-3.5 text-xs space-y-2.5">
-                  <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90 text-center">
-                    <div className="px-1">
-                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
-                        <Calendar className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
-                        Año
-                      </span>
-                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
-                        {book.fechaPublicacion ?? '—'}
-                      </p>
-                    </div>
-
-                    <div className="px-1">
-                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
-                        <BookOpen className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
-                        Páginas
-                      </span>
-                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
-                        {book.paginas ? `${book.paginas} págs.` : '—'}
-                      </p>
-                    </div>
-
-                    <div className="px-1">
-                      <span className="text-stone-500 dark:text-slate-400 flex items-center justify-center gap-1 text-[10.5px]">
-                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
-                        Lectura
-                      </span>
-                      <p className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 mt-0.5 truncate">
-                        {computedReadingTime}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Colofón bibliográfico sutil: Editorial · Idioma · ISBN */}
-                  {colophonItems.length > 0 && (
-                    <div className="pt-2 border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-center gap-1.5 flex-wrap text-[11px] font-serif text-stone-600 dark:text-slate-400 text-center">
-                      {colophonItems.map((item, idx) => (
-                        <React.Fragment key={idx}>
-                          {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
-                          <span className={item.isMono ? 'font-mono text-[10px] text-stone-500 dark:text-slate-400' : ''}>
-                            {item.label ? (
-                              <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-600 dark:text-slate-400 mr-1">
-                                {item.label}
-                              </span>
-                            ) : null}
-                            {item.value}
-                          </span>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  )}
+                  <BookDetailMetricsGrid
+                    book={book}
+                    computedReadingTime={computedReadingTime}
+                    variant="mobile"
+                  />
+                  <BookDetailColophon items={colophonItems} variant="mobile" />
                 </div>
                   </div>
                 )}
@@ -1554,81 +1123,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                               </div>
 
                               {/* Sello / Ficha de Registro de Lectura Clásica (Fechas y Lectura Virtual) */}
-                              <div className="w-full rounded-xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-2.5 space-y-1.5 text-xs shrink-0 shadow-sm">
-                                <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#232D42] pb-1">
-                                  <span className="font-serif italic font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 text-[11px]">
-                                    <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                                    Registro de Lectura
-                                  </span>
-                                  <span className="text-[9px] uppercase tracking-widest text-stone-600 dark:text-slate-400 font-mono">
-                                    NEXUS
-                                  </span>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
-                                      Inicio
-                                    </label>
-                                    {onDatesChange ? (
-                                      <input
-                                        type="date"
-                                        value={book.fechaInicio || ''}
-                                        onChange={(e) =>
-                                          onDatesChange(book.id, e.target.value, book.fechaFin)
-                                        }
-                                        className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                                      />
-                                    ) : (
-                                      <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
-                                        {book.fechaInicio || '—'}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div>
-                                    <label className="text-[10px] font-semibold text-stone-600 dark:text-slate-400 block mb-0.5">
-                                      Fin
-                                    </label>
-                                    {onDatesChange ? (
-                                      <input
-                                        type="date"
-                                        value={book.fechaFin || ''}
-                                        onChange={(e) =>
-                                          onDatesChange(book.id, book.fechaInicio, e.target.value)
-                                        }
-                                        className="w-full rounded-lg border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-2 py-0.5 text-[11px] font-medium text-stone-800 dark:text-slate-200 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none"
-                                      />
-                                    ) : (
-                                      <span className="font-semibold text-xs block text-stone-800 dark:text-slate-200">
-                                        {book.fechaFin || '—'}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {book.lecturaVirtual && (
-                                  <div className="pt-1 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
-                                    <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
-                                      Formato
-                                    </span>
-                                    {isUrl ? (
-                                      <a
-                                        href={book.lecturaVirtual}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate text-[11px]"
-                                      >
-                                        Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
-                                      </a>
-                                    ) : (
-                                      <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
-                                        {formatReadingType(book.lecturaVirtual)}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                              <BookDetailReadingRecord
+                                book={book}
+                                onDatesChange={onDatesChange}
+                                readOnly={readOnly}
+                                variant="desktop"
+                              />
                             </>
                           ) : (
                             <>
@@ -1929,58 +1429,14 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </div>
 
                       {/* Fila principal con las 3 métricas protagonistas: Año, Páginas y Tiempo de lectura */}
-                      <div className="border-y border-amber-900/20 dark:border-slate-800 text-xs">
-                        <div className="grid grid-cols-3 divide-x divide-amber-900/15 dark:divide-slate-800/90 py-0.5">
-                          <div className="py-1.5 sm:py-2 pr-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              Año Publicación
-                            </span>
-                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.fechaPublicacion ?? '—'}
-                            </p>
-                          </div>
-
-                          <div className="py-1.5 sm:py-2 px-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              Páginas
-                            </span>
-                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {book.paginas ? `${book.paginas} págs.` : '—'}
-                            </p>
-                          </div>
-
-                          <div className="py-1.5 sm:py-2 pl-2.5">
-                            <span className="text-stone-500 dark:text-slate-400 flex items-center gap-1 text-[10.5px]">
-                              <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                              Tiempo de Lectura
-                            </span>
-                            <p className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5">
-                              {computedReadingTime}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <BookDetailMetricsGrid
+                        book={book}
+                        computedReadingTime={computedReadingTime}
+                        variant="desktop"
+                      />
 
                       {/* Colofón bibliográfico sutil: Editorial · Idioma · ISBN */}
-                      {colophonItems.length > 0 && (
-                        <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] font-serif text-stone-600 dark:text-slate-400">
-                          {colophonItems.map((item, idx) => (
-                            <React.Fragment key={idx}>
-                              {idx > 0 && <span className="text-amber-900/30 dark:text-slate-600">·</span>}
-                              <span className={item.isMono ? 'font-mono text-[10.5px] text-stone-500 dark:text-slate-400' : ''}>
-                                {item.label ? (
-                                  <span className="text-[9.5px] uppercase font-mono tracking-wider text-stone-600 dark:text-slate-400 mr-1">
-                                    {item.label}
-                                  </span>
-                                ) : null}
-                                {item.value}
-                              </span>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      )}
+                      <BookDetailColophon items={colophonItems} variant="desktop" />
 
                       {/* Botón interactivo para pasar página a la Sinopsis */}
                       <button
@@ -2037,316 +1493,46 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       </button>
                     </div>
                   ) : activeTab === 'notes' ? (
-                    <div className="open-book-fade-content flex flex-col gap-4 sm:gap-5">
-                      <div className="text-left border-b border-amber-900/15 dark:border-[#242E42] pb-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
-                            fol. IV · Cuaderno de Lectura & Citas Memorables
-                          </span>
-                          <span className="text-[10px] text-stone-500 dark:text-slate-400 font-serif italic">
-                            Ex-Libris
-                          </span>
-                        </div>
-                        <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white mt-1">
-                          {book.nombre}
-                        </h2>
-                        <p className="font-serif italic text-sm text-stone-700 dark:text-slate-300 mt-0.5">
-                          por {book.autor || 'Autor no especificado'}
-                        </p>
-                        <div className="flex items-center gap-3 mt-3" aria-hidden="true">
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
-                          <span className="text-amber-700 dark:text-amber-400 text-xs select-none">✦</span>
-                          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
-                        </div>
-                      </div>
-
-                      {/* Sección 1: Notas y Reseña Personal */}
-                      <div className="rounded-2xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5]/90 dark:bg-[#151C2A]/90 p-4 space-y-2.5 shadow-sm">
-                        <div className="flex items-center justify-between gap-2 border-b border-amber-900/10 dark:border-[#20293A] pb-2">
-                          <span className="font-serif font-bold text-sm text-stone-900 dark:text-white flex items-center gap-1.5">
-                            <PenLine className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                            Reseña & Reflexiones Personales
-                          </span>
-                          {!readOnly && (
-                            <button
-                              type="button"
-                              onClick={() => handleSaveNotes(undefined, true)}
-                              disabled={isSavingNotes}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition cursor-pointer"
-                            >
-                              {isSavingNotes ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : notesSavedSuccess ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                              ) : (
-                                <Save className="w-3.5 h-3.5" />
-                              )}
-                              <span>{notesSavedSuccess ? 'Guardado' : 'Guardar notas'}</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {readOnly ? (
-                          <p className="font-serif text-sm text-stone-700 dark:text-slate-300 whitespace-pre-line leading-relaxed italic">
-                            {localNotes || 'El lector no ha registrado notas públicas para este libro.'}
-                          </p>
-                        ) : (
-                          <textarea
-                            rows={4}
-                            value={localNotes}
-                            onChange={(e) => setLocalNotes(e.target.value)}
-                            onBlur={() => handleSaveNotes()}
-                            placeholder="Añade aquí lo que más te ha impresionado, tus reflexiones al terminar el libro o tu reseña personal..."
-                            className="w-full rounded-xl border border-amber-900/20 dark:border-[#2A354B] bg-[#fbf6ea]/70 dark:bg-[#0D111A] p-3 text-sm font-serif text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition leading-relaxed resize-y"
-                          />
-                        )}
-                      </div>
-
-                      {/* Sección 2: Citas Memorables */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-serif font-bold text-sm text-stone-900 dark:text-white flex items-center gap-1.5">
-                            <Quote className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                            Citas Memorables ({localQuotes.length})
-                          </span>
-                          <span className="text-xs text-stone-500 dark:text-slate-400 font-serif italic">
-                            Frases inolvidables
-                          </span>
-                        </div>
-
-                        {/* Formulario para añadir cita */}
-                        {!readOnly && (
-                          <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-[#121824]/60 p-3.5 space-y-2.5">
-                            <textarea
-                              rows={2}
-                              value={newQuoteText}
-                              onChange={(e) => setNewQuoteText(e.target.value)}
-                              placeholder="«Escribe o pega aquí una frase o cita memorable del libro...»"
-                              className="w-full rounded-xl border border-amber-900/20 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0D111A] p-2.5 text-xs font-serif italic text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition resize-none"
-                            />
-                            <div className="flex items-center justify-between gap-2">
-                              <input
-                                type="text"
-                                value={newQuotePage}
-                                onChange={(e) => setNewQuotePage(e.target.value)}
-                                placeholder="Página o ubicación (ej: pág. 142)"
-                                className="rounded-lg border border-amber-900/20 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0D111A] px-2.5 py-1 text-xs text-stone-900 dark:text-slate-200 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-600 max-w-[200px]"
-                              />
-                              <button
-                                type="button"
-                                onClick={handleAddQuote}
-                                disabled={!newQuoteText.trim()}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>Añadir cita</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Lista de citas guardadas */}
-                        {localQuotes.length === 0 ? (
-                          <div className="py-6 px-4 rounded-xl border border-dashed border-amber-900/20 dark:border-[#232D40] text-center text-xs text-stone-500 dark:text-slate-400 font-serif italic">
-                            Aún no has guardado ninguna cita de esta obra. Agrega tus fragmentos favoritos para recordarlos siempre.
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5 max-h-[32vh] overflow-y-auto overscroll-contain pr-1">
-                            {localQuotes.map((quote, idx) => (
-                              <div
-                                key={idx}
-                                className="group relative rounded-xl border border-amber-900/15 dark:border-[#222B3C] bg-[#fffcf5]/85 dark:bg-[#141A26]/85 p-3.5 transition hover:border-amber-600/40"
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <blockquote className="font-serif italic text-xs sm:text-sm text-stone-800 dark:text-slate-200 leading-relaxed pl-2.5 border-l-2 border-amber-600/60 dark:border-amber-400/60">
-                                    «{quote}»
-                                  </blockquote>
-
-                                  <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedQuoteForCard(quote);
-                                        setIsShareCardOpen(true);
-                                      }}
-                                      className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-500/15 transition cursor-pointer"
-                                      title="Crear tarjeta para redes con esta cita"
-                                    >
-                                      <Share2 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopyQuote(quote, idx)}
-                                      className="p-1.5 rounded-lg text-stone-500 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-500/15 transition cursor-pointer"
-                                      title="Copiar cita con autor y título"
-                                    >
-                                      {copiedQuoteIndex === idx ? (
-                                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                      ) : (
-                                        <Copy className="w-3.5 h-3.5" />
-                                      )}
-                                    </button>
-                                    {!readOnly && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteQuote(idx)}
-                                        className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/15 transition cursor-pointer"
-                                        title="Eliminar cita"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-3 mt-auto border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={handleTurnToSynopsis}
-                          title="Volver a la sinopsis (←)"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] text-xs font-semibold text-amber-950 dark:text-amber-200 transition shadow-sm cursor-pointer"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Volver a Sinopsis</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleTurnToDetails}
-                          title="Volver a la ficha técnica"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] text-xs font-semibold text-amber-950 dark:text-amber-200 transition shadow-sm cursor-pointer"
-                        >
-                          <span>Ficha técnica</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                    <BookDetailNotesView
+                      book={book}
+                      localNotes={localNotes}
+                      setLocalNotes={setLocalNotes}
+                      localQuotes={localQuotes}
+                      isSavingNotes={isSavingNotes}
+                      notesSavedSuccess={notesSavedSuccess}
+                      onSaveNotes={handleSaveNotes}
+                      newQuoteText={newQuoteText}
+                      setNewQuoteText={setNewQuoteText}
+                      newQuotePage={newQuotePage}
+                      setNewQuotePage={setNewQuotePage}
+                      onAddQuote={handleAddQuote}
+                      onDeleteQuote={handleDeleteQuote}
+                      onCopyQuote={handleCopyQuote}
+                      copiedQuoteIndex={copiedQuoteIndex}
+                      onShareQuote={(quote) => {
+                        setSelectedQuoteForCard(quote);
+                        setIsShareCardOpen(true);
+                      }}
+                      onTurnToSynopsis={handleTurnToSynopsis}
+                      onTurnToDetails={handleTurnToDetails}
+                      readOnly={readOnly}
+                      variant="desktop"
+                    />
                   ) : (
-                    <div className="open-book-fade-content flex flex-col gap-4 sm:gap-5">
-                      <div className="text-left border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 dark:text-amber-400 font-semibold">
-                            Argumento & Sinopsis de la obra
-                          </span>
-                          <span className="text-[10px] text-stone-500 dark:text-slate-400 font-serif italic">
-                            fol. III
-                          </span>
-                        </div>
-                        <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-white mt-1">
-                          {book.nombre}
-                        </h2>
-                        <p className="font-serif italic text-sm text-stone-700 dark:text-slate-300 mt-0.5">
-                          por {book.autor || 'Autor no especificado'}
-                        </p>
-                        <div className="flex items-center gap-3 mt-3" aria-hidden="true">
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
-                          <span className="text-amber-700 dark:text-amber-400 text-xs select-none">
-                            ✦
-                          </span>
-                          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-amber-700/35 to-amber-700/50 dark:via-amber-400/25 dark:to-amber-400/45" />
-                        </div>
-                      </div>
-
-                      {currentSynopsis ? (
-                        <div className="py-2 space-y-3.5">
-                          {isCurrentSynopsisEnglish && (
-                            <div className="p-3 sm:p-3.5 rounded-xl border border-amber-600/35 bg-amber-500/15 flex items-center justify-between gap-3 text-xs">
-                              <div className="flex items-center gap-2 min-w-0 text-amber-950 dark:text-amber-200">
-                                <Languages className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                                <span className="font-medium truncate">
-                                  Sinopsis en inglés detectada. ¿Deseas traducirla al español?
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleTranslateCurrentSynopsis}
-                                disabled={isTranslatingSynopsis}
-                                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shrink-0 active:scale-95 transition shadow-xs disabled:opacity-50"
-                              >
-                                {isTranslatingSynopsis ? 'Traduciendo...' : 'Traducir al español'}
-                              </button>
-                            </div>
-                          )}
-                          <p className="font-serif text-[15px] sm:text-base leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line tracking-normal first-letter:float-left first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:text-amber-800 dark:first-letter:text-amber-400 first-letter:mr-3 first-letter:leading-none">
-                            {currentSynopsis}
-                          </p>
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
-                            <button
-                              type="button"
-                              onClick={handleAutoFetchSynopsis}
-                              disabled={isFetchingSynopsis}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-stone-600 dark:text-slate-400 hover:text-amber-900 dark:hover:text-amber-300 transition"
-                              title="Volver a buscar sinopsis en registros abiertos"
-                            >
-                              {isFetchingSynopsis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                              <span>{isFetchingSynopsis ? 'Actualizando...' : 'Actualizar sinopsis'}</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="py-12 px-6 rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] text-center space-y-2.5">
-                          <BookOpen className="w-9 h-9 text-amber-700/60 dark:text-amber-400/60 mx-auto" />
-                          <h3 className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-                            Esta obra no incluye sinopsis registrada todavía
-                          </h3>
-                          <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
-                            Puedes buscar y autocompletar el argumento automáticamente desde los registros bibliográficos abiertos o redactarlo a mano.
-                          </p>
-                          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
-                            <button
-                              type="button"
-                              onClick={handleAutoFetchSynopsis}
-                              disabled={isFetchingSynopsis}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-sm disabled:opacity-50 cursor-pointer"
-                            >
-                              {isFetchingSynopsis ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Sparkles className="w-3.5 h-3.5" />
-                              )}
-                              <span>{isFetchingSynopsis ? 'Buscando sinopsis...' : 'Autocompletar sinopsis'}</span>
-                            </button>
-                            {!readOnly && onEdit && (
-                              <button
-                                type="button"
-                                onClick={() => onEdit(book)}
-                                disabled={isFetchingSynopsis}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-900/20 dark:border-slate-700 bg-white/70 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-750 text-stone-800 dark:text-slate-200 transition shadow-sm cursor-pointer"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Escribir manual</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="pt-4 mt-auto border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={handleTurnToDetails}
-                          title="Volver a la ficha técnica (←)"
-                          aria-label="Volver a la ficha técnica"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-900/25 dark:border-slate-700 bg-[#f4ead4] hover:bg-[#ebdcc0] dark:bg-[#1A2232] dark:hover:bg-[#222C3F] text-amber-950 dark:text-amber-200 transition shadow-sm cursor-pointer text-xs font-semibold"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Ficha técnica</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleTurnToNotes}
-                          title="Ir al Diario & Citas (→)"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-600/35 bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold text-amber-950 dark:text-amber-200 transition shadow-sm cursor-pointer"
-                        >
-                          <span>Diario & Citas (fol. IV)</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                    <BookDetailSynopsisView
+                      book={book}
+                      currentSynopsis={currentSynopsis}
+                      isCurrentSynopsisEnglish={isCurrentSynopsisEnglish}
+                      isTranslatingSynopsis={isTranslatingSynopsis}
+                      isFetchingSynopsis={isFetchingSynopsis}
+                      onTranslateCurrentSynopsis={handleTranslateCurrentSynopsis}
+                      onAutoFetchSynopsis={handleAutoFetchSynopsis}
+                      onTurnToDetails={handleTurnToDetails}
+                      onTurnToNotes={handleTurnToNotes}
+                      onEdit={onEdit}
+                      readOnly={readOnly}
+                      variant="desktop"
+                    />
                   )}
                   </div>
                 </div>
