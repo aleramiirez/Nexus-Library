@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://nexus-library.vercel.app/sitemap.xml
+Sitemap: https://nexuslibrary.vercel.app/sitemap.xml

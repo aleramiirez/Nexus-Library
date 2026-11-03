@@ -813,7 +813,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       ctx.fillStyle = pal.footerBrand;
       ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       ctx.letterSpacing = '3px';
-      ctx.fillText('NEXUS LIBRARY · nexus-library.vercel.app', W / 2, footerY);
+      ctx.fillText('NEXUS LIBRARY · nexuslibrary.vercel.app', W / 2, footerY);
     } else {
       // Formato Cuadrado (Square 1:1)
       const bookW = 320;
@@ -920,7 +920,7 @@ export const ShareBookCardModal: React.FC<ShareBookCardModalProps> = ({
       ctx.fillStyle = pal.footerBrand;
       ctx.font = '600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       ctx.letterSpacing = '2px';
-      ctx.fillText('NEXUS LIBRARY · nexus-library.vercel.app', textX, footerY);
+      ctx.fillText('NEXUS LIBRARY · nexuslibrary.vercel.app', textX, footerY);
     }
 
     setIsGenerating(false);
