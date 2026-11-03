@@ -33,6 +33,8 @@ import { friendshipService } from '../services/friendshipService';
 import { supabase } from '../services/supabaseClient';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
+import { UserAvatar } from './UserAvatar';
+import { calculateReaderLevel } from '../services/levelingService';
 import { BookDetailModal } from './BookDetailModal';
 import '../book-detail.css';
 import '../dashboard-panels.css';
@@ -100,6 +102,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+
+  const selectedReaderLevelInfo = useMemo(() => {
+    if (!selectedReader) return null;
+    return calculateReaderLevel(readerBooks);
+  }, [selectedReader, readerBooks]);
   const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
@@ -663,12 +670,27 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 font-serif font-bold text-2xl flex items-center justify-center shadow-md shrink-0 border border-amber-400/30">
-                {selectedReader.displayName
-                  ? selectedReader.displayName.charAt(0).toUpperCase()
-                  : selectedReader.username.charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar
+                avatarUrl={selectedReader.avatarUrl}
+                displayName={selectedReader.displayName}
+                username={selectedReader.username}
+                size="xl"
+                level={selectedReaderLevelInfo?.level}
+                rank={selectedReaderLevelInfo?.rank}
+              />
               <div>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  {selectedReaderLevelInfo && (
+                    <>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs ${selectedReaderLevelInfo.rank.badgeStyle}`}>
+                        Rango {selectedReaderLevelInfo.rank.roman} · Nivel {selectedReaderLevelInfo.level}
+                      </span>
+                      <span className="font-serif italic text-xs font-bold text-amber-900 dark:text-amber-300">
+                        {selectedReaderLevelInfo.rank.name}
+                      </span>
+                    </>
+                  )}
+                </div>
                 <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
                   {selectedReader.displayName}
                 </h2>

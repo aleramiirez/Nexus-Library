@@ -52,6 +52,7 @@ import { AvatarPickerModal } from './AvatarPickerModal';
 import { ShareReaderCardModal } from './ShareReaderCardModal';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { isBookRead } from '../services/literaryGeographyService';
+import { calculateReaderLevel } from '../services/levelingService';
 import { User } from '@supabase/supabase-js';
 import { Book, Saga, UserProfile, ProfileVisibility } from '../types/models';
 import {
@@ -130,6 +131,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setActiveTab(initialTab);
   }, [initialTab]);
   const [, startTransition] = useTransition();
+
+  const readerLevelInfo = useMemo(() => calculateReaderLevel(books, sagas), [books, sagas]);
 
   const handleTabChange = useCallback((tab: SettingsTab) => {
     setActiveTab(tab);
@@ -1101,6 +1104,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       username={profileUsername}
                       size="2xl"
                       className="rounded-xl"
+                      level={readerLevelInfo.level}
+                      rank={readerLevelInfo.rank}
                     />
                   </div>
                   <button
@@ -1121,6 +1126,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex-1 min-w-0 text-center sm:text-left space-y-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
                     <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1 justify-center sm:justify-start">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs ${readerLevelInfo.rank.badgeStyle}`}>
+                          Rango {readerLevelInfo.rank.roman} · Nivel {readerLevelInfo.level}
+                        </span>
+                        <span className="font-serif italic text-xs font-bold text-amber-900 dark:text-amber-300">
+                          {readerLevelInfo.activeTitle}
+                        </span>
+                      </div>
                       <h3 className="font-serif text-xl sm:text-2xl font-black text-amber-950 dark:text-amber-100 tracking-tight">
                         {profileDisplayName.trim() || (currentUser ? currentUser.email : 'Lector Invitado')}
                       </h3>
@@ -1540,6 +1553,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               totalBooks={books.length}
               readBooks={books.filter((b) => isBookRead(b)).length}
               totalSagas={sagas.length}
+              levelInfo={readerLevelInfo}
               onShowToast={(msg, type) =>
                 setFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
               }

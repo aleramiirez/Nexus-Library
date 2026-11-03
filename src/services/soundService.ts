@@ -341,6 +341,53 @@ class SoundService {
       // Ignorar
     }
   }
+
+  /**
+   * 5. Fanfarria de Ascenso en la Orden (Arpegio áureo ceremonial + golpe de lacre)
+   */
+  public playLevelUp(force = false) {
+    if (!force && !this.preferences.enabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      const masterVol = this.preferences.volume;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(masterVol, now);
+      masterGain.connect(ctx.destination);
+
+      // Arpegio áureo ascendente: C5, E5, G5, C6 (sonoridad clásica de biblioteca y triunfo)
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const noteStart = now + i * 0.085;
+        const noteDuration = i === notes.length - 1 ? 0.9 : 0.45;
+
+        osc.type = i === notes.length - 1 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, noteStart);
+
+        gain.gain.setValueAtTime(0.001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(0.24, noteStart + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, noteStart + noteDuration);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(noteStart);
+        osc.stop(noteStart + noteDuration + 0.05);
+      });
+
+      // Golpe sordo de lacre ceremonial al llegar a la nota culminante
+      setTimeout(() => {
+        this.playWaxSeal(true);
+      }, 260);
+    } catch {
+      // Audio context bloqueado
+    }
+  }
 }
 
 export const soundService = new SoundService();

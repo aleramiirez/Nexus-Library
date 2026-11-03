@@ -23,6 +23,7 @@ import {
 import { BookmarkMarker } from './BookmarkMarker';
 import { UserAvatar } from './UserAvatar';
 import { pwaInstallService } from '../services/pwaInstallService';
+import { ReaderLevelInfo } from '../services/levelingService';
 
 export type NavigationSection =
   | 'dashboard'
@@ -60,6 +61,7 @@ interface BookSidebarProps {
   inboxUnreadCount?: number;
   onOpenInbox?: () => void;
   onOpenInstallModal?: () => void;
+  levelInfo?: ReaderLevelInfo;
 }
 
 interface NavItemProps {
@@ -144,7 +146,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   onCloseMobile,
   inboxUnreadCount = 0,
   onOpenInbox,
-  onOpenInstallModal
+  onOpenInstallModal,
+  levelInfo
 }) => {
   const [isStandalone, setIsStandalone] = React.useState<boolean>(
     () => pwaInstallService.getState().isStandalone
@@ -368,33 +371,63 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                 username={username}
                 size="sm"
                 className="shrink-0"
+                level={levelInfo?.level}
+                rank={levelInfo?.rank}
               />
 
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
-                  {hasUser
-                    ? (userDisplayName || userEmail || 'Mi Cuenta')
-                    : (userDisplayName || 'Lector Invitado')}
-                </p>
-                <div className="flex items-center gap-1.5 text-[10px]">
-                  {hasUser ? (
-                    isSyncing ? (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        <span className="text-amber-700 dark:text-amber-400 font-medium">Sincronizando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
-                          {username ? `@${username}` : 'Nube al día'}
-                        </span>
-                      </>
-                    )
-                  ) : (
-                    <span className="text-stone-500 dark:text-slate-400">Toca para crear cuenta</span>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-xs font-semibold truncate text-stone-800 dark:text-slate-100">
+                    {hasUser
+                      ? (userDisplayName || userEmail || 'Mi Cuenta')
+                      : (userDisplayName || 'Lector Invitado')}
+                  </p>
+                  {levelInfo && (
+                    <span className="font-mono text-[9px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                      Nv. {levelInfo.level}
+                    </span>
                   )}
                 </div>
+
+                {levelInfo ? (
+                  <div className="space-y-1 mt-0.5">
+                    <p className="text-[10px] font-serif font-bold text-amber-800 dark:text-amber-300 truncate leading-none">
+                      {levelInfo.activeTitle}
+                    </p>
+                    {/* Barra dorada de progreso de XP */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 h-1 rounded-full bg-amber-900/15 dark:bg-amber-500/20 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                          style={{ width: `${levelInfo.progressPercent}%` }}
+                        />
+                      </div>
+                      <span className="text-[8.5px] font-mono text-stone-500 dark:text-slate-400 shrink-0 leading-none">
+                        {levelInfo.isMaxLevel ? 'MAX' : `${levelInfo.xpInLevel}/${levelInfo.xpNeededForNext}`}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    {hasUser ? (
+                      isSyncing ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-amber-700 dark:text-amber-400 font-medium">Sincronizando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium truncate">
+                            {username ? `@${username}` : 'Nube al día'}
+                          </span>
+                        </>
+                      )
+                    ) : (
+                      <span className="text-stone-500 dark:text-slate-400">Toca para crear cuenta</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { AVATAR_PRESETS, getAvatarPreset } from '../constants/avatarPresets';
 import { LibrarySelect } from './LibrarySelect';
+import { ReaderLevelInfo, getRankForLevel } from '../services/levelingService';
 
 export type ReaderCardFormat = 'carnet' | 'story';
 export type ReaderCardTheme = 'parchment' | 'dark-academia' | 'imperial' | 'midnight';
@@ -32,45 +33,30 @@ export interface ShareReaderCardModalProps {
   readBooks?: number;
   totalSagas?: number;
   onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  levelInfo?: ReaderLevelInfo;
 }
 
-export function getReaderRank(readCount: number): {
+export function getReaderRank(readCount: number = 0, levelInfo?: ReaderLevelInfo): {
   title: string;
   latinTitle: string;
   badge: string;
+  level: number;
 } {
-  if (readCount >= 50) {
+  if (levelInfo) {
     return {
-      title: 'Gran Conservador Bibliotecario',
-      latinTitle: 'Magnus Custos Bibliothecae',
-      badge: 'Nivel V · Honorífico'
+      title: levelInfo.activeTitle || levelInfo.rank.name,
+      latinTitle: levelInfo.rank.latinName,
+      badge: `Nivel ${levelInfo.level} · Rango ${levelInfo.rank.roman}`,
+      level: levelInfo.level
     };
   }
-  if (readCount >= 25) {
-    return {
-      title: 'Erudito de los Archivos',
-      latinTitle: 'Archivorum Eruditus',
-      badge: 'Nivel IV · Erudito'
-    };
-  }
-  if (readCount >= 10) {
-    return {
-      title: 'Bibliófilo Consagrado',
-      latinTitle: 'Bibliophilus Devotus',
-      badge: 'Nivel III · Consagrado'
-    };
-  }
-  if (readCount >= 3) {
-    return {
-      title: 'Lector Voraz',
-      latinTitle: 'Lector Avidissimus',
-      badge: 'Nivel II · Devoto'
-    };
-  }
+  const estimatedLevel = Math.max(1, Math.min(50, Math.round((readCount || 0) * 2)));
+  const rank = getRankForLevel(estimatedLevel);
   return {
-    title: 'Custodio del Saber',
-    latinTitle: 'Custos Scientiae',
-    badge: 'Nivel I · Iniciado'
+    title: rank.name,
+    latinTitle: rank.latinName,
+    badge: `Nivel ${estimatedLevel} · Rango ${rank.roman}`,
+    level: estimatedLevel
   };
 }
 
@@ -294,7 +280,8 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
   totalBooks = 0,
   readBooks = 0,
   totalSagas = 0,
-  onShowToast
+  onShowToast,
+  levelInfo
 }) => {
   const [format, setFormat] = useState<ReaderCardFormat>('carnet');
   const [theme, setTheme] = useState<ReaderCardTheme>('parchment');
@@ -307,7 +294,7 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
   const cleanName = displayName?.trim() || 'Lector Nexus';
   const cleanUsername = username?.trim() ? `@${username.trim()}` : '@lector';
   const cleanId = (memberId || 'INVITADO').slice(0, 8).toUpperCase();
-  const rank = useMemo(() => getReaderRank(readBooks), [readBooks]);
+  const rank = useMemo(() => getReaderRank(readBooks, levelInfo), [readBooks, levelInfo]);
   const cleanBio = useMemo(
     () =>
       bio?.trim() ||
@@ -1071,9 +1058,9 @@ export const ShareReaderCardModal: React.FC<ShareReaderCardModalProps> = ({
               {/* Resumen de Datos que se certificarán */}
               <div className="rounded-xl border border-amber-900/15 dark:border-[#253046] bg-[#fffcf5] dark:bg-[#101623] p-3 space-y-2 text-xs">
                 <div className="flex items-center justify-between text-stone-600 dark:text-slate-400">
-                  <span>Rango honorífico:</span>
+                  <span>Escalafón & Nivel:</span>
                   <span className="font-serif font-bold text-amber-800 dark:text-amber-300">
-                    {rank.title}
+                    {rank.badge} · {rank.title}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-stone-600 dark:text-slate-400">

@@ -146,6 +146,7 @@ import { ProfileSetupBanner } from './components/ProfileSetupBanner';
 import { SettingsTab } from './components/SettingsScreen';
 import { BookFinishedCelebrationModal } from './components/BookFinishedCelebrationModal';
 import { ShareBookCardModal } from './components/ShareBookCardModal';
+import { calculateReaderLevel } from './services/levelingService';
 
 const initialFilters: LibraryFilters = {
   search: '',
@@ -1591,6 +1592,11 @@ export const App: React.FC = () => {
     .charAt(0)
     .toUpperCase();
 
+  const readerLevelInfo = React.useMemo(
+    () => calculateReaderLevel(books, sagas),
+    [books, sagas]
+  );
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#f7f0df] dark:bg-[#080C15] text-stone-900 dark:text-slate-100 relative">
       <AnimatedBackground />
@@ -1618,6 +1624,7 @@ export const App: React.FC = () => {
         inboxUnreadCount={inboxUnreadCount}
         onOpenInbox={() => setIsInboxOpen(true)}
         onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        levelInfo={readerLevelInfo}
       />
 
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-amber-900/20 dark:border-[#222B3C] bg-[#efe4cb]/95 dark:bg-[#111622]/95 backdrop-blur-md px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -2993,6 +3000,8 @@ export const App: React.FC = () => {
         <BookFinishedCelebrationModal
           isOpen={Boolean(celebrationBook)}
           book={celebrationBook}
+          books={books}
+          sagas={sagas}
           booksReadCount={books.filter((b) => b.progreso && b.progreso.includes('Leído')).length + 1}
           readerDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
           readerUsername={currentUserProfile?.username}
