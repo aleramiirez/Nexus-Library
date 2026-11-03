@@ -1877,7 +1877,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           ref={svgRef}
           className="la-svg"
           viewBox="0 0 1000 520"
-          preserveAspectRatio={isZoomed ? 'xMidYMid slice' : 'xMidYMid meet'}
+          preserveAspectRatio="xMidYMid meet"
           role="group"
           aria-label="Planisferio literario interactivo"
           data-zoom="low"
