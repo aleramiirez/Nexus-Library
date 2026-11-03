@@ -40,8 +40,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   className = '',
   showBorder = true,
   level,
-  rank: rankProp,
-  showLevelBadge = true
+  rank: rankProp
 }) => {
   const [imageError, setImageError] = useState(false);
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
@@ -115,21 +114,6 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       title={activeRank ? `${activeRank.name} (Rango ${activeRank.roman}${validLevel !== undefined ? ` · Nivel ${validLevel}` : ''})` : undefined}
     >
       {renderContent()}
-
-      {/* Badge de nivel tipo sello de lacre en miniatura */}
-      {showLevelBadge && validLevel !== undefined && size !== 'xs' && (
-        <span
-          className={`absolute -bottom-1 -right-1 font-mono font-bold tracking-tight rounded-full shadow-md border leading-none z-10 flex items-center justify-center ${
-            size === 'sm'
-              ? 'text-[8px] px-1 py-0.5'
-              : size === 'md'
-              ? 'text-[9.5px] px-1.5 py-0.5'
-              : 'text-[11px] px-2 py-0.5'
-          } ${activeRank?.badgeStyle || 'bg-amber-600 text-slate-950 border-amber-400'}`}
-        >
-          {validLevel}
-        </span>
-      )}
     </div>
   );
 };
