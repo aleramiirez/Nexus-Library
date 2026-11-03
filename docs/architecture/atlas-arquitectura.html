@@ -41,6 +41,8 @@ h2 small{font:400 .75rem "Plus Jakarta Sans",system-ui,sans-serif;color:var(--mu
 .fi{font:.75rem/1.5 ui-monospace,Menlo,monospace;color:var(--mu);word-break:break-word}
 .fb,.ch{font:600 .8rem "Plus Jakarta Sans",system-ui,sans-serif;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:999px;padding:.4rem .8rem;cursor:pointer;margin:0 .3rem .4rem 0}
 .fb:hover,.ch:hover{border-color:var(--gold)}
+a.fb{text-decoration:none;display:inline-flex;align-items:center;gap:.3rem}
+.act{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
 .fb:disabled{opacity:.4;cursor:default}
 .x{float:right;background:none;border:0;color:var(--mu);font-size:1rem;cursor:pointer}
 .st{color:var(--mu);font-size:.8rem}
@@ -49,7 +51,7 @@ h2 small{font:400 .75rem "Plus Jakarta Sans",system-ui,sans-serif;color:var(--mu
  body{padding-bottom:44vh}h1{font-size:1.9rem}}
 @media(prefers-reduced-motion:reduce){#ln>path{animation:none}.nd{transition:none}}
 </style></head><body>
-<header><div><h1>Nexus Library</h1><p>Atlas de arquitectura · pulsa una pieza o sigue un recorrido</p></div><button id="th" class="fb" aria-label="Cambiar entre tema claro y oscuro">◐ Tema</button></header>
+<header><div><h1>Nexus Library</h1><p>Atlas de arquitectura · pulsa una pieza o sigue un recorrido</p></div><div class="act"><a href="../index.html" class="fb" aria-label="Volver al portal de documentación">← Volver al portal</a><button id="th" class="fb" aria-label="Cambiar entre tema claro y oscuro">◐ Tema</button></div></header>
 <div class="wrap"><main id="map"><svg id="ln" aria-hidden="true"></svg></main><aside id="pn" aria-live="polite"></aside></div>
 <script>
 const $=s=>document.querySelector(s),map=$("#map"),svg=$("#ln"),pn=$("#pn");
