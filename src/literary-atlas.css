@@ -321,6 +321,7 @@ html.dark .la-continent-select-trigger--filtered {
   background: radial-gradient(ellipse at 50% 42%, var(--la-sea-a) 0%, var(--la-sea-b) 100%);
   box-shadow: var(--la-shadow);
   isolation: isolate;
+  contain: layout paint;
 }
 
 .la-svg {
@@ -331,15 +332,32 @@ html.dark .la-continent-select-trigger--filtered {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: pan-y;
+  touch-action: none;
   cursor: default;
 }
 .la-svg[data-zoomed='true'] {
   cursor: grab;
-  touch-action: none;
 }
 .la-svg[data-drag='1'] {
   cursor: grabbing;
+}
+.la-svg[data-moving='1'] * {
+  pointer-events: none !important;
+}
+.la-svg[data-moving='1'] .la-rose__ring,
+.la-svg[data-moving='1'] .la-rose__star,
+.la-svg[data-moving='1'] .la-route,
+.la-svg[data-moving='1'] .la-explore__ring,
+.la-svg[data-moving='1'] .la-sel__ring,
+.la-svg[data-moving='1'] .la-pulse {
+  animation-play-state: paused !important;
+}
+.la-svg[data-moving='1'] .la-node,
+.la-svg[data-moving='1'] .la-node__body,
+.la-svg[data-moving='1'] .la-label,
+.la-svg[data-moving='1'] .la-badge,
+.la-svg[data-moving='1'] .la-land {
+  transition: none !important;
 }
 
 /* Modo Gran Formato / Mesa Cartográfica Despejada */
@@ -451,32 +469,37 @@ html.dark .la-root--expanded .la-zoom {
   max-height: none;
 }
 
-/* Textura de grano de papel + viñeta + marco */
+/* Textura de grano de papel + viñeta + marco (GPU-friendly sin feTurbulence ni mix-blend-mode) */
 .la-grain,
 .la-vignette,
 .la-frame {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  contain: strict;
 }
 .la-grain {
   z-index: 2;
-  opacity: 0.55;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.26 0 0 0 0 0.12 0.95 0 0 0 -0.28'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 240px 240px;
+  opacity: 0.28;
+  background-image:
+    radial-gradient(rgba(92, 66, 30, 0.14) 0.75px, transparent 0.75px),
+    radial-gradient(rgba(92, 66, 30, 0.09) 0.75px, transparent 0.75px);
+  background-size: 14px 14px, 23px 23px;
+  background-position: 0 0, 7px 11px;
 }
 html.dark .la-grain {
-  opacity: 0.4;
-  mix-blend-mode: soft-light;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(rgba(229, 193, 88, 0.12) 0.75px, transparent 0.75px),
+    radial-gradient(rgba(255, 255, 255, 0.06) 0.75px, transparent 0.75px);
 }
 .la-vignette {
   z-index: 3;
-  box-shadow: inset 0 0 70px rgba(120, 80, 20, 0.32), inset 0 0 12px rgba(120, 80, 20, 0.25);
+  background: radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(110, 72, 18, 0.26) 100%);
   border-radius: inherit;
 }
 html.dark .la-vignette {
-  box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.65), inset 0 0 14px rgba(229, 193, 88, 0.12);
+  background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.58) 100%);
 }
 .la-frame {
   z-index: 4;
@@ -564,43 +587,35 @@ html.dark .la-corner {
   stroke: var(--la-coast);
   stroke-width: 0.9;
   stroke-linejoin: round;
-  transition: fill 0.3s ease;
-}
-.la-land--click {
-  cursor: pointer;
+  transition: fill 0.25s ease;
 }
 
 /* Continentes interactivos: iluminación conjunta al pasar el ratón SOLO en vista general */
 .la-continent {
   outline: none;
 }
-.la-continent--interactive {
+.la-svg[data-zoomed='false'] .la-continent {
   cursor: pointer;
 }
-.la-continent--interactive:hover .la-land--click,
-.la-continent--interactive:focus-visible .la-land--click {
+.la-svg[data-zoomed='false'] .la-continent:hover .la-land,
+.la-svg[data-zoomed='false'] .la-continent:focus-visible .la-land {
   fill: var(--la-land-hover);
   stroke: var(--la-brass);
-  filter: drop-shadow(0 0 7px var(--la-brass-soft));
-  transition: fill 0.25s var(--la-ease), stroke 0.25s var(--la-ease), filter 0.25s var(--la-ease);
+  transition: fill 0.22s var(--la-ease), stroke 0.22s var(--la-ease);
 }
-html.dark .la-continent--interactive:hover .la-land--click,
-html.dark .la-continent--interactive:focus-visible .la-land--click {
+html.dark .la-svg[data-zoomed='false'] .la-continent:hover .la-land,
+html.dark .la-svg[data-zoomed='false'] .la-continent:focus-visible .la-land {
   fill: #26354d;
   stroke: var(--la-gold);
-  filter: drop-shadow(0 0 8px rgba(229, 193, 88, 0.45));
 }
-.la-continent--interactive:hover .la-region-label,
-.la-continent--interactive:focus-visible .la-region-label {
+.la-svg[data-zoomed='false'] .la-continent:hover .la-region-label,
+.la-svg[data-zoomed='false'] .la-continent:focus-visible .la-region-label {
   fill: var(--la-crimson);
   opacity: 1;
-  text-shadow: 0 0 10px var(--la-brass-soft);
-  transition: fill 0.25s var(--la-ease), text-shadow 0.25s var(--la-ease);
 }
-html.dark .la-continent--interactive:hover .la-region-label,
-html.dark .la-continent--interactive:focus-visible .la-region-label {
+html.dark .la-svg[data-zoomed='false'] .la-continent:hover .la-region-label,
+html.dark .la-svg[data-zoomed='false'] .la-continent:focus-visible .la-region-label {
   fill: var(--la-gold);
-  text-shadow: 0 0 10px rgba(229, 193, 88, 0.6);
 }
 .la-hatch {
   fill: url(#la-hatch);
@@ -712,7 +727,7 @@ html.dark .la-region-label:hover {
 }
 .la-rose-stroke { fill: none; stroke: var(--la-brass); stroke-width: 0.8; }
 .la-rose-stroke--dash { stroke-dasharray: 1.2 2.2; opacity: 0.9; }
-.la-rose-tick { stroke: var(--la-ink-soft); stroke-width: 0.5; opacity: 0.8; }
+.la-rose-tick { fill: none; stroke: var(--la-ink-soft); stroke-width: 0.5; opacity: 0.8; }
 .la-rose-halfA { fill: var(--la-rose-a); opacity: 0.9; }
 .la-rose-halfB { fill: var(--la-rose-b); opacity: 0.95; }
 .la-rose-halfA--minor { opacity: 0.55; }
@@ -763,9 +778,15 @@ html.dark .la-rose-letter--n { fill: var(--la-gold); }
   outline: none;
   transition: opacity 0.4s var(--la-ease);
 }
+.la-node__scale {
+  transform: scale(var(--la-s, 0.4));
+}
 .la-node--dim {
   opacity: 0.26;
   pointer-events: none;
+}
+.la-node--dim .la-label {
+  display: none;
 }
 .la-node__hit {
   fill: transparent;
@@ -965,6 +986,7 @@ html:not(.dark) .la-pulse {
 /* — Etiquetas — */
 .la-label {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
@@ -974,6 +996,7 @@ html:not(.dark) .la-pulse {
 .la-svg[data-zoomed='true'] .la-node:not(.la-node--dim) .la-label,
 .la-svg[data-zoom='high'] .la-node:not(.la-node--dim) .la-label {
   opacity: 1;
+  visibility: visible;
 }
 .la-label__bg {
   fill: var(--la-chip-bg);
