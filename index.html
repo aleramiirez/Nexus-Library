@@ -12,11 +12,11 @@
     <meta name="google-site-verification" content="d4a56b63133f31ff" />
     <meta
       name="description"
-      content="Gestiona tu biblioteca personal con estética Dark Academia. Portadas oficiales automáticas, seguimiento de sagas, retos de lectura anuales y sincronización en la nube y offline."
+      content="Nexus Library: la mejor aplicación web para organizar tu biblioteca personal y seguir tus lecturas con estética Dark Academia. Book tracker, sagas, atlas literario mundial y retos de lectura anuales."
     />
     <meta
       name="keywords"
-      content="nexus library, biblioteca digital, organizador de libros, dark academia, sagas de libros, lectura personal, reto de lectura, book tracker, epub"
+      content="nexus library, aplicacion de libros, app organizar libros, organizador de libros, biblioteca personal, book tracker en español, organizar lecturas, sagas literarias, dark academia, reto de lectura, alternativa goodreads, catalogar libros, epub"
     />
     <meta name="author" content="Nexus Library" />
 
@@ -27,22 +27,25 @@
       "@type": "WebApplication",
       "name": "Nexus Library",
       "url": "https://nexuslibrary.vercel.app/",
-      "description": "Gestiona tu biblioteca personal con estética Dark Academia. Portadas oficiales automáticas, seguimiento de sagas, retos de lectura anuales y sincronización en la nube y offline.",
+      "description": "Nexus Library: la mejor aplicación web para organizar tu biblioteca personal y seguir tus lecturas con estética Dark Academia. Book tracker, sagas, atlas literario mundial y retos de lectura anuales.",
       "applicationCategory": "BooksApplication",
       "operatingSystem": "All",
       "browserRequirements": "Requires JavaScript. Requires HTML5.",
       "inLanguage": "es",
+      "keywords": "aplicación de libros, app organizar libros, organizador de libros, biblioteca personal, book tracker, dark academia, sagas literarias, reto de lectura, atlas literario",
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "EUR"
       },
       "featureList": [
-        "Gestión de biblioteca personal",
-        "Estética Dark Academia y cartografía de lectura",
-        "Atlas literario mundial con sellos consulares",
-        "Seguimiento de sagas y retos de lectura anuales",
-        "Sincronización Local-First y en la nube"
+        "Organizador de biblioteca personal y catálogo digital",
+        "Book tracker y seguimiento de lectura con estadísticas",
+        "Estética Dark Academia y estanterías 3D de madera noble",
+        "Atlas literario mundial con 50 países y sellos consulares",
+        "Seguimiento de sagas, series y colecciones de libros",
+        "Retos anuales de lectura y registro de citas literarias",
+        "Sincronización Local-First (IndexedDB) y en la nube (Supabase)"
       ]
     }
     </script>
@@ -110,7 +113,22 @@
     />
   </head>
   <body class="bg-[#f7f0df] dark:bg-[#0D1017] text-stone-900 dark:text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-900 dark:selection:text-amber-200">
-    <div id="root"></div>
+    <div id="root">
+      <noscript>
+        <div style="font-family: serif; max-width: 800px; margin: 40px auto; padding: 24px; line-height: 1.6; color: #3d2c1e;">
+          <h1>Nexus Library — Aplicación para Organizar Libros, Biblioteca Personal & Book Tracker</h1>
+          <p>Nexus Library es la aplicación web definitiva para catalogar y organizar tu biblioteca personal con estética Dark Academia.</p>
+          <h2>Funcionalidades principales:</h2>
+          <ul>
+            <li><strong>Organizador de libros y biblioteca digital</strong>: Estanterías virtuales 3D en madera noble, importación automática de metadatos oficiales y portadas por ISBN.</li>
+            <li><strong>Book Tracker y Seguimiento de Lectura</strong>: Control de lecturas activas, porcentaje de progreso, notas personales y retos anuales.</li>
+            <li><strong>Atlas Literario Mundial</strong>: Cartografía interactiva y pasaporte consular para descubrir la literatura de 50 países con sellos de lacre personalizados.</li>
+            <li><strong>Gestor de sagas literarias y colecciones</strong>: Seguimiento cronológico de sagas, series y trilogías.</li>
+            <li><strong>Alternativa a Goodreads en español</strong>: 100% privada, sin publicidad molesta, con modo offline y sincronización en la nube.</li>
+          </ul>
+        </div>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
