@@ -98,14 +98,25 @@ function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
 }
 const EASE = cubicBezier(0.22, 1, 0.36, 1);
 
-function clampRect(r: Rect): Rect {
+function clampRect(r: Rect, box?: DOMRect | null): Rect {
   const w = Math.min(MAP_W, Math.max(MIN_W, r.w));
   const h = (w * MAP_H) / MAP_W;
+  let maxX = MAP_W - w;
+  let maxY = MAP_H - h;
+  if (box && box.width > 0 && box.height > 0) {
+    const scale = Math.max(box.width / w, box.height / h);
+    if (scale > 0) {
+      const visW = box.width / scale;
+      const visH = box.height / scale;
+      maxX = Math.max(0, MAP_W - visW);
+      maxY = Math.max(0, MAP_H - visH);
+    }
+  }
   return {
     w,
     h,
-    x: Math.min(MAP_W - w, Math.max(0, r.x)),
-    y: Math.min(MAP_H - h, Math.max(0, r.y)),
+    x: Math.min(maxX, Math.max(0, r.x)),
+    y: Math.min(maxY, Math.max(0, r.y)),
   };
 }
 
@@ -1224,16 +1235,24 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           return;
         }
 
-        const nw = Math.min(MAP_W, Math.max(MIN_W, (g.rect.w * g.startDist) / dist));
+        const k = g.startDist / dist;
+        const nw = Math.min(MAP_W, Math.max(MIN_W, g.rect.w * k));
         const nh = (nw * MAP_H) / MAP_W;
-        const ux = g.rect.x + (g.sx / g.box.width) * g.rect.w;
-        const uy = g.rect.y + (g.sy / g.box.height) * g.rect.h;
-        const next = clampRect({
-          x: ux - (mx / g.box.width) * nw,
-          y: uy - (my / g.box.height) * nh,
-          w: nw,
-          h: nh,
-        });
+        const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
+        const upp = 1 / Math.max(0.001, scale);
+        const ux = g.rect.x + (g.sx - g.box.width / 2) * upp + g.rect.w / 2;
+        const uy = g.rect.y + (g.sy - g.box.height / 2) * upp + g.rect.h / 2;
+        const nextScale = Math.max(g.box.width / nw, g.box.height / nh);
+        const nextUpp = 1 / Math.max(0.001, nextScale);
+        const next = clampRect(
+          {
+            x: ux - (mx - g.box.width / 2) * nextUpp - nw / 2,
+            y: uy - (my - g.box.height / 2) * nextUpp - nh / 2,
+            w: nw,
+            h: nh,
+          },
+          g.box,
+        );
         targetRef.current = next;
         scheduleRect(next);
         return;
@@ -1245,7 +1264,6 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
         const dy = t.clientY - g.sy;
         if (!g.moved) {
           if (Math.hypot(dx, dy) < 6) return;
-          if (MAP_W / curRef.current.w <= 1.01) return; // en vista mundial completa sin zoom no hay paneo
           cancelAnimationFrame(rafRef.current);
           cancelAnimationFrame(wheelRafRef.current);
           wheelRafRef.current = 0;
@@ -1257,14 +1275,17 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           return;
         }
         if (e.cancelable) e.preventDefault();
-        const uppX = g.rect.w / g.box.width;
-        const uppY = g.rect.h / g.box.height;
-        const next = clampRect({
-          x: g.rect.x - dx * uppX,
-          y: g.rect.y - dy * uppY,
-          w: g.rect.w,
-          h: g.rect.h,
-        });
+        const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
+        const upp = 1 / Math.max(0.001, scale);
+        const next = clampRect(
+          {
+            x: g.rect.x - dx * upp,
+            y: g.rect.y - dy * upp,
+            w: g.rect.w,
+            h: g.rect.h,
+          },
+          g.box,
+        );
         targetRef.current = next;
         scheduleRect(next);
       }
@@ -1297,13 +1318,25 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
             if (curZ > 3.1) {
               animateTo(PRESETS[propsRef.current.activeContinent]);
             } else {
-              const rx = Math.max(0, Math.min(1, (ct.clientX - g.box.left) / g.box.width));
-              const ry = Math.max(0, Math.min(1, (ct.clientY - g.box.top) / g.box.height));
-              const ux = cur.x + rx * cur.w;
-              const uy = cur.y + ry * cur.h;
+              const scale = Math.max(g.box.width / cur.w, g.box.height / cur.h);
+              const upp = 1 / Math.max(0.001, scale);
+              const ux = cur.x + (ct.clientX - g.box.left - g.box.width / 2) * upp + cur.w / 2;
+              const uy = cur.y + (ct.clientY - g.box.top - g.box.height / 2) * upp + cur.h / 2;
               const nw = Math.max(MIN_W, cur.w / 1.85);
               const nh = (nw * MAP_H) / MAP_W;
-              animateTo(clampRect({ x: ux - rx * nw, y: uy - ry * nh, w: nw, h: nh }));
+              const nextScale = Math.max(g.box.width / nw, g.box.height / nh);
+              const nextUpp = 1 / Math.max(0.001, nextScale);
+              animateTo(
+                clampRect(
+                  {
+                    x: ux - (ct.clientX - g.box.left - g.box.width / 2) * nextUpp - nw / 2,
+                    y: uy - (ct.clientY - g.box.top - g.box.height / 2) * nextUpp - nh / 2,
+                    w: nw,
+                    h: nh,
+                  },
+                  g.box,
+                ),
+              );
             }
             window.setTimeout(() => {
               suppressRef.current = false;
@@ -1391,18 +1424,28 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const box = el.getBoundingClientRect();
       if (box.width <= 0 || box.height <= 0) return;
 
-      const rx = Math.max(0, Math.min(1, (e.clientX - box.left) / box.width));
-      const ry = Math.max(0, Math.min(1, (e.clientY - box.top) / box.height));
       const rawDelta = e.deltaMode === 1 ? e.deltaY * 18 : e.deltaY;
       const clampedDelta = Math.max(-220, Math.min(220, rawDelta));
 
       const base = targetRef.current;
       const cur = curRef.current;
-      const ux = cur.x + rx * cur.w;
-      const uy = cur.y + ry * cur.h;
+      const scale = Math.max(box.width / cur.w, box.height / cur.h);
+      const upp = 1 / Math.max(0.001, scale);
+      const ux = cur.x + (e.clientX - box.left - box.width / 2) * upp + cur.w / 2;
+      const uy = cur.y + (e.clientY - box.top - box.height / 2) * upp + cur.h / 2;
       const nw = Math.min(MAP_W, Math.max(MIN_W, base.w * Math.exp(clampedDelta * 0.0018)));
       const nh = (nw * MAP_H) / MAP_W;
-      targetRef.current = clampRect({ x: ux - rx * nw, y: uy - ry * nh, w: nw, h: nh });
+      const nextScale = Math.max(box.width / nw, box.height / nh);
+      const nextUpp = 1 / Math.max(0.001, nextScale);
+      targetRef.current = clampRect(
+        {
+          x: ux - (e.clientX - box.left - box.width / 2) * nextUpp - nw / 2,
+          y: uy - (e.clientY - box.top - box.height / 2) * nextUpp - nh / 2,
+          w: nw,
+          h: nh,
+        },
+        box,
+      );
 
       if (!wheelRafRef.current) {
         lastWheelFrame = 0;
@@ -1418,7 +1461,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const t = targetRef.current;
       const nw = Math.min(MAP_W, Math.max(MIN_W, t.w / factor));
       const nh = (nw * MAP_H) / MAP_W;
-      animateTo(clampRect({ x: t.x + t.w / 2 - nw / 2, y: t.y + t.h / 2 - nh / 2, w: nw, h: nh }));
+      const box = svgRef.current?.getBoundingClientRect();
+      animateTo(clampRect({ x: t.x + t.w / 2 - nw / 2, y: t.y + t.h / 2 - nh / 2, w: nw, h: nh }, box));
     },
     [animateTo],
   );
@@ -1440,7 +1484,8 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       const inside =
         x >= t.x + t.w * 0.2 && x <= t.x + t.w * 0.8 && y >= t.y + t.h * 0.24 && y <= t.y + t.h * 0.76;
       if (inside) return;
-      animateTo(clampRect({ x: x - t.w / 2, y: y - t.h / 2, w: t.w, h: t.h }));
+      const box = svgRef.current?.getBoundingClientRect();
+      animateTo(clampRect({ x: x - t.w / 2, y: y - t.h / 2, w: t.w, h: t.h }, box));
     },
     [animateTo],
   );
@@ -1475,7 +1520,9 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
     const dy = e.clientY - g.sy;
     if (!g.moved) {
       if (Math.hypot(dx, dy) < 5) return;
-      if (MAP_W / curRef.current.w <= 1.01) return; // sin zoom no hay nada que arrastrar
+      const scale = Math.max(g.box.width / curRef.current.w, g.box.height / curRef.current.h);
+      const canPan = scale > 0 && (MAP_W - g.box.width / scale > 1 || MAP_H - g.box.height / scale > 1);
+      if (!canPan && MAP_W / curRef.current.w <= 1.01) return;
       cancelAnimationFrame(rafRef.current);
       cancelAnimationFrame(wheelRafRef.current);
       wheelRafRef.current = 0;
@@ -1492,14 +1539,17 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
       svg.dataset.drag = '1';
       return;
     }
-    const uppX = g.rect.w / g.box.width;
-    const uppY = g.rect.h / g.box.height;
-    const next = clampRect({
-      x: g.rect.x - dx * uppX,
-      y: g.rect.y - dy * uppY,
-      w: g.rect.w,
-      h: g.rect.h,
-    });
+    const scale = Math.max(g.box.width / g.rect.w, g.box.height / g.rect.h);
+    const upp = 1 / Math.max(0.001, scale);
+    const next = clampRect(
+      {
+        x: g.rect.x - dx * upp,
+        y: g.rect.y - dy * upp,
+        w: g.rect.w,
+        h: g.rect.h,
+      },
+      g.box,
+    );
     targetRef.current = next;
     scheduleRect(next);
   };
@@ -1877,7 +1927,7 @@ export function LiteraryAtlasMap(props: LiteraryAtlasMapProps) {
           ref={svgRef}
           className="la-svg"
           viewBox="0 0 1000 520"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio={isExpanded ? 'xMidYMid slice' : 'xMidYMid meet'}
           role="group"
           aria-label="Planisferio literario interactivo"
           data-zoom="low"

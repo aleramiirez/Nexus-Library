@@ -352,8 +352,6 @@ html.dark .la-continent-select-trigger--filtered {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.65rem;
 }
 .la-root--expanded .la-toolbar {
   position: relative;
@@ -364,27 +362,27 @@ html.dark .la-continent-select-trigger--filtered {
   gap: 0.5rem;
   width: 100%;
   flex: 0 0 auto;
+  padding-bottom: 0.35rem;
 }
 .la-root--expanded .la-canvas {
   position: relative;
   width: 100%;
-  aspect-ratio: 1000 / 520;
-  max-height: calc(94vh - 90px);
-  margin: 0 auto;
+  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--la-brass);
-  border-radius: 14px;
+  border-radius: 12px;
   background: radial-gradient(ellipse at 50% 42%, var(--la-sea-a) 0%, var(--la-sea-b) 100%);
   box-shadow: var(--la-shadow);
   isolation: isolate;
+  margin: 0;
 }
 .la-root--expanded .la-svg {
   display: block;
   width: 100%;
   height: 100%;
-  aspect-ratio: 1000 / 520;
-  user-select: none;
-  -webkit-user-select: none;
+  aspect-ratio: unset;
   touch-action: none;
   cursor: default;
 }

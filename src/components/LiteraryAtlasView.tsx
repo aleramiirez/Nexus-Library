@@ -895,7 +895,7 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
             }}
           >
             <div
-              className="relative w-full max-w-7xl max-h-[96vh] h-auto p-2 sm:p-4 md:p-5 flex flex-col justify-center rounded-xl sm:rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden"
+              className="relative w-full max-w-7xl h-[94vh] sm:h-[95vh] p-2 sm:p-4 rounded-xl sm:rounded-2xl shadow-2xl border border-amber-900/40 dark:border-amber-500/30 bg-[#f4ebd0] dark:bg-[#131b27] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Mapa a pantalla completa en la mesa */}
