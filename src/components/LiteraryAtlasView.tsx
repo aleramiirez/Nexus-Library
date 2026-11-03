@@ -144,7 +144,11 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
         unreadCount,
         totalCount,
         canonCount,
-        firstReadDate
+        firstReadDate,
+        waxColor: info.waxColor,
+        waxDarkColor: info.waxDarkColor,
+        sealEmblem: info.sealEmblem,
+        sealLatinName: info.sealLatinName
       };
     });
 
@@ -335,7 +339,13 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
         const pct = Math.min(100, Math.round(Math.max(0, (p1 + p2) / 2) * 100));
         return { pct, nextText: `${stamped}/10 países y ${conts}/4 continentes para Rango V · Embajador` };
       }
-      case 5:
+      case 5: {
+        const p1 = (stamped - 10) / 6;
+        const p2 = (conts - 4) / 1;
+        const pct = Math.min(100, Math.round(Math.max(0, (p1 + p2) / 2) * 100));
+        return { pct, nextText: `${stamped}/16 países y ${conts}/5 continentes para Rango VI · Canciller Supremo` };
+      }
+      case 6:
       default:
         return { pct: 100, nextText: '¡Honor Máximo de la República de las Letras!' };
     }
@@ -523,9 +533,22 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
           {/* Sello de Estado Diplomático */}
           <div className="flex items-center gap-2.5">
             {isActiveConquered ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-rose-900/30 dark:border-rose-400/30 bg-rose-500/10 text-rose-800 dark:text-rose-300 text-xs font-bold shadow-sm">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
-                <span>Sello Conquistado ({activeNode?.readCount} leídos)</span>
+              <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-bold shadow-sm transition-all"
+                style={{
+                  borderColor: activeCountryInfo.waxColor ? `${activeCountryInfo.waxColor}50` : undefined,
+                  backgroundColor: activeCountryInfo.waxColor ? `${activeCountryInfo.waxColor}14` : undefined,
+                  color: activeCountryInfo.waxColor || undefined
+                }}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full animate-pulse"
+                  style={{ backgroundColor: activeCountryInfo.waxColor || '#b91c1c' }}
+                />
+                <span className="flex items-center gap-1.5">
+                  {activeCountryInfo.sealEmblem && <span className="text-sm">{activeCountryInfo.sealEmblem}</span>}
+                  <span>Sello Conquistado ({activeNode?.readCount} leídos)</span>
+                </span>
               </div>
             ) : isActiveExploring ? (
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-900/30 dark:border-amber-400/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-sm">

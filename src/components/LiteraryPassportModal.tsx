@@ -304,8 +304,8 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                             : 'border border-dotted border-stone-400/50 dark:border-slate-700'
                         }`}
                         style={{
-                          borderColor: isStamped ? `${c.color}75` : undefined,
-                          backgroundColor: isStamped ? `${c.color}0d` : 'transparent'
+                          borderColor: isStamped ? `${c.waxColor || c.color}75` : undefined,
+                          backgroundColor: isStamped ? `${c.waxColor || c.color}0d` : 'transparent'
                         }}
                       >
                         {/* Bandera / Código Consular */}
@@ -319,9 +319,9 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
                           <span
                             className="font-mono text-[10px] font-black px-1.5 py-0.2 rounded border uppercase"
                             style={{
-                              color: isStamped ? c.color : '#78716c',
-                              borderColor: isStamped ? `${c.color}40` : '#a8a29e',
-                              backgroundColor: isStamped ? `${c.color}15` : 'transparent'
+                              color: isStamped ? (c.waxColor || c.color) : '#78716c',
+                              borderColor: isStamped ? `${c.waxColor || c.color}40` : '#a8a29e',
+                              backgroundColor: isStamped ? `${c.waxColor || c.color}15` : 'transparent'
                             }}
                           >
                             {c.code}
@@ -330,10 +330,23 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
 
                         <span
                           className="font-mono text-[8.5px] uppercase tracking-widest font-black mt-1"
-                          style={{ color: isStamped ? c.color : '#78716c' }}
+                          style={{ color: isStamped ? (c.waxColor || c.color) : '#78716c' }}
                         >
                           {c.sealLatinName}
                         </span>
+
+                        {isStamped && (
+                          <div
+                            className="w-8 h-8 my-1 rounded-full flex items-center justify-center text-xs shadow-inner"
+                            style={{
+                              background: `radial-gradient(circle at 35% 30%, ${c.waxColor || c.color}, ${c.waxDarkColor || '#380a0a'})`,
+                              boxShadow: '0 2px 5px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.4)'
+                            }}
+                            title={`Sello de lacre: ${c.sealLatinName}`}
+                          >
+                            <span className="drop-shadow-xs">{c.sealEmblem || '⚜️'}</span>
+                          </div>
+                        )}
 
                         <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 mt-0.5 leading-tight">
                           {c.name}
@@ -554,19 +567,44 @@ export const LiteraryPassportModal: React.FC<LiteraryPassportModalProps> = ({
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fadeIn">
             <div className="catalog-card-panel relative w-full max-w-lg p-5 sm:p-6 shadow-2xl space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-amber-900/15 dark:border-slate-700">
-                <div className="flex items-center gap-2.5">
-                  <img
-                    src={`https://flagcdn.com/w80/${selectedEntry.country.code.toLowerCase()}.png`}
-                    alt={selectedEntry.country.name}
-                    className="w-10 h-7 object-cover rounded shadow border border-amber-900/20 shrink-0"
-                    loading="lazy"
-                  />
+                <div className="flex items-center gap-3">
+                  {selectedEntry.stamped ? (
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-md relative"
+                      style={{
+                        background: `radial-gradient(circle at 35% 30%, ${selectedEntry.country.waxColor || selectedEntry.country.color}, ${selectedEntry.country.waxDarkColor || '#380a0a'})`,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.45)'
+                      }}
+                      title={`Sello de Lacre Oficial: ${selectedEntry.country.sealLatinName}`}
+                    >
+                      <div className="w-9 h-9 rounded-full border border-white/35 border-dashed flex items-center justify-center text-lg drop-shadow-xs">
+                        <span>{selectedEntry.country.sealEmblem || '⚜️'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={`https://flagcdn.com/w80/${selectedEntry.country.code.toLowerCase()}.png`}
+                      alt={selectedEntry.country.name}
+                      className="w-11 h-8 object-cover rounded shadow border border-amber-900/20 shrink-0"
+                      loading="lazy"
+                    />
+                  )}
                   <div>
                     <span className="font-mono text-[9px] uppercase tracking-widest text-amber-800 dark:text-amber-400 font-black block">
                       VISADO CONSULAR · {selectedEntry.country.sealLatinName}
                     </span>
-                    <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white">
-                      {selectedEntry.country.name} ({CONTINENT_NAMES[selectedEntry.country.continent] || selectedEntry.country.continent})
+                    <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
+                      {selectedEntry.stamped && (
+                        <img
+                          src={`https://flagcdn.com/w40/${selectedEntry.country.code.toLowerCase()}.png`}
+                          alt=""
+                          className="w-4 h-3 object-cover rounded-xs border border-black/10 inline"
+                        />
+                      )}
+                      <span>{selectedEntry.country.name}</span>
+                      <span className="text-xs font-normal text-stone-500 dark:text-slate-400 font-sans">
+                        ({CONTINENT_NAMES[selectedEntry.country.continent] || selectedEntry.country.continent})
+                      </span>
                     </h3>
                   </div>
                 </div>

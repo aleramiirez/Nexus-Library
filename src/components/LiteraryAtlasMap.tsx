@@ -28,6 +28,10 @@ export interface CountryMapNode {
   totalCount: number; // Total en su biblioteca (read + reading + unread)
   canonCount: number; // Obras maestras disponibles para descubrir en este país
   firstReadDate?: string;
+  waxColor?: string;
+  waxDarkColor?: string;
+  sealEmblem?: string;
+  sealLatinName?: string;
 }
 
 export interface LiteraryAtlasMapProps {
@@ -388,7 +392,7 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
   const meta =
     status === 'discover'
       ? `Canon por descubrir · ${plural(c.canonCount, 'obra', 'obras')}`
-      : `${c.readCount} leídos · ${c.canonCount} en el canon`;
+      : `${c.sealEmblem ? c.sealEmblem + ' ' : ''}${c.readCount} leídos · ${c.canonCount} en el canon`;
 
   const FLAG_W = 16;
   const FLAG_H = 11;
@@ -444,9 +448,30 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
         {status === 'conquered' && (
           <>
             {selected && <circle className="la-pulse" r={13} />}
-            <path className="la-wax" d={WAX_D} fill="url(#la-wax-grad)" />
-            <circle className="la-wax-ring" r={9.3} />
-            <circle className="la-wax-ring la-wax-ring--dash" r={7.4} />
+            {c.waxColor && (
+              <defs>
+                <radialGradient id={`la-wax-${c.code}`} cx="0.35" cy="0.3" r="0.85">
+                  <stop offset="0" stopColor={c.waxColor} />
+                  <stop offset="0.6" stopColor={c.waxColor} />
+                  <stop offset="1" stopColor={c.waxDarkColor || '#380a0a'} />
+                </radialGradient>
+              </defs>
+            )}
+            <path
+              className="la-wax"
+              d={WAX_D}
+              fill={c.waxColor ? `url(#la-wax-${c.code})` : 'url(#la-wax-grad)'}
+            />
+            <circle
+              className="la-wax-ring"
+              r={9.3}
+              stroke={c.waxColor ? 'rgba(255,255,255,0.45)' : undefined}
+            />
+            <circle
+              className="la-wax-ring la-wax-ring--dash"
+              r={7.4}
+              stroke={c.waxColor ? 'rgba(255,255,255,0.3)' : undefined}
+            />
             <image
               href={flagUrl}
               x={-7.5}
@@ -458,8 +483,10 @@ const CountryNode = memo(function CountryNode({ c, x, y, status, selected, dim, 
             />
             <ellipse className="la-wax-shine" cx={-4} cy={-5} rx={4.2} ry={2.2} transform="rotate(-35 -4 -5)" />
             <g className="la-badge" transform="translate(10 -10)">
-              <circle r={5.8} />
-              <text y={0.3}>{c.readCount > 99 ? '99+' : c.readCount}</text>
+              <circle r={5.8} style={c.waxColor ? { stroke: c.waxColor } : undefined} />
+              <text y={0.3} style={c.waxColor ? { fill: c.waxColor } : undefined}>
+                {c.readCount > 99 ? '99+' : c.readCount}
+              </text>
             </g>
           </>
         )}

@@ -35,6 +35,9 @@ export interface CountryInfo {
   sealLatinName: string; // e.g. "REGNUM HISPANIAE"
   color: string; // Color de tinta vintage para el sello
   shape: 'circle' | 'octagon' | 'rectangle' | 'oval';
+  sealEmblem?: string; // Glifo heráldico distintivo grabado en cera (e.g. "🪶", "⚜️", "🌸")
+  waxColor?: string; // Color primario de la cera fundida para el sello de lacre
+  waxDarkColor?: string; // Sombra perimetral profunda de la cera fundida
 }
 
 export interface CountryPassportEntry {
@@ -97,7 +100,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'REGNUM HISPANIAE',
     color: '#b91c1c',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🪶',
+    waxColor: '#991b1b',
+    waxDarkColor: '#450a0a'
   },
   GB: {
     code: 'GB',
@@ -106,7 +112,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'BRITANNIA LITTERARIA',
     color: '#1d4ed8',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '👑',
+    waxColor: '#1e3a8a',
+    waxDarkColor: '#172554'
   },
   US: {
     code: 'US',
@@ -115,7 +124,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'north_america',
     sealLatinName: 'CIVITATES FOEDERATAE',
     color: '#0f766e',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🦅',
+    waxColor: '#0f766e',
+    waxDarkColor: '#134e4a'
   },
   FR: {
     code: 'FR',
@@ -124,7 +136,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'REPUBLICA GALLICA',
     color: '#6d28d9',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '⚜️',
+    waxColor: '#581c87',
+    waxDarkColor: '#3b0764'
   },
   JP: {
     code: 'JP',
@@ -133,7 +148,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'asia',
     sealLatinName: 'IMPERIUM NIPPONICUM',
     color: '#be123c',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🌸',
+    waxColor: '#be123c',
+    waxDarkColor: '#4c0519'
   },
   DE: {
     code: 'DE',
@@ -142,7 +160,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'TERRA TEUTONICA',
     color: '#854d0e',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '📜',
+    waxColor: '#78350f',
+    waxDarkColor: '#451a03'
   },
   IT: {
     code: 'IT',
@@ -151,7 +172,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'PENINSULA ITALICA',
     color: '#15803d',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🏛️',
+    waxColor: '#15803d',
+    waxDarkColor: '#052e16'
   },
   RU: {
     code: 'RU',
@@ -160,7 +184,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'ARCHIVUM BOREALE',
     color: '#475569',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '❄️',
+    waxColor: '#334155',
+    waxDarkColor: '#0f172a'
   },
   MX: {
     code: 'MX',
@@ -169,7 +196,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'MEXICUM LITTERARUM',
     color: '#047857',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '☀️',
+    waxColor: '#047857',
+    waxDarkColor: '#064e3b'
   },
   AR: {
     code: 'AR',
@@ -178,7 +208,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'TERRA PLATAE',
     color: '#0369a1',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🗝️',
+    waxColor: '#0284c7',
+    waxDarkColor: '#082f49'
   },
   CO: {
     code: 'CO',
@@ -187,7 +220,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'COLOMBIA MAGICA',
     color: '#ca8a04',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🦋',
+    waxColor: '#ca8a04',
+    waxDarkColor: '#713f12'
   },
   CL: {
     code: 'CL',
@@ -196,7 +232,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'CHILIA AUSTRALIS',
     color: '#991b1b',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '⛰️',
+    waxColor: '#991b1b',
+    waxDarkColor: '#450a0a'
   },
   IE: {
     code: 'IE',
@@ -205,7 +244,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'HIBERNIA CELTICA',
     color: '#166534',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '☘️',
+    waxColor: '#166534',
+    waxDarkColor: '#052e16'
   },
   PL: {
     code: 'PL',
@@ -214,7 +256,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'POLONIA HISTORICA',
     color: '#9f1239',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🛡️',
+    waxColor: '#881337',
+    waxDarkColor: '#4c0519'
   },
   SE: {
     code: 'SE',
@@ -223,7 +268,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'SUECIA BOREALIS',
     color: '#1e40af',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🧭',
+    waxColor: '#1e40af',
+    waxDarkColor: '#172554'
   },
   GR: {
     code: 'GR',
@@ -232,7 +280,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'HELLAS CLASSICA',
     color: '#0284c7',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🏺',
+    waxColor: '#0284c7',
+    waxDarkColor: '#082f49'
   },
   PT: {
     code: 'PT',
@@ -241,7 +292,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'LUSITANIA AUREA',
     color: '#15803d',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '⚓',
+    waxColor: '#15803d',
+    waxDarkColor: '#052e16'
   },
   BR: {
     code: 'BR',
@@ -250,7 +304,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'BRASILIA TROPICALIS',
     color: '#16a34a',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🦜',
+    waxColor: '#16a34a',
+    waxDarkColor: '#052e16'
   },
   CA: {
     code: 'CA',
@@ -259,7 +316,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'north_america',
     sealLatinName: 'CANADA SEPTENTRIONALIS',
     color: '#b91c1c',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🍁',
+    waxColor: '#b91c1c',
+    waxDarkColor: '#450a0a'
   },
   AU: {
     code: 'AU',
@@ -268,7 +328,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'oceania',
     sealLatinName: 'TERRA AUSTRALIS',
     color: '#b45309',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🦘',
+    waxColor: '#b45309',
+    waxDarkColor: '#451a03'
   },
   EG: {
     code: 'EG',
@@ -277,7 +340,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'africa',
     sealLatinName: 'AEGYPTUS ANTIQUA',
     color: '#a16207',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '𓃭',
+    waxColor: '#a16207',
+    waxDarkColor: '#451a03'
   },
   NG: {
     code: 'NG',
@@ -286,7 +352,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'africa',
     sealLatinName: 'NIGERIA LITTERARIA',
     color: '#047857',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🥁',
+    waxColor: '#047857',
+    waxDarkColor: '#064e3b'
   },
   ZA: {
     code: 'ZA',
@@ -295,7 +364,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'africa',
     sealLatinName: 'AFRICA AUSTRALIS',
     color: '#0e7490',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '💎',
+    waxColor: '#0e7490',
+    waxDarkColor: '#083344'
   },
   KR: {
     code: 'KR',
@@ -304,7 +376,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'asia',
     sealLatinName: 'COREA ORIENTALIS',
     color: '#1d4ed8',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '☯️',
+    waxColor: '#1d4ed8',
+    waxDarkColor: '#172554'
   },
   CN: {
     code: 'CN',
@@ -313,7 +388,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'asia',
     sealLatinName: 'SERICA IMPERIALIS',
     color: '#b91c1c',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🐉',
+    waxColor: '#b91c1c',
+    waxDarkColor: '#450a0a'
   },
   IN: {
     code: 'IN',
@@ -322,7 +400,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'asia',
     sealLatinName: 'INDIA ANCIENT',
     color: '#c2410c',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🪷',
+    waxColor: '#c2410c',
+    waxDarkColor: '#7c2d12'
   },
   AT: {
     code: 'AT',
@@ -331,7 +412,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'AUSTRIA IMPERIALIS',
     color: '#be123c',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🎻',
+    waxColor: '#be123c',
+    waxDarkColor: '#4c0519'
   },
   CH: {
     code: 'CH',
@@ -340,7 +424,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'HELVETIA ALPINA',
     color: '#dc2626',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🏔️',
+    waxColor: '#dc2626',
+    waxDarkColor: '#450a0a'
   },
   NL: {
     code: 'NL',
@@ -349,7 +436,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'BATAVIA LITTERARIA',
     color: '#ea580c',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🌷',
+    waxColor: '#ea580c',
+    waxDarkColor: '#7c2d12'
   },
   NO: {
     code: 'NO',
@@ -358,7 +448,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'NORVEGIA FJORDICA',
     color: '#1e3a8a',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '⛵',
+    waxColor: '#1e3a8a',
+    waxDarkColor: '#172554'
   },
   DK: {
     code: 'DK',
@@ -367,7 +460,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'DANIA NORDICA',
     color: '#991b1b',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🦢',
+    waxColor: '#991b1b',
+    waxDarkColor: '#450a0a'
   },
   CZ: {
     code: 'CZ',
@@ -376,7 +472,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'BOHEMIA LITTERATA',
     color: '#1d4ed8',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🏰',
+    waxColor: '#1d4ed8',
+    waxDarkColor: '#172554'
   },
   PE: {
     code: 'PE',
@@ -385,7 +484,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'PERUVIA ANDINA',
     color: '#b91c1c',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🦙',
+    waxColor: '#b91c1c',
+    waxDarkColor: '#450a0a'
   },
   UY: {
     code: 'UY',
@@ -394,7 +496,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'URUGUAIA LITTERATA',
     color: '#0284c7',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '☀️',
+    waxColor: '#0284c7',
+    waxDarkColor: '#082f49'
   },
   BE: {
     code: 'BE',
@@ -403,7 +508,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'BELGICA LITTERARIA',
     color: '#b45309',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🔔',
+    waxColor: '#b45309',
+    waxDarkColor: '#451a03'
   },
   TR: {
     code: 'TR',
@@ -412,7 +520,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'asia',
     sealLatinName: 'OTTOMANIA LITTERATA',
     color: '#be123c',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🕌',
+    waxColor: '#be123c',
+    waxDarkColor: '#4c0519'
   },
   CU: {
     code: 'CU',
@@ -421,7 +532,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'latam',
     sealLatinName: 'INSULA CUBA',
     color: '#0284c7',
-    shape: 'oval'
+    shape: 'oval',
+    sealEmblem: '🌴',
+    waxColor: '#0284c7',
+    waxDarkColor: '#082f49'
   },
   IS: {
     code: 'IS',
@@ -430,7 +544,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'ISLANDIA SAGA',
     color: '#1e40af',
-    shape: 'octagon'
+    shape: 'octagon',
+    sealEmblem: '🌋',
+    waxColor: '#1e40af',
+    waxDarkColor: '#172554'
   },
   FI: {
     code: 'FI',
@@ -439,7 +556,10 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'europe',
     sealLatinName: 'FINLANDIA BOREALIS',
     color: '#0369a1',
-    shape: 'circle'
+    shape: 'circle',
+    sealEmblem: '🌲',
+    waxColor: '#0369a1',
+    waxDarkColor: '#082f49'
   },
   NZ: {
     code: 'NZ',
@@ -448,7 +568,130 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
     continent: 'oceania',
     sealLatinName: 'ZEALANDIA AUSTRALIS',
     color: '#047857',
-    shape: 'rectangle'
+    shape: 'rectangle',
+    sealEmblem: '🌿',
+    waxColor: '#047857',
+    waxDarkColor: '#064e3b'
+  },
+  IR: {
+    code: 'IR',
+    name: 'Irán',
+    flag: '🇮🇷',
+    continent: 'asia',
+    sealLatinName: 'PERSIA AETERNA',
+    color: '#047857',
+    shape: 'octagon',
+    sealEmblem: '🦁',
+    waxColor: '#065f46',
+    waxDarkColor: '#022c22'
+  },
+  LB: {
+    code: 'LB',
+    name: 'Líbano',
+    flag: '🇱🇧',
+    continent: 'asia',
+    sealLatinName: 'PHOENICIA LITTERARIA',
+    color: '#b91c1c',
+    shape: 'circle',
+    sealEmblem: '🌲',
+    waxColor: '#991b1b',
+    waxDarkColor: '#450a0a'
+  },
+  MA: {
+    code: 'MA',
+    name: 'Marruecos',
+    flag: '🇲🇦',
+    continent: 'africa',
+    sealLatinName: 'MAURITANIA OCCIDENTALIS',
+    color: '#b45309',
+    shape: 'octagon',
+    sealEmblem: '⭐',
+    waxColor: '#92400e',
+    waxDarkColor: '#451a03'
+  },
+  DZ: {
+    code: 'DZ',
+    name: 'Argelia',
+    flag: '🇩🇿',
+    continent: 'africa',
+    sealLatinName: 'NUMIDIA LITTERARIA',
+    color: '#15803d',
+    shape: 'rectangle',
+    sealEmblem: '🌙',
+    waxColor: '#166534',
+    waxDarkColor: '#052e16'
+  },
+  KE: {
+    code: 'KE',
+    name: 'Kenia',
+    flag: '🇰🇪',
+    continent: 'africa',
+    sealLatinName: 'KENIA ORIENTALIS',
+    color: '#991b1b',
+    shape: 'oval',
+    sealEmblem: '🛡️',
+    waxColor: '#7f1d1d',
+    waxDarkColor: '#450a0a'
+  },
+  SN: {
+    code: 'SN',
+    name: 'Senegal',
+    flag: '🇸🇳',
+    continent: 'africa',
+    sealLatinName: 'SENEGALIA ILLUSTRIS',
+    color: '#16a34a',
+    shape: 'circle',
+    sealEmblem: '🌳',
+    waxColor: '#15803d',
+    waxDarkColor: '#052e16'
+  },
+  VE: {
+    code: 'VE',
+    name: 'Venezuela',
+    flag: '🇻🇪',
+    continent: 'latam',
+    sealLatinName: 'VENEZUELA AUREA',
+    color: '#ca8a04',
+    shape: 'rectangle',
+    sealEmblem: '⭐',
+    waxColor: '#a16207',
+    waxDarkColor: '#422006'
+  },
+  EC: {
+    code: 'EC',
+    name: 'Ecuador',
+    flag: '🇪🇨',
+    continent: 'latam',
+    sealLatinName: 'AEQUATORIA ANDINA',
+    color: '#d97706',
+    shape: 'circle',
+    sealEmblem: '🦅',
+    waxColor: '#b45309',
+    waxDarkColor: '#451a03'
+  },
+  BO: {
+    code: 'BO',
+    name: 'Bolivia',
+    flag: '🇧🇴',
+    continent: 'latam',
+    sealLatinName: 'BOLIVIA ANDINA',
+    color: '#dc2626',
+    shape: 'oval',
+    sealEmblem: '🦙',
+    waxColor: '#b91c1c',
+    waxDarkColor: '#450a0a'
+  },
+  CR: {
+    code: 'CR',
+    name: 'Costa Rica',
+    flag: '🇨🇷',
+    continent: 'latam',
+    sealLatinName: 'COSTA RICA VIRIDIS',
+    color: '#0284c7',
+    shape: 'circle',
+    sealEmblem: '🌿',
+    waxColor: '#0369a1',
+    waxDarkColor: '#082f49'
   }
 };
 
@@ -761,7 +1004,153 @@ const AUTHOR_COUNTRY_MAP: Record<string, string> = {
   'mario benedetti': 'UY',
   'benedetti': 'UY',
   'eduardo galeano': 'UY',
-  'juan carlos onetti': 'UY'
+  'juan carlos onetti': 'UY',
+
+  // Irán
+  'sadegh hedayat': 'IR',
+  'hedayat': 'IR',
+  'hafez': 'IR',
+  'omar jayam': 'IR',
+  'marjane satrapi': 'IR',
+  'forugh farrokhzad': 'IR',
+
+  // Líbano
+  'khalil gibran': 'LB',
+  'gibran': 'LB',
+  'amin maalouf': 'LB',
+  'maalouf': 'LB',
+  'joumana haddad': 'LB',
+
+  // Marruecos
+  'tahar ben jelloun': 'MA',
+  'ben jelloun': 'MA',
+  'fatima mernissi': 'MA',
+  'mernissi': 'MA',
+  'mohamed choukri': 'MA',
+  'leïla slimani': 'MA',
+  'leila slimani': 'MA',
+
+  // Argelia
+  'assia djebar': 'DZ',
+  'yasmina khadra': 'DZ',
+  'khadra': 'DZ',
+  'kateb yacine': 'DZ',
+  'boualem sansal': 'DZ',
+
+  // Kenia
+  'ngũgĩ wa thiong\'o': 'KE',
+  'ngugi wa thiong\'o': 'KE',
+  'ngugi': 'KE',
+  'binyavanga wainaina': 'KE',
+
+  // Senegal
+  'léopold sédar senghor': 'SN',
+  'leopold sedar senghor': 'SN',
+  'senghor': 'SN',
+  'mariama bâ': 'SN',
+  'mariama ba': 'SN',
+  'mohamed mbougar sarr': 'SN',
+  'mbougar sarr': 'SN',
+
+  // Venezuela
+  'rómulo gallegos': 'VE',
+  'romulo gallegos': 'VE',
+  'gallegos': 'VE',
+  'teresa de la parra': 'VE',
+  'arturo uslar pietri': 'VE',
+  'uslar pietri': 'VE',
+
+  // Ecuador
+  'jorge icaza': 'EC',
+  'mónica ojeda': 'EC',
+  'monica ojeda': 'EC',
+  'maría fernanda ampuero': 'EC',
+
+  // Bolivia
+  'edmundo paz soldán': 'BO',
+  'edmundo paz soldan': 'BO',
+  'alcides arguedas': 'BO',
+
+  // Costa Rica
+  'carlos luis fallas': 'CR',
+  'carmen lyra': 'CR',
+
+  // Suiza
+  'max frisch': 'CH',
+  'robert walser': 'CH',
+  'friedrich dürrenmatt': 'CH',
+  'friedrich durrenmatt': 'CH',
+
+  // Países Bajos
+  'anne frank': 'NL',
+  'cees nooteboom': 'NL',
+  'harry mulisch': 'NL',
+  'herman koch': 'NL',
+
+  // Dinamarca
+  'hans christian andersen': 'DK',
+  'andersen': 'DK',
+  'karen blixen': 'DK',
+  'isak dinesen': 'DK',
+  'søren kierkegaard': 'DK',
+  'soren kierkegaard': 'DK',
+  'kierkegaard': 'DK',
+
+  // Islandia
+  'halldór laxness': 'IS',
+  'halldor laxness': 'IS',
+  'laxness': 'IS',
+  'arnaldur indriðason': 'IS',
+  'arnaldur indridason': 'IS',
+
+  // Finlandia
+  'mika waltari': 'FI',
+  'waltari': 'FI',
+  'tove jansson': 'FI',
+  'arto paasilinna': 'FI',
+
+  // Bélgica
+  'georges simenon': 'BE',
+  'simenon': 'BE',
+  'amélie nothomb': 'BE',
+  'amelie nothomb': 'BE',
+  'nothomb': 'BE',
+  'marguerite yourcenar': 'BE',
+
+  // Austria
+  'stefan zweig': 'AT',
+  'zweig': 'AT',
+  'arthur schnitzler': 'AT',
+  'robert musil': 'AT',
+  'thomas bernhard': 'AT',
+
+  // Suecia
+  'selma lagerlöf': 'SE',
+
+  // Polonia
+  'lem': 'PL',
+  'tokarczuk': 'PL',
+  'wisława szymborska': 'PL',
+  'henryk sienkiewicz': 'PL',
+
+  // Turquía
+  'orhan pamuk': 'TR',
+  'pamuk': 'TR',
+  'elif shafak': 'TR',
+  'shafak': 'TR',
+
+  // Cuba
+  'alejo carpentier': 'CU',
+  'guillermo cabrera infante': 'CU',
+  'josé lezama lima': 'CU',
+  'leonardo padura': 'CU',
+
+  // Sudáfrica
+  'j.m. coetzee': 'ZA',
+  'jm coetzee': 'ZA',
+  'coetzee': 'ZA',
+  'nadine gordimer': 'ZA',
+  'nelson mandela': 'ZA',
 };
 
 const USER_OVERRIDE_KEY = 'nexus_author_country_overrides';
@@ -954,7 +1343,100 @@ export const NATIONAL_LITERARY_CANON: Record<string, BibliographicCandidate[]> =
     makeCanon('canon-au-2', 'AU', 'El arca de Schindler', 'Thomas Keneally', 1982, 480, '9788425325854', 'Grijalbo', '🏰 Novela Histórica', ['🪖 Guerras Mundiales & Siglo XX'], 'La sobrecogedora historia verídica de Oskar Schindler y su rescate de más de mil doscientos judíos del Holocausto.', 'Premio Booker y base de la obra maestra cinematográfica de Spielberg.'),
     makeCanon('canon-au-3', 'AU', 'Voss', 'Patrick White', 1957, 496, '9788435017244', 'Edhasa', '🏛️ Clásicos', ['🧭 Exploración & Arqueología'], 'El explorador alemán Johann Voss emprende una expedición mística y fatal por el hostil desierto australiano.', 'La cumbre literaria del único Premio Nobel australiano.'),
     makeCanon('canon-au-4', 'AU', 'Carreteras secundarias', 'Tim Winton', 1991, 464, '9788439702207', 'Destino', '🖋️ Ficción Contemporánea & Literaria', ['🌱 Coming-of-Age (Aprendizaje)'], 'Dos familias humildes comparten una destartalada casa en Perth a lo largo de veinte años de dicha y desventura.', 'Un clásico imperecedero de la literatura australiana.')
+  ],
+
+  CH: [
+    makeCanon('canon-ch-1', 'CH', 'Siddhartha', 'Hermann Hesse', 1922, 176, '9788497598682', 'Debolsillo', '🏛️ Clásicos', ['🌍 Clásicos Universales', '📜 Ensayo Filosófico'], 'El viaje espiritual del joven hindú Siddhartha en busca de la sabiduría interior y la iluminación personal.', 'La joya filosófica y poética suiza más influyente de Hermann Hesse.'),
+    makeCanon('canon-ch-2', 'CH', 'Jakob von Gunten', 'Robert Walser', 1909, 192, '9788417553555', 'Siruela', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'El diario íntimo de un singular alumno en el Instituto Benjamenta, precursor del espíritu kafkiano europeo.', 'La obra maestra secreta y deslumbrante de Robert Walser.')
+  ],
+  NL: [
+    makeCanon('canon-nl-1', 'NL', 'El diario de Ana Frank', 'Anne Frank', 1947, 384, '9788466332156', 'Debolsillo', '🏛️ Clásicos', ['🪖 Guerras Mundiales & Siglo XX'], 'El conmovedor testimonio escrito desde el anexo secreto en Ámsterdam durante la ocupación nazi.', 'Símbolo imperecedero de la inocencia, la esperanza y la resistencia humana.'),
+    makeCanon('canon-nl-2', 'NL', 'El descubrimiento del cielo', 'Harry Mulisch', 1992, 736, '9788426418654', 'Alfaguara', '🏛️ Clásicos', ['📚 Metaficción & Libros sobre Libros'], 'Una ambiciosa trama teológica y humana donde dos amigos íntimos son piezas de un complot celestial.', 'Considerada la novela más importante de las letras neerlandesas modernas.')
+  ],
+  DK: [
+    makeCanon('canon-dk-1', 'DK', 'Cuentos completos', 'Hans Christian Andersen', 1835, 480, '9788420666655', 'Alianza', '🏛️ Clásicos', ['🧚 Cuentos de Hadas & Folklore', '🌍 Clásicos Universales'], 'La sirenita, El patito feo, La reina de las nieves: relatos que moldearon el imaginario universal.', 'El tesoro fundacional del cuento nórdico y europeo.'),
+    makeCanon('canon-dk-2', 'DK', 'Memorias de África', 'Karen Blixen', 1937, 416, '9788420471563', 'Alfaguara', '🏛️ Clásicos', ['🧭 Exploración & Arqueología'], '«Yo tenía una granja en África, al pie de las colinas de Ngong»: elegía poética al continente y a la libertad.', 'Una de las autobiografías líricas más deslumbrantes del siglo XX.')
+  ],
+  IS: [
+    makeCanon('canon-is-1', 'IS', 'Gente independiente', 'Halldór Laxness', 1934, 528, '9788415713005', 'Impedimenta', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La lucha titanica y obstinada del campesino Bjartur por no rendir su independencia a nadie entre los páramos.', 'La colosal epopeya islandesa que valió el Premio Nobel a Laxness.')
+  ],
+  FI: [
+    makeCanon('canon-fi-1', 'FI', 'Sinuhé, el egipcio', 'Mika Waltari', 1945, 608, '9788435017244', 'Edhasa', '🏰 Novela Histórica', ['🦅 Edad Antigua (Roma, Grecia, Egipto)'], 'El médico real de los faraones relata su apasionante periplo por el Nilo, Babilonia y Creta en tiempos de Akenatón.', 'La novela histórica nórdica más célebre y leída de la historia.'),
+    makeCanon('canon-fi-2', 'FI', 'El año de la liebre', 'Arto Paasilinna', 1975, 208, '9788433978554', 'Anagrama', '🖋️ Ficción Contemporánea & Literaria', ['🎭 Humor & Sátira'], 'Un periodista hastiado adopta una pequeña liebre herida y abandona la civilización para vivir libre en los bosques.', 'Canto desternillante y conmovedor al retorno a la naturaleza.')
+  ],
+  BE: [
+    makeCanon('canon-be-1', 'BE', 'El perro canelo (Maigret)', 'Georges Simenon', 1931, 192, '9788492412891', 'Acantilado', '🕵️ Misterio, Thriller & Novela Negra', ['🕵️ Misterio & Detective'], 'El comisario Jules Maigret investiga una enigmática tentativa de envenenamiento en la lluviosa costa de Bretaña.', 'Clásico maestro del maestro indiscutible de la novela policíaca europea.'),
+    makeCanon('canon-be-2', 'BE', 'Estupor y temblores', 'Amélie Nothomb', 1999, 144, '9788433973160', 'Anagrama', '🖋️ Ficción Contemporánea & Literaria', ['🎭 Humor & Sátira'], 'Las hilarantes y asfixiantes peripecias de una joven belga que empieza a trabajar en una corporación en Tokio.', 'Gran Premio de Novela de la Academia Francesa.')
+  ],
+  AT: [
+    makeCanon('canon-at-1', 'AT', 'El mundo de ayer: Memorias de un europeo', 'Stefan Zweig', 1942, 544, '9788499201580', 'Acantilado', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'El sobrecogedor testamento espiritual de la Viena imperial y la edad de oro de la cultura europea antes del abismo.', 'La autobiografía cultural más lúcida y conmovedora del siglo XX.'),
+    makeCanon('canon-at-2', 'AT', 'Carta de una desconocida', 'Stefan Zweig', 1922, 112, '9788492412891', 'Acantilado', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La estremecedora confesión póstuma de un amor ciego, obsesivo y silencioso mantenido a lo largo de toda una vida.', 'Prodigio concentrado de psicología amorosa y delicadeza estilística.')
+  ],
+  SE: [
+    makeCanon('canon-se-1', 'SE', 'Los hombres que no amaban a las mujeres', 'Stieg Larsson', 2005, 672, '9788423342792', 'Destino', '🕵️ Misterio, Thriller & Novela Negra', ['🕵️ Misterio & Detective'], 'Mikael Blomkvist y la indómita hacker Lisbeth Salander desentrañan el oscuro enigma de la familia Vanger.', 'La obra que revolucionó el thriller nórdico a escala planetaria.'),
+    makeCanon('canon-se-2', 'SE', 'El maravilloso viaje de Nils Holgersson', 'Selma Lagerlöf', 1906, 448, '9788420665504', 'Alianza', '✨ Fantasía', ['🌍 Clásicos Universales'], 'Un muchacho travieso es reducido de tamaño y recorre Suecia a lomos de un ganso salvaje aprendiendo nobleza.', 'La obra cumbre de la primera mujer galardonada con el Premio Nobel de Literatura.')
+  ],
+  PL: [
+    makeCanon('canon-pl-1', 'PL', 'Solaris', 'Stanisław Lem', 1961, 288, '9788435018616', 'Minotauro', '🔭 Ciencia Ficción & Distopía', ['🔬 Ciencia Ficción Dura (Hard Sci-Fi)', '👽 Primer Contacto & Aliens'], 'El océano pensante del planeta Solaris materializa los recuerdos y culpas más íntimas de los científicos.', 'La cumbre filosófica y científica de la ciencia ficción europea.'),
+    makeCanon('canon-pl-2', 'PL', 'Los errantes', 'Olga Tokarczuk', 2007, 400, '9788433978554', 'Anagrama', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'Una deslumbrante constelación de relatos y reflexiones sobre el viaje, la anatomía humana y la movilidad.', 'Ganadora del Man Booker International y pilar del Nobel de Tokarczuk.')
+  ],
+  TR: [
+    makeCanon('canon-tr-1', 'TR', 'Me llamo Rojo', 'Orhan Pamuk', 1998, 592, '9788497598583', 'Debolsillo', '🏛️ Clásicos', ['🏛️ Thriller Histórico & Religioso', '📚 Metaficción & Libros sobre Libros'], 'En el Estambul otomano de 1591, un miniaturista es asesinado mientras ilustra un manuscrito secreto para el Sultán.', 'La deslumbrante novela que encumbró internacionalmente al Premio Nobel Orhan Pamuk.'),
+    makeCanon('canon-tr-2', 'TR', 'La bastarda de Estambul', 'Elif Shafak', 2006, 368, '9788426416186', 'Lumen', '🖋️ Ficción Contemporánea & Literaria', ['🥹 Drama Familiar & Generacional'], 'El cruce de destinos entre una familia turca y una joven armenia de San Francisco en las calles de Estambul.', 'Audaz y vibrante canto al perdón, la identidad y la memoria femenina.')
+  ],
+  CU: [
+    makeCanon('canon-cu-1', 'CU', 'Los pasos perdidos', 'Alejo Carpentier', 1953, 336, '9788420651149', 'Alianza', '🏛️ Clásicos', ['🔮 Realismo Mágico'], 'Un músico hastiado de la civilización emprende una expedición a la selva en busca de instrumentos primitivos.', 'La obra fundacional de «lo real maravilloso» americano.'),
+    makeCanon('canon-cu-2', 'CU', 'El hombre que amaba a los perros', 'Leonardo Padura', 2009, 576, '9788483835104', 'Tusquets', '🏰 Novela Histórica', ['🪖 Guerras Mundiales & Siglo XX'], 'La reconstrucción del magnicidio de León Trotski y las vidas cruzadas de Ramón Mercader y el escritor Iván.', 'Monumento a la memoria histórica y la desilusión de las utopías.')
+  ],
+  UY: [
+    makeCanon('canon-uy-1', 'UY', 'La tregua', 'Mario Benedetti', 1960, 224, '9788420666662', 'Alianza', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'El diario íntimo de Martín Santomé a punto de jubilarse y la inesperada irrupción luminosa de Laura Avellaneda.', 'Una de las historias de amor y redención más leídas del idioma español.'),
+    makeCanon('canon-uy-2', 'UY', 'Las venas abiertas de América Latina', 'Eduardo Galeano', 1971, 384, '9788432311451', 'Siglo XXI', '🧠 Ensayo, Filosofía & Ciencia', ['🏛️ Política, Geopolítica & Sociedad'], 'Crónica apasionada y poética de cinco siglos de expoliación y resistencia en las tierras americanas.', 'El clásico latinoamericano más traducido de la memoria continental.')
+  ],
+  ZA: [
+    makeCanon('canon-za-1', 'ZA', 'Desgracia', 'J.M. Coetzee', 1999, 272, '9788497598682', 'Debolsillo', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'David Lurie, profesor en Ciudad del Cabo, busca refugio en la granja de su hija tras un escándalo amoroso.', 'Ganadora del Premio Booker y cúspide moral del Nobel sudafricano.'),
+    makeCanon('canon-za-2', 'ZA', 'El largo camino hacia la libertad', 'Nelson Mandela', 1994, 640, '9788420442600', 'Aguilar', '🧠 Ensayo, Filosofía & Ciencia', ['🏛️ Política, Geopolítica & Sociedad'], 'La inspiradora memoria vital del prisionero que derrotó pacíficamente al apartheid y unió a su país.', 'Uno de los testimonios de coraje y reconciliación más leídos de la historia.')
+  ],
+  IR: [
+    makeCanon('canon-ir-1', 'IR', 'La lechuza ciega', 'Sadegh Hedayat', 1937, 144, '9788415713005', 'Siruela', '🏛️ Clásicos', ['🕯️ Gótico Clásico & Romanticismo'], 'Una alucinación febril, poética y sombría de un pintor de cajas de rapé en Isfahán.', 'La cumbre literaria de la literatura persa contemporánea.'),
+    makeCanon('canon-ir-2', 'IR', 'Persépolis', 'Marjane Satrapi', 2000, 360, '9788417553555', 'Reservoir Books', '🖋️ Ficción Contemporánea & Literaria', ['🌱 Coming-of-Age (Aprendizaje)'], 'La mirada lúcida, tierna y valiente de una niña durante la Revolución Islámica en Teherán.', 'Una obra maestra universal de la memoria gráfica e histórica.')
+  ],
+  LB: [
+    makeCanon('canon-lb-1', 'LB', 'El profeta', 'Khalil Gibran', 1923, 128, '9788420666679', 'Alianza', '🏛️ Clásicos', ['🌍 Clásicos Universales', '🪶 Poesía Clásica & Contemporánea'], 'Al-Mustafá se despide de la ciudad de Orfalese respondiendo a las preguntas esenciales de la existencia.', 'Uno de los tesoros líricos y espirituales más leídos en todos los idiomas.'),
+    makeCanon('canon-lb-2', 'LB', 'León el Africano', 'Amin Maalouf', 1986, 416, '9788420651149', 'Alianza', '🏰 Novela Histórica', ['🧭 Exploración & Arqueología'], 'El viaje extraordinario de Hasán bin Muhammed desde la Granada de 1492 por Fez, El Cairo y la Roma papal.', 'El gran clásico de la interculturalidad y el puente entre Oriente y Occidente.')
+  ],
+  MA: [
+    makeCanon('canon-ma-1', 'MA', 'La noche sagrada', 'Tahar Ben Jelloun', 1987, 192, '9788432248252', 'Seix Barral', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La liberación y renacimiento de Zahra, forzada durante toda su juventud a vivir disfrazada de varón.', 'Premio Goncourt y un monumento a la libertad femenina en el Magreb.'),
+    makeCanon('canon-ma-2', 'MA', 'El pan a secas', 'Mohamed Choukri', 1973, 208, '9788496867628', 'Cabaret Voltaire', '🏛️ Clásicos', ['🌱 Coming-of-Age (Aprendizaje)'], 'La desgarradora autobiografía de un niño de la calle en Tánger que aprende a leer ya adulto para salvar su alma.', 'El hito rebelde y más visceral de las letras marroquíes.')
+  ],
+  DZ: [
+    makeCanon('canon-dz-1', 'DZ', 'El atentado', 'Yasmina Khadra', 2005, 256, '9788420658766', 'Alianza', '🖋️ Ficción Contemporánea & Literaria', ['🏛️ Política, Geopolítica & Sociedad'], 'Un cirujano respetado en Tel Aviv descubre con estupor que su amada esposa era la autora de un ataque suicida.', 'Obra maestra de tensión psicológica y empatía humana sobre el conflicto de Oriente.'),
+    makeCanon('canon-dz-2', 'DZ', 'El amor, la fantasía', 'Assia Djebar', 1985, 304, '9788420471563', 'Alfaguara', '🏛️ Clásicos', ['🪖 Guerras Mundiales & Siglo XX'], 'Polifonía de voces de mujeres argelinas entrelazadas con las crónicas coloniales de la toma de Argel.', 'Cúspide testimonial de la gran escritora argelina de la Academia Francesa.')
+  ],
+  KE: [
+    makeCanon('canon-ke-1', 'KE', 'Un grano de trigo', 'Ngũgĩ wa Thiong\'o', 1967, 320, '9788499896113', 'Debolsillo', '🏛️ Clásicos', ['🪖 Guerras Mundiales & Siglo XX'], 'Los preparativos de la independencia keniana desvelan los sacrificios, traiciones y heroicidades de la rebelión Mau Mau.', 'La gran novela política y coral de las letras de África Oriental.'),
+    makeCanon('canon-ke-2', 'KE', 'Descolonizar la mente', 'Ngũgĩ wa Thiong\'o', 1986, 192, '9788494874987', 'Debolsillo', '🧠 Ensayo, Filosofía & Ciencia', ['🏛️ Política, Geopolítica & Sociedad'], 'El alegato supremo en favor de las lenguas maternas africanas y la soberanía cultural del pensamiento.', 'Texto fundamental de la teoría cultural y literaria contemporánea.')
+  ],
+  SN: [
+    makeCanon('canon-sn-1', 'SN', 'Mi carta más larga', 'Mariama Bâ', 1979, 160, '9788417553012', 'Zack', '🏛️ Clásicos', ['🥹 Drama Familiar & Generacional'], 'Ramatoulaye escribe a su mejor amiga durante el duelo islámico, reflexionando sobre la poligamia y la dignidad.', 'El clásico feminista y epistolar más venerado de la literatura subsahariana.'),
+    makeCanon('canon-sn-2', 'SN', 'La más recóndita memoria de los hombres', 'Mohamed Mbougar Sarr', 2021, 448, '9788433978554', 'Anagrama', '🖋️ Ficción Contemporánea & Literaria', ['📚 Metaficción & Libros sobre Libros'], 'Un joven escritor senegalés en París sigue el rastro de un autor mítico desaparecido tras publicar un libro maldito.', 'Ganadora del Premio Goncourt y una deslumbrante oda al misterio de la literatura.')
+  ],
+  VE: [
+    makeCanon('canon-ve-1', 'VE', 'Doña Bárbara', 'Rómulo Gallegos', 1929, 368, '9788437604183', 'Cátedra', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La lucha mítica entre la civilización del letrado Santos Luzardo y la salvaje barbarie de los llanos del Arauca.', 'La novela más célebre y fundacional de las letras venezolanas.'),
+    makeCanon('canon-ve-2', 'VE', 'Ifigenia', 'Teresa de la Parra', 1924, 480, '9788420651132', 'Alianza', '🏛️ Clásicos', ['🌱 Coming-of-Age (Aprendizaje)'], 'El diario epistolar de María Eugenia Alonso al regresar a la Caracas conservadora tras vivir en París.', 'Obra cumbre de la introspección lírica y la rebeldía íntima hispanoamericana.')
+  ],
+  EC: [
+    makeCanon('canon-ec-1', 'EC', 'Huasipungo', 'Jorge Icaza', 1934, 224, '9788437600857', 'Cátedra', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La desgarradora tragedia de los indígenas quechuas despojados de sus parcelas ancestrales en los Andes.', 'La obra cumbre del realismo social y de denuncia indígena sudamericano.'),
+    makeCanon('canon-ec-2', 'EC', 'Mandíbula', 'Mónica Ojeda', 2018, 288, '9788417553555', 'Candaya', '🖋️ Ficción Contemporánea & Literaria', ['🕯️ Terror Gótico'], 'Un secuestro escolar entre una alumna y su profesora en Guayaquil destapa los horrores de la adolescencia y el miedo.', 'Una de las voces más osadas y poéticas del gótico andino actual.')
+  ],
+  BO: [
+    makeCanon('canon-bo-1', 'BO', 'Raza de bronce', 'Alcides Arguedas', 1919, 304, '9788437604657', 'Cátedra', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La vida áspera y solemne de las comunidades aymaras frente a las alturas del lago Titicaca.', 'La novela fundacional de la literatura boliviana y la narrativa andina.'),
+    makeCanon('canon-bo-2', 'BO', 'El delirio de Turing', 'Edmundo Paz Soldán', 2003, 336, '9788420468303', 'Alfaguara', '🔭 Ciencia Ficción & Distopía', ['🤖 Cyberpunk & IA'], 'Guerra de información, criptografía y ciberresistencia en una Bolivia convulsa por las protestas sociales.', 'Pionera del tecno-thriller y cyberpunk político latinoamericano.')
+  ],
+  CR: [
+    makeCanon('canon-cr-1', 'CR', 'Mamita Yunai', 'Carlos Luis Fallas', 1941, 240, '9788437505671', 'Fondo de Cultura Económica', '🏛️ Clásicos', ['🌍 Clásicos Universales'], 'La crudeza del trabajo en las plantaciones bananeras de Talamanca y el despertar de la solidaridad humana.', 'La gran epopeya social y literaria de Costa Rica.'),
+    makeCanon('canon-cr-2', 'CR', 'Cuentos de mi tía Panchita', 'Carmen Lyra', 1920, 176, '9788437601618', 'Cátedra', '✨ Fantasía', ['🌍 Clásicos Universales'], 'Pícaros cuentos populares protagonizados por Tío Conejo y las tradiciones orales costarricenses.', 'El tesoro infantil y folclórico más amado de Centroamérica.')
   ]
+
 };
 
 // ─── Funciones públicas de descubrimiento y canon nacional ───
@@ -1011,7 +1493,26 @@ export async function fetchMoreCountryBooks(
     NL: ['Cees Nooteboom', 'Harry Mulisch', 'Anne Frank'],
     AT: ['Stefan Zweig', 'Arthur Schnitzler', 'Robert Musil'],
     DK: ['Hans Christian Andersen', 'Karen Blixen', 'Søren Kierkegaard'],
-    UY: ['Mario Benedetti', 'Eduardo Galeano', 'Juan Carlos Onetti']
+    UY: ['Mario Benedetti', 'Eduardo Galeano', 'Juan Carlos Onetti', 'Horacio Quiroga'],
+    BE: ['Georges Simenon', 'Amélie Nothomb', 'Marguerite Yourcenar', 'Maurice Maeterlinck'],
+    CH: ['Max Frisch', 'Friedrich Dürrenmatt', 'Robert Walser', 'Hermann Hesse'],
+    FI: ['Mika Waltari', 'Tove Jansson', 'Aleksis Kivi', 'Arto Paasilinna'],
+    IS: ['Halldór Laxness', 'Arnaldur Indriðason', 'Sjón', 'Auður Ava Ólafsdóttir'],
+    IR: ['Sadegh Hedayat', 'Ferdowsi', 'Omar Khayyam', 'Marjane Satrapi'],
+    LB: ['Khalil Gibran', 'Amin Maalouf', 'Hoda Barakat'],
+    MA: ['Tahar Ben Jelloun', 'Fatema Mernissi', 'Mohamed Choukri', 'Leïla Slimani'],
+    DZ: ['Albert Camus', 'Kateb Yacine', 'Assia Djebar', 'Yasmina Khadra'],
+    KE: ['Ngũgĩ wa Thiong\'o', 'Binyavanga Wainaina', 'Grace Ogot'],
+    SN: ['Léopold Sédar Senghor', 'Mariama Bâ', 'Boubacar Boris Diop', 'Mohamed Mbougar Sarr'],
+    VE: ['Rómulo Gallegos', 'Arturo Uslar Pietri', 'Teresa de la Parra', 'Rafael Cadenas'],
+    EC: ['Jorge Icaza', 'Alicia Yánez Cossío', 'Mónica Ojeda', 'Pablo Palacio'],
+    BO: ['Edmundo Paz Soldán', 'Alcides Arguedas', 'Liliana Colanzi', 'Nataniel Aguirre'],
+    CR: ['Carmen Lyra', 'Fabián Dobles', 'Carlos Luis Fallas', 'Joaquín Gutiérrez'],
+    CU: ['Alejo Carpentier', 'José Lezama Lima', 'Guillermo Cabrera Infante', 'Reinaldo Arenas'],
+    TR: ['Orhan Pamuk', 'Elif Shafak', 'Yaşar Kemal', 'Ahmet Hamdi Tanpınar'],
+    ZA: ['J.M. Coetzee', 'Nadine Gordimer', 'André Brink', 'Breyten Breytenbach'],
+    NZ: ['Katherine Mansfield', 'Keri Hulme', 'Janet Frame', 'Witi Ihimaera'],
+    CA: ['Margaret Atwood', 'Alice Munro', 'Michael Ondaatje', 'Yann Martel']
   };
 
   const authors = countryAuthorsMap[code] || [country.name];
@@ -1176,6 +1677,15 @@ class LiteraryGeographyService {
   }
 
   public getDiplomaticRank(countriesCount: number, continentsCount: number): DiplomaticRank {
+    if (continentsCount >= 5 && countriesCount >= 16) {
+      return {
+        title: 'Canciller Supremo de las Letras',
+        latinTitle: 'Cancellarius Supremus Litterarum Mundi',
+        description: 'La más alta distinción de la República de las Letras. Has tendido puentes entre todas las culturas y continentes del orbe.',
+        badge: 'Rango VI · Canciller Supremo',
+        level: 6
+      };
+    }
     if (continentsCount >= 4 && countriesCount >= 10) {
       return {
         title: 'Embajador Plenipotenciario de las Letras',
@@ -1324,7 +1834,37 @@ class LiteraryGeographyService {
       totalContinentsStamped
     );
 
-    // Insignias consulares de exploración
+    // Insignias consulares de exploración e hitos mundiales
+    const hasIberian = Boolean(
+      countryMap.get('ES')?.some((b) => isBookRead(b)) ||
+      countryMap.get('PT')?.some((b) => isBookRead(b))
+    );
+    const ukUsCount =
+      (countryMap.get('GB')?.filter((b) => isBookRead(b)).length || 0) +
+      (countryMap.get('US')?.filter((b) => isBookRead(b)).length || 0);
+    const latamCodes = ['MX', 'AR', 'CO', 'CL', 'PE', 'UY', 'BR', 'CU', 'VE', 'EC', 'BO', 'CR'];
+    const latamCount = latamCodes.filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+    const hasOrient = ['JP', 'KR', 'CN', 'IN', 'IR', 'LB', 'TR'].some((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    );
+    const silkRoadCount = ['TR', 'IR', 'IN', 'CN', 'JP'].filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+    const nordicCount = ['IS', 'NO', 'SE', 'DK', 'FI'].filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+    const mediterraneanCount = ['ES', 'FR', 'IT', 'GR', 'EG', 'MA', 'LB', 'TR', 'DZ'].filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+    const centralEuroCount = ['DE', 'AT', 'CH', 'CZ', 'PL'].filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+    const africaCount = ['EG', 'NG', 'ZA', 'MA', 'DZ', 'KE', 'SN'].filter((code) =>
+      countryMap.get(code)?.some((b) => isBookRead(b))
+    ).length;
+
     const badges: PassportBadge[] = [
       {
         id: 'iberian',
@@ -1332,10 +1872,7 @@ class LiteraryGeographyService {
         latinTitle: 'Sigillum Ibericum',
         description: 'Has leído obras de autores españoles o portugueses.',
         icon: '🏛️',
-        unlocked: Boolean(
-          (countryMap.get('ES')?.some((b) => isBookRead(b))) ||
-          (countryMap.get('PT')?.some((b) => isBookRead(b)))
-        ),
+        unlocked: hasIberian,
         progressText: 'España / Portugal'
       },
       {
@@ -1344,32 +1881,80 @@ class LiteraryGeographyService {
         latinTitle: 'Visum Britannicum et Americanum',
         description: 'Has completado 3 o más obras de autores británicos o estadounidenses.',
         icon: '👑',
-        unlocked:
-          ((countryMap.get('GB')?.filter((b) => isBookRead(b)).length || 0) +
-            (countryMap.get('US')?.filter((b) => isBookRead(b)).length || 0)) >= 3,
-        progressText: '3+ obras de UK o EE.UU.'
+        unlocked: ukUsCount >= 3,
+        progressText: `${Math.min(3, ukUsCount)} / 3 obras (UK o EE.UU.)`
       },
       {
         id: 'latam',
         title: 'Crónicas de las Américas',
         latinTitle: 'Chronica Neomundi',
-        description: 'Has leído autores latinoamericanos (México, Argentina, Colombia, Chile, etc.).',
+        description: 'Has leído autores de las letras hispanoamericanas o brasileñas.',
         icon: '🌿',
-        unlocked: ['MX', 'AR', 'CO', 'CL', 'PE', 'UY', 'BR', 'CU'].some((code) =>
-          countryMap.get(code)?.some((b) => isBookRead(b))
-        ),
-        progressText: 'América Latina'
+        unlocked: latamCount >= 1,
+        progressText: `${latamCount} países de América Latina`
+      },
+      {
+        id: 'magical_realism',
+        title: 'El Realismo Mágico',
+        latinTitle: 'Magicus Realismus',
+        description: 'Has conquistado al menos 3 naciones de la gran tradición mágica de las Américas.',
+        icon: '🔮',
+        unlocked: latamCount >= 3,
+        progressText: `${Math.min(3, latamCount)} / 3 naciones americanas`
       },
       {
         id: 'orient',
         title: 'Caminante del Sol Naciente',
         latinTitle: 'Viator Solis Orientis',
-        description: 'Has cruzado el Pacífico para leer autores asiáticos (Japón, Corea, China o India).',
+        description: 'Has cruzado hacia Oriente para leer autores de Asia o Próximo Oriente.',
         icon: '⛩️',
-        unlocked: ['JP', 'KR', 'CN', 'IN'].some((code) =>
-          countryMap.get(code)?.some((b) => isBookRead(b))
-        ),
-        progressText: 'Asia'
+        unlocked: hasOrient,
+        progressText: 'Asia & Próximo Oriente'
+      },
+      {
+        id: 'silk_road',
+        title: 'La Ruta de la Seda',
+        latinTitle: 'Iter Sericum',
+        description: 'Has explorado al menos 3 culturas del milenario corredor de las caravanas (Turquía, Irán, India, China o Japón).',
+        icon: '🐪',
+        unlocked: silkRoadCount >= 3,
+        progressText: `${Math.min(3, silkRoadCount)} / 3 culturas de la ruta`
+      },
+      {
+        id: 'mediterranean',
+        title: 'Cuna del Mare Nostrum',
+        latinTitle: 'Cunabula Mediterranei',
+        description: 'Has leído autores de al menos 3 culturas ribereñas del mar Mediterráneo.',
+        icon: '🏺',
+        unlocked: mediterraneanCount >= 3,
+        progressText: `${Math.min(3, mediterraneanCount)} / 3 culturas mediterráneas`
+      },
+      {
+        id: 'hyperborea',
+        title: 'Expedición Boreal',
+        latinTitle: 'Expeditio Hyperborea',
+        description: 'Has conquistado al menos 2 países de las sagas nórdicas (Islandia, Noruega, Suecia, Dinamarca o Finlandia).',
+        icon: '❄️',
+        unlocked: nordicCount >= 2,
+        progressText: `${Math.min(2, nordicCount)} / 2 tierras nórdicas`
+      },
+      {
+        id: 'central_europe',
+        title: 'Tridentum Centroeuropeo',
+        latinTitle: 'Tridentum Europae Centralis',
+        description: 'Has visitado al menos 3 patrias literarias de Europa Central (Alemania, Austria, Suiza, Chequia o Polonia).',
+        icon: '🏰',
+        unlocked: centralEuroCount >= 3,
+        progressText: `${Math.min(3, centralEuroCount)} / 3 países centroeuropeos`
+      },
+      {
+        id: 'african_renaissance',
+        title: 'El Renacimiento Africano',
+        latinTitle: 'Renascitur Africa',
+        description: 'Has leído obras maestras de al menos 2 países del continente africano.',
+        icon: '🦁',
+        unlocked: africaCount >= 2,
+        progressText: `${Math.min(2, africaCount)} / 2 países africanos`
       },
       {
         id: 'cosmopolitan',
@@ -1381,6 +1966,15 @@ class LiteraryGeographyService {
         progressText: `${Math.min(5, totalCountriesStamped)} / 5 países sellados`
       },
       {
+        id: 'cartographer',
+        title: 'Gran Cartógrafo de Ultramar',
+        latinTitle: 'Magnus Cartographus',
+        description: 'Has extendido tus lecturas a través de 10 o más naciones del mapamundi.',
+        icon: '📜',
+        unlocked: totalCountriesStamped >= 10,
+        progressText: `${Math.min(10, totalCountriesStamped)} / 10 países sellados`
+      },
+      {
         id: 'intercontinental',
         title: 'Pacto Intercontinental',
         latinTitle: 'Foedus Intercontinentale',
@@ -1388,6 +1982,15 @@ class LiteraryGeographyService {
         icon: '🧭',
         unlocked: totalContinentsStamped >= 3,
         progressText: `${Math.min(3, totalContinentsStamped)} / 3 continentes`
+      },
+      {
+        id: 'circumnavigation',
+        title: 'La Vuelta al Mundo',
+        latinTitle: 'Circumnavigatio Litteraria',
+        description: 'La máxima proeza geográfica: has leído obras en al menos 5 continentes distintos.',
+        icon: '⛵',
+        unlocked: totalContinentsStamped >= 5,
+        progressText: `${Math.min(5, totalContinentsStamped)} / 5 continentes`
       }
     ];
 
