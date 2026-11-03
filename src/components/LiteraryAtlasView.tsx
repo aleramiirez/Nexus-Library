@@ -914,16 +914,18 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
 
               {/* Píldora flotante minimalista al seleccionar un país en la mesa grande */}
               {selectedCountryCode && activeCountryInfo && (
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
-                  <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[#fbf6ea]/95 dark:bg-[#151d2b]/95 backdrop-blur-md border border-amber-600/40 shadow-2xl">
+                <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[calc(100%-24px)] max-w-md sm:w-auto px-1 sm:px-0">
+                  <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl sm:rounded-full bg-[#fbf6ea]/95 dark:bg-[#151d2b]/95 backdrop-blur-md border border-amber-600/40 shadow-2xl">
                     <img
                       src={`https://flagcdn.com/w40/${activeCountryInfo.code.toLowerCase()}.png`}
                       alt={activeCountryInfo.name}
-                      className="w-5 h-3.5 object-cover rounded-xs border border-amber-900/20 shadow-xs"
+                      className="w-5 h-3.5 sm:w-6 sm:h-4 object-cover rounded-xs border border-amber-900/20 shadow-xs shrink-0"
                     />
-                    <div className="flex items-center gap-1.5 font-serif text-sm font-bold text-stone-900 dark:text-stone-100">
-                      <span>{activeCountryInfo.name}</span>
-                      <span className="text-xs font-sans font-normal text-stone-500 dark:text-stone-400">
+                    <div className="min-w-0 flex-1 sm:flex-initial flex flex-col sm:flex-row sm:items-center sm:gap-2 leading-tight">
+                      <span className="font-serif text-sm font-bold text-stone-900 dark:text-stone-100 truncate">
+                        {activeCountryInfo.name}
+                      </span>
+                      <span className="text-[11px] sm:text-xs font-sans font-normal text-stone-600 dark:text-stone-400 truncate">
                         ({currentCountryBooks.length} en biblioteca · {canonBooks.length} en canon)
                       </span>
                     </div>
@@ -936,10 +938,10 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
                           if (el) el.scrollIntoView({ behavior: 'smooth' });
                         }, 100);
                       }}
-                      className="ml-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-700 hover:bg-amber-800 text-white shadow-sm transition cursor-pointer"
+                      className="shrink-0 whitespace-nowrap ml-1 sm:ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-700 hover:bg-amber-800 active:scale-95 text-white shadow-sm transition cursor-pointer"
                     >
                       <span>Ver obras</span>
-                      <ArrowDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-3.5 h-3.5 shrink-0" />
                     </button>
                   </div>
                 </div>
