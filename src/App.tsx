@@ -108,7 +108,9 @@ import { formatFriendlyErrorMessage } from './utils/errorUtils';
 import { LibrarySelect } from './components/LibrarySelect';
 import './dashboard-panels.css';
 
-import { BookDetailModal } from './components/BookDetailModal';
+const BookDetailModal = React.lazy(() =>
+  import('./components/BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
+);
 import { PwaInstallModal } from './components/PwaInstallModal';
 const AddEditBookModal = React.lazy(() =>
   import('./components/AddEditBookModal').then((m) => ({ default: m.AddEditBookModal }))
@@ -141,12 +143,20 @@ const CollectionsScreen = React.lazy(() =>
 );
 import { collectionService } from './services/collectionService';
 import { readingChallengeService } from './services/readingChallengeService';
-import { FirstLoginProfileModal } from './components/FirstLoginProfileModal';
+const FirstLoginProfileModal = React.lazy(() =>
+  import('./components/FirstLoginProfileModal').then((m) => ({ default: m.FirstLoginProfileModal }))
+);
 import { ProfileSetupBanner } from './components/ProfileSetupBanner';
-import { SettingsTab } from './components/SettingsScreen';
-import { BookFinishedCelebrationModal } from './components/BookFinishedCelebrationModal';
-import { ShareBookCardModal } from './components/ShareBookCardModal';
-import { NexusOrderCodexModal } from './components/NexusOrderCodexModal';
+import type { SettingsTab } from './components/SettingsScreen';
+const BookFinishedCelebrationModal = React.lazy(() =>
+  import('./components/BookFinishedCelebrationModal').then((m) => ({ default: m.BookFinishedCelebrationModal }))
+);
+const ShareBookCardModal = React.lazy(() =>
+  import('./components/ShareBookCardModal').then((m) => ({ default: m.ShareBookCardModal }))
+);
+const NexusOrderCodexModal = React.lazy(() =>
+  import('./components/NexusOrderCodexModal').then((m) => ({ default: m.NexusOrderCodexModal }))
+);
 import { calculateReaderLevel } from './services/levelingService';
 
 const initialFilters: LibraryFilters = {
@@ -2990,9 +3000,8 @@ export const App: React.FC = () => {
             onNavigateToSettingsAccount={handleNavigateToSettingsAccount}
           />
         )}
-      </React.Suspense>
 
-      {currentUser && currentUserProfile && (
+      {isFirstLoginModalOpen && currentUser && currentUserProfile && (
         <FirstLoginProfileModal
           isOpen={isFirstLoginModalOpen}
           onClose={() => setIsFirstLoginModalOpen(false)}
@@ -3040,15 +3049,18 @@ export const App: React.FC = () => {
         />
       )}
 
-      <NexusOrderCodexModal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        levelInfo={readerLevelInfo}
-        avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
-        displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
-        username={currentUserProfile?.username}
-        onShowToast={showToast}
-      />
+      {isOrderModalOpen && (
+        <NexusOrderCodexModal
+          isOpen={isOrderModalOpen}
+          onClose={() => setIsOrderModalOpen(false)}
+          levelInfo={readerLevelInfo}
+          avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
+          displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
+          username={currentUserProfile?.username}
+          onShowToast={showToast}
+        />
+      )}
+      </React.Suspense>
 
       {bookToDelete &&
         typeof document !== 'undefined' &&
