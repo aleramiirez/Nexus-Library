@@ -324,8 +324,6 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     return () => clearTimeout(timer);
   }, [searchQuery, isOpen]);
 
-  if (!isOpen) return null;
-
   const applyCandidate = (cand: BibliographicCandidate) => {
     setSelectedCandidateId(cand.id);
     setNombre(cand.nombre);
@@ -1469,6 +1467,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       </div>
     </div>
   );
+
+  if (!isOpen) return null;
 
   return (
     <div
