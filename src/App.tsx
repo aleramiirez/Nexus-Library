@@ -159,6 +159,7 @@ const NexusOrderCodexModal = React.lazy(() =>
 );
 import { calculateReaderLevel } from './services/levelingService';
 import { useLibraryFilters, initialFilters } from './hooks/useLibraryFilters';
+import { useLibraryModals } from './hooks/useLibraryModals';
 
 const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
   'dashboard',
@@ -277,43 +278,60 @@ export const App: React.FC = () => {
     filteredBooks
   } = useLibraryFilters(books);
 
-  const [detailBookId, setDetailBookId] = useState<string | null>(null);
-  const handleOpenBookDetail = React.useCallback(
-    (id: string) => {
-      startTransition(() => {
-        setDetailBookId(id);
-      });
-    },
-    []
-  );
-  const handleOpenCardDetail = React.useCallback(
-    (b: Book) => {
-      startTransition(() => {
-        setDetailBookId(b.id);
-      });
-    },
-    []
-  );
-  const [isAddEditOpen, setIsAddEditOpen] = useState(false);
-  const [editingBook, setEditingBook] = useState<Book | null>(null);
-  const [selectedInitialCandidate, setSelectedInitialCandidate] = useState<BibliographicCandidate | null>(null);
-  const [selectedParsedEbook, setSelectedParsedEbook] = useState<ParsedEbookFile | null>(null);
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isEpubImportOpen, setIsEpubImportOpen] = useState(false);
-  const [initialEpubFiles, setInitialEpubFiles] = useState<File[] | undefined>(undefined);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const {
+    detailBookId,
+    setDetailBookId,
+    handleOpenBookDetail,
+    handleOpenCardDetail,
+    handleCloseBookDetail,
+    isAddEditOpen,
+    setIsAddEditOpen,
+    editingBook,
+    setEditingBook,
+    selectedInitialCandidate,
+    setSelectedInitialCandidate,
+    selectedParsedEbook,
+    setSelectedParsedEbook,
+    handleOpenCreateBook,
+    handleOpenEditBook,
+    handleCustomizeFromDiscover,
+    handleCloseAddEdit,
+    isImportOpen,
+    setIsImportOpen,
+    isEpubImportOpen,
+    setIsEpubImportOpen,
+    initialEpubFiles,
+    setInitialEpubFiles,
+    handleCloseEpubImport,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    isInstallModalOpen,
+    setIsInstallModalOpen,
+    bookToDelete,
+    setBookToDelete,
+    sagaToDelete,
+    setSagaToDelete,
+    celebrationBook,
+    setCelebrationBook,
+    shareCardBook,
+    setShareCardBook,
+    isOrderModalOpen,
+    setIsOrderModalOpen,
+    isInboxOpen,
+    setIsInboxOpen,
+    inboxInitialTab,
+    setInboxInitialTab,
+    isFirstLoginModalOpen,
+    setIsFirstLoginModalOpen,
+    isAnyLibraryModalOpen
+  } = useLibraryModals();
+
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     const hash = window.location.hash || '';
     const search = window.location.search || '';
     return hash.includes('type=recovery') || search.includes('type=recovery');
   });
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  const [sagaToDelete, setSagaToDelete] = useState<Saga | null>(null);
-  const [celebrationBook, setCelebrationBook] = useState<Book | null>(null);
-  const [shareCardBook, setShareCardBook] = useState<Book | null>(null);
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const lastAuthUserIdRef = useRef<string | null | undefined>(undefined);
@@ -348,13 +366,10 @@ export const App: React.FC = () => {
   const [assignVolume, setAssignVolume] = useState<string>('1');
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
 
-  const [isInboxOpen, setIsInboxOpen] = useState(false);
-  const [inboxInitialTab, setInboxInitialTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
   const [discoverInitialTab, setDiscoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
-  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState(false);
 
   const handleNavigateToSettingsAccount = React.useCallback(() => {
     setSettingsInitialTab('account');
@@ -813,16 +828,8 @@ export const App: React.FC = () => {
 
   const isAnyModalOpen = Boolean(
     mobileMenuOpen ||
-    isAddEditOpen ||
-    detailBookId ||
-    isImportOpen ||
-    isEpubImportOpen ||
-    isAuthModalOpen ||
-    isInstallModalOpen ||
-    bookToDelete ||
-    sagaToDelete ||
     sagaFormOpen ||
-    isInboxOpen
+    isAnyLibraryModalOpen
   );
 
   // Bloquea el scroll del fondo mientras cualquier modal o menú móvil está abierto
@@ -1175,21 +1182,6 @@ export const App: React.FC = () => {
     }
   }, [books, sagas]);
 
-  const handleOpenCreateBook = () => {
-    setSelectedInitialCandidate(null);
-    setSelectedParsedEbook(null);
-    setEditingBook(null);
-    setIsAddEditOpen(true);
-  };
-
-  const handleOpenEditBook = (book: Book) => {
-    setSelectedInitialCandidate(null);
-    setSelectedParsedEbook(null);
-    setDetailBookId(null);
-    setEditingBook(book);
-    setIsAddEditOpen(true);
-  };
-
   const handleBookStatusChange = useCallback(
     async (bookId: string, nextStatus: ReadingStatus) => {
       const currentBook = books.find((b) => b.id === bookId);
@@ -1206,12 +1198,6 @@ export const App: React.FC = () => {
   const handleQuickAddFromDiscover = async (candidate: BibliographicCandidate) => {
     const bookInput = candidateToBookInput(candidate);
     await saveBookRecord(bookInput);
-  };
-
-  const handleCustomizeFromDiscover = (candidate: BibliographicCandidate) => {
-    setEditingBook(null);
-    setSelectedInitialCandidate(candidate);
-    setIsAddEditOpen(true);
   };
 
   const handleAddBookFromCommunity = async (book: Book) => {
