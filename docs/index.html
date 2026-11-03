@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nexus Library · Arquitectura y Documentación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F1E7D3;
+      --sf: #FAF3E4;
+      --card: #FFFCF3;
+      --bd: #D8C7A3;
+      --tx: #2A2017;
+      --mu: #6A5A46;
+      --gold: #A46F1B;
+      color-scheme: light;
+      box-sizing: border-box;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0D1017;
+        --sf: #151A24;
+        --card: #1B2230;
+        --bd: #283246;
+        --tx: #EDE3CF;
+        --mu: #9AA3B5;
+        --gold: #E5C158;
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0D1017;
+      --sf: #151A24;
+      --card: #1B2230;
+      --bd: #283246;
+      --tx: #EDE3CF;
+      --mu: #9AA3B5;
+      --gold: #E5C158;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--tx);
+      font: 400 1rem/1.6 "Plus Jakarta Sans", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      background: var(--sf);
+      border: 1px solid var(--bd);
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      margin-bottom: 0.8rem;
+    }
+    h1 {
+      font: 700 3rem/1.1 "Cormorant Garamond", Georgia, serif;
+      color: var(--gold);
+      margin-bottom: 0.6rem;
+    }
+    header p {
+      color: var(--mu);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 1.6rem;
+      text-decoration: none;
+      color: var(--tx);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gold);
+      opacity: 0.8;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+      border-color: var(--gold);
+    }
+    .card-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.8rem;
+      display: inline-block;
+    }
+    .card h2 {
+      font: 700 1.6rem/1.2 "Cormorant Garamond", Georgia, serif;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+    .card p {
+      color: var(--mu);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.2rem;
+      flex-grow: 1;
+    }
+    .card-link {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gold);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    footer {
+      text-align: center;
+      color: var(--mu);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--bd);
+      padding-top: 1.5rem;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    footer a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Nexus Library</span>
+      <h1>Arquitectura y Sistemas</h1>
+      <p>Explora los diagramas visuales e interactivos que documentan la estructura técnica de la aplicación.</p>
+    </header>
+
+    <main class="grid">
+      <a href="architecture/atlas-arquitectura.html" class="card">
+        <div>
+          <span class="card-icon">🗺️</span>
+          <h2>Atlas de Arquitectura</h2>
+          <p>Estructura estratificada en 6 capas: interfaz, servicios, base de datos local Dexie, nube Supabase, APIs de terceros y taller de despliegue. Incluye recorridos guiados y trazado de dependencias.</p>
+        </div>
+        <span class="card-link">Explorar Atlas interactivo →</span>
+      </a>
+
+      <a href="architecture/diagrama-arquitectura.html" class="card">
+        <div>
+          <span class="card-icon">⚡</span>
+          <h2>Diagrama de Arquitectura</h2>
+          <p>Flujo integral de datos, sincronización reactiva en tiempo real, llamadas Web Push con Edge Functions y conexiones cliente-servidor animadas paquete a paquete.</p>
+        </div>
+        <span class="card-link">Explorar Diagrama de flujo →</span>
+      </a>
+    </main>
+  </div>
+
+  <footer>
+    <p>Nexus Library &bull; Repositorio en <a href="https://github.com/aleramiirez/Nexus-Library" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+  </footer>
+</body>
+</html>
