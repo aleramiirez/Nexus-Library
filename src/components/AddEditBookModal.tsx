@@ -223,7 +223,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       }
       setVolumen(editingBook.volumen ? String(editingBook.volumen) : '');
       setFechaInicio(editingBook.fechaInicio);
-      setFechaFin(editingBook.fechaFin);
+      setFechaFin(editingBook.fechaFin || editingBook.fechaPausado || '');
       setLecturaVirtual(editingBook.lecturaVirtual);
       setTiempoLectura(editingBook.tiempoLectura);
       setIsbn(editingBook.isbn);
@@ -584,7 +584,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           fechaFin,
           fechaPausado:
             progreso === '⏸️ Pausado'
-              ? editingBook?.fechaPausado || getTodayLocalDateString()
+              ? fechaFin || editingBook?.fechaPausado || getTodayLocalDateString()
               : null,
           lecturaVirtual: (lecturaVirtual || 'Digital (.epub / eBook)').trim(),
           tiempoLectura: calculateReadingTime({

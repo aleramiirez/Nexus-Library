@@ -340,21 +340,27 @@ class ReadingStreakService {
             (book.fechaPausado ? book.fechaPausado.trim() : '') ||
             (book.fechaFin ? book.fechaFin.trim() : '');
 
-          if (!fin || fin < ini) {
-            // Si el usuario no especificó fechaFin, buscar si hay una siguiente lectura que empezó después
-            const nextBookStarts = books
-              .filter((b) => b.id !== book.id && b.fechaInicio && b.fechaInicio.trim() > ini)
-              .map((b) => b.fechaInicio.trim())
-              .sort();
+          // Buscar lecturas que empezaron después de este libro
+          const nextBookStarts = books
+            .filter((b) => b.id !== book.id && b.fechaInicio && b.fechaInicio.trim() > ini)
+            .map((b) => b.fechaInicio.trim())
+            .sort();
 
-            if (nextBookStarts.length > 0) {
-              // El día anterior al comienzo del siguiente libro (ej. pausó el 29 y el 30 empezó Juego de tronos)
-              const nextStart = nextBookStarts[0];
-              const dNext = new Date(nextStart + 'T00:00:00');
-              dNext.setDate(dNext.getDate() - 1);
-              const dayBeforeNext = formatDateToLocalIso(dNext);
+          if (nextBookStarts.length > 0) {
+            // El día anterior al comienzo del siguiente libro (ej. si Juego de Tronos empezó el 30,
+            // el libro pausado se leyó hasta el 29 inclusive como día de lectura)
+            const nextStart = nextBookStarts[0];
+            const dNext = new Date(nextStart + 'T00:00:00');
+            dNext.setDate(dNext.getDate() - 1);
+            const dayBeforeNext = formatDateToLocalIso(dNext);
+
+            // Si no había fecha fin, o si fin sobrepasa el inicio del nuevo libro,
+            // acotar fin a dayBeforeNext (ej. 29 de octubre)
+            if (!fin || fin < ini || fin > dayBeforeNext) {
               fin = dayBeforeNext >= ini ? dayBeforeNext : ini;
-            } else if (book.updatedAt) {
+            }
+          } else if (!fin || fin < ini) {
+            if (book.updatedAt) {
               const updatedIso = book.updatedAt.slice(0, 10);
               if (updatedIso >= ini && updatedIso <= today) {
                 fin = updatedIso;

@@ -132,7 +132,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
         </div>
         <div>
           <label htmlFor="add-book-fecha-fin" className={labelCls}>
-            Fecha Fin
+            {progreso === '⏸️ Pausado' ? 'Fecha de Pausa' : 'Fecha Fin'}
           </label>
           <input
             id="add-book-fecha-fin"
