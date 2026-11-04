@@ -1404,6 +1404,7 @@ export const App: React.FC = () => {
               onLoadSampleBooks={handleLoadSampleBooks}
               onOpenImport={() => setIsImportOpen(true)}
               onUpdateProgress={handleUpdateBookReadingProgress}
+              onShowToast={showToast}
             />
           )}
 

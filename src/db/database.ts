@@ -4,6 +4,7 @@ import { BackupPayload, Book, Saga } from '../types/models';
 import { normalizeText } from '../constants/catalogs';
 import { getActiveUser, supabase } from '../services/supabaseClient';
 import { isDuplicateBook, ParsedCsvBook } from '../services/importExportService';
+import { readingStreakService } from '../services/readingStreakService';
 
 export class NexusLibraryDB extends Dexie {
   books!: Table<Book, string>;
@@ -834,6 +835,18 @@ export async function updateBookReadingProgress(
   }
 
   await db.books.put(currentBook);
+
+  try {
+    readingStreakService.recordBookReadingProgress(
+      bookId,
+      newPage,
+      previousPage,
+      pagesDelta,
+      today
+    );
+  } catch (err) {
+    console.warn('Advertencia al registrar racha de lectura:', err);
+  }
 
   return {
     book: currentBook,

@@ -30,6 +30,7 @@ import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { formatStars } from '../constants/catalogs';
 import { calculateReaderLevel } from '../services/levelingService';
 import { NexusOrderRankPanel } from './NexusOrderRankPanel';
+import { ReadingHeatmapCalendar } from './ReadingHeatmapCalendar';
 import '../dashboard-panels.css';
 
 interface ReadingChallengeScreenProps {
@@ -453,6 +454,9 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         username={username}
         onShowToast={onShowToast}
       />
+
+      {/* ─── Mapa de Calor Anual Completo (365 días) ─── */}
+      <ReadingHeatmapCalendar books={books} initialYear={activeYearNum} />
 
       {/* ─── Cadencia Mensual de Lectura (Gráfico 12 meses) ─── */}
       <section className="rounded-2xl editorial-card-surface p-6 space-y-5">

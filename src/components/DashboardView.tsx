@@ -7,6 +7,7 @@ import { ProfileSetupBanner } from './ProfileSetupBanner';
 import { DashboardReadingPanel } from './DashboardReadingPanel';
 import { DashboardSagasPanel } from './DashboardSagasPanel';
 import { DashboardFavoritesShelf } from './DashboardFavoritesShelf';
+import { ReadingStreakDashboardWidget } from './ReadingStreakDashboardWidget';
 import { SagaWithBooksItem } from './SagasScreen';
 import '../dashboard-panels.css';
 
@@ -35,6 +36,7 @@ export interface DashboardViewProps {
   onLoadSampleBooks: () => void;
   onOpenImport: () => void;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
+  onShowToast?: (message: string, options?: any) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -53,7 +55,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenBookDetail,
   onLoadSampleBooks,
   onOpenImport,
-  onUpdateProgress
+  onUpdateProgress,
+  onShowToast
 }) => {
   return (
     <div className="space-y-6">
@@ -186,6 +189,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           />
         </div>
       </div>
+
+      {/* Widget de Racha y Hábito de Lectura */}
+      <ReadingStreakDashboardWidget
+        books={books}
+        onNavigateToStats={() => onNavigate('stats')}
+        onShowToast={onShowToast}
+      />
 
       {/* Estantería de favoritos */}
       <DashboardFavoritesShelf
