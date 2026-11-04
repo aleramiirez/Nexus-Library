@@ -135,5 +135,17 @@ test.describe('Fase 2: Racha Diaria de Lectura y Mapa de Calor', () => {
 
     // Verificar que la racha actual reconoce la suma continua de ambos (11 días)
     await expect(page.getByText(/11\s*días/i).first()).toBeVisible({ timeout: 10000 });
+
+    // Verificar que el cambio de mes a noviembre muestra la etiqueta 'NOV'
+    await expect(page.locator('.nx-streak-mo', { hasText: 'NOV' })).toBeVisible();
+
+    // Verificar que el sello 'HOY' está en el día actual local (día 4)
+    const todayCell = page.locator('.nx-streak-d.t');
+    await expect(todayCell.locator('.nx-streak-tg')).toHaveText('HOY');
+    await expect(todayCell.locator('.nx-streak-s')).toHaveText(new Date().getDate().toString());
+
+    // Verificar que el día 29 de octubre tiene lecturas asignadas del libro pausado (20 p)
+    const day29Cell = page.locator('.nx-streak-d').filter({ has: page.locator('[aria-label*="29 de octubre"]') });
+    await expect(day29Cell.locator('.nx-streak-pg')).toHaveText('20 p');
   });
 });

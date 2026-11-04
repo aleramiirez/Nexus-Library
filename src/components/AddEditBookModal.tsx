@@ -45,6 +45,7 @@ import {
   COUNTRIES_CATALOG,
   literaryGeographyService
 } from '../services/literaryGeographyService';
+import { getTodayLocalDateString } from '../db/database';
 import { BookFormEssentialTab } from './book-form/BookFormEssentialTab';
 import { BookFormReadingTab } from './book-form/BookFormReadingTab';
 import { BookFormEditionTab } from './book-form/BookFormEditionTab';
@@ -583,7 +584,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           fechaFin,
           fechaPausado:
             progreso === '⏸️ Pausado'
-              ? editingBook?.fechaPausado || new Date().toISOString().slice(0, 10)
+              ? editingBook?.fechaPausado || getTodayLocalDateString()
               : null,
           lecturaVirtual: (lecturaVirtual || 'Digital (.epub / eBook)').trim(),
           tiempoLectura: calculateReadingTime({

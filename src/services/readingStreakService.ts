@@ -1,11 +1,14 @@
 import { Book } from '../types/models';
 
-export function getTodayLocalDateString(): string {
-  const d = new Date();
+export function formatDateToLocalIso(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function getTodayLocalDateString(): string {
+  return formatDateToLocalIso(new Date());
 }
 
 export interface DailyReadingLog {
@@ -255,7 +258,7 @@ class ReadingStreakService {
             const cursor = new Date(dIni);
 
             while (cursor <= dFin) {
-              const iso = cursor.toISOString().slice(0, 10);
+              const iso = formatDateToLocalIso(cursor);
               if (!prefix || iso.startsWith(prefix)) {
                 const existing = map.get(iso);
                 const currentP = existing ? existing.pagesRead : 0;
@@ -305,7 +308,7 @@ class ReadingStreakService {
             const cursor = new Date(dIni);
 
             while (cursor <= dHoy) {
-              const iso = cursor.toISOString().slice(0, 10);
+              const iso = formatDateToLocalIso(cursor);
               if (!prefix || iso.startsWith(prefix)) {
                 const existing = map.get(iso);
                 const currentP = existing ? existing.pagesRead : 0;
@@ -349,7 +352,7 @@ class ReadingStreakService {
               const nextStart = nextBookStarts[0];
               const dNext = new Date(nextStart + 'T00:00:00');
               dNext.setDate(dNext.getDate() - 1);
-              const dayBeforeNext = dNext.toISOString().slice(0, 10);
+              const dayBeforeNext = formatDateToLocalIso(dNext);
               fin = dayBeforeNext >= ini ? dayBeforeNext : ini;
             } else if (book.updatedAt) {
               const updatedIso = book.updatedAt.slice(0, 10);
@@ -382,7 +385,7 @@ class ReadingStreakService {
             const cursor = new Date(dIni);
 
             while (cursor <= dFin) {
-              const iso = cursor.toISOString().slice(0, 10);
+              const iso = formatDateToLocalIso(cursor);
               if (!prefix || iso.startsWith(prefix)) {
                 const existing = map.get(iso);
                 const currentP = existing ? existing.pagesRead : 0;
@@ -468,14 +471,14 @@ class ReadingStreakService {
     if (!readToday) {
       // Probar si ayer hubo lectura
       checkDate.setDate(checkDate.getDate() - 1);
-      const yesterdayStr = checkDate.toISOString().slice(0, 10);
+      const yesterdayStr = formatDateToLocalIso(checkDate);
       const yEntry = heatmap.get(yesterdayStr);
       if (!yEntry || yEntry.pagesRead <= 0) {
         currentStreak = 0;
       } else {
         // Ayer leyó: la racha sigue viva contando desde ayer
         while (true) {
-          const iso = checkDate.toISOString().slice(0, 10);
+          const iso = formatDateToLocalIso(checkDate);
           const entry = heatmap.get(iso);
           if (entry && entry.pagesRead > 0) {
             currentStreak++;
@@ -488,7 +491,7 @@ class ReadingStreakService {
     } else {
       // Hoy ya leyó: contar desde hoy hacia atrás
       while (true) {
-        const iso = checkDate.toISOString().slice(0, 10);
+        const iso = formatDateToLocalIso(checkDate);
         const entry = heatmap.get(iso);
         if (entry && entry.pagesRead > 0) {
           currentStreak++;
@@ -546,7 +549,7 @@ class ReadingStreakService {
     for (let i = daysCount - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const iso = d.toISOString().slice(0, 10);
+      const iso = formatDateToLocalIso(d);
       const existing = heatmap.get(iso);
 
       if (existing) {
@@ -597,7 +600,7 @@ class ReadingStreakService {
     for (let w = 0; w < weeksCount; w++) {
       const currentWeek: CalendarDayView[] = [];
       for (let d = 0; d < 7; d++) {
-        const iso = cursor.toISOString().slice(0, 10);
+        const iso = formatDateToLocalIso(cursor);
         const isToday = iso === today;
         const isFuture = iso > today;
         const existing = heatmap.get(iso);
