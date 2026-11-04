@@ -639,3 +639,477 @@ html.dark .nx-streak-w {
     animation: none !important;
   }
 }
+
+/* ===== Widget Ceremonial de Mapa de Calor de Lectura Anual (Sellos y Cordones 365d) ===== */
+.nx-heatmap-w {
+  --card: #FBF4E4;
+  --in: #F5EAD3;
+  --bd: #D8C4A0;
+  --tx: #2B1A10;
+  --mu: #7A6650;
+  --gold: #B07A1E;
+  --cord: #C9A66B;
+  --crim: #8E2434;
+  --glow: rgba(176, 122, 30, 0.35);
+  background: var(--card);
+  color: var(--tx);
+  border: 1px solid var(--bd);
+  border-radius: 22px;
+  padding: 1.4rem;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+html.dark .nx-heatmap-w {
+  --card: #1B2230;
+  --in: #151A24;
+  --bd: #283246;
+  --tx: #EDE3CF;
+  --mu: #9AA3B5;
+  --gold: #E5C158;
+  --cord: #5B4A2A;
+  --crim: #C2485A;
+  --glow: rgba(229, 193, 88, 0.35);
+}
+
+.nx-heatmap-w::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.nx-heatmap-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.nx-heatmap-tt {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.nx-heatmap-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, #CF5560, #8E2434 72%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.nx-heatmap-title {
+  font: 700 1.55rem/1.1 'Cormorant Garamond', Georgia, serif;
+  margin: 0;
+  color: var(--tx);
+}
+
+.nx-heatmap-sub {
+  color: var(--mu);
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+}
+
+.nx-heatmap-sub::before {
+  content: "❦ ";
+  color: var(--gold);
+}
+
+.nx-heatmap-yr {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.nx-heatmap-yr button {
+  font: 600 0.8rem 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--in);
+  color: var(--tx);
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nx-heatmap-yr button:hover {
+  border-color: var(--gold);
+}
+
+.nx-heatmap-yr button.on {
+  background: linear-gradient(135deg, #E5C158, #C98A1B);
+  border-color: #C98A1B;
+  color: #2B1A10;
+  font-weight: 700;
+  box-shadow: 0 2px 8px var(--glow);
+}
+
+.nx-heatmap-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin: 1.1rem 0;
+}
+
+@media (max-width: 720px) {
+  .nx-heatmap-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nx-heatmap-sx {
+  background: var(--in);
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.nx-heatmap-sx .nx-heatmap-lb {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mu);
+  font-weight: 600;
+}
+
+.nx-heatmap-sx .nx-heatmap-nm {
+  font: 700 2.2rem/1 'Cormorant Garamond', Georgia, serif;
+  color: var(--crim);
+}
+
+.nx-heatmap-sx .nx-heatmap-nm small {
+  font-size: 0.95rem;
+  color: var(--mu);
+  margin-left: 0.25rem;
+  font-weight: 600;
+}
+
+.nx-heatmap-sx .nx-heatmap-nt {
+  font-size: 0.75rem;
+  color: var(--mu);
+}
+
+.nx-heatmap-rg {
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+
+.nx-heatmap-rg circle {
+  fill: none;
+  stroke-width: 6;
+}
+
+.nx-heatmap-rg .bgc {
+  stroke: var(--bd);
+}
+
+.nx-heatmap-rg .fg {
+  stroke: url(#nxHeatmapRingGrad);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.nx-heatmap-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.nx-heatmap-ch {
+  font-size: 0.8rem;
+  border: 1px solid var(--bd);
+  background: var(--in);
+  border-radius: 99px;
+  padding: 0.25rem 0.8rem;
+  color: var(--tx);
+}
+
+.nx-heatmap-ch b {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.nx-heatmap-cal {
+  background: var(--in);
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  padding: 1rem 0.9rem 0.8rem;
+}
+
+.nx-heatmap-sc {
+  overflow-x: auto;
+  padding-top: 0.2rem;
+  padding-bottom: 0.4rem;
+  scrollbar-width: thin;
+}
+
+.nx-heatmap-hw {
+  display: flex;
+  gap: 0.5rem;
+  width: max-content;
+  --z: 15px;
+  --g: 4px;
+}
+
+.nx-heatmap-rl {
+  display: grid;
+  grid-template-rows: repeat(7, var(--z));
+  gap: var(--g);
+  margin-top: 22px;
+  width: 28px;
+  font-size: 0.68rem;
+  color: var(--mu);
+  align-items: center;
+  user-select: none;
+}
+
+.nx-heatmap-hs {
+  position: relative;
+  padding-top: 22px;
+}
+
+.nx-heatmap-mw {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 100%;
+  pointer-events: none;
+}
+
+.nx-heatmap-ml {
+  position: absolute;
+  top: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--tx);
+  border-left: 1px solid var(--bd);
+  padding-left: 4px;
+  height: 14px;
+  line-height: 14px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.nx-heatmap-hm {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, var(--z));
+  grid-auto-columns: var(--z);
+  gap: var(--g);
+}
+
+.nx-heatmap-c {
+  position: relative;
+  width: var(--z);
+  height: var(--z);
+}
+
+.nx-heatmap-c.x {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nx-heatmap-c.k::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: calc(100% + var(--g));
+  transform: translateX(-50%);
+  background: var(--cord);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.nx-heatmap-c.b.k::after {
+  background: linear-gradient(#E5C158, #C98A1B);
+  box-shadow: 0 0 6px var(--glow);
+}
+
+.nx-heatmap-s {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: nxHeatmapSp 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--col, 0) * 9ms);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+@keyframes nxHeatmapSp {
+  from {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.nx-heatmap-c[tabindex="0"] {
+  cursor: pointer;
+  outline: none;
+}
+
+.nx-heatmap-c:hover .nx-heatmap-s,
+.nx-heatmap-c:focus-visible .nx-heatmap-s,
+.nx-heatmap-c.sel .nx-heatmap-s {
+  transform: scale(1.35);
+}
+
+.nx-heatmap-c:focus-visible .nx-heatmap-s {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.nx-heatmap-c.sel .nx-heatmap-s {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 10px var(--glow) !important;
+}
+
+.nx-heatmap-s.l0 {
+  background: var(--bd);
+  opacity: 0.55;
+  transform: scale(0.5);
+}
+
+.nx-heatmap-c:hover .nx-heatmap-s.l0,
+.nx-heatmap-c:focus-visible .nx-heatmap-s.l0 {
+  transform: scale(0.5);
+}
+
+.nx-heatmap-s.fu {
+  border: 1px dotted var(--bd);
+  transform: scale(0.55);
+  animation: none;
+  opacity: 0.4;
+}
+
+.nx-heatmap-s.l1 {
+  background: radial-gradient(circle at 35% 30%, #F6D08A, #DBA24C 72%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.nx-heatmap-s.l2 {
+  background: radial-gradient(circle at 35% 30%, #EFAE55, #C7721F 72%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nx-heatmap-s.l3 {
+  background: radial-gradient(circle at 35% 30%, #CF5560, #8E2434 72%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.nx-heatmap-s.l4 {
+  background: radial-gradient(circle at 35% 30%, #B22E42, #5E1220 75%);
+  box-shadow: 0 0 0 1.5px #E5C158, 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.nx-heatmap-c.b .nx-heatmap-s:not(.l0):not(.fu) {
+  box-shadow: 0 0 0 1.5px #E5C158, 0 0 6px var(--glow);
+}
+
+.nx-heatmap-c.t .nx-heatmap-s {
+  animation: nxHeatmapSp 0.45s both, nxHeatmapPl 2.2s ease-in-out infinite 0.8s;
+}
+
+@keyframes nxHeatmapPl {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--gold), 0 0 0 4px transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--gold), 0 0 0 7px var(--glow);
+  }
+}
+
+.nx-heatmap-ft {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+  font-size: 0.85rem;
+  color: var(--mu);
+}
+
+.nx-heatmap-dt {
+  font: italic 1.05rem 'Cormorant Garamond', Georgia, serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--tx);
+  min-height: 1.6rem;
+}
+
+.nx-heatmap-dt b {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.nx-heatmap-lg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--mu);
+}
+
+.nx-heatmap-lg .nx-heatmap-s {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  animation: none;
+  transform: none;
+  opacity: 1;
+}
+
+.nx-heatmap-hint {
+  display: none;
+  color: var(--mu);
+  font-size: 0.75rem;
+  margin-top: 0.3rem;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .nx-heatmap-hint {
+    display: block;
+  }
+  .nx-heatmap-w {
+    padding: 1.1rem 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-heatmap-s,
+  .nx-heatmap-c.t .nx-heatmap-s {
+    animation: none !important;
+  }
+}

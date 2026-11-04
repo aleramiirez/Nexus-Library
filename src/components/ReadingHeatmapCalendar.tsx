@@ -1,24 +1,44 @@
-import React, { useState, useMemo } from 'react';
-import { Calendar, Flame, ChevronLeft, ChevronRight, BookOpen, Sparkles } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Calendar } from 'lucide-react';
 import { Book } from '../types/models';
-import { readingStreakService, HeatmapDayData } from '../services/readingStreakService';
+import { readingStreakService } from '../services/readingStreakService';
 
 interface ReadingHeatmapCalendarProps {
   books: Book[];
   initialYear?: number;
 }
 
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
 const MONTH_NAMES_SHORT = [
   'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
 ];
 
-const DAY_LABELS = ['Lun', '', 'Mié', '', 'Vie', '', 'Dom'];
+const MONTH_NAMES_FULL = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+const WEEKDAY_NAMES_SHORT = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const WEEKDAY_NAMES_FULL = [
+  'domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'
+];
+
+const ROW_LABELS = ['Lun', '', 'Mié', '', 'Vie', '', 'Dom'];
+
+interface DayCellData {
+  dayIndex: number; // 0..364 o 365
+  dateObj: Date;
+  iso: string;
+  dayNumber: number;
+  monthShort: string;
+  monthFull: string;
+  weekdayShort: string;
+  weekdayFull: string;
+  pages: number;
+  levelClass: string;
+  isToday: boolean;
+  isFuture: boolean;
+}
 
 export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
   books,
@@ -26,9 +46,12 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
 }) => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(initialYear || currentYear);
-  const [selectedDay, setSelectedDay] = useState<HeatmapDayData | null>(null);
+  const [selectedDay, setSelectedDay] = useState<DayCellData | null>(null);
+  const [hoveredDay, setHoveredDay] = useState<DayCellData | null>(null);
 
-  // Generar años disponibles (últimos 3 años y el actual)
+  const scRef = useRef<HTMLDivElement>(null);
+
+  // Años disponibles (año actual y hasta 3 anteriores)
   const availableYears = useMemo(() => {
     const years = [currentYear];
     for (let i = 1; i <= 3; i++) {
@@ -42,144 +65,178 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
     return readingStreakService.buildReadingHeatmapData(books, selectedYear);
   }, [books, selectedYear]);
 
-  // Resumen del año seleccionado
-  const yearSummary = useMemo(() => {
-    let totalPages = 0;
-    let activeDays = 0;
-    heatmapMap.forEach((d) => {
-      if (d.pagesRead > 0) {
-        totalPages += d.pagesRead;
-        activeDays++;
+  // Helpers de fechas locales
+  const isLeap = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0);
+  const daysInYear = isLeap ? 366 : 365;
+
+  const toIso = (y: number, m: number, d: number) =>
+    `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const now = new Date();
+  const todayIso = toIso(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Construir array de los 365/366 días del año seleccionado
+  const daysArray: DayCellData[] = useMemo(() => {
+    const list: DayCellData[] = [];
+    for (let d = 0; d < daysInYear; d++) {
+      const dateObj = new Date(selectedYear, 0, d + 1);
+      const m = dateObj.getMonth();
+      const dayNum = dateObj.getDate();
+      const iso = toIso(selectedYear, m, dayNum);
+      const isToday = iso === todayIso;
+      const isFuture = iso > todayIso;
+
+      const entry = heatmapMap.get(iso);
+      const pages = !isFuture && entry ? entry.pagesRead : 0;
+
+      let levelClass = 'l0';
+      if (isFuture) {
+        levelClass = 'fu';
+      } else if (pages === 0) {
+        levelClass = 'l0';
+      } else if (pages < 20) {
+        levelClass = 'l1';
+      } else if (pages < 50) {
+        levelClass = 'l2';
+      } else if (pages < 100) {
+        levelClass = 'l3';
+      } else {
+        levelClass = 'l4';
       }
-    });
-    const avgPerActiveDay = activeDays > 0 ? Math.round(totalPages / activeDays) : 0;
-    return { totalPages, activeDays, avgPerActiveDay };
-  }, [heatmapMap]);
 
-  // Construir las semanas para la cuadrícula del año (53 columnas × 7 filas)
-  const calendarWeeks = useMemo(() => {
-    const weeks: Array<Array<{ date: string; data: HeatmapDayData | null }>> = [];
+      const wIdx = dateObj.getDay();
 
-    // Inicio: 1 de enero del año seleccionado
-    const startOfYear = new Date(selectedYear, 0, 1);
-    const endOfYear = new Date(selectedYear, 11, 31);
-
-    // Ajustar para empezar en Lunes (0 = Domingo en JS, queremos 0 = Lunes)
-    // Lun = 0, Mar = 1 ... Dom = 6
-    const getAdjustedDay = (d: Date) => (d.getDay() + 6) % 7;
-
-    const currentCursor = new Date(startOfYear);
-    // Retroceder al lunes de la primera semana
-    currentCursor.setDate(currentCursor.getDate() - getAdjustedDay(startOfYear));
-
-    while (currentCursor <= endOfYear || weeks.length < 52) {
-      const currentWeek: Array<{ date: string; data: HeatmapDayData | null }> = [];
-      for (let dayRow = 0; dayRow < 7; dayRow++) {
-        const iso = currentCursor.toISOString().slice(0, 10);
-        const isCurrentYear = currentCursor.getFullYear() === selectedYear;
-
-        if (isCurrentYear) {
-          const entry = heatmapMap.get(iso) || {
-            date: iso,
-            pagesRead: 0,
-            level: 0,
-            bookIds: [],
-            source: 'log',
-            dayOfWeek: currentCursor.getDay()
-          };
-          currentWeek.push({ date: iso, data: entry });
-        } else {
-          currentWeek.push({ date: iso, data: null });
-        }
-        currentCursor.setDate(currentCursor.getDate() + 1);
-      }
-      weeks.push(currentWeek);
-      if (currentCursor > endOfYear && currentWeek[6].date >= endOfYear.toISOString().slice(0, 10)) {
-        break;
-      }
-    }
-
-    return weeks;
-  }, [selectedYear, heatmapMap]);
-
-  // Etiquetas de meses con la columna de semana donde empiezan
-  const monthLabels = useMemo(() => {
-    const labels: Array<{ monthIndex: number; weekIndex: number; label: string }> = [];
-    calendarWeeks.forEach((week, weekIndex) => {
-      week.forEach((cell) => {
-        if (cell.data) {
-          const parts = cell.date.split('-');
-          const day = parseInt(parts[2], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          if (day === 1 && !labels.some((l) => l.monthIndex === month)) {
-            labels.push({
-              monthIndex: month,
-              weekIndex,
-              label: MONTH_NAMES_SHORT[month]
-            });
-          }
-        }
+      list.push({
+        dayIndex: d,
+        dateObj,
+        iso,
+        dayNumber: dayNum,
+        monthShort: MONTH_NAMES_SHORT[m],
+        monthFull: MONTH_NAMES_FULL[m],
+        weekdayShort: WEEKDAY_NAMES_SHORT[wIdx],
+        weekdayFull: WEEKDAY_NAMES_FULL[wIdx],
+        pages,
+        levelClass,
+        isToday,
+        isFuture
       });
+    }
+    return list;
+  }, [selectedYear, daysInYear, heatmapMap, todayIso]);
+
+  // Estadísticas del año
+  const {
+    activeDays,
+    totalPages,
+    dailyAvg,
+    bestStreakLen,
+    bestStreakStartIdx,
+    bestMonthName,
+    bestWeekdayName
+  } = useMemo(() => {
+    let act = 0;
+    let sum = 0;
+    const monthTotals = new Array(12).fill(0);
+    const weekdayTotals = new Array(7).fill(0);
+
+    let best = 0;
+    let bestStart = 0;
+    let run = 0;
+    let runStart = 0;
+
+    daysArray.forEach((day, i) => {
+      if (!day.isFuture && day.pages > 0) {
+        act++;
+        sum += day.pages;
+        monthTotals[day.dateObj.getMonth()] += day.pages;
+        weekdayTotals[day.dateObj.getDay()] += day.pages;
+
+        if (run === 0) runStart = i;
+        run++;
+        if (run > best) {
+          best = run;
+          bestStart = runStart;
+        }
+      } else {
+        run = 0;
+      }
     });
-    return labels;
-  }, [calendarWeeks]);
 
-  const getCellClass = (level: number, isSelected: boolean) => {
-    let base = '';
-    switch (level) {
-      case 1:
-        base = 'bg-amber-400/40 dark:bg-amber-600/45 border-amber-500/40';
-        break;
-      case 2:
-        base = 'bg-amber-500/75 dark:bg-amber-500/65 border-amber-500/60';
-        break;
-      case 3:
-        base = 'bg-amber-600 dark:bg-amber-400 border-amber-400 text-stone-900 shadow-[0_0_6px_rgba(245,158,11,0.35)]';
-        break;
-      case 4:
-        base = 'bg-gradient-to-br from-amber-500 via-amber-400 to-amber-200 dark:from-amber-400 dark:to-amber-100 text-slate-950 border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.55)]';
-        break;
-      case 0:
-      default:
-        base = 'bg-amber-950/10 dark:bg-[#151D2A] border-amber-900/10 dark:border-[#222E42]';
-        break;
-    }
-    if (isSelected) {
-      base += ' ring-2 ring-amber-600 dark:ring-amber-300 ring-offset-1 ring-offset-[#fffcf5] dark:ring-offset-[#0B0E14]';
-    }
-    return base;
-  };
+    const avg = act > 0 ? Math.round(sum / act) : 0;
+    const bMonth = monthTotals.indexOf(Math.max(...monthTotals));
+    const bWeekday = weekdayTotals.indexOf(Math.max(...weekdayTotals));
 
-  const formatDetailDate = (dateStr: string): string => {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const day = parseInt(parts[2], 10);
-      const mIdx = parseInt(parts[1], 10) - 1;
-      return `${day} de ${MONTH_NAMES[mIdx] || parts[1]} de ${parts[0]}`;
+    return {
+      activeDays: act,
+      totalPages: sum,
+      dailyAvg: avg,
+      bestStreakLen: best,
+      bestStreakStartIdx: bestStart,
+      bestMonthName: MONTH_NAMES_FULL[bMonth] || 'Ninguno',
+      bestWeekdayName: WEEKDAY_NAMES_FULL[bWeekday] || 'Ninguno'
+    };
+  }, [daysArray]);
+
+  // Cuadrícula: columnas semanales de Lunes (0) a Domingo (6)
+  const firstDayOfYear = new Date(selectedYear, 0, 1);
+  const mondayOffset = (firstDayOfYear.getDay() + 6) % 7;
+  const totalColumns = Math.ceil((mondayOffset + daysInYear) / 7);
+
+  // Posiciones de los meses para las cabeceras de columnas
+  const monthHeaders = useMemo(() => {
+    return MONTH_NAMES_SHORT.map((mShort, mIdx) => {
+      const monthFirstDate = new Date(selectedYear, mIdx, 1);
+      const dayIdx = Math.round(
+        (monthFirstDate.getTime() - firstDayOfYear.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const col = Math.floor((mondayOffset + dayIdx) / 7);
+      return { label: mShort, col };
+    });
+  }, [selectedYear, mondayOffset, firstDayOfYear]);
+
+  // Desplazamiento horizontal inicial centrado en "HOY" en móvil
+  useEffect(() => {
+    if (scRef.current) {
+      if (selectedYear === currentYear) {
+        const todayDayIdx = daysArray.findIndex((d) => d.isToday);
+        if (todayDayIdx >= 0) {
+          const col = Math.floor((mondayOffset + todayDayIdx) / 7);
+          scRef.current.scrollLeft = Math.max(0, col * 19 - scRef.current.clientWidth + 90);
+        }
+      } else {
+        scRef.current.scrollLeft = 0;
+      }
     }
-    return dateStr;
-  };
+  }, [selectedYear, currentYear, daysArray, mondayOffset]);
+
+  // Texto de la mejor racha con fechas
+  const bestStreakDateText = useMemo(() => {
+    if (bestStreakLen <= 0) return '';
+    const startDay = daysArray[bestStreakStartIdx];
+    const endDay = daysArray[bestStreakStartIdx + bestStreakLen - 1];
+    if (!startDay || !endDay) return '';
+    return `(${startDay.weekdayShort} ${startDay.dayNumber} ${startDay.monthShort} → ${endDay.weekdayShort} ${endDay.dayNumber} ${endDay.monthShort})`;
+  }, [bestStreakLen, bestStreakStartIdx, daysArray]);
+
+  const activeDisplayDay = hoveredDay || selectedDay;
 
   return (
-    <div className="rounded-2xl border border-amber-900/20 dark:border-[#263147] bg-[#fbf6ea]/95 dark:bg-[#121824]/95 p-5 sm:p-6 shadow-sm space-y-5 transition-colors">
+    <section className="nx-heatmap-w" aria-label="Mapa de calor de lectura anual">
       {/* Cabecera y Selector de Año */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242F43] pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-600/35 text-amber-800 dark:text-amber-300">
-            <Calendar className="w-5 h-5" />
+      <div className="nx-heatmap-hd">
+        <div className="nx-heatmap-tt">
+          <div className="nx-heatmap-ic" aria-hidden="true">
+            <Calendar className="w-5 h-5 text-amber-100" />
           </div>
           <div>
-            <h3 className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-[#f8f5ee]">
-              Mapa de Calor de Lectura Anual
-            </h3>
-            <p className="text-xs text-stone-600 dark:text-slate-400">
+            <h2 className="nx-heatmap-title">Mapa de Calor de Lectura Anual</h2>
+            <p className="nx-heatmap-sub">
               Visualización completa de constancia y páginas leídas en {selectedYear}
             </p>
           </div>
         </div>
 
-        {/* Selector de años */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
+        <div className="nx-heatmap-yr" role="group" aria-label="Selector de año">
           {availableYears.map((yr) => (
             <button
               key={yr}
@@ -187,13 +244,10 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
               onClick={() => {
                 setSelectedYear(yr);
                 setSelectedDay(null);
+                setHoveredDay(null);
               }}
-              className={
-                'px-3 py-1 rounded-lg text-xs font-semibold border transition shadow-xs ' +
-                (selectedYear === yr
-                  ? 'border-amber-600 bg-amber-500 text-slate-950 font-bold'
-                  : 'border-amber-900/20 dark:border-[#2C384F] bg-[#fbf6ea] dark:bg-[#171F2E] text-stone-700 dark:text-slate-300 hover:border-amber-500/50')
-              }
+              className={yr === selectedYear ? 'on' : ''}
+              aria-pressed={yr === selectedYear}
             >
               {yr}
             </button>
@@ -201,130 +255,233 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
         </div>
       </div>
 
-      {/* Métricas del año seleccionado */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-        <div className="rounded-xl border border-amber-900/15 dark:border-[#253045] bg-[#f6edd9]/70 dark:bg-[#151D2A]/80 p-3 text-center">
-          <span className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
-            Días con lectura
-          </span>
-          <p className="font-serif text-xl sm:text-3xl font-bold text-amber-950 dark:text-amber-300 mt-1">
-            {yearSummary.activeDays} <span className="text-xs sm:text-sm font-normal text-stone-500">/ 365</span>
-          </p>
+      {/* 3 Estadísticas con carácter */}
+      <div className="nx-heatmap-stats">
+        {/* Días con lectura */}
+        <div className="nx-heatmap-sx">
+          <svg className="nx-heatmap-rg" viewBox="0 0 56 56" aria-hidden="true">
+            <defs>
+              <linearGradient id="nxHeatmapRingGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#E5C158" />
+                <stop offset="100%" stopColor="#C2485A" />
+              </linearGradient>
+            </defs>
+            <circle className="bgc" cx="28" cy="28" r="22" />
+            <circle
+              className="fg"
+              cx="28"
+              cy="28"
+              r="22"
+              strokeDasharray="138.2"
+              strokeDashoffset={138.2 * (1 - activeDays / daysInYear)}
+            />
+          </svg>
+          <div>
+            <div className="nx-heatmap-lb">Días con lectura</div>
+            <div className="nx-heatmap-nm">
+              {activeDays}
+              <small>/ {daysInYear}</small>
+            </div>
+            <div className="nx-heatmap-nt">
+              {Math.round((activeDays / daysInYear) * 100)}% del año con la llama encendida
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-amber-900/15 dark:border-[#253045] bg-[#f6edd9]/70 dark:bg-[#151D2A]/80 p-3 text-center">
-          <span className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
-            Páginas anuales
-          </span>
-          <p className="font-serif text-xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">
-            {yearSummary.totalPages.toLocaleString()}
-          </p>
+        {/* Páginas anuales */}
+        <div className="nx-heatmap-sx">
+          <div>
+            <div className="nx-heatmap-lb">Páginas anuales</div>
+            <div className="nx-heatmap-nm">{totalPages.toLocaleString('es-ES')}</div>
+            <div className="nx-heatmap-nt">
+              ≈ {Math.round(totalPages / 350)} novelas de 350 páginas
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-amber-900/15 dark:border-[#253045] bg-[#f6edd9]/70 dark:bg-[#151D2A]/80 p-3 text-center">
-          <span className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400">
-            Media diaria activa
-          </span>
-          <p className="font-serif text-xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 mt-1">
-            ~{yearSummary.avgPerActiveDay} <span className="text-xs font-normal text-stone-500">p/día</span>
-          </p>
+        {/* Media diaria activa */}
+        <div className="nx-heatmap-sx">
+          <div>
+            <div className="nx-heatmap-lb">Media diaria activa</div>
+            <div className="nx-heatmap-nm">
+              ~{dailyAvg}
+              <small>p/día</small>
+            </div>
+            <div className="nx-heatmap-nt">solo contando los días que lees</div>
+          </div>
         </div>
       </div>
 
-      {/* Cuadrícula del Mapa de Calor (Scrolleable horizontalmente en móviles con total fluidez) */}
-      <div className="overflow-x-auto pb-2 pt-1 scrollbar-thin">
-        <div className="inline-block min-w-[760px] space-y-1.5">
-          {/* Etiquetas de meses */}
-          <div className="flex text-[11px] font-semibold text-stone-600 dark:text-slate-400 pl-8">
-            {monthLabels.map((m) => (
-              <span
-                key={m.monthIndex}
-                style={{ marginLeft: `${m.weekIndex === 0 ? 0 : 44}px` }}
-                className="w-8 shrink-0"
-              >
-                {m.label}
-              </span>
-            ))}
-          </div>
+      {/* Fila de chips «Lo que cuentan tus sellos» */}
+      {bestStreakLen > 0 && (
+        <div className="nx-heatmap-in">
+          <span className="nx-heatmap-ch">
+            🔥 Mejor racha: <b>{bestStreakLen} {bestStreakLen === 1 ? 'día' : 'días'}</b> {bestStreakDateText}
+          </span>
+          <span className="nx-heatmap-ch">
+            📆 Mes más lector: <b>{bestMonthName}</b>
+          </span>
+          <span className="nx-heatmap-ch">
+            ⭐ Tu día fuerte: <b>{bestWeekdayName}</b>
+          </span>
+        </div>
+      )}
 
-          {/* Cuadrícula 7 filas (Lunes a Domingo) */}
-          <div className="flex gap-1.5">
-            {/* Etiquetas de días a la izquierda */}
-            <div className="flex flex-col justify-between text-[9px] font-medium text-stone-500 dark:text-slate-400 w-6 shrink-0 py-0.5">
-              {DAY_LABELS.map((lbl, idx) => (
-                <span key={idx} className="h-3 flex items-center">
-                  {lbl}
-                </span>
+      {/* Cuadrícula Ceremonial de Sellos de Lacre (52+ semanas) */}
+      <div className="nx-heatmap-cal">
+        <div className="nx-heatmap-sc" ref={scRef}>
+          <div className="nx-heatmap-hw">
+            {/* Etiquetas de días de la semana a la izquierda (Lun, Mié, Vie, Dom) */}
+            <div className="nx-heatmap-rl" aria-hidden="true">
+              {ROW_LABELS.map((lbl, idx) => (
+                <span key={idx}>{lbl}</span>
               ))}
             </div>
 
-            {/* Columnas de semanas */}
-            <div className="flex gap-1">
-              {calendarWeeks.map((week, wIdx) => (
-                <div key={wIdx} className="flex flex-col gap-1">
-                  {week.map((cell, dIdx) => {
-                    if (!cell.data) {
-                      return (
-                        <div
-                          key={dIdx}
-                          className="w-3 h-3 rounded-xs opacity-0 pointer-events-none"
-                        />
-                      );
-                    }
-                    const day = cell.data;
-                    const isSelected = selectedDay?.date === day.date;
-                    const tooltip = `${formatDetailDate(day.date)}: ${day.pagesRead} páginas`;
+            <div className="nx-heatmap-hs">
+              {/* Etiquetas de los meses alineadas en cabecera */}
+              <div className="nx-heatmap-mw" aria-hidden="true">
+                {monthHeaders.map((m) => (
+                  <span
+                    key={m.label}
+                    className="nx-heatmap-ml"
+                    style={{ left: `calc(${m.col} * (var(--z) + var(--g)))` }}
+                  >
+                    {m.label}
+                  </span>
+                ))}
+              </div>
 
-                    return (
-                      <button
-                        key={dIdx}
-                        type="button"
-                        onClick={() => setSelectedDay(day)}
-                        title={tooltip}
-                        className={
-                          'w-3 h-3 rounded-xs border transition-transform hover:scale-125 focus:outline-hidden ' +
-                          getCellClass(day.level, isSelected)
-                        }
-                      />
+              {/* Matriz de sellos (filas = Lun..Dom, columnas = semanas) */}
+              <div className="nx-heatmap-hm">
+                {Array.from({ length: totalColumns * 7 }).map((_, i) => {
+                  const d = i - mondayOffset;
+                  if (d < 0 || d >= daysInYear) {
+                    return <div key={`empty-${i}`} className="nx-heatmap-c x" aria-hidden="true" />;
+                  }
+
+                  const day = daysArray[d];
+                  const col = Math.floor(i / 7);
+                  const isSelected = selectedDay?.iso === day.iso;
+
+                  // Cordón vertical entre días consecutivos leídos dentro de la misma columna
+                  const nextD = d + 1;
+                  const hasNextInColumn = i % 7 < 6 && nextD < daysInYear;
+                  const nextDay = hasNextInColumn ? daysArray[nextD] : null;
+
+                  const hasCord =
+                    Boolean(
+                      hasNextInColumn &&
+                        !day.isFuture &&
+                        day.pages > 0 &&
+                        nextDay &&
+                        !nextDay.isFuture &&
+                        nextDay.pages > 0
                     );
-                  })}
-                </div>
-              ))}
+
+                  const isBestStreakDay =
+                    bestStreakLen > 1 &&
+                    d >= bestStreakStartIdx &&
+                    d < bestStreakStartIdx + bestStreakLen;
+
+                  const isBestStreakCord =
+                    hasCord &&
+                    isBestStreakDay &&
+                    nextD < bestStreakStartIdx + bestStreakLen;
+
+                  const cellClasses = [
+                    'nx-heatmap-c',
+                    hasCord ? 'k' : '',
+                    isBestStreakDay ? 'b' : '',
+                    day.isToday ? 't' : '',
+                    isSelected ? 'sel' : ''
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+
+                  const ariaLabel = `${day.weekdayShort} ${day.dayNumber} ${day.monthShort}, ${
+                    day.isFuture
+                      ? 'día futuro'
+                      : day.pages > 0
+                        ? `${day.pages} páginas`
+                        : 'sin lectura'
+                  }`;
+
+                  return (
+                    <div
+                      key={day.iso}
+                      className={cellClasses}
+                      tabIndex={day.pages > 0 && !day.isFuture ? 0 : undefined}
+                      role={day.pages > 0 && !day.isFuture ? 'button' : undefined}
+                      aria-label={ariaLabel}
+                      onMouseEnter={() => setHoveredDay(day)}
+                      onMouseLeave={() => setHoveredDay(null)}
+                      onFocus={() => setHoveredDay(day)}
+                      onBlur={() => setHoveredDay(null)}
+                      onClick={() => {
+                        if (day.pages > 0 && !day.isFuture) {
+                          setSelectedDay(day);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          if (day.pages > 0 && !day.isFuture) {
+                            setSelectedDay(day);
+                          }
+                        }
+                      }}
+                    >
+                      <b
+                        className={`nx-heatmap-s ${day.levelClass}`}
+                        style={{ '--col': col } as React.CSSProperties}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Leyenda y Detalle de día seleccionado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/10 dark:border-[#222E42] text-xs">
-        {/* Detalle interactivo del día pulsado */}
-        {selectedDay ? (
-          <div className="flex items-center gap-2 text-stone-800 dark:text-slate-200 bg-amber-500/15 dark:bg-amber-400/10 border border-amber-600/35 dark:border-amber-400/30 px-3 py-1.5 rounded-xl animate-in fade-in duration-200">
-            <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>
-              <strong>{formatDetailDate(selectedDay.date)}:</strong>{' '}
-              {selectedDay.pagesRead > 0
-                ? `${selectedDay.pagesRead} páginas leídas`
-                : 'Sin páginas registradas este día'}
-            </span>
+        <div className="nx-heatmap-hint">Desliza hacia los lados para recorrer el año →</div>
+
+        {/* Pie con inspección de fecha seleccionada y escala de niveles */}
+        <div className="nx-heatmap-ft">
+          <div className="nx-heatmap-dt" aria-live="polite">
+            {activeDisplayDay ? (
+              <>
+                <span
+                  className={`nx-heatmap-s ${activeDisplayDay.levelClass}`}
+                  style={{ width: 16, height: 16, display: 'inline-block', animation: 'none' }}
+                />
+                <span>
+                  <b>
+                    {activeDisplayDay.weekdayFull} {activeDisplayDay.dayNumber} de{' '}
+                    {activeDisplayDay.monthFull}
+                  </b>{' '}
+                  ·{' '}
+                  {activeDisplayDay.pages > 0
+                    ? `${activeDisplayDay.pages} páginas`
+                    : 'sin lectura'}
+                </span>
+              </>
+            ) : (
+              <span>Toca cualquier día para ver el detalle de páginas.</span>
+            )}
           </div>
-        ) : (
-          <span className="text-stone-500 dark:text-slate-400 italic">
-            Toca cualquier día de la cuadrícula para ver el detalle de páginas.
-          </span>
-        )}
 
-        {/* Leyenda de intensidades */}
-        <div className="flex items-center gap-1.5 text-[11px] text-stone-600 dark:text-slate-400 self-end sm:self-auto">
-          <span>Menos</span>
-          <div className="w-3 h-3 rounded-xs bg-amber-950/10 dark:bg-[#151D2A] border border-amber-900/15 dark:border-[#222E42]" title="0 páginas" />
-          <div className="w-3 h-3 rounded-xs bg-amber-400/40 dark:bg-amber-600/45 border border-amber-500/40" title="1-15 páginas" />
-          <div className="w-3 h-3 rounded-xs bg-amber-500/75 dark:bg-amber-500/65 border border-amber-500/60" title="16-35 páginas" />
-          <div className="w-3 h-3 rounded-xs bg-amber-600 dark:bg-amber-400 border border-amber-400" title="36-65 páginas" />
-          <div className="w-3 h-3 rounded-xs bg-gradient-to-br from-amber-500 to-amber-200 border border-amber-300" title=">65 páginas" />
-          <span>Más</span>
+          <div className="nx-heatmap-lg" aria-hidden="true">
+            Menos
+            <span className="nx-heatmap-s l0" style={{ transform: 'scale(0.6)' }} />
+            <span className="nx-heatmap-s l1" />
+            <span className="nx-heatmap-s l2" />
+            <span className="nx-heatmap-s l3" />
+            <span className="nx-heatmap-s l4" />
+            Más
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
