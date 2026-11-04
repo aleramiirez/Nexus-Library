@@ -1,9 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Book, Saga } from '../types/models';
-import { SagaVitrine } from './SagaVitrine';
+import {
+  SagaVitrine,
+  VITRINE_CLOSED_H,
+  computeVitrineOpenHeight
+} from './SagaVitrine';
 import { LibrarySelect } from './LibrarySelect';
 import { formatFriendlyErrorMessage } from '../utils/errorUtils';
+
+interface VitrineSnapshotItem {
+  left: number;
+  top: number;
+  width: number;
+  bodyHeight: number;
+}
+
+const FLIP_DURATION_MS = 720;
+const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export interface SagaWithBooksItem {
   saga: Saga;
@@ -74,6 +93,38 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
   const [filter, setFilter] = useState<SagaFilter>('all');
   const [openIds, setOpenIds] = useState<Set<string>>(readOpenIds);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const snapshotRef = useRef<Map<string, VitrineSnapshotItem> | null>(null);
+  const flipCleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flipRafRef = useRef<number>(0);
+
+  /**
+   * Captura la geometría visual actual de todas las vitrinas antes de abrir/cerrar
+   * para interpolar posición (FLIP), anchura y altura de forma continua sin parpadeos.
+   */
+  const captureGridSnapshot = useCallback(() => {
+    const gridEl = gridRef.current;
+    if (!gridEl || prefersReducedMotion()) {
+      snapshotRef.current = null;
+      return;
+    }
+    const map = new Map<string, VitrineSnapshotItem>();
+    const cards = gridEl.querySelectorAll<HTMLElement>('[data-vitrine-id]');
+    cards.forEach((cardEl) => {
+      const id = cardEl.dataset.vitrineId;
+      if (!id) return;
+      const rect = cardEl.getBoundingClientRect();
+      const bodyEl = cardEl.querySelector<HTMLElement>('.vit-body');
+      const bodyHeight = bodyEl ? bodyEl.getBoundingClientRect().height : VITRINE_CLOSED_H;
+      map.set(id, {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        bodyHeight
+      });
+    });
+    snapshotRef.current = map;
+  }, []);
 
   useEffect(() => {
     try {
@@ -81,6 +132,165 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
     } catch {
       /* sin almacenamiento de sesión */
     }
+  }, [openIds]);
+
+  // Animación FLIP sincronizada en toda la rejilla al abrir o cerrar vitrinas
+  useLayoutEffect(() => {
+    const snapshot = snapshotRef.current;
+    snapshotRef.current = null;
+    const gridEl = gridRef.current;
+    if (!snapshot || !gridEl || prefersReducedMotion()) return;
+
+    if (flipCleanupTimerRef.current) {
+      clearTimeout(flipCleanupTimerRef.current);
+      flipCleanupTimerRef.current = null;
+    }
+    if (flipRafRef.current) {
+      cancelAnimationFrame(flipRafRef.current);
+      flipRafRef.current = 0;
+    }
+
+    const cards = Array.from(gridEl.querySelectorAll<HTMLElement>('[data-vitrine-id]'));
+    if (cards.length === 0) return;
+
+    // 1. Limpiar estilos previos y fijar la altura destino de cada vitrina para medir el layout final real
+    const targets = new Map<
+      HTMLElement,
+      { id: string; bodyEl: HTMLElement | null; targetBodyH: number }
+    >();
+
+    cards.forEach((cardEl) => {
+      const id = cardEl.dataset.vitrineId || '';
+      const bookCount = Number(cardEl.dataset.bookCount || '0');
+      const isOpenNow = cardEl.classList.contains('is-open');
+      const bodyEl = cardEl.querySelector<HTMLElement>('.vit-body');
+
+      cardEl.setAttribute('data-flip-active', 'true');
+      cardEl.style.transition = 'none';
+      cardEl.style.width = '';
+      cardEl.style.transform = '';
+      cardEl.style.zIndex = '';
+
+      // Al estar ya aplicado .is-open (o quitado), clientWidth es el ancho final de su celda
+      const finalCardW = cardEl.clientWidth;
+      const targetBodyH = isOpenNow
+        ? computeVitrineOpenHeight(finalCardW, bookCount)
+        : VITRINE_CLOSED_H;
+
+      if (bodyEl) {
+        bodyEl.style.transition = 'none';
+        bodyEl.style.height = `${targetBodyH}px`;
+      }
+
+      targets.set(cardEl, { id, bodyEl, targetBodyH });
+    });
+
+    // 2. Medir las cajas finales (LAST) en una sola pasada de lectura
+    const lastRects = new Map<HTMLElement, DOMRect>();
+    cards.forEach((cardEl) => {
+      lastRects.set(cardEl, cardEl.getBoundingClientRect());
+    });
+
+    // 3. INVERT: colocar cada vitrina en su posición, ancho y alto anteriores antes de pintar
+    const animated: Array<{
+      cardEl: HTMLElement;
+      bodyEl: HTMLElement | null;
+      lastWidth: number;
+      targetBodyH: number;
+      animateWidth: boolean;
+      animateTransform: boolean;
+      animateHeight: boolean;
+    }> = [];
+
+    cards.forEach((cardEl) => {
+      const info = targets.get(cardEl);
+      const last = lastRects.get(cardEl);
+      if (!info || !last) return;
+      const first = snapshot.get(info.id);
+      if (!first) return;
+
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      const dw = Math.abs(first.width - last.width);
+      const dh = Math.abs(first.bodyHeight - info.targetBodyH);
+
+      const animateWidth = dw > 1.5;
+      const animateTransform = Math.abs(dx) > 1 || Math.abs(dy) > 1;
+      const animateHeight = Boolean(info.bodyEl && dh > 1.5);
+
+      if (!animateWidth && !animateTransform && !animateHeight) {
+        cardEl.removeAttribute('data-flip-active');
+        return;
+      }
+
+      if (animateWidth) {
+        cardEl.style.width = `${first.width}px`;
+        cardEl.style.zIndex = '6';
+      }
+      if (animateTransform) {
+        cardEl.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+      }
+      if (animateHeight && info.bodyEl) {
+        info.bodyEl.style.height = `${first.bodyHeight}px`;
+      }
+
+      animated.push({
+        cardEl,
+        bodyEl: info.bodyEl,
+        lastWidth: last.width,
+        targetBodyH: info.targetBodyH,
+        animateWidth,
+        animateTransform,
+        animateHeight
+      });
+    });
+
+    if (animated.length === 0) return;
+
+    // 4. Forzar reflujo único para comprometer el estado invertido
+    void gridEl.offsetHeight;
+
+    // 5. PLAY: interpolar suavemente hacia el tamaño y posición finales
+    flipRafRef.current = requestAnimationFrame(() => {
+      flipRafRef.current = 0;
+      const dur = `${FLIP_DURATION_MS}ms`;
+      animated.forEach(
+        ({ cardEl, bodyEl, lastWidth, targetBodyH, animateWidth, animateTransform, animateHeight }) => {
+          const cardTransitions: string[] = [];
+          if (animateWidth) cardTransitions.push(`width ${dur} ${FLIP_EASING}`);
+          if (animateTransform) cardTransitions.push(`transform ${dur} ${FLIP_EASING}`);
+          if (cardTransitions.length > 0) {
+            cardEl.style.transition = cardTransitions.join(', ');
+          }
+          if (animateWidth) {
+            cardEl.style.width = `${lastWidth}px`;
+          }
+          if (animateTransform) {
+            cardEl.style.transform = 'translate3d(0, 0, 0)';
+          }
+          if (animateHeight && bodyEl) {
+            bodyEl.style.transition = `height ${dur} ${FLIP_EASING}`;
+            bodyEl.style.height = `${targetBodyH}px`;
+          }
+        }
+      );
+    });
+
+    // 6. Limpiar estilos temporales al concluir la transición (ya están en su posición final exacta)
+    flipCleanupTimerRef.current = setTimeout(() => {
+      flipCleanupTimerRef.current = null;
+      cards.forEach((cardEl) => {
+        cardEl.removeAttribute('data-flip-active');
+        cardEl.style.transition = '';
+        cardEl.style.width = '';
+        cardEl.style.transform = '';
+        cardEl.style.zIndex = '';
+        const bodyEl = cardEl.querySelector<HTMLElement>('.vit-body');
+        if (bodyEl) {
+          bodyEl.style.transition = '';
+        }
+      });
+    }, FLIP_DURATION_MS + 40);
   }, [openIds]);
 
   const categories = useMemo(() => {
@@ -105,16 +315,21 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
 
   const anyVisibleOpen = visibleSagas.some((item) => openIds.has(item.saga.id));
 
-  const toggleVitrine = useCallback((sagaId: string) => {
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(sagaId)) next.delete(sagaId);
-      else next.add(sagaId);
-      return next;
-    });
-  }, []);
+  const toggleVitrine = useCallback(
+    (sagaId: string) => {
+      captureGridSnapshot();
+      setOpenIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(sagaId)) next.delete(sagaId);
+        else next.add(sagaId);
+        return next;
+      });
+    },
+    [captureGridSnapshot]
+  );
 
   const toggleAllVisible = () => {
+    captureGridSnapshot();
     setOpenIds((prev) => {
       const next = new Set(prev);
       visibleSagas.forEach((item) => {
@@ -150,6 +365,7 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
       setAssignVolume('1');
       setActiveSagaIdForAssign(null);
       // Abrir la vitrina para mostrar el volumen recién colocado
+      captureGridSnapshot();
       setOpenIds((prev) => (prev.has(saga.id) ? prev : new Set(prev).add(saga.id)));
     } catch (err: unknown) {
       onError?.(
@@ -293,7 +509,7 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
               </button>
             </div>
           ) : (
-            <div className="vit-grid">
+            <div className="vit-grid" ref={gridRef}>
               {visibleSagas.map((item) => {
                 const isAssignActive = activeSagaIdForAssign === item.saga.id;
                 const isEditing = sagaFormOpen && editingSaga?.id === item.saga.id;

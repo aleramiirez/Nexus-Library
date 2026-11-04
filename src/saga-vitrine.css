@@ -455,18 +455,19 @@ html.dark .vit-btn.is-active {
   border-radius: 2px 4px 4px 2px;
   box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.5);
   transition:
-    width 0.68s cubic-bezier(0.22, 1, 0.36, 1),
-    height 0.68s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.65s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.35s,
     opacity 0.25s;
-  transition-delay: calc(var(--i, 0) * 38ms), calc(var(--i, 0) * 38ms), 0s, 0s, 0s;
+  transition-delay: calc(var(--i, 0) * 14ms), calc(var(--i, 0) * 14ms), 0s, 0s, 0s;
 }
 .saga-vitrine.is-open .vit-face {
   width: 104px;
   height: 156px;
   overflow: visible;
   box-shadow: none;
+  transition-delay: calc(var(--i, 0) * 36ms), calc(var(--i, 0) * 36ms), 0s, 0s, 0s;
 }
 
 /* Lomo */
@@ -578,12 +579,12 @@ html.dark .vit-btn.is-active {
   opacity: 0;
   pointer-events: none;
   transition:
-    width 0.68s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 38ms),
-    max-width 0.68s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 38ms),
-    height 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
-    margin-top 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
-    padding 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
-    opacity 0.42s ease 0.24s,
+    width 0.65s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 14ms),
+    max-width 0.65s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 14ms),
+    height 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
     filter 0.3s,
     box-shadow 0.3s;
 }
@@ -595,6 +596,15 @@ html.dark .vit-btn.is-active {
   padding: 0 12px;
   opacity: 1;
   pointer-events: auto;
+  transition:
+    width 0.68s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 36ms),
+    max-width 0.68s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 36ms),
+    height 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
+    margin-top 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
+    padding 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.14s,
+    opacity 0.42s ease 0.22s,
+    filter 0.3s,
+    box-shadow 0.3s;
 }
 
 /* Interacción con los libros de la vitrina abierta */
