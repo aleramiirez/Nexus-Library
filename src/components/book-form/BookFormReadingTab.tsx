@@ -15,6 +15,7 @@ import { Book, Saga, StarRating } from '../../types/models';
 import { ReadingStatus, STAR_OPTIONS } from '../../constants/catalogs';
 import { calculateReadingTime } from '../../utils/readingTime';
 import { LibrarySelect } from '../LibrarySelect';
+import { StarRatingInteractive } from '../StarRatingInteractive';
 import { inputCls, labelCls } from './styles';
 
 interface BookFormReadingTabProps {
@@ -139,26 +140,35 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
       {/* Rating & Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <span id="add-book-puntuacion-label" className={labelCls}>Puntuación</span>
-          <LibrarySelect
-            id="add-book-puntuacion"
-            ariaLabel="Puntuación"
-            value={puntuacion ?? ''}
-            onChange={(val) =>
-              setPuntuacion(
-                val !== '' ? (Number(val) as StarRating) : null
-              )
-            }
-            placeholder="Sin puntuar"
-            options={[
-              { value: '', label: 'Sin puntuar' },
-              ...STAR_OPTIONS.map((opt) => ({
-                value: opt.value,
-                label: `${opt.label} (${opt.value})`
-              }))
-            ]}
-            className={inputCls}
-          />
+          <span id="add-book-puntuacion-label" className={labelCls}>Puntuación personal</span>
+          <div className="p-2.5 rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-[#0D1017] flex flex-col gap-2">
+            <StarRatingInteractive
+              value={puntuacion}
+              onChange={setPuntuacion}
+              size="md"
+              showScoreText={true}
+              allowClear={true}
+            />
+            <LibrarySelect
+              id="add-book-puntuacion"
+              ariaLabel="Puntuación"
+              value={puntuacion ?? ''}
+              onChange={(val) =>
+                setPuntuacion(
+                  val !== '' ? (Number(val) as StarRating) : null
+                )
+              }
+              placeholder="Sin puntuar"
+              options={[
+                { value: '', label: 'Sin puntuar' },
+                ...STAR_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: `${opt.label} (${opt.value})`
+                }))
+              ]}
+              className={`${inputCls} text-xs py-1.5`}
+            />
+          </div>
         </div>
         <div>
           <label htmlFor="add-book-fecha-inicio" className={labelCls}>

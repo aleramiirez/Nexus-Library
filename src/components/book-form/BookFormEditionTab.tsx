@@ -1,5 +1,6 @@
 import React from 'react';
-import { Images } from 'lucide-react';
+import { Images, Book, Smartphone, Headphones, Library, BookmarkCheck, Heart, Share2 } from 'lucide-react';
+import { BookFormat, BookOwnership } from '../../types/models';
 import { inputCls, labelCls } from './styles';
 
 interface CountryItem {
@@ -9,6 +10,10 @@ interface CountryItem {
 }
 
 interface BookFormEditionTabProps {
+  formato?: BookFormat;
+  setFormato?: (val: BookFormat) => void;
+  propiedad?: BookOwnership;
+  setPropiedad?: (val: BookOwnership) => void;
   fechaPublicacion: string;
   setFechaPublicacion: (val: string) => void;
   paginas: string;
@@ -33,6 +38,10 @@ interface BookFormEditionTabProps {
 }
 
 export const BookFormEditionTab: React.FC<BookFormEditionTabProps> = ({
+  formato = 'fisico',
+  setFormato,
+  propiedad = 'propio',
+  setPropiedad,
   fechaPublicacion,
   setFechaPublicacion,
   paginas,
@@ -55,8 +64,77 @@ export const BookFormEditionTab: React.FC<BookFormEditionTabProps> = ({
   notasPersonales,
   setNotasPersonales
 }) => {
+  const formatOptions: Array<{ value: BookFormat; label: string; icon: string }> = [
+    { value: 'fisico', label: 'Físico', icon: '📖' },
+    { value: 'digital', label: 'Digital / ePub', icon: '📱' },
+    { value: 'audiolibro', label: 'Audiolibro', icon: '🎧' }
+  ];
+
+  const ownershipOptions: Array<{ value: BookOwnership; label: string; icon: string }> = [
+    { value: 'propio', label: 'En mi estantería', icon: '🏛️' },
+    { value: 'prestado', label: 'Prestado', icon: '🤝' },
+    { value: 'biblioteca', label: 'Biblioteca pública', icon: '🔖' },
+    { value: 'deseo', label: 'Lista de deseos', icon: '✨' }
+  ];
+
   return (
     <div className="space-y-5">
+      {/* Formato y Propiedad / Estado de Posesión */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fbf6ea]/60 dark:bg-[#0D1017]">
+        {/* Formato */}
+        <div>
+          <span className="block text-[11px] uppercase tracking-wider font-semibold text-amber-950/80 dark:text-amber-200/80 mb-2">
+            Formato de la obra
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {formatOptions.map((opt) => {
+              const isSelected = formato === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFormato?.(opt.value)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-100 font-bold shadow-xs'
+                      : 'border-amber-900/15 dark:border-[#283246] bg-white/70 dark:bg-[#151D2A] text-stone-600 dark:text-slate-400 hover:border-amber-600/40'
+                  }`}
+                >
+                  <span>{opt.icon}</span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Propiedad */}
+        <div>
+          <span className="block text-[11px] uppercase tracking-wider font-semibold text-amber-950/80 dark:text-amber-200/80 mb-2">
+            Propiedad / Procedencia
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {ownershipOptions.map((opt) => {
+              const isSelected = propiedad === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setPropiedad?.(opt.value)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-100 font-bold shadow-xs'
+                      : 'border-amber-900/15 dark:border-[#283246] bg-white/70 dark:bg-[#151D2A] text-stone-600 dark:text-slate-400 hover:border-amber-600/40'
+                  }`}
+                >
+                  <span>{opt.icon}</span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
       {/* Año Publicación & Páginas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

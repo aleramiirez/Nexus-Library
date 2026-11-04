@@ -309,17 +309,28 @@ export const READING_STATUSES = [
 
 export type ReadingStatus = (typeof READING_STATUSES)[number];
 
-export const STAR_OPTIONS: Array<{ value: 1 | 2 | 3 | 4 | 5; label: string }> = [
+export const STAR_OPTIONS: Array<{
+  value: 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
+  label: string;
+}> = [
+  { value: 0.5, label: '½' },
   { value: 1, label: '⭐' },
+  { value: 1.5, label: '⭐½' },
   { value: 2, label: '⭐⭐' },
+  { value: 2.5, label: '⭐⭐½' },
   { value: 3, label: '⭐⭐⭐' },
+  { value: 3.5, label: '⭐⭐⭐½' },
   { value: 4, label: '⭐⭐⭐⭐' },
+  { value: 4.5, label: '⭐⭐⭐⭐½' },
   { value: 5, label: '⭐⭐⭐⭐⭐' }
 ];
 
 export function formatStars(rating: number | null): string {
-  if (!rating || rating < 1 || rating > 5) return '';
-  return '⭐'.repeat(Math.round(rating));
+  if (!rating || rating <= 0 || rating > 5) return '';
+  const full = Math.floor(rating);
+  const isHalf = rating % 1 >= 0.5;
+  const stars = '⭐'.repeat(full);
+  return isHalf ? `${stars}½` : stars;
 }
 
 export function normalizeText(value: string): string {

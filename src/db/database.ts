@@ -207,6 +207,14 @@ export function mapRowToBook(row: SupabaseBookRow): Book {
         : null,
     puntuacion: d.puntuacion ?? null,
     progreso: d.progreso ?? '❌ No Leído',
+    formato: d.formato ?? (row as any).formato ?? '',
+    propiedad: d.propiedad ?? (row as any).propiedad ?? '',
+    vecesLeido: typeof d.vecesLeido === 'number' ? d.vecesLeido : (typeof (row as any).veces_leido === 'number' ? (row as any).veces_leido : 1),
+    historialLecturas: Array.isArray(d.historialLecturas)
+      ? d.historialLecturas
+      : Array.isArray((row as any).historial_lecturas)
+      ? (row as any).historial_lecturas
+      : [],
     sagaId: d.sagaId ?? null,
     sagaNombre: d.sagaNombre ?? '',
     volumen: d.volumen ?? null,
@@ -247,9 +255,24 @@ async function upsertBookToSupabase(userId: string, book: Book): Promise<void> {
     created_at: book.createdAt,
     updated_at: book.updatedAt
   };
-  const { error } = await supabase
+  let { error } = await supabase
     .from('books')
     .upsert(payload, { onConflict: 'id,user_id' });
+
+  // Si falló por posibles columnas/propiedades no reconocidas en esquemas estrictos remotos
+  if (error && (error.message?.includes('column') || (error as any).code === '42703')) {
+    const { formato: _f, propiedad: _p, vecesLeido: _v, historialLecturas: _h, ...legacyBook } = book;
+    const fallbackPayload: SupabaseBookRow = {
+      id: book.id,
+      user_id: userId,
+      data: legacyBook as Book,
+      created_at: book.createdAt,
+      updated_at: book.updatedAt
+    };
+    const retry = await supabase.from('books').upsert(fallbackPayload, { onConflict: 'id,user_id' });
+    error = retry.error;
+  }
+
   if (error) {
     // Fallback a update explícito si upsert choca con políticas RLS
     const { error: updateError } = await supabase

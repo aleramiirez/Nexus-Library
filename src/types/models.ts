@@ -1,6 +1,15 @@
 import { Genre, Subgenre, ReadingStatus } from '../constants/catalogs';
 
-export type StarRating = 1 | 2 | 3 | 4 | 5 | null;
+export type StarRating = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5 | null;
+
+export interface ReadingHistoryEntry {
+  fechaInicio: string;
+  fechaFin: string;
+  puntuacion?: StarRating;
+}
+
+export type BookFormat = 'fisico' | 'digital' | 'audiolibro' | '';
+export type BookOwnership = 'propio' | 'prestado' | 'biblioteca' | 'deseo' | '';
 
 export interface Book {
   id: string;
@@ -13,6 +22,10 @@ export interface Book {
   paginaActual?: number | null;
   puntuacion: StarRating;
   progreso: ReadingStatus;
+  formato?: BookFormat;
+  propiedad?: BookOwnership;
+  vecesLeido?: number;
+  historialLecturas?: ReadingHistoryEntry[];
   sagaId: string | null;
   sagaNombre: string;
   volumen: number | null;

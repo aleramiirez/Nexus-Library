@@ -20,6 +20,8 @@ import { calculateReadingTime } from '../utils/readingTime';
 import {
   BibliographicCandidate,
   Book,
+  BookFormat,
+  BookOwnership,
   Saga,
   StarRating
 } from '../types/models';
@@ -113,6 +115,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [paginaActual, setPaginaActual] = useState<string>('');
   const [puntuacion, setPuntuacion] = useState<StarRating>(null);
   const [progreso, setProgreso] = useState<ReadingStatus>('❌ No Leído');
+  const [formato, setFormato] = useState<BookFormat>('fisico');
+  const [propiedad, setPropiedad] = useState<BookOwnership>('propio');
   const [sagaMode, setSagaMode] = useState<'none' | 'existing' | 'new'>('none');
   const [selectedSagaId, setSelectedSagaId] = useState<string>('');
   const [newSagaName, setNewSagaName] = useState<string>('');
@@ -234,6 +238,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma(editingBook.idioma);
       setEdicion(editingBook.edicion);
       setPais(editingBook.pais || '');
+      setFormato(editingBook.formato || 'fisico');
+      setPropiedad(editingBook.propiedad || 'propio');
       setSinopsis(editingBook.sinopsis);
       setNotasPersonales(editingBook.notasPersonales || '');
       setPortadaUrl(editingBook.portadaUrl);
@@ -273,6 +279,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma('');
       setEdicion('');
       setPais('');
+      setFormato('fisico');
+      setPropiedad('propio');
       setSinopsis('');
       setNotasPersonales('');
       setPortadaUrl('');
@@ -363,6 +371,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     if (parsed.editorial) setEditorial(parsed.editorial);
     if (parsed.idioma) setIdioma(parsed.idioma);
     if (parsed.edicion) setEdicion(parsed.edicion);
+    setFormato('digital');
+    setPropiedad('propio');
     if (parsed.sinopsis) setSinopsis(parsed.sinopsis);
     if (parsed.lecturaVirtual) setLecturaVirtual(parsed.lecturaVirtual);
     if (parsed.portadaUrl) setPortadaUrl(parsed.portadaUrl);
@@ -580,6 +590,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           paginaActual: paginaActual.trim() ? Number(paginaActual.trim()) : null,
           puntuacion,
           progreso,
+          formato,
+          propiedad,
+          vecesLeido: editingBook?.vecesLeido ?? 1,
+          historialLecturas: editingBook?.historialLecturas ?? [],
           sagaId: finalSagaId,
           sagaNombre: finalSagaNombre,
           volumen: volumen ? Number(volumen) : null,
@@ -857,6 +871,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   <button
                     key={tab.id}
                     type="button"
+                    aria-selected={isActive}
                     onClick={() => setActiveTab(tab.id)}
                     className={
                       'relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ' +
@@ -948,6 +963,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
               )}
               {activeTab === 'edition' && (
                 <BookFormEditionTab
+                  formato={formato}
+                  setFormato={setFormato}
+                  propiedad={propiedad}
+                  setPropiedad={setPropiedad}
                   fechaPublicacion={fechaPublicacion}
                   setFechaPublicacion={setFechaPublicacion}
                   paginas={paginas}

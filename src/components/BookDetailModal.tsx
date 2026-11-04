@@ -27,7 +27,8 @@ import {
   Copy,
   Save,
   CheckCircle2,
-  Share2
+  Share2,
+  RotateCcw
 } from 'lucide-react';
 import '../book-detail.css';
 import { Book, StarRating, CustomCollection } from '../types/models';
@@ -35,6 +36,7 @@ import { collectionService } from '../services/collectionService';
 import { AddToCollectionModal } from './AddToCollectionModal';
 import { BookCover } from './BookCover';
 import { formatStars, ReadingStatus, STAR_OPTIONS } from '../constants/catalogs';
+import { StarRatingInteractive, StarRatingDisplay } from './StarRatingInteractive';
 import { READING_STATUS_META } from '../constants/readingStatusMeta';
 import { ReadingStatusControl } from './ReadingStatusControl';
 import { RecommendBookModal } from './RecommendBookModal';
@@ -90,6 +92,19 @@ import { BookDetailNotesView } from './book-detail/BookDetailNotesView';
 
 export type { BookFlipValues };
 export { getBookFlipValues, computeBookFlipVars, applyBookFlipVarsToElement };
+
+const FORMAT_LABELS: Record<string, string> = {
+  fisico: '📖 Físico',
+  digital: '📱 Digital / ePub',
+  audiolibro: '🎧 Audiolibro'
+};
+
+const OWNERSHIP_LABELS: Record<string, string> = {
+  propio: '🏛️ En mi estantería',
+  prestado: '🤝 Prestado',
+  biblioteca: '🔖 Biblioteca pública',
+  deseo: '✨ Lista de deseos'
+};
 
 export type BookModalTab = 'details' | 'synopsis' | 'notes';
 
@@ -481,6 +496,34 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
     [book, onStatusChange, onShowToast]
   );
 
+  const handleStartReread = useCallback(async () => {
+    if (!book) return;
+    const prevHistory = book.historialLecturas || [];
+    const newEntry = {
+      fechaInicio: book.fechaInicio || '',
+      fechaFin: book.fechaFin || getTodayLocalDateString(),
+      puntuacion: book.puntuacion ?? null
+    };
+    const nextHistory = [...prevHistory, newEntry];
+    const nextVeces = (book.vecesLeido || 1) + 1;
+    const today = getTodayLocalDateString();
+
+    await updateBookPartialRecord(book.id, {
+      historialLecturas: nextHistory,
+      vecesLeido: nextVeces,
+      paginaActual: 0,
+      fechaInicio: today,
+      fechaFin: '',
+      progreso: '⏳ Leyendo'
+    });
+
+    soundService.playPageTurn(true);
+    onShowToast?.(
+      `🔄 ¡Relectura iniciada! (${nextVeces}ª lectura). ¡Feliz reencuentro con esta obra!`,
+      'success'
+    );
+  }, [book, onShowToast]);
+
   useEffect(() => {
     if (!book) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -817,6 +860,21 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           Sin género
                         </span>
                       )}
+                      {book.formato && (
+                        <span className="rounded-md bg-[#efe3c8] dark:bg-[#1B2333] border border-amber-900/15 dark:border-[#283246] px-2 py-0.5 text-[11px] font-medium text-stone-700 dark:text-slate-300">
+                          {FORMAT_LABELS[book.formato] || book.formato}
+                        </span>
+                      )}
+                      {book.propiedad && (
+                        <span className="rounded-md bg-[#efe3c8] dark:bg-[#1B2333] border border-amber-900/15 dark:border-[#283246] px-2 py-0.5 text-[11px] font-medium text-stone-700 dark:text-slate-300">
+                          {OWNERSHIP_LABELS[book.propiedad] || book.propiedad}
+                        </span>
+                      )}
+                      {book.vecesLeido && book.vecesLeido > 1 && (
+                        <span className="rounded-md bg-amber-500/15 border border-amber-600/35 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:text-amber-200">
+                          🔄 Leído {book.vecesLeido} veces
+                        </span>
+                      )}
                       {book.fechaPublicacion && (
                         <span className="rounded-md bg-[#efe3c8] dark:bg-[#1B2333] px-2 py-0.5 text-[11px] text-stone-700 dark:text-slate-300">
                           {book.fechaPublicacion}
@@ -854,10 +912,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold">
                             Valoración de {readerName}
                           </span>
-                          <span className="text-xs text-amber-700 dark:text-amber-400 font-bold">
-                            {book.puntuacion
-                              ? `${formatStars(book.puntuacion)} (${book.puntuacion}/5)`
-                              : 'Sin valorar'}
+                          <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 font-bold">
+                            {book.puntuacion ? (
+                              <>
+                                <StarRatingDisplay value={book.puntuacion} size="xs" />
+                                <span>({book.puntuacion.toFixed(1)}/5)</span>
+                              </>
+                            ) : (
+                              'Sin valorar'
+                            )}
                           </span>
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t border-amber-900/15 dark:border-[#232D42]">
@@ -909,27 +972,14 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       <span className="block text-[10px] uppercase tracking-widest text-stone-500 dark:text-slate-400 font-semibold mb-1.5">
                         Puntuación personal
                       </span>
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {STAR_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() =>
-                              onRatingChange?.(
-                                book.id,
-                                book.puntuacion === opt.value ? null : opt.value
-                              )
-                            }
-                            className={
-                              'py-1.5 rounded-xl text-xs border text-center active:scale-95 transition ' +
-                              (book.puntuacion === opt.value
-                                ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
-                                : 'border-amber-900/15 dark:border-[#263147] bg-[#fbf6ea]/70 dark:bg-[#171F2E]/70 text-stone-600 dark:text-slate-400')
-                            }
-                          >
-                            {opt.value} ⭐
-                          </button>
-                        ))}
+                      <div className="flex items-center justify-between">
+                        <StarRatingInteractive
+                          value={book.puntuacion}
+                          onChange={(rating) => onRatingChange?.(book.id, rating)}
+                          size="md"
+                          showScoreText={true}
+                          allowClear={true}
+                        />
                       </div>
                     </div>
                   </div>
@@ -942,6 +992,42 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     onUpdateProgress={onUpdateProgress}
                     variant="mobile"
                   />
+                )}
+
+                {/* Botón Iniciar relectura si el libro ya está marcado como Leído */}
+                {!readOnly && book.progreso === '✅ Leído' && (
+                  <button
+                    type="button"
+                    onClick={handleStartReread}
+                    className="w-full py-2.5 px-3.5 rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                    <span>🔄 Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
+                  </button>
+                )}
+
+                {/* Historial de lecturas previas */}
+                {book.historialLecturas && book.historialLecturas.length > 0 && (
+                  <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#101520]/80 p-3 space-y-1.5">
+                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 dark:text-slate-400">
+                      Historial de lecturas registradas ({book.historialLecturas.length})
+                    </span>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {book.historialLecturas.map((h, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-[11px] py-1 px-2 rounded-lg bg-amber-500/10 border border-amber-900/10 dark:border-[#222B3C] text-stone-700 dark:text-slate-300 font-serif"
+                        >
+                          <span>Lectura #{idx + 1}: {h.fechaInicio || '—'} a {h.fechaFin || '—'}</span>
+                          {h.puntuacion && (
+                            <span className="text-amber-800 dark:text-amber-300 font-sans font-bold">
+                              {h.puntuacion} ★
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {/* Botón para pasar página a la Sinopsis en móvil */}
@@ -1106,32 +1192,17 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           {!readOnly ? (
                             <>
                               {/* Puntuación Personal (Estrellas) */}
-                              <div className="w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0">
+                              <div className="w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0 flex flex-col items-center">
                                 <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-1">
                                   Puntuación Personal
                                 </p>
-                                <div className="flex items-center justify-center gap-1 flex-wrap">
-                                  {STAR_OPTIONS.map((opt) => (
-                                    <button
-                                      key={opt.value}
-                                      type="button"
-                                      onClick={() =>
-                                        onRatingChange?.(
-                                          book.id,
-                                          book.puntuacion === opt.value ? null : opt.value
-                                        )
-                                      }
-                                      className={
-                                        'px-2 py-0.5 rounded-lg text-xs border transition ' +
-                                        (book.puntuacion === opt.value
-                                          ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-200 font-bold shadow-sm'
-                                          : 'border-transparent hover:bg-amber-900/10 dark:hover:bg-slate-800 text-stone-600 dark:text-slate-400')
-                                      }
-                                    >
-                                      {opt.value} ⭐
-                                    </button>
-                                  ))}
-                                </div>
+                                <StarRatingInteractive
+                                  value={book.puntuacion}
+                                  onChange={(rating) => onRatingChange?.(book.id, rating)}
+                                  size="md"
+                                  showScoreText={true}
+                                  allowClear={true}
+                                />
                               </div>
 
                               {/* Sello / Ficha de Registro de Lectura Clásica (Fechas y Lectura Virtual) */}
@@ -1150,10 +1221,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                     <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-0.5">
                                       Valoración de {readerName}
                                     </p>
-                                    <div className="text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-bold">
-                                      {book.puntuacion
-                                        ? `${formatStars(book.puntuacion)} (${book.puntuacion}/5)`
-                                        : 'Sin valorar'}
+                                    <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-bold">
+                                      {book.puntuacion ? (
+                                        <>
+                                          <StarRatingDisplay value={book.puntuacion} size="sm" />
+                                          <span>({book.puntuacion.toFixed(1)}/5)</span>
+                                        </>
+                                      ) : (
+                                        'Sin valorar'
+                                      )}
                                     </div>
                                   </div>
 
@@ -1430,6 +1506,21 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             Sin género asignado
                           </span>
                         )}
+                        {book.formato && (
+                          <span className="rounded-full bg-[#efe3c8] dark:bg-[#1B2333] border border-amber-900/15 dark:border-[#283246] px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-slate-300">
+                            {FORMAT_LABELS[book.formato] || book.formato}
+                          </span>
+                        )}
+                        {book.propiedad && (
+                          <span className="rounded-full bg-[#efe3c8] dark:bg-[#1B2333] border border-amber-900/15 dark:border-[#283246] px-2.5 py-1 text-xs font-medium text-stone-700 dark:text-slate-300">
+                            {OWNERSHIP_LABELS[book.propiedad] || book.propiedad}
+                          </span>
+                        )}
+                        {book.vecesLeido && book.vecesLeido > 1 && (
+                          <span className="rounded-full bg-amber-500/15 border border-amber-600/35 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:text-amber-200">
+                            🔄 Leído {book.vecesLeido} veces
+                          </span>
+                        )}
                         {book.subgeneros.map((sub) => (
                           <span
                             key={sub}
@@ -1447,6 +1538,42 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           onUpdateProgress={onUpdateProgress}
                           variant="desktop"
                         />
+                      )}
+
+                      {/* Botón Iniciar relectura si el libro ya está marcado como Leído */}
+                      {!readOnly && book.progreso === '✅ Leído' && (
+                        <button
+                          type="button"
+                          onClick={handleStartReread}
+                          className="w-full py-2 px-3 rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition cursor-pointer shadow-xs"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                          <span>🔄 Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
+                        </button>
+                      )}
+
+                      {/* Historial de lecturas previas registradas */}
+                      {book.historialLecturas && book.historialLecturas.length > 0 && (
+                        <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#101520]/80 p-2.5 space-y-1">
+                          <span className="block text-[10px] uppercase tracking-wider font-semibold text-stone-500 dark:text-slate-400">
+                            Historial de lecturas ({book.historialLecturas.length})
+                          </span>
+                          <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {book.historialLecturas.map((h, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between text-[11px] py-0.5 px-2 rounded-lg bg-amber-500/10 border border-amber-900/10 dark:border-[#222B3C] text-stone-700 dark:text-slate-300 font-serif"
+                              >
+                                <span>Lectura #{idx + 1}: {h.fechaInicio || '—'} a {h.fechaFin || '—'}</span>
+                                {h.puntuacion && (
+                                  <span className="text-amber-800 dark:text-amber-300 font-sans font-bold">
+                                    {h.puntuacion} ★
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
 
                       {/* Fila principal con las 3 métricas protagonistas: Año, Páginas y Tiempo de lectura */}
