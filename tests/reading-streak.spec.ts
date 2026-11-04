@@ -16,15 +16,15 @@ test.describe('Fase 2: Racha Diaria de Lectura y Mapa de Calor', () => {
     const streakTitle = page.getByText(/Hábito y Racha de Lectura/i).first();
     await expect(streakTitle).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/Racha actual/i).first()).toBeVisible();
+    await expect(page.getByText(/Hitos/i).first()).toBeVisible();
 
     // 3. Probar pulsar "Marcar que he leído hoy" si aún no está registrada la lectura
     const checkInBtn = page.getByRole('button', { name: /Marcar que he leído hoy/i }).first();
     if (await checkInBtn.isVisible()) {
       await checkInBtn.click();
-      // Toast de éxito y cambio a badge de lectura registrada
-      await expect(page.getByText(/Lectura de hoy registrada/i).first()).toBeVisible({ timeout: 8000 });
+      await expect(page.getByText(/La llama sigue encendida/i).first()).toBeVisible({ timeout: 8000 });
     } else {
-      await expect(page.getByText(/Lectura de hoy registrada/i).first()).toBeVisible();
+      await expect(page.getByText(/La llama sigue encendida/i).first()).toBeVisible();
     }
 
     // 4. Navegar a Estadísticas y Reto
