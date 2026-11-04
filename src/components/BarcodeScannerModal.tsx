@@ -383,15 +383,15 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="barcode-scanner-title"
-        className="catalog-card-panel relative w-full max-w-xl max-h-[92vh] flex flex-col p-0 shadow-2xl mt-2 sm:mt-4 overflow-hidden border border-amber-900/30 dark:border-amber-500/30"
+        className="catalog-card-panel relative w-full max-w-xl max-h-[92vh] flex flex-col p-0 shadow-2xl mt-3 sm:mt-5 overflow-visible border border-amber-900/30 dark:border-amber-500/30"
       >
         {/* Pestaña de latón superior */}
-        <div className="catalog-brass-tab z-20 whitespace-nowrap">
+        <div className="catalog-brass-tab z-20 whitespace-nowrap pointer-events-none max-w-[calc(100%-36px)] truncate">
           Lente Bibliográfica · Reconocimiento ISBN
         </div>
 
         {/* Cabecera del Modal */}
-        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/95 dark:bg-[#141b27]/95">
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 pt-5 pb-3.5 border-b border-amber-900/15 dark:border-[#242f42] bg-[#f7eedc]/95 dark:bg-[#141b27]/95 rounded-t-[14px] sm:rounded-t-[17px]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 text-slate-950 flex items-center justify-center font-bold shadow-sm shrink-0">
               <ScanBarcode className="w-5 h-5 drop-shadow-xs" />
@@ -423,7 +423,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         </div>
 
         {/* Contenido Principal */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-[#faf6ee] dark:bg-[#0f141f]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-[#faf6ee] dark:bg-[#0f141f] rounded-b-[14px] sm:rounded-b-[17px]">
           {/* ESTADO: ESCANEANDO O INICIANDO */}
           {(status === 'starting' || status === 'scanning') && (
             <div className="space-y-4">
