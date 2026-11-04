@@ -22,6 +22,7 @@ const GAP_X = 18;
 const PAD_X = 20;
 const PAD_TOP = 22;
 const ROW_H = 208;
+const CLOSE_DURATION_MS = 680;
 const SPINE_W = [27, 24, 30, 26, 29, 25, 31];
 const SPINE_H = [100, 104, 98, 106, 102, 99, 105];
 const MAX_SEGMENTS = 24;
@@ -46,6 +47,19 @@ const STATE_META: Record<BookState, { label: string; icon: React.ElementType | n
   reading: { label: 'Leyendo', icon: Play, cls: 'is-reading' },
   paused: { label: 'Pausado', icon: Pause, cls: 'is-paused' },
   pending: { label: 'Pendiente', icon: null, cls: '' }
+};
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const computeOpenHeightForWidth = (bodyWidth: number, bookCount: number): number => {
+  if (bookCount === 0) return CLOSED_H;
+  const inner = Math.max(100, bodyWidth - PAD_X * 2);
+  const cols = Math.max(1, Math.floor((inner + GAP_X) / (COVER_W + GAP_X)));
+  const rows = Math.max(1, Math.ceil(bookCount / cols));
+  return PAD_TOP + rows * ROW_H - 6;
 };
 
 export interface SagaVitrineProps {
@@ -109,10 +123,15 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
 }) => {
   const { saga, books, readCount, pendingCount, registeredCount, progressPercent } = item;
   const bodyId = `vitrine-body-${saga.id}`;
+  const articleRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [openHeight, setOpenHeight] = useState(CLOSED_H);
-  // Las portadas reales solo se montan cuando la vitrina se ha abierto alguna vez
+
+  // Altura animada del cuerpo (.vit-body) y fase de cierre para no saltar de 2 columnas a 1 de golpe
+  const [bodyHeight, setBodyHeight] = useState<number>(CLOSED_H);
+  const [isClosing, setIsClosing] = useState(false);
   const [coversMounted, setCoversMounted] = useState(isOpen);
+  const prevOpenRef = useRef<boolean>(isOpen);
+  const closedWidthRef = useRef<number | null>(null);
   const preloaded = useRef(false);
   const tones = useSpineTones(books);
 
@@ -120,28 +139,140 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
     if (isOpen) setCoversMounted(true);
   }, [isOpen]);
 
-  // Altura abierta = filas × 208px, recalculada al cambiar el ancho
+  // Coreografía fluida de apertura y cierre (alto + ancho de vitrina)
   useLayoutEffect(() => {
-    if (!isOpen) return;
-    const el = bodyRef.current;
-    if (!el) return;
-    const compute = () => {
-      const inner = el.clientWidth - PAD_X * 2;
-      const cols = Math.max(1, Math.floor((inner + GAP_X) / (COVER_W + GAP_X)));
-      const rows = Math.max(1, Math.ceil(books.length / cols));
-      const next = books.length === 0 ? CLOSED_H : PAD_TOP + rows * ROW_H - 6;
-      setOpenHeight((prev) => (prev === next ? prev : next));
+    const articleEl = articleRef.current;
+    const bodyEl = bodyRef.current;
+    if (!articleEl || !bodyEl) return;
+
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = isOpen;
+
+    if (prefersReducedMotion()) {
+      setIsClosing(false);
+      articleEl.style.width = '';
+      articleEl.style.transition = '';
+      setBodyHeight(isOpen ? computeOpenHeightForWidth(bodyEl.clientWidth, books.length) : CLOSED_H);
+      return;
+    }
+
+    let rafId1 = 0;
+    let rafId2 = 0;
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    if (isOpen && !wasOpen) {
+      // APERTURA FLUIDA:
+      // 1. La vitrina pasa a ocupar toda la fila (grid-column: 1 / -1), pero arranca desde su ancho cerrado
+      //    y su alto cerrado (132px), expandiéndose suavemente en el siguiente frame.
+      setIsClosing(false);
+      const fullWidth = articleEl.clientWidth;
+      const startWidth =
+        closedWidthRef.current && closedWidthRef.current < fullWidth - 20
+          ? closedWidthRef.current
+          : fullWidth;
+      const targetHeight = computeOpenHeightForWidth(fullWidth, books.length);
+
+      if (startWidth < fullWidth - 20) {
+        articleEl.style.transition = 'none';
+        articleEl.style.width = `${startWidth}px`;
+        void articleEl.offsetWidth;
+      }
+
+      setBodyHeight(CLOSED_H);
+
+      rafId1 = requestAnimationFrame(() => {
+        rafId2 = requestAnimationFrame(() => {
+          if (startWidth < fullWidth - 20) {
+            articleEl.style.transition = 'width 0.72s cubic-bezier(0.22, 1, 0.36, 1)';
+            articleEl.style.width = `${fullWidth}px`;
+          }
+          setBodyHeight(targetHeight);
+        });
+      });
+
+      closeTimer = setTimeout(() => {
+        articleEl.style.transition = '';
+        articleEl.style.width = '';
+      }, 760);
+    } else if (!isOpen && wasOpen) {
+      // CIERRE FLUIDO:
+      // Mantiene grid-column: 1 / -1 durante la transición mientras las puertas se cierran,
+      // el alto vuelve a 132px y el ancho se repliega suavemente al tamaño de 1 columna.
+      const fullWidth = articleEl.clientWidth;
+      const gridEl = articleEl.parentElement;
+      const gapPx = 20.8; // 1.3rem
+      const singleColWidth =
+        closedWidthRef.current ||
+        (gridEl && fullWidth > 860 ? Math.floor((gridEl.clientWidth - gapPx) / 2) : fullWidth);
+
+      setIsClosing(true);
+
+      if (singleColWidth < fullWidth - 20) {
+        articleEl.style.transition = 'none';
+        articleEl.style.width = `${fullWidth}px`;
+        void articleEl.offsetWidth;
+      }
+
+      rafId1 = requestAnimationFrame(() => {
+        if (singleColWidth < fullWidth - 20) {
+          articleEl.style.transition = `width ${CLOSE_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+          articleEl.style.width = `${singleColWidth}px`;
+        }
+        setBodyHeight(CLOSED_H);
+      });
+
+      closeTimer = setTimeout(() => {
+        setIsClosing(false);
+        articleEl.style.transition = '';
+        articleEl.style.width = '';
+      }, CLOSE_DURATION_MS);
+    } else if (isOpen) {
+      // Si ya estaba abierta (ej. se añade un libro o monta abierta), actualizar altura
+      setBodyHeight(computeOpenHeightForWidth(bodyEl.clientWidth, books.length));
+    } else {
+      // Cerrada en reposo: recordar su ancho de 1 columna para la próxima apertura
+      closedWidthRef.current = articleEl.clientWidth;
+      setBodyHeight(CLOSED_H);
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId1);
+      cancelAnimationFrame(rafId2);
+      if (closeTimer) clearTimeout(closeTimer);
     };
-    compute();
-    const ro = new ResizeObserver(compute);
-    ro.observe(el);
-    return () => ro.disconnect();
   }, [isOpen, books.length]);
+
+  // Recalcular al redimensionar la ventana o contenedor
+  useEffect(() => {
+    const bodyEl = bodyRef.current;
+    const articleEl = articleRef.current;
+    if (!bodyEl || !articleEl) return;
+
+    const ro = new ResizeObserver(() => {
+      if (isOpen) {
+        // Evitar recalcular con ancho intermedio mientras anima el ancho de apertura
+        if (!articleEl.style.width) {
+          setBodyHeight(computeOpenHeightForWidth(bodyEl.clientWidth, books.length));
+        }
+      } else if (!isClosing) {
+        closedWidthRef.current = articleEl.clientWidth;
+      }
+    });
+    ro.observe(bodyEl);
+    return () => ro.disconnect();
+  }, [isOpen, isClosing, books.length]);
 
   const warmUp = () => {
     if (preloaded.current) return;
     preloaded.current = true;
     books.forEach((b) => preloadBookCover(b));
+  };
+
+  const handleTriggerToggle = () => {
+    if (!isOpen && articleRef.current) {
+      closedWidthRef.current = articleRef.current.clientWidth;
+    }
+    onToggle();
   };
 
   const inProgressCount = books.filter((b) => {
@@ -164,7 +295,13 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
 
   return (
     <article
-      className={'saga-vitrine' + (isOpen ? ' is-open' : '') + (isComplete ? ' is-complete' : '')}
+      ref={articleRef}
+      className={
+        'saga-vitrine' +
+        (isOpen ? ' is-open' : '') +
+        (isClosing ? ' is-closing' : '') +
+        (isComplete ? ' is-complete' : '')
+      }
       aria-labelledby={`vitrine-title-${saga.id}`}
       onPointerEnter={warmUp}
     >
@@ -216,7 +353,7 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
           </button>
           <button
             type="button"
-            onClick={onToggle}
+            onClick={handleTriggerToggle}
             onFocus={warmUp}
             className="vit-btn vit-toggle"
             aria-expanded={isOpen}
@@ -236,8 +373,8 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
         id={bodyId}
         ref={bodyRef}
         className="vit-body"
-        style={{ height: isOpen ? openHeight : CLOSED_H }}
-        onClick={!isOpen ? onToggle : undefined}
+        style={{ height: `${bodyHeight}px` }}
+        onClick={!isOpen ? handleTriggerToggle : undefined}
       >
         <div className="vit-layer vit-wood" aria-hidden="true" />
         <div className="vit-layer vit-shelves" aria-hidden="true" />
