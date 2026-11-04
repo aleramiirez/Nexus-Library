@@ -212,6 +212,7 @@ export function mapRowToBook(row: SupabaseBookRow): Book {
     volumen: d.volumen ?? null,
     fechaInicio: d.fechaInicio ?? '',
     fechaFin: d.fechaFin ?? '',
+    fechaPausado: d.fechaPausado ?? (row as any).fecha_pausado ?? null,
     lecturaVirtual: d.lecturaVirtual ?? '',
     tiempoLectura: d.tiempoLectura ?? '',
     isbn: d.isbn ?? '',
@@ -738,12 +739,18 @@ export async function updateBookQuickStatus(
   const today = getTodayLocalDateString();
   let fechaInicio = book.fechaInicio;
   let fechaFin = book.fechaFin;
+  let fechaPausado = book.fechaPausado ?? null;
 
-  if (newStatus === '⏳ Leyendo' && !fechaInicio) {
-    fechaInicio = today;
+  if (newStatus === '⏳ Leyendo') {
+    if (!fechaInicio) fechaInicio = today;
+    fechaPausado = null;
   }
-  if (newStatus === '✅ Leído' && !fechaFin) {
-    fechaFin = today;
+  if (newStatus === '⏸️ Pausado') {
+    if (!fechaPausado) fechaPausado = today;
+  }
+  if (newStatus === '✅ Leído') {
+    if (!fechaFin) fechaFin = today;
+    fechaPausado = null;
   }
 
   const tiempoLectura = calculateReadingTimeLabel(fechaInicio, fechaFin, book.tiempoLectura);
@@ -752,6 +759,7 @@ export async function updateBookQuickStatus(
     progreso: newStatus,
     fechaInicio,
     fechaFin,
+    fechaPausado,
     tiempoLectura,
     updatedAt: new Date().toISOString()
   };
@@ -795,6 +803,7 @@ export async function updateBookReadingProgress(
     newPage > 0
   ) {
     currentBook.progreso = '⏳ Leyendo';
+    currentBook.fechaPausado = null;
     if (!currentBook.fechaInicio) {
       currentBook.fechaInicio = today;
     }

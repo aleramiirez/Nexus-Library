@@ -333,7 +333,9 @@ class ReadingStreakService {
         const ini = (book.fechaInicio ? book.fechaInicio.trim() : '') || (book.fechaFin ? book.fechaFin.trim() : '');
         if (ini && ini <= today) {
           // Determinar la fecha en que se detuvo la lectura antes de pausar:
-          let fin = book.fechaFin ? book.fechaFin.trim() : '';
+          let fin =
+            (book.fechaPausado ? book.fechaPausado.trim() : '') ||
+            (book.fechaFin ? book.fechaFin.trim() : '');
 
           if (!fin || fin < ini) {
             // Si el usuario no especificó fechaFin, buscar si hay una siguiente lectura que empezó después

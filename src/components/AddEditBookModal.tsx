@@ -581,6 +581,10 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           volumen: volumen ? Number(volumen) : null,
           fechaInicio,
           fechaFin,
+          fechaPausado:
+            progreso === '⏸️ Pausado'
+              ? editingBook?.fechaPausado || new Date().toISOString().slice(0, 10)
+              : null,
           lecturaVirtual: (lecturaVirtual || 'Digital (.epub / eBook)').trim(),
           tiempoLectura: calculateReadingTime({
             fechaInicio,

@@ -18,6 +18,7 @@ export interface Book {
   volumen: number | null;
   fechaInicio: string;
   fechaFin: string;
+  fechaPausado?: string | null;
   lecturaVirtual: string;
   tiempoLectura: string;
   isbn: string;
