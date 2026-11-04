@@ -25,8 +25,8 @@ interface BookFormReadingTabProps {
   setFechaInicio: (val: string) => void;
   fechaFin: string;
   setFechaFin: (val: string) => void;
-  lecturaVirtual: string;
-  setLecturaVirtual: (val: string) => void;
+  lecturaVirtual?: string;
+  setLecturaVirtual?: (val: string) => void;
   paginas: string;
   paginaActual: string;
   setPaginaActual: (val: string) => void;
@@ -230,86 +230,32 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
         </div>
       )}
 
-      {/* Formato y Tiempo de lectura calculado */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="add-book-formato" className={labelCls}>
-            Formato de lectura
-          </label>
-          <select
-            id="add-book-formato"
-            value={
-              lecturaVirtual.startsWith('http')
-                ? 'url'
-                : ['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual)
-                ? lecturaVirtual
-                : lecturaVirtual
-                ? 'otro'
-                : 'Digital (.epub / eBook)'
-            }
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === 'url') {
-                if (!lecturaVirtual.startsWith('http')) setLecturaVirtual('https://');
-              } else if (val === 'otro') {
-                setLecturaVirtual('');
-              } else {
-                setLecturaVirtual(val);
-              }
-            }}
-            className={inputCls}
-          >
-            <option value="Digital (.epub / eBook)">📱 Digital (.epub / eBook)</option>
-            <option value="Físico (Papel)">📖 Físico (Papel)</option>
-            <option value="Audiolibro">🎧 Audiolibro</option>
-            <option value="url">🌐 Enlace Web / URL</option>
-            {lecturaVirtual &&
-              !['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual) &&
-              !lecturaVirtual.startsWith('http') && (
-                <option value="otro">Personalizado: {lecturaVirtual}</option>
-              )}
-          </select>
-
-          {/* Si eligió URL o tiene un enlace/personalizado, mostrar el input */}
-          {(lecturaVirtual.startsWith('http') ||
-            (lecturaVirtual &&
-              !['Digital (.epub / eBook)', 'Físico (Papel)', 'Audiolibro'].includes(lecturaVirtual))) && (
-            <input
-              type="text"
-              value={lecturaVirtual}
-              onChange={(e) => setLecturaVirtual(e.target.value)}
-              placeholder="https://... o referencia"
-              className={`${inputCls} mt-2`}
-            />
-          )}
-        </div>
-
-        <div>
-          <span className={labelCls}>Tiempo de lectura estimado / real</span>
-          <div className="rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-3.5 py-2.5 flex flex-col justify-between min-h-[42px]">
-            <div className="flex items-center justify-between">
-              <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
-                {calculateReadingTime({
-                  fechaInicio,
-                  fechaFin,
-                  paginas: paginas ? Number(paginas) : null,
-                  progreso,
-                  tiempoLectura
-                })}
-              </span>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-800 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-600/20">
-                Auto
-              </span>
-            </div>
-            <span className="text-[10px] text-stone-600 dark:text-slate-400 mt-1">
-              {fechaInicio && fechaFin
-                ? 'Calculado por diferencia entre fecha de inicio y fin'
-                : paginas
-                ? 'Estimado según número de páginas (1.8 min/pág)'
-                : 'Ingresa páginas o fechas para calcular'}
+      {/* Tiempo de lectura calculado */}
+      <div>
+        <span className={labelCls}>Tiempo de lectura estimado / real</span>
+        <div className="rounded-xl border border-amber-900/15 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#141A26] px-3.5 py-2.5 flex flex-col justify-between min-h-[42px]">
+          <div className="flex items-center justify-between">
+            <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+              {calculateReadingTime({
+                fechaInicio,
+                fechaFin,
+                paginas: paginas ? Number(paginas) : null,
+                progreso,
+                tiempoLectura
+              })}
+            </span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-amber-800 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-600/20">
+              Auto
             </span>
           </div>
+          <span className="text-[10px] text-stone-600 dark:text-slate-400 mt-1">
+            {fechaInicio && fechaFin
+              ? 'Calculado por diferencia entre fecha de inicio y fin'
+              : paginas
+              ? 'Estimado según número de páginas (1.8 min/pág)'
+              : 'Ingresa páginas o fechas para calcular'}
+          </span>
         </div>
       </div>
 

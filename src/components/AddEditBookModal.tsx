@@ -115,7 +115,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [paginaActual, setPaginaActual] = useState<string>('');
   const [puntuacion, setPuntuacion] = useState<StarRating>(null);
   const [progreso, setProgreso] = useState<ReadingStatus>('❌ No Leído');
-  const [formato, setFormato] = useState<BookFormat>('fisico');
+  const [formato, setFormato] = useState<BookFormat>('digital');
   const [propiedad, setPropiedad] = useState<BookOwnership>('propio');
   const [sagaMode, setSagaMode] = useState<'none' | 'existing' | 'new'>('none');
   const [selectedSagaId, setSelectedSagaId] = useState<string>('');
@@ -238,7 +238,16 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma(editingBook.idioma);
       setEdicion(editingBook.edicion);
       setPais(editingBook.pais || '');
-      setFormato(editingBook.formato || 'fisico');
+      const deducedFormato: BookFormat =
+        editingBook.formato ||
+        (editingBook.lecturaVirtual?.toLowerCase().includes('físico') ||
+        editingBook.lecturaVirtual?.toLowerCase().includes('fisico') ||
+        editingBook.lecturaVirtual?.toLowerCase().includes('papel')
+          ? 'fisico'
+          : editingBook.lecturaVirtual?.toLowerCase().includes('audio')
+          ? 'audiolibro'
+          : 'digital');
+      setFormato(deducedFormato);
       setPropiedad(editingBook.propiedad || 'propio');
       setSinopsis(editingBook.sinopsis);
       setNotasPersonales(editingBook.notasPersonales || '');
@@ -279,7 +288,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setIdioma('');
       setEdicion('');
       setPais('');
-      setFormato('fisico');
+      setFormato('digital');
       setPropiedad('propio');
       setSinopsis('');
       setNotasPersonales('');
@@ -333,6 +342,17 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, isOpen]);
+
+  const handleSetFormato = (nextFormato: BookFormat) => {
+    setFormato(nextFormato);
+    if (nextFormato === 'digital') {
+      setLecturaVirtual('Digital (.epub / eBook)');
+    } else if (nextFormato === 'fisico') {
+      setLecturaVirtual('Físico (Papel)');
+    } else if (nextFormato === 'audiolibro') {
+      setLecturaVirtual('Audiolibro');
+    }
+  };
 
   const applyCandidate = (cand: BibliographicCandidate) => {
     setSelectedCandidateId(cand.id);
@@ -590,8 +610,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           paginaActual: paginaActual.trim() ? Number(paginaActual.trim()) : null,
           puntuacion,
           progreso,
-          formato,
-          propiedad,
+          formato: formato || 'digital',
+          propiedad: propiedad || 'propio',
           vecesLeido: editingBook?.vecesLeido ?? 1,
           historialLecturas: editingBook?.historialLecturas ?? [],
           sagaId: finalSagaId,
@@ -964,7 +984,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
               {activeTab === 'edition' && (
                 <BookFormEditionTab
                   formato={formato}
-                  setFormato={setFormato}
+                  setFormato={handleSetFormato}
                   propiedad={propiedad}
                   setPropiedad={setPropiedad}
                   fechaPublicacion={fechaPublicacion}

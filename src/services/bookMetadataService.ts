@@ -2599,6 +2599,8 @@ export function candidateToBookInput(
     paginas: cand.paginas,
     puntuacion: null,
     progreso: '❌ No Leído',
+    formato: 'digital',
+    propiedad: 'propio',
     sagaId: null,
     sagaNombre: '',
     volumen: null,
