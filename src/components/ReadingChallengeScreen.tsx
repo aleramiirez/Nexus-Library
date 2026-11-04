@@ -28,8 +28,6 @@ import {
 import { BookCover } from './BookCover';
 import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { formatStars } from '../constants/catalogs';
-import { calculateReaderLevel } from '../services/levelingService';
-import { NexusOrderRankPanel } from './NexusOrderRankPanel';
 import { ReadingHeatmapCalendar } from './ReadingHeatmapCalendar';
 import '../dashboard-panels.css';
 
@@ -106,12 +104,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   // Meta sobreescrita en memoria para respuesta reactiva instantánea (0ms)
   const activeYearNum = selectedYear === 'all' ? currentYear : selectedYear;
   const currentGoalOverride = goalsByYear[String(activeYearNum)];
-
-  // Nivel y Escalafón en la Orden del Nexus
-  const levelInfo = useMemo(
-    () => calculateReaderLevel(books, sagas, currentGoalOverride),
-    [books, sagas, currentGoalOverride]
-  );
 
   // Recalcular estadísticas del año seleccionado (reactivo instantáneamente)
   const stats: YearReadingStats = useMemo(() => {
@@ -445,15 +437,6 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </span>
         </div>
       </section>
-
-      {/* ─── Panel La Orden de los Guardianes del Nexus ─── */}
-      <NexusOrderRankPanel
-        levelInfo={levelInfo}
-        avatarUrl={avatarUrl}
-        displayName={userName}
-        username={username}
-        onShowToast={onShowToast}
-      />
 
       {/* ─── Mapa de Calor Anual Completo (365 días) ─── */}
       <ReadingHeatmapCalendar books={books} initialYear={activeYearNum} />
