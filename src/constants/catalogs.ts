@@ -52,6 +52,7 @@ export const SUBGENRES = [
   // Nuevos subgéneros de la taxonomía profesional de 14 géneros
   '🧙♂️ Fantasía Épica',
   '🐉 Alta Fantasía & Mundos Secundarios',
+  '🛡️ Fantasía Medieval',
   '⚔️ Grimdark',
   '💘 Romantasy',
   '🗡️ Espada y Brujería',
@@ -143,6 +144,7 @@ export const GENRE_SUBGENRES_MAP: Record<Genre, Subgenre[]> = {
   '✨ Fantasía': [
     '🧙♂️ Fantasía Épica',
     '🐉 Alta Fantasía & Mundos Secundarios',
+    '🛡️ Fantasía Medieval',
     '🏰 Fantasía Oscura',
     '⚔️ Grimdark',
     '🌿 Fantasía Urbana',
@@ -663,6 +665,7 @@ export function inferCatalogFromCategories(categories: string[]): {
     if (!genre) genre = '✨ Fantasía';
     if (joined.includes('epic fantasy') || joined.includes('fantasia epica')) subgenres.add('🧙♂️ Fantasía Épica');
     if (joined.includes('high fantasy') || joined.includes('alta fantasia')) subgenres.add('🐉 Alta Fantasía & Mundos Secundarios');
+    if (joined.includes('medieval') || joined.includes('edad media') || joined.includes('arthur') || joined.includes('artur')) subgenres.add('🛡️ Fantasía Medieval');
     if (joined.includes('dark fantasy') || joined.includes('fantasia oscura')) subgenres.add('🏰 Fantasía Oscura');
     if (joined.includes('grimdark')) subgenres.add('⚔️ Grimdark');
     if (joined.includes('urban fantasy') || joined.includes('fantasia urbana')) subgenres.add('🌿 Fantasía Urbana');
