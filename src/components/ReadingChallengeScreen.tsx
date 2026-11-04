@@ -29,6 +29,7 @@ import { BookCover } from './BookCover';
 import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { formatStars } from '../constants/catalogs';
 import { ReadingHeatmapCalendar } from './ReadingHeatmapCalendar';
+import { AuthorsStatsPanel } from './AuthorsStatsPanel';
 import '../dashboard-panels.css';
 
 interface ReadingChallengeScreenProps {
@@ -798,6 +799,13 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </div>
         </div>
       </section>
+
+      {/* ─── Sala de Autores: Ranking & Estadísticas ─── */}
+      <AuthorsStatsPanel
+        books={books}
+        onOpenBookDetail={onOpenBookDetail}
+        darkMode={darkMode}
+      />
 
       {/* ─── Aviso de Libros Leídos sin Fecha Asignada ─── */}
       {stats.booksWithoutFinishDate.length > 0 && selectedYear !== 'all' && (
