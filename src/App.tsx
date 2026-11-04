@@ -69,6 +69,7 @@ import { formatFriendlyErrorMessage } from './utils/errorUtils';
 import './dashboard-panels.css';
 
 import { AppModals } from './components/AppModals';
+import { ReadingSessionModal } from './components/ReadingSessionModal';
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
@@ -262,6 +263,10 @@ export const App: React.FC = () => {
   } = useLibraryFilters(books);
 
   const modals = useLibraryModals();
+  const [sessionBook, setSessionBook] = useState<Book | null>(null);
+  const handleStartReadingSession = useCallback((book: Book) => {
+    setSessionBook(book);
+  }, []);
   const {
     detailBookId,
     setDetailBookId,
@@ -1416,6 +1421,7 @@ export const App: React.FC = () => {
               onLoadSampleBooks={handleLoadSampleBooks}
               onOpenImport={() => setIsImportOpen(true)}
               onUpdateProgress={handleUpdateBookReadingProgress}
+              onStartReadingSession={handleStartReadingSession}
               onShowToast={showToast}
             />
           )}
@@ -1664,6 +1670,7 @@ export const App: React.FC = () => {
         onOpenEditBook={handleOpenEditBook}
         onBookStatusChange={handleBookStatusChange}
         onUpdateBookReadingProgress={handleUpdateBookReadingProgress}
+        onStartReadingSession={handleStartReadingSession}
         updateBookQuickRating={updateBookQuickRating}
         updateBookQuickDates={updateBookQuickDates}
         saveBookRecord={saveBookRecord}
@@ -1674,6 +1681,16 @@ export const App: React.FC = () => {
         confirmDeleteBook={confirmDeleteBook}
         confirmDeleteSaga={confirmDeleteSaga}
       />
+
+      {sessionBook && (
+        <ReadingSessionModal
+          book={sessionBook}
+          isOpen={Boolean(sessionBook)}
+          onClose={() => setSessionBook(null)}
+          onSaveProgress={handleUpdateBookReadingProgress}
+          onShowToast={showToast}
+        />
+      )}
 
       {/* ─── Banner Flotante In-App estilo Instagram / Notificación Nativa ─── */}
       {inAppBanner &&

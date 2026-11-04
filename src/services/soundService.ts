@@ -26,6 +26,8 @@ class SoundService {
   private preferences: SoundPreferences = DEFAULT_PREFERENCES;
   private listeners: Set<(prefs: SoundPreferences) => void> = new Set();
   private noiseBuffer: AudioBuffer | null = null;
+  private ambientGain: GainNode | null = null;
+  private ambientSource: AudioBufferSourceNode | null = null;
 
   constructor() {
     this.loadPreferences();
@@ -430,6 +432,81 @@ class SoundService {
       });
     } catch {
       // Audio context bloqueado
+    }
+  }
+
+  /**
+   * 7. Sonido ambiental de biblioteca / lectura (Ruido marrón cálido + resonancia acústica suave)
+   */
+  public startAmbientLibrarySound(): void {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    this.stopAmbientLibrarySound();
+
+    try {
+      const now = ctx.currentTime;
+      const bufferSize = Math.floor(ctx.sampleRate * 2.5);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        // Filtro marrón orgánico suave
+        data[i] = (lastOut + 0.022 * white) / 1.022;
+        lastOut = data[i];
+        data[i] *= 2.8;
+      }
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      noise.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320, now);
+      filter.Q.setValueAtTime(0.6, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      const targetVol = Math.max(0.02, 0.07 * (this.preferences.volume || 1));
+      gain.gain.linearRampToValueAtTime(targetVol, now + 1.2);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      noise.start();
+      this.ambientSource = noise;
+      this.ambientGain = gain;
+    } catch {
+      // Audio context bloqueado
+    }
+  }
+
+  public stopAmbientLibrarySound(): void {
+    if (this.ambientGain && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        this.ambientGain.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+        setTimeout(() => {
+          if (this.ambientSource) {
+            try {
+              this.ambientSource.stop();
+            } catch {
+              // ya detenido
+            }
+          }
+          this.ambientSource = null;
+          this.ambientGain = null;
+        }, 650);
+      } catch {
+        this.ambientSource = null;
+        this.ambientGain = null;
+      }
+    } else {
+      this.ambientSource = null;
+      this.ambientGain = null;
     }
   }
 }

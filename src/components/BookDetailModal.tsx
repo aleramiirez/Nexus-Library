@@ -65,6 +65,7 @@ export interface BookDetailModalProps {
   onRatingChange?: (bookId: string, rating: StarRating) => void;
   onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
+  onStartReadingSession?: (book: Book) => void;
   currentUserId?: string;
   onShowToast?: (
     message: string,
@@ -117,6 +118,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onRatingChange,
   onDatesChange,
   onUpdateProgress,
+  onStartReadingSession,
   currentUserId,
   onShowToast,
   readOnly = false,
@@ -990,6 +992,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   <BookDetailReadingProgress
                     book={book}
                     onUpdateProgress={onUpdateProgress}
+                    onStartReadingSession={onStartReadingSession}
                     variant="mobile"
                   />
                 )}
@@ -1536,6 +1539,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                         <BookDetailReadingProgress
                           book={book}
                           onUpdateProgress={onUpdateProgress}
+                          onStartReadingSession={onStartReadingSession}
                           variant="desktop"
                         />
                       )}

@@ -36,6 +36,7 @@ export interface DashboardViewProps {
   onLoadSampleBooks: () => void;
   onOpenImport: () => void;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
+  onStartReadingSession?: (book: Book) => void;
   onShowToast?: (message: string, options?: any) => void;
 }
 
@@ -56,6 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onLoadSampleBooks,
   onOpenImport,
   onUpdateProgress,
+  onStartReadingSession,
   onShowToast
 }) => {
   return (
@@ -178,6 +180,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onOpenDetail={onOpenBookDetail}
             onNavigateToShelf={() => onNavigate('shelf-reading')}
             onUpdateProgress={onUpdateProgress}
+            onStartReadingSession={onStartReadingSession}
           />
         </div>
 

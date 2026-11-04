@@ -8,7 +8,8 @@ import {
   X,
   Percent,
   Hash,
-  Bookmark
+  Bookmark,
+  Timer
 } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover, preloadBookCover } from './BookCover';
@@ -20,6 +21,7 @@ interface DashboardReadingPanelProps {
   onOpenDetail: (bookId: string) => void;
   onNavigateToShelf: () => void;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
+  onStartReadingSession?: (book: Book) => void;
 }
 
 function formatReadingStartDate(fechaInicio?: string, paginas?: number | null): React.ReactNode {
@@ -66,7 +68,8 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
   readingBooks,
   onOpenDetail,
   onNavigateToShelf,
-  onUpdateProgress
+  onUpdateProgress,
+  onStartReadingSession
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -262,8 +265,23 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
               </div>
             </div>
 
-            {/* Botón de Actualizar página */}
-            <div className="flex items-center justify-end mt-3">
+            {/* Botón de Iniciar sesión y Actualizar página */}
+            <div className="flex items-center justify-end gap-2 mt-3">
+              {onStartReadingSession && currentBook && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartReadingSession(currentBook);
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  title="Iniciar sesión de lectura con cronómetro y velocidad real"
+                >
+                  <Timer className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                  <span>⏱️ Iniciar sesión</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={(e) => {

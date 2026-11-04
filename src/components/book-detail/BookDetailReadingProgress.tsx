@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Bookmark, Sparkles, Check, CheckCircle2, Percent, Hash, Plus } from 'lucide-react';
+import { Bookmark, Sparkles, Check, CheckCircle2, Percent, Hash, Plus, Timer } from 'lucide-react';
 import { Book } from '../../types/models';
 import { calculateRemainingReadingTime } from '../../utils/readingTime';
 
 export interface BookDetailReadingProgressProps {
   book: Book;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
+  onStartReadingSession?: (book: Book) => void;
   variant?: 'mobile' | 'desktop';
 }
 
 export const BookDetailReadingProgress: React.FC<BookDetailReadingProgressProps> = ({
   book,
   onUpdateProgress,
+  onStartReadingSession,
   variant = 'desktop'
 }) => {
   const currentActual = book.paginaActual || 0;
@@ -211,6 +213,17 @@ export const BookDetailReadingProgress: React.FC<BookDetailReadingProgressProps>
           >
             +50p
           </button>
+          {onStartReadingSession && (
+            <button
+              type="button"
+              onClick={() => onStartReadingSession(book)}
+              className="px-2.5 py-1 rounded-md text-[11px] font-bold border border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-950 dark:text-amber-300 transition shadow-2xs flex items-center gap-1 cursor-pointer"
+              title="Iniciar sesión de lectura en vivo con cronómetro"
+            >
+              <Timer className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+              <span>⏱️ Iniciar sesión</span>
+            </button>
+          )}
         </div>
 
         {/* Input numérico directo + Botón Guardar / Completar */}
