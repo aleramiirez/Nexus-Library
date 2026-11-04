@@ -8,6 +8,8 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Globe,
   Flame,
   ArrowUpDown
@@ -47,6 +49,8 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortField>('read');
   const [expandedAuthor, setExpandedAuthor] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 10;
 
   // Agrupar y calcular estadísticas por autor
   const authorsStats = useMemo(() => {
@@ -173,6 +177,14 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
     });
   }, [authorsStats, searchQuery, sortBy]);
 
+  const totalPages = Math.ceil(filteredAndSortedAuthors.length / PAGE_SIZE) || 1;
+  const effectivePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedAuthors = useMemo(() => {
+    const startIndex = (effectivePage - 1) * PAGE_SIZE;
+    return filteredAndSortedAuthors.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredAndSortedAuthors, effectivePage]);
+
   const toggleExpandAuthor = (name: string) => {
     setExpandedAuthor((prev) => (prev === name ? null : name));
   };
@@ -213,7 +225,10 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 placeholder="Buscar autor..."
                 className="pl-8 pr-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121722] text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 focus:outline-none focus:border-amber-600 w-36 sm:w-44 transition"
               />
@@ -224,7 +239,10 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
               <ArrowUpDown className="w-3.5 h-3.5 text-stone-400 dark:text-slate-500" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortField)}
+                onChange={(e) => {
+                  setSortBy(e.target.value as SortField);
+                  setCurrentPage(1);
+                }}
                 className="px-2.5 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121722] text-xs text-stone-800 dark:text-slate-200 focus:outline-none focus:border-amber-600 font-medium"
               >
                 <option value="read">Más leídos</option>
@@ -317,12 +335,13 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
               No se han encontrado autores que coincidan con la búsqueda.
             </div>
           ) : (
-            filteredAndSortedAuthors.map((author, index) => {
+            paginatedAuthors.map((author, index) => {
               const isExpanded = expandedAuthor === author.name;
               const readPct =
                 author.totalBooks > 0
                   ? Math.round((author.readBooks / author.totalBooks) * 100)
                   : 0;
+              const absoluteRank = (effectivePage - 1) * PAGE_SIZE + index + 1;
 
               return (
                 <div
@@ -337,7 +356,7 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
                     {/* Identificación del autor */}
                     <div className="flex items-center gap-3.5 min-w-0">
                       <span className="w-6 text-center font-mono text-xs font-bold text-amber-800/60 dark:text-amber-400/60 shrink-0">
-                        #{index + 1}
+                        #{absoluteRank}
                       </span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -457,6 +476,87 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
             })
           )}
         </div>
+
+        {/* ─── Paginación: Carga de 10 autores por página ─── */}
+        {totalPages > 1 && (
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-amber-900/15 dark:border-[#222B3C] text-xs text-stone-600 dark:text-slate-400">
+            <span>
+              Mostrando{' '}
+              <strong>
+                {(effectivePage - 1) * PAGE_SIZE + 1}–
+                {Math.min(effectivePage * PAGE_SIZE, filteredAndSortedAuthors.length)}
+              </strong>{' '}
+              de <strong>{filteredAndSortedAuthors.length}</strong> autores
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                  setExpandedAuthor(null);
+                }}
+                disabled={effectivePage <= 1}
+                className="px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#151D2A] disabled:opacity-40 disabled:cursor-not-allowed hover:border-amber-600 text-stone-800 dark:text-slate-200 font-semibold transition flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Anterior</span>
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  if (
+                    totalPages > 7 &&
+                    pageNum !== 1 &&
+                    pageNum !== totalPages &&
+                    Math.abs(pageNum - effectivePage) > 1
+                  ) {
+                    if (pageNum === 2 || pageNum === totalPages - 1) {
+                      return (
+                        <span key={pageNum} className="px-1 text-stone-400">
+                          …
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+
+                  const isCurrent = pageNum === effectivePage;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage(pageNum);
+                        setExpandedAuthor(null);
+                      }}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                        isCurrent
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-xs ring-1 ring-amber-600'
+                          : 'border border-amber-900/15 dark:border-[#242E40] bg-white/70 dark:bg-[#121824] text-stone-700 dark:text-slate-300 hover:border-amber-500/50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  setExpandedAuthor(null);
+                }}
+                disabled={effectivePage >= totalPages}
+                className="px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-white dark:bg-[#151D2A] disabled:opacity-40 disabled:cursor-not-allowed hover:border-amber-600 text-stone-800 dark:text-slate-200 font-semibold transition flex items-center gap-1 cursor-pointer"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

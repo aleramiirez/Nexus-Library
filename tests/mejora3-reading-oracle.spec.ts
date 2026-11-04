@@ -17,8 +17,11 @@ test.describe('MEJORA 3: El Oráculo del Archivo (¿Qué leo ahora?)', () => {
       await page.waitForTimeout(1200);
     }
 
-    // 3. Abrir el Oráculo desde el botón del Dashboard
-    const oracleBtn = page.getByRole('button', { name: /¿Qué leo ahora\?/i });
+    // 3. Navegar a Mi Biblioteca y abrir el Oráculo
+    const libraryNavBtn = page.getByRole('button', { name: /Mi Biblioteca/i }).first();
+    await libraryNavBtn.click();
+
+    const oracleBtn = page.getByRole('button', { name: /El Oráculo del Archivo/i });
     await expect(oracleBtn).toBeVisible({ timeout: 10000 });
     await oracleBtn.click();
 
