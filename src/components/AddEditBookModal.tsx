@@ -943,6 +943,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   isEditingSagaName={isEditingSagaName}
                   setIsEditingSagaName={setIsEditingSagaName}
                   sagaPickerRef={sagaPickerRef}
+                  editingBookId={editingBook?.id}
                 />
               )}
               {activeTab === 'edition' && (

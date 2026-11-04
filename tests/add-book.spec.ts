@@ -43,4 +43,51 @@ test.describe('Gestión de Libros: Creación y Visualización', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
     await expect(page.getByText('El Nombre del Viento').first()).toBeVisible({ timeout: 10000 });
   });
+
+  test('autocompleta automáticamente el número de volumen siguiente al seleccionar una saga', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const guestBtn = page.getByRole('button', { name: 'Probar' });
+    await expect(guestBtn).toBeVisible({ timeout: 10000 });
+    await guestBtn.click();
+
+    // 1. Añadir el primer libro de una saga ("Cuentos de Dunk y Egg", Vol. 1)
+    const addBtn1 = page.getByRole('button', { name: 'Añadir libro' }).first();
+    await addBtn1.click();
+    await page.locator('#add-book-nombre').fill('El caballero errante');
+    // Ir a pestaña Lectura & Saga
+    await page.getByRole('button', { name: /Lectura & Saga/i }).first().click();
+    // Crear nueva saga "Cuentos de Dunk y Egg"
+    await page.getByRole('button', { name: 'Nueva saga' }).click();
+    const sagaInput = page.locator('input[placeholder*="Nombre de la saga"]');
+    await sagaInput.fill('Cuentos de Dunk y Egg');
+    const volInput = page.locator('#add-book-volumen');
+    await volInput.fill('1');
+    await page.getByRole('button', { name: /Añadir a mi biblioteca/i }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+
+    // 2. Añadir el segundo libro ("La espada leal", Vol. 2)
+    const addBtn2 = page.getByRole('button', { name: 'Añadir libro' }).first();
+    await addBtn2.click();
+    await page.locator('#add-book-nombre').fill('La espada leal');
+    await page.getByRole('button', { name: /Lectura & Saga/i }).first().click();
+    // Seleccionar el chip de la saga recién creada
+    await page.getByRole('button', { name: /Cuentos de Dunk y Egg/i }).click();
+    // Debe haber autocompletado con el volumen 2 (porque el último era 1)
+    await expect(volInput).toHaveValue('2');
+    await page.getByRole('button', { name: /Añadir a mi biblioteca/i }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
+
+    // 3. Abrir el formulario para el tercer libro y verificar que sugiere el volumen 3
+    const addBtn3 = page.getByRole('button', { name: 'Añadir libro' }).first();
+    await addBtn3.click();
+    await page.locator('#add-book-nombre').fill('El caballero misterioso');
+    await page.getByRole('button', { name: /Lectura & Saga/i }).first().click();
+    // Seleccionar chip de la saga
+    await page.getByRole('button', { name: /Cuentos de Dunk y Egg/i }).click();
+    // ¡Verificar que el volumen se autocompleta con 3 automáticamente!
+    await expect(volInput).toHaveValue('3');
+    await expect(page.getByText('Libro número 3 de la serie.')).toBeVisible();
+  });
 });

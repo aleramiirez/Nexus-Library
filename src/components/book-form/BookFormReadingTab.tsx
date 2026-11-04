@@ -48,6 +48,7 @@ interface BookFormReadingTabProps {
   isEditingSagaName: boolean;
   setIsEditingSagaName: (editing: boolean) => void;
   sagaPickerRef: React.RefObject<HTMLDivElement>;
+  editingBookId?: string;
 }
 
 export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
@@ -80,7 +81,8 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
   setSagaSearchFilter,
   isEditingSagaName,
   setIsEditingSagaName,
-  sagaPickerRef
+  sagaPickerRef,
+  editingBookId
 }) => {
   const currentSaga = selectedSagaId ? sagas.find((s) => s.id === selectedSagaId) : null;
   const activeSagaDisplayName = currentSaga
@@ -91,6 +93,46 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
   const filteredSagas = sagas.filter((s) =>
     s.nombre.toLowerCase().includes(sagaSearchFilter.toLowerCase().trim())
   );
+
+  // Calcula automáticamente el siguiente número de volumen en base a los libros existentes en la saga
+  const getNextVolumeForSaga = (sagaId?: string, sagaName?: string): string => {
+    const booksInSaga = existingBooks.filter((b) => {
+      if (editingBookId && b.id === editingBookId) return false;
+      if (sagaId && b.sagaId === sagaId) return true;
+      if (
+        sagaName &&
+        b.sagaNombre &&
+        b.sagaNombre.trim().toLowerCase() === sagaName.trim().toLowerCase()
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (booksInSaga.length === 0) return '1';
+
+    const maxVol = booksInSaga.reduce((max, b) => {
+      const v = typeof b.volumen === 'number' ? b.volumen : Number(b.volumen);
+      return Number.isFinite(v) && v > max ? v : max;
+    }, 0);
+
+    const effectiveMax = Math.max(maxVol, booksInSaga.length);
+    return String(effectiveMax + 1);
+  };
+
+  // Al seleccionar una saga existente, autocompleta el volumen si es nueva selección o estaba vacío
+  const handleSelectSaga = (saga: Saga) => {
+    const isSwitching = selectedSagaId !== saga.id;
+    setSelectedSagaId(saga.id);
+    setNewSagaName(saga.nombre);
+    setSagaMode('existing');
+    setIsEditingSagaName(false);
+    setIsSagaPickerOpen(false);
+
+    if (isSwitching || !volumen) {
+      setVolumen(getNextVolumeForSaga(saga.id, saga.nombre));
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -331,13 +373,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedSagaId(s.id);
-                    setNewSagaName(s.nombre);
-                    setSagaMode('existing');
-                    setIsEditingSagaName(false);
-                    setIsSagaPickerOpen(false);
-                  }}
+                  onClick={() => handleSelectSaga(s)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition border font-serif cursor-pointer ${
                     isSelected
                       ? 'bg-amber-500/25 border-amber-600 dark:border-amber-400 text-amber-950 dark:text-amber-100 font-bold shadow-sm ring-1 ring-amber-500/40'
@@ -368,6 +404,9 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                 setSagaMode('new');
                 setIsEditingSagaName(true);
                 setIsSagaPickerOpen(false);
+                if (!volumen) {
+                  setVolumen('1');
+                }
               }}
               className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition border border-dashed cursor-pointer ${
                 sagaMode === 'new' && !selectedSagaId
@@ -408,8 +447,17 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                     type="text"
                     value={newSagaName}
                     onChange={(e) => {
-                      setNewSagaName(e.target.value);
-                      if (!selectedSagaId) setSagaMode('new');
+                      const val = e.target.value;
+                      setNewSagaName(val);
+                      if (!selectedSagaId) {
+                        setSagaMode('new');
+                        const matched = sagas.find(
+                          (s) => s.nombre.trim().toLowerCase() === val.trim().toLowerCase()
+                        );
+                        if (matched) {
+                          setVolumen(getNextVolumeForSaga(matched.id, matched.nombre));
+                        }
+                      }
                     }}
                     placeholder="Nombre de la saga (Ej. El Archivo de las Tormentas)..."
                     // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -529,13 +577,7 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                           <button
                             key={s.id}
                             type="button"
-                            onClick={() => {
-                              setSelectedSagaId(s.id);
-                              setNewSagaName(s.nombre);
-                              setSagaMode('existing');
-                              setIsEditingSagaName(false);
-                              setIsSagaPickerOpen(false);
-                            }}
+                            onClick={() => handleSelectSaga(s)}
                             className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition font-serif cursor-pointer ${
                               isSelected
                                 ? 'bg-amber-500/25 text-amber-950 dark:text-amber-100 font-bold'
@@ -574,6 +616,9 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
                               setNewSagaName(sagaSearchFilter.trim());
                               setSagaMode('new');
                               setIsSagaPickerOpen(false);
+                              if (!volumen) {
+                                setVolumen('1');
+                              }
                             }}
                             className="w-full flex items-center gap-2 p-2.5 rounded-xl text-xs text-left bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-100 font-semibold transition border border-dashed border-amber-600/40 cursor-pointer"
                           >
@@ -614,9 +659,21 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
               />
             </div>
             {hasSaga && (
-              <p className="text-[11px] text-stone-600 dark:text-slate-400 mt-1 leading-tight">
-                {volumen ? `Libro número ${volumen} de la serie.` : 'Indica el orden del libro en la saga.'}
-              </p>
+              <div className="text-[11px] text-stone-600 dark:text-slate-400 mt-1 leading-tight flex items-center justify-between flex-wrap gap-1">
+                <span>
+                  {volumen ? `Libro número ${volumen} de la serie.` : 'Indica el orden del libro en la saga.'}
+                </span>
+                {hasSaga && (
+                  <button
+                    type="button"
+                    onClick={() => setVolumen(getNextVolumeForSaga(selectedSagaId, activeSagaDisplayName))}
+                    title="Asignar siguiente volumen automáticamente"
+                    className="text-[10px] text-amber-700 dark:text-amber-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    (Sugerido: #{getNextVolumeForSaga(selectedSagaId, activeSagaDisplayName)})
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
