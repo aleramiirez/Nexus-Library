@@ -18,6 +18,8 @@ import {
   Mail,
   Download,
   Smartphone,
+  Plus,
+  ScanBarcode,
   type LucideIcon
 } from 'lucide-react';
 import { BookmarkMarker } from './BookmarkMarker';
@@ -61,6 +63,8 @@ interface BookSidebarProps {
   inboxUnreadCount?: number;
   onOpenInbox?: () => void;
   onOpenInstallModal?: () => void;
+  onOpenCreateBook?: () => void;
+  onOpenBarcodeScanner?: () => void;
   levelInfo?: ReaderLevelInfo;
   onOpenOrderModal?: () => void;
 }
@@ -148,6 +152,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   inboxUnreadCount = 0,
   onOpenInbox,
   onOpenInstallModal,
+  onOpenCreateBook,
+  onOpenBarcodeScanner,
   levelInfo,
   onOpenOrderModal
 }) => {
@@ -260,6 +266,41 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
             <span className="text-[9px]">◆</span>
             <span className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-600/50" />
           </div>
+
+          {/* Botones de acción rápida: Añadir y Escanear */}
+          {(onOpenCreateBook || onOpenBarcodeScanner) && (
+            <div className="px-3 pb-2 flex items-center gap-1.5">
+              {onOpenCreateBook && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenCreateBook();
+                    onCloseMobile?.();
+                  }}
+                  title="Añadir libro"
+                  aria-label="Añadir libro"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Añadir libro</span>
+                </button>
+              )}
+              {onOpenBarcodeScanner && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenBarcodeScanner();
+                    onCloseMobile?.();
+                  }}
+                  title="Escanear código de barras (ISBN)"
+                  aria-label="Escanear código de barras (ISBN)"
+                  className="p-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 hover:border-amber-500/40 transition active:scale-95 shrink-0 cursor-pointer"
+                >
+                  <ScanBarcode className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Índice */}
           <nav className="flex-1 pl-3 pr-3 overflow-y-auto overflow-x-hidden no-scrollbar" aria-label="Índice">

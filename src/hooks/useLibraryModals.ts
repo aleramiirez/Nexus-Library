@@ -55,6 +55,12 @@ export interface UseLibraryModalsReturn {
   isOrderModalOpen: boolean;
   setIsOrderModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
+  // Barcode scanner modal
+  isBarcodeScannerOpen: boolean;
+  setIsBarcodeScannerOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleOpenBarcodeScanner: () => void;
+  handleCloseBarcodeScanner: () => void;
+
   // Inbox & First login modal
   isInboxOpen: boolean;
   setIsInboxOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -86,6 +92,15 @@ export const useLibraryModals = (): UseLibraryModalsReturn => {
   const [isInboxOpen, setIsInboxOpen] = useState(false);
   const [inboxInitialTab, setInboxInitialTab] = useState<'recommendations' | 'friend_requests'>('recommendations');
   const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState(false);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+
+  const handleOpenBarcodeScanner = useCallback(() => {
+    setIsBarcodeScannerOpen(true);
+  }, []);
+
+  const handleCloseBarcodeScanner = useCallback(() => {
+    setIsBarcodeScannerOpen(false);
+  }, []);
 
   const handleOpenBookDetail = useCallback((id: string) => {
     startTransition(() => {
@@ -145,7 +160,8 @@ export const useLibraryModals = (): UseLibraryModalsReturn => {
       isInstallModalOpen ||
       bookToDelete ||
       sagaToDelete ||
-      isInboxOpen
+      isInboxOpen ||
+      isBarcodeScannerOpen
   );
 
   return {
@@ -193,6 +209,10 @@ export const useLibraryModals = (): UseLibraryModalsReturn => {
     setInboxInitialTab,
     isFirstLoginModalOpen,
     setIsFirstLoginModalOpen,
+    isBarcodeScannerOpen,
+    setIsBarcodeScannerOpen,
+    handleOpenBarcodeScanner,
+    handleCloseBarcodeScanner,
     isAnyLibraryModalOpen
   };
 };

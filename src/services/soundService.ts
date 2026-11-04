@@ -388,6 +388,50 @@ class SoundService {
       // Audio context bloqueado
     }
   }
+
+  /**
+   * 6. Chime de Escaneo de Código de Barras ISBN (Campana armónica de descubrimiento)
+   */
+  public playBarcodeScanSuccess(force = false) {
+    if (!force && !this.preferences.enabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      const masterVol = this.preferences.volume;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(masterVol, now);
+      masterGain.connect(ctx.destination);
+
+      // Dos tonos armónicos limpios y brillantes (A5: 880Hz -> E6: 1318.5Hz)
+      const tones = [
+        { freq: 880, start: now, dur: 0.18, vol: 0.22 },
+        { freq: 1318.51, start: now + 0.08, dur: 0.38, vol: 0.28 }
+      ];
+
+      tones.forEach(({ freq, start, dur, vol }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.exponentialRampToValueAtTime(vol, start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+      });
+    } catch {
+      // Audio context bloqueado
+    }
+  }
 }
 
 export const soundService = new SoundService();

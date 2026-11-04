@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Users,
   RefreshCw,
-  Globe
+  Globe,
+  ScanBarcode
 } from 'lucide-react';
 import { BibliographicCandidate, Book } from '../types/models';
 import {
@@ -48,6 +49,7 @@ interface DiscoverBooksScreenProps {
   userDisplayName?: string | null;
   username?: string | null;
   avatarUrl?: string | null;
+  onOpenBarcodeScanner?: () => void;
 }
 
 const QUICK_CHIPS = [
@@ -72,7 +74,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   initialTab,
   userDisplayName,
   username,
-  avatarUrl
+  avatarUrl,
+  onOpenBarcodeScanner
 }) => {
   const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas' | 'community'>(() => {
     if (typeof window !== 'undefined') {
@@ -544,28 +547,43 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                 </p>
               </div>
 
-              {/* Barra de búsqueda interactiva */}
-              <div className="relative w-full sm:w-80 md:w-96">
-                <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Buscar título, autor, saga o ISBN..."
-                  className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition"
-                />
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-                ) : searchInput ? (
+              {/* Barra de búsqueda interactiva y botón de escaneo */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-72 md:w-88">
+                  <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Buscar título, autor, saga o ISBN..."
+                    className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition"
+                  />
+                  {isSearching ? (
+                    <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                  ) : searchInput ? (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
+                      title="Limpiar búsqueda"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  ) : null}
+                </div>
+
+                {onOpenBarcodeScanner && (
                   <button
                     type="button"
-                    onClick={handleClearSearch}
-                    className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
-                    title="Limpiar búsqueda"
+                    onClick={onOpenBarcodeScanner}
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 text-xs font-semibold transition shrink-0 shadow-xs cursor-pointer"
+                    title="Escanear libro físico con la cámara (ISBN)"
+                    aria-label="Escanear libro físico con la cámara (ISBN)"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <ScanBarcode className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                    <span className="hidden sm:inline">Escanear</span>
                   </button>
-                ) : null}
+                )}
               </div>
             </div>
 

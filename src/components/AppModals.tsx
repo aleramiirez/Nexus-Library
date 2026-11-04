@@ -15,6 +15,7 @@ import { UseLibraryModalsReturn } from '../hooks/useLibraryModals';
 import { ToastType, ToastOptions } from '../hooks/useAppNotifications';
 import { PwaInstallModal } from './PwaInstallModal';
 import { NavigationSection } from './BookSidebar';
+import { candidateToBookInput } from '../services/bookMetadataService';
 
 const BookDetailModal = React.lazy(() =>
   import('./BookDetailModal').then((m) => ({ default: m.BookDetailModal }))
@@ -45,6 +46,9 @@ const ShareBookCardModal = React.lazy(() =>
 );
 const NexusOrderCodexModal = React.lazy(() =>
   import('./NexusOrderCodexModal').then((m) => ({ default: m.NexusOrderCodexModal }))
+);
+const BarcodeScannerModal = React.lazy(() =>
+  import('./BarcodeScannerModal').then((m) => ({ default: m.BarcodeScannerModal }))
 );
 
 export interface AppModalsProps {
@@ -277,6 +281,24 @@ export const AppModals: React.FC<AppModalsProps> = ({
             displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null)}
             username={currentUserProfile?.username}
             onShowToast={showToast}
+          />
+        )}
+
+        {modals.isBarcodeScannerOpen && (
+          <BarcodeScannerModal
+            isOpen={modals.isBarcodeScannerOpen}
+            onClose={() => modals.setIsBarcodeScannerOpen(false)}
+            onBookSelected={async (candidate, mode) => {
+              if (mode === 'direct') {
+                const bookInput = candidateToBookInput(candidate);
+                await saveBookRecord(bookInput);
+                showToast(`✨ «${candidate.nombre}» añadido a tu biblioteca`, { type: 'success' });
+              } else {
+                modals.handleCustomizeFromDiscover(candidate);
+              }
+              modals.setIsBarcodeScannerOpen(false);
+            }}
+            onShowToast={(msg, opts) => showToast(msg, opts)}
           />
         )}
       </React.Suspense>

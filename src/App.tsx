@@ -14,7 +14,8 @@ import {
   Mail,
   X,
   Sparkles,
-  Users
+  Users,
+  ScanBarcode
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { triggerBackgroundFallbackNotification, syncPushSubscriptionWithDatabase } from './services/pushNotificationService';
@@ -1299,6 +1300,8 @@ export const App: React.FC = () => {
         inboxUnreadCount={inboxUnreadCount}
         onOpenInbox={() => setIsInboxOpen(true)}
         onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        onOpenCreateBook={handleOpenCreateBook}
+        onOpenBarcodeScanner={modals.handleOpenBarcodeScanner}
         levelInfo={readerLevelInfo}
         onOpenOrderModal={() => setIsOrderModalOpen(true)}
       />
@@ -1334,9 +1337,18 @@ export const App: React.FC = () => {
             onClick={handleOpenCreateBook}
             title="Añadir libro"
             aria-label="Añadir libro"
-            className="w-9 h-9 inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold shadow-sm transition shrink-0"
+            className="w-9 h-9 inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold shadow-sm transition shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
+          </button>
+          <button
+            type="button"
+            onClick={modals.handleOpenBarcodeScanner}
+            title="Escanear código de barras (ISBN)"
+            aria-label="Escanear código de barras (ISBN)"
+            className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition shrink-0 cursor-pointer"
+          >
+            <ScanBarcode className="w-4 h-4" />
           </button>
           <button
             type="button"
@@ -1427,6 +1439,7 @@ export const App: React.FC = () => {
               detailBookId={detailBookId}
               onNavigate={handleNavigate}
               onOpenCreateBook={handleOpenCreateBook}
+              onOpenBarcodeScanner={modals.handleOpenBarcodeScanner}
               onOpenEpubImport={() => {
                 setInitialEpubFiles(undefined);
                 setIsEpubImportOpen(true);
@@ -1462,6 +1475,7 @@ export const App: React.FC = () => {
                 userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
                 username={currentUserProfile?.username}
                 avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
+                onOpenBarcodeScanner={modals.handleOpenBarcodeScanner}
               />
             </React.Suspense>
           )}

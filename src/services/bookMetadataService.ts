@@ -1845,7 +1845,112 @@ export async function translateToSpanish(text: string, signal?: AbortSignal): Pr
   return cleaned;
 }
 
+/**
+ * Búsqueda exacta y exhaustiva de libro por código ISBN (10 o 13 dígitos).
+ * Combina Google Books, Open Library Search y Open Library Direct Edition API.
+ */
+export async function searchBookByIsbn(
+  rawIsbn: string,
+  signal?: AbortSignal
+): Promise<BibliographicCandidate | null> {
+  const cleanIsbn = extractCleanIsbn(rawIsbn) || rawIsbn.replace(/[-\s]/g, '').trim();
+  if (!cleanIsbn || (!/^\d{9}[\dX]$/i.test(cleanIsbn) && !/^\d{13}$/.test(cleanIsbn))) {
+    return null;
+  }
+
+  const cacheKey = `isbn:${cleanIsbn.toUpperCase()}`;
+  if (searchCache.has(cacheKey)) {
+    const cached = searchCache.get(cacheKey);
+    if (cached && cached.length > 0) return cached[0];
+  }
+
+  // Ejecución paralela en Google Books, Open Library Search y Open Library Direct Edition
+  const [gbSettled, olSettled, olDirectSettled] = await Promise.allSettled([
+    searchGoogleBooks(cleanIsbn, cleanIsbn, signal),
+    searchOpenLibrary(cleanIsbn, cleanIsbn, signal),
+    fetchWithTimeout(`https://openlibrary.org/isbn/${cleanIsbn}.json`, { signal }, 3500)
+  ]);
+
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+
+  const gbResults = gbSettled.status === 'fulfilled' ? gbSettled.value : [];
+  const olResults = olSettled.status === 'fulfilled' ? olSettled.value : [];
+
+  let directOlEdition: any = null;
+  if (olDirectSettled.status === 'fulfilled' && olDirectSettled.value.ok) {
+    try {
+      directOlEdition = await olDirectSettled.value.json();
+    } catch {
+      // ignorar error de parseo JSON
+    }
+  }
+
+  // Mezclar y clasificar candidatos
+  const candidates = mergeAndRankCandidates(olResults, gbResults, cleanIsbn, cleanIsbn);
+  let best: BibliographicCandidate | null = candidates.length > 0 ? { ...candidates[0] } : null;
+
+  // Enriquecer con Open Library Direct Edition si hay datos útiles
+  if (directOlEdition) {
+    if (!best) {
+      const covers = Array.isArray(directOlEdition.covers) ? directOlEdition.covers : [];
+      const primaryCover = buildOpenLibraryIsbnCover(cleanIsbn) || (covers[0] ? buildOpenLibraryIdCover(covers[0]) : '');
+      const rawCategories = Array.isArray(directOlEdition.subjects) ? directOlEdition.subjects.slice(0, 10) : [];
+      const inferred = inferCatalogFromCategories(rawCategories);
+
+      best = {
+        id: `ol-direct-${cleanIsbn}`,
+        source: 'openlibrary',
+        nombre: (directOlEdition.title || '').trim(),
+        autor: '',
+        fechaPublicacion: parseYear(directOlEdition.publish_date),
+        paginas: directOlEdition.number_of_pages || (directOlEdition.pagination ? parseInt(directOlEdition.pagination, 10) || null : null),
+        isbn: cleanIsbn,
+        editorial: Array.isArray(directOlEdition.publishers) ? directOlEdition.publishers[0] || '' : '',
+        idioma: 'Español',
+        edicion: directOlEdition.edition_name || '',
+        sinopsis: typeof directOlEdition.description === 'string'
+          ? directOlEdition.description
+          : directOlEdition.description?.value || '',
+        portadaUrl: primaryCover,
+        portadaFallbackUrl: covers[0] ? buildOpenLibraryIdCover(covers[0]) : '',
+        rawCategories,
+        suggestedGenre: inferred.genre,
+        suggestedSubgenres: inferred.subgenres
+      };
+    } else {
+      if (!best.paginas && directOlEdition.number_of_pages) {
+        best.paginas = directOlEdition.number_of_pages;
+      }
+      if (!best.editorial && Array.isArray(directOlEdition.publishers) && directOlEdition.publishers[0]) {
+        best.editorial = directOlEdition.publishers[0];
+      }
+      if (!best.sinopsis && (directOlEdition.description?.value || typeof directOlEdition.description === 'string')) {
+        best.sinopsis = typeof directOlEdition.description === 'string'
+          ? directOlEdition.description
+          : directOlEdition.description.value;
+      }
+      if (!best.edicion && directOlEdition.edition_name) {
+        best.edicion = directOlEdition.edition_name;
+      }
+    }
+  }
+
+  // Asegurar que el ISBN esté presente y tenga portada
+  if (best) {
+    best.isbn = cleanIsbn;
+    if (!best.portadaUrl) {
+      best.portadaUrl = buildOpenLibraryIsbnCover(cleanIsbn);
+    }
+    searchCache.set(cacheKey, [best]);
+  }
+
+  return best;
+}
+
 export const bookMetadataService = {
+  searchBookByIsbn,
   async searchBooks(query: string, signal?: AbortSignal): Promise<BibliographicCandidate[]> {
     const trimmed = query.trim();
     if (trimmed.length < 2) return [];

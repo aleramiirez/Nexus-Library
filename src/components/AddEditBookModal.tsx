@@ -13,7 +13,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Images,
-  FileUp
+  FileUp,
+  ScanBarcode
 } from 'lucide-react';
 import { calculateReadingTime } from '../utils/readingTime';
 import {
@@ -34,6 +35,7 @@ import {
 import { bookMetadataService } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
 import { BookCoverPickerModal, SelectedCoverPayload } from './BookCoverPickerModal';
+import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { isDuplicateBook } from '../services/importExportService';
 import { tryCacheCoverDataUrl } from '../services/coverService';
 import {
@@ -141,6 +143,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [parsedFileBadge, setParsedFileBadge] = useState<string | null>(null);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const ebookInputRef = useRef<HTMLInputElement>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -678,6 +681,16 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                 Búsqueda Bibliográfica o Carga desde Archivo
               </label>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBarcodeScannerOpen(true)}
+                  className="h-8 px-2.5 rounded-xl border border-amber-600/45 bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 transition shadow-sm flex items-center gap-1.5 shrink-0 text-xs font-semibold cursor-pointer"
+                  title="Escanear código de barras con la cámara (ISBN)"
+                  aria-label="Escanear código de barras con la cámara (ISBN)"
+                >
+                  <ScanBarcode className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                  <span className="hidden sm:inline">Escanear ISBN</span>
+                </button>
                 <input
                   ref={ebookInputRef}
                   type="file"
@@ -1021,6 +1034,16 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         currentCoverDataUrl={customDataUrl}
         existingCandidates={candidates}
         onSelectCover={handleCoverSelected}
+      />
+
+      {/* Escáner de código de barras ISBN */}
+      <BarcodeScannerModal
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onBookSelected={(candidate) => {
+          applyCandidate(candidate);
+          setIsBarcodeScannerOpen(false);
+        }}
       />
     </div>
   );

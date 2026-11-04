@@ -12,7 +12,8 @@ import {
   ArrowUpDown,
   RotateCcw,
   Sparkles,
-  Loader2
+  Loader2,
+  ScanBarcode
 } from 'lucide-react';
 import {
   Book,
@@ -62,6 +63,7 @@ export interface LibraryViewProps {
   detailBookId: string | null;
   onNavigate: (section: NavigationSection) => void;
   onOpenCreateBook: () => void;
+  onOpenBarcodeScanner?: () => void;
   onOpenEpubImport: () => void;
   onOpenImport: () => void;
   onOpenCardDetail: (book: Book) => void;
@@ -92,6 +94,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   detailBookId,
   onNavigate,
   onOpenCreateBook,
+  onOpenBarcodeScanner,
   onOpenEpubImport,
   onOpenImport,
   onOpenCardDetail,
@@ -274,10 +277,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             onClick={onOpenCreateBook}
             title="Añadir libro"
             aria-label="Añadir libro"
-            className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0"
+            className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
           </button>
+
+          {onOpenBarcodeScanner && (
+            <button
+              type="button"
+              onClick={onOpenBarcodeScanner}
+              title="Escanear código de barras con la cámara (ISBN)"
+              aria-label="Escanear código de barras con la cámara (ISBN)"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-amber-600/45 dark:border-amber-500/45 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 transition shadow-sm shrink-0 cursor-pointer"
+            >
+              <ScanBarcode className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+            </button>
+          )}
 
           <button
             type="button"
