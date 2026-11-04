@@ -1,5 +1,5 @@
 import React from 'react';
-import { Library, Compass } from 'lucide-react';
+import { Library, Compass, Sparkles } from 'lucide-react';
 import { Book, Saga, UserProfile } from '../types/models';
 import type { User } from '@supabase/supabase-js';
 import { NavigationSection } from './BookSidebar';
@@ -37,6 +37,7 @@ export interface DashboardViewProps {
   onOpenImport: () => void;
   onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
   onStartReadingSession?: (book: Book) => void;
+  onOpenOracle?: () => void;
   onShowToast?: (message: string, options?: any) => void;
 }
 
@@ -58,6 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenImport,
   onUpdateProgress,
   onStartReadingSession,
+  onOpenOracle,
   onShowToast
 }) => {
   return (
@@ -112,6 +114,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <Compass className="w-4 h-4" /> Explorar y Descubrir
           </button>
+          {onOpenOracle && (
+            <button
+              type="button"
+              onClick={onOpenOracle}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" /> ¿Qué leo ahora?
+            </button>
+          )}
         </div>
       </div>
 

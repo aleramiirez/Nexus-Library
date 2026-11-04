@@ -70,6 +70,7 @@ import './dashboard-panels.css';
 
 import { AppModals } from './components/AppModals';
 import { ReadingSessionModal } from './components/ReadingSessionModal';
+import { ReadingOracleModal } from './components/ReadingOracleModal';
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
@@ -264,6 +265,7 @@ export const App: React.FC = () => {
 
   const modals = useLibraryModals();
   const [sessionBook, setSessionBook] = useState<Book | null>(null);
+  const [isOracleOpen, setIsOracleOpen] = useState(false);
   const handleStartReadingSession = useCallback((book: Book) => {
     setSessionBook(book);
   }, []);
@@ -1101,6 +1103,17 @@ export const App: React.FC = () => {
     [showToast, setCelebrationBook]
   );
 
+  const handleSelectOracleBook = useCallback(
+    async (book: Book) => {
+      setIsOracleOpen(false);
+      if (book.progreso !== '⏳ Leyendo') {
+        await handleBookStatusChange(book.id, '⏳ Leyendo');
+      }
+      setSessionBook(book);
+    },
+    [handleBookStatusChange]
+  );
+
   const handleQuickAddFromDiscover = async (candidate: BibliographicCandidate) => {
     const bookInput = candidateToBookInput(candidate);
     await saveBookRecord(bookInput);
@@ -1422,6 +1435,7 @@ export const App: React.FC = () => {
               onOpenImport={() => setIsImportOpen(true)}
               onUpdateProgress={handleUpdateBookReadingProgress}
               onStartReadingSession={handleStartReadingSession}
+              onOpenOracle={() => setIsOracleOpen(true)}
               onShowToast={showToast}
             />
           )}
@@ -1459,6 +1473,7 @@ export const App: React.FC = () => {
               onLoadSampleBooks={handleLoadSampleBooks}
               onRemoveSampleBooks={handleRemoveSampleBooks}
               onKeepSampleBooks={handleKeepSampleBooks}
+              onOpenOracle={() => setIsOracleOpen(true)}
             />
           )}
 
@@ -1691,6 +1706,15 @@ export const App: React.FC = () => {
           onShowToast={showToast}
         />
       )}
+
+      <ReadingOracleModal
+        isOpen={isOracleOpen}
+        books={books}
+        sagas={sagas}
+        onClose={() => setIsOracleOpen(false)}
+        onSelectBookToRead={handleSelectOracleBook}
+        onOpenBookDetail={handleOpenBookDetail}
+      />
 
       {/* ─── Banner Flotante In-App estilo Instagram / Notificación Nativa ─── */}
       {inAppBanner &&

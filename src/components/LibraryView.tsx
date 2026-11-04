@@ -74,6 +74,7 @@ export interface LibraryViewProps {
   onLoadSampleBooks: () => void;
   onRemoveSampleBooks: () => void;
   onKeepSampleBooks: () => void;
+  onOpenOracle?: () => void;
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
@@ -104,7 +105,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onBookStatusChange,
   onLoadSampleBooks,
   onRemoveSampleBooks,
-  onKeepSampleBooks
+  onKeepSampleBooks,
+  onOpenOracle
 }) => {
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => {
     if (typeof window !== 'undefined') {
@@ -303,6 +305,18 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           >
             <FileUp className="w-4 h-4 text-amber-700 dark:text-amber-400" />
           </button>
+
+          {onOpenOracle && (
+            <button
+              type="button"
+              onClick={onOpenOracle}
+              title="El Oráculo del Archivo: ¿Qué leo ahora?"
+              aria-label="El Oráculo del Archivo: ¿Qué leo ahora?"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-amber-600/45 dark:border-amber-500/45 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 transition shadow-sm shrink-0 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+            </button>
+          )}
 
           {(() => {
             const activeFilterCount = [
