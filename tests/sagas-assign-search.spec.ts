@@ -86,6 +86,11 @@ test.describe('Sagas: Búsqueda interactiva al asignar libro', () => {
     await expect(page.locator('.saga-vitrine.is-open')).toHaveCount(0);
     await expect(toolbar.getByRole('button', { name: 'Abrir todas' })).toBeVisible();
 
+    // Comprobar que el lomo cerrado tiene dimensiones válidas (24-31px ancho, 98-106px alto)
+    const spineBox = await page.locator('.saga-vitrine .vit-face').first().boundingBox();
+    expect(spineBox).not.toBeNull();
+    expect(spineBox!.height).toBeGreaterThanOrEqual(95);
+
     // Reabrir con el botón accesible de la vitrina (aria-expanded)
     const vitrineToggle = page.locator('.vit-toggle').first();
     await expect(vitrineToggle).toHaveAttribute('aria-expanded', 'false');

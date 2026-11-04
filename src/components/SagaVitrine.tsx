@@ -251,9 +251,13 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
               const state = stateOf(book);
               const meta = STATE_META[state];
               const StateIcon = meta.icon;
-              const h = hashString(book.id);
+              const h = hashString(book.id) >>> 0;
               const [base, deep] = tones[book.id] || fallbackTone(book.nombre);
               const volLabel = book.volumen ? `Vol. ${book.volumen}` : 'S/n';
+              const rawW = SPINE_W[(h + i) % SPINE_W.length];
+              const spineScale = books.length > 12 ? Math.max(0.55, 12 / books.length) : 1;
+              const spineW = Math.round(rawW * spineScale);
+              const spineH = SPINE_H[((h >>> 3) + i * 2) % SPINE_H.length];
               return (
                 <li
                   key={book.id}
@@ -261,8 +265,8 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
                   style={
                     {
                       '--i': i,
-                      '--sw': `${SPINE_W[h % SPINE_W.length]}px`,
-                      '--sh': `${SPINE_H[(h >> 3) % SPINE_H.length]}px`,
+                      '--sw': `${spineW}px`,
+                      '--sh': `${spineH}px`,
                       '--spine-a': base,
                       '--spine-b': deep
                     } as React.CSSProperties
