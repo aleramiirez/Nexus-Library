@@ -30,15 +30,7 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
     // 3. Verificar que aparece el panel de "Leyendo actualmente"
     await expect(page.getByText('Leyendo actualmente')).toBeVisible({ timeout: 10000 });
 
-    // 4. Probar botón de avance rápido inline (+10p o +25p)
-    const quickAddBtn = page.getByRole('button', { name: /\+25p/i }).first();
-    if (await quickAddBtn.isVisible()) {
-      await quickAddBtn.click();
-      // Toast de confirmación de progreso
-      await expect(page.getByText(/Progreso actualizado/i)).toBeVisible({ timeout: 6000 });
-    }
-
-    // 5. Probar desplegar edición rápida inline con botón "Actualizar página"
+    // 4. Probar desplegar edición rápida inline con botón "Actualizar página" en el panel
     const updatePageBtn = page.getByRole('button', { name: /Actualizar página/i }).first();
     if (await updatePageBtn.isVisible()) {
       await updatePageBtn.click();
@@ -47,6 +39,16 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
       const closeBtn = page.getByRole('button', { name: /Cerrar edición/i }).first();
       await closeBtn.click();
       await expect(page.getByText(/Registrar avance de lectura/i)).not.toBeVisible();
+    }
+
+    // 5. Abrir ficha del libro y comprobar que los botones de avance (+25p) y slider están en el detalle
+    const bookTitle = page.locator('.library-paper-panel h3').first();
+    if (await bookTitle.isVisible()) {
+      await bookTitle.click();
+      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 6000 });
+      // Los botones de avance rápido (+25p) están en el detalle
+      const detailQuickAdd = page.getByRole('button', { name: /\+25p/i }).first();
+      await expect(detailQuickAdd).toBeVisible({ timeout: 6000 });
     }
   });
 });

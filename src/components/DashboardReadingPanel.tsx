@@ -4,7 +4,6 @@ import {
   BookOpen,
   ChevronRight,
   ChevronLeft,
-  Plus,
   Check,
   X,
   Percent,
@@ -102,18 +101,6 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
   const percentage = totalPages > 0 ? Math.min(100, Math.round((currentPage / totalPages) * 100)) : 0;
   const remainingPages = Math.max(0, totalPages - currentPage);
   const remainingTimeStr = calculateRemainingReadingTime(remainingPages);
-
-  const handleQuickAdd = async (e: React.MouseEvent, delta: number) => {
-    e.stopPropagation();
-    if (!currentBook || !onUpdateProgress || isSubmitting) return;
-    try {
-      setIsSubmitting(true);
-      const target = totalPages > 0 ? Math.min(totalPages, currentPage + delta) : currentPage + delta;
-      await onUpdateProgress(currentBook.id, target, totalPages > 0 ? totalPages : undefined);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleSaveInlineProgress = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -275,44 +262,8 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
               </div>
             </div>
 
-            {/* Fila de Botones Rápidos Inline */}
-            <div className="flex items-center justify-between flex-wrap gap-2 mt-3">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-stone-500 dark:text-slate-400 hidden sm:inline">
-                  Avanzar:
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => handleQuickAdd(e, 10)}
-                  disabled={isSubmitting}
-                  className="px-2 py-1 rounded-md text-[11px] font-bold border border-amber-900/20 dark:border-[#2E3B52] bg-amber-500/10 hover:bg-amber-500/25 active:scale-95 text-amber-950 dark:text-amber-300 transition shadow-2xs flex items-center gap-0.5"
-                  title="Sumar 10 páginas al progreso de hoy"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>10p</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleQuickAdd(e, 25)}
-                  disabled={isSubmitting}
-                  className="px-2 py-1 rounded-md text-[11px] font-bold border border-amber-900/20 dark:border-[#2E3B52] bg-amber-500/10 hover:bg-amber-500/25 active:scale-95 text-amber-950 dark:text-amber-300 transition shadow-2xs flex items-center gap-0.5"
-                  title="Sumar 25 páginas al progreso de hoy"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>25p</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleQuickAdd(e, 50)}
-                  disabled={isSubmitting}
-                  className="px-2 py-1 rounded-md text-[11px] font-bold border border-amber-900/20 dark:border-[#2E3B52] bg-amber-500/10 hover:bg-amber-500/25 active:scale-95 text-amber-950 dark:text-amber-300 transition shadow-2xs flex items-center gap-0.5"
-                  title="Sumar 50 páginas al progreso de hoy"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>50p</span>
-                </button>
-              </div>
-
+            {/* Botón de Actualizar página */}
+            <div className="flex items-center justify-end mt-3">
               <button
                 type="button"
                 onClick={(e) => {
@@ -320,10 +271,10 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
                   setIsInlineEditing((prev) => !prev);
                 }}
                 className={
-                  'px-3 py-1 rounded-md text-xs font-semibold border transition shadow-xs flex items-center gap-1.5 ' +
+                  'px-3 py-1.5 rounded-lg text-xs font-semibold border transition shadow-xs flex items-center gap-1.5 ' +
                   (isInlineEditing
-                    ? 'border-amber-600 bg-amber-500 text-slate-950 font-bold'
-                    : 'border-amber-900/25 dark:border-[#2D394E] bg-[#fbf6ea] dark:bg-[#161C28] text-stone-800 dark:text-stone-200 hover:border-amber-600/60')
+                    ? 'border-amber-600 bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'border-amber-900/25 dark:border-[#2D394E] bg-[#fbf6ea] dark:bg-[#161C28] text-stone-800 dark:text-stone-200 hover:border-amber-600/60 hover:bg-amber-500/10')
                 }
               >
                 <span>{isInlineEditing ? 'Cerrar edición' : 'Actualizar página'}</span>
