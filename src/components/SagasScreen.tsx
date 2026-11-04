@@ -338,13 +338,16 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
                       value={assignBookId}
                       onChange={(val) => setAssignBookId(val)}
                       placeholder="— Selecciona un libro —"
+                      searchable={true}
+                      searchPlaceholder="Buscar por título o autor..."
                       options={[
                         { value: '', label: '— Selecciona un libro —' },
                         ...books
                           .filter((b) => b.sagaId !== item.saga.id)
                           .map((b) => ({
                             value: b.id,
-                            label: `${b.nombre} (${b.autor || 'Sin autor'})`
+                            label: b.nombre,
+                            hint: b.autor || 'Sin autor'
                           }))
                       ]}
                     />

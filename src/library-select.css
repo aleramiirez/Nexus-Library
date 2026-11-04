@@ -193,3 +193,47 @@ html.dark .library-select-item.is-active {
 html.dark .library-select-group-header {
   color: #f59e0b;
 }
+
+
+/* Buscador integrado dentro del menú desplegable */
+.library-select-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.375rem;
+  padding: 0.25rem 0.25rem 0.375rem;
+  border-bottom: 1px solid rgba(180, 83, 9, 0.15);
+}
+
+html.dark .library-select-search-box {
+  border-bottom-color: rgba(217, 119, 6, 0.18);
+}
+
+.library-select-search-input {
+  width: 100%;
+  padding: 0.35rem 1.625rem 0.35rem 1.75rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  background-color: #fffcf5;
+  color: #1c1917;
+  outline: none;
+  transition: border-color 130ms ease, box-shadow 130ms ease;
+}
+
+html.dark .library-select-search-input {
+  border-color: #283246;
+  background-color: #0d121c;
+  color: #f1f5f9;
+}
+
+.library-select-search-input:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+}
+
+html.dark .library-select-search-input:focus {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}

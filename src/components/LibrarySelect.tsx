@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Search, X } from 'lucide-react';
 import '../library-select.css';
 
 export interface LibrarySelectOption<T extends string | number = string> {
@@ -26,6 +26,8 @@ export interface LibrarySelectProps<T extends string | number = string> {
   className?: string;
   ariaLabel?: string;
   id?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 interface MenuCoords {
@@ -47,9 +49,12 @@ export function LibrarySelect<T extends string | number = string>({
   disabled = false,
   className = '',
   ariaLabel,
-  id
+  id,
+  searchable,
+  searchPlaceholder
 }: LibrarySelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [coords, setCoords] = useState<MenuCoords>({
     top: 0,
     left: 0,
@@ -60,22 +65,62 @@ export function LibrarySelect<T extends string | number = string>({
   });
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const listboxId = useId();
 
-  // Aplanar todas las opciones para navegación de teclado
-  const flattenedOptions: LibrarySelectOption<T>[] = React.useMemo(() => {
+  // Aplanar todas las opciones brutas para saber el total y el elemento seleccionado
+  const rawFlattenedOptions: LibrarySelectOption<T>[] = React.useMemo(() => {
     if (groups && groups.length > 0) {
       return groups.flatMap((g) => g.options);
     }
     return options || [];
   }, [options, groups]);
 
-  const currentIndex = flattenedOptions.findIndex((opt) => opt.value === value);
+  const totalRawCount = rawFlattenedOptions.length;
+  // Activamos el buscador si se pide explícitamente o si hay 8 o más opciones
+  const isSearchable = searchable ?? (totalRawCount >= 8);
+
+  // Filtrado de grupos y opciones según el término de búsqueda
+  const filteredGroups = React.useMemo(() => {
+    if (!groups || groups.length === 0) return undefined;
+    if (!searchQuery.trim()) return groups;
+    const q = searchQuery.toLowerCase().trim();
+    return groups
+      .map((g) => ({
+        ...g,
+        options: g.options.filter(
+          (opt) =>
+            opt.label.toLowerCase().includes(q) ||
+            (opt.hint && opt.hint.toLowerCase().includes(q))
+        )
+      }))
+      .filter((g) => g.options.length > 0);
+  }, [groups, searchQuery]);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!options) return [];
+    if (!searchQuery.trim()) return options;
+    const q = searchQuery.toLowerCase().trim();
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        (opt.hint && opt.hint.toLowerCase().includes(q))
+    );
+  }, [options, searchQuery]);
+
+  const activeFlattenedOptions: LibrarySelectOption<T>[] = React.useMemo(() => {
+    if (filteredGroups && filteredGroups.length > 0) {
+      return filteredGroups.flatMap((g) => g.options);
+    }
+    return filteredOptions;
+  }, [filteredGroups, filteredOptions]);
+
+  const currentIndex = activeFlattenedOptions.findIndex((opt) => opt.value === value);
   const [focusedIndex, setFocusedIndex] = useState(currentIndex >= 0 ? currentIndex : 0);
 
   // Obtener etiqueta y elemento seleccionado
-  const selectedOption = flattenedOptions.find((opt) => opt.value === value);
+  const selectedOption = rawFlattenedOptions.find((opt) => opt.value === value);
   const displayLabel = selectedOption?.label || placeholder || String(value || '');
   const SelectedIcon = selectedOption?.icon;
 
@@ -122,10 +167,11 @@ export function LibrarySelect<T extends string | number = string>({
   const openMenu = useCallback(() => {
     if (disabled) return;
     calculateCoords();
-    const curIdx = flattenedOptions.findIndex((opt) => opt.value === value);
+    setSearchQuery('');
+    const curIdx = rawFlattenedOptions.findIndex((opt) => opt.value === value);
     setFocusedIndex(curIdx >= 0 ? curIdx : 0);
     setIsOpen(true);
-  }, [disabled, calculateCoords, flattenedOptions, value]);
+  }, [disabled, calculateCoords, rawFlattenedOptions, value]);
 
   const closeMenu = useCallback(() => {
     setIsOpen(false);
@@ -154,8 +200,12 @@ export function LibrarySelect<T extends string | number = string>({
     if (!isOpen) return;
 
     const timer = setTimeout(() => {
-      itemRefs.current[focusedIndex]?.focus();
-      itemRefs.current[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+      if (isSearchable && searchInputRef.current) {
+        searchInputRef.current.focus();
+      } else {
+        itemRefs.current[focusedIndex]?.focus();
+        itemRefs.current[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+      }
     }, 24);
 
     const handleWindowKeyDown = (e: KeyboardEvent) => {
@@ -171,10 +221,16 @@ export function LibrarySelect<T extends string | number = string>({
         return;
       }
 
+      // Si el foco está en el input de búsqueda, dejar que el input maneje las teclas
+      if (document.activeElement === searchInputRef.current) {
+        return;
+      }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        if (activeFlattenedOptions.length === 0) return;
         setFocusedIndex((prev) => {
-          const next = (prev + 1) % flattenedOptions.length;
+          const next = (prev + 1) % activeFlattenedOptions.length;
           itemRefs.current[next]?.focus();
           itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
           return next;
@@ -184,8 +240,13 @@ export function LibrarySelect<T extends string | number = string>({
 
       if (e.key === 'ArrowUp') {
         e.preventDefault();
+        if (activeFlattenedOptions.length === 0) return;
+        if (focusedIndex === 0 && isSearchable && searchInputRef.current) {
+          searchInputRef.current.focus();
+          return;
+        }
         setFocusedIndex((prev) => {
-          const next = (prev - 1 + flattenedOptions.length) % flattenedOptions.length;
+          const next = (prev - 1 + activeFlattenedOptions.length) % activeFlattenedOptions.length;
           itemRefs.current[next]?.focus();
           itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
           return next;
@@ -195,6 +256,7 @@ export function LibrarySelect<T extends string | number = string>({
 
       if (e.key === 'Home') {
         e.preventDefault();
+        if (activeFlattenedOptions.length === 0) return;
         setFocusedIndex(0);
         itemRefs.current[0]?.focus();
         itemRefs.current[0]?.scrollIntoView({ block: 'nearest' });
@@ -203,7 +265,8 @@ export function LibrarySelect<T extends string | number = string>({
 
       if (e.key === 'End') {
         e.preventDefault();
-        const lastIdx = flattenedOptions.length - 1;
+        if (activeFlattenedOptions.length === 0) return;
+        const lastIdx = activeFlattenedOptions.length - 1;
         setFocusedIndex(lastIdx);
         itemRefs.current[lastIdx]?.focus();
         itemRefs.current[lastIdx]?.scrollIntoView({ block: 'nearest' });
@@ -212,7 +275,7 @@ export function LibrarySelect<T extends string | number = string>({
 
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        const opt = flattenedOptions[focusedIndex];
+        const opt = activeFlattenedOptions[focusedIndex];
         if (opt) {
           handleSelect(opt.value);
         }
@@ -234,7 +297,7 @@ export function LibrarySelect<T extends string | number = string>({
       window.removeEventListener('resize', handleResizeOrScroll);
       window.removeEventListener('scroll', handleResizeOrScroll, true);
     };
-  }, [isOpen, focusedIndex, closeMenu, handleSelect, calculateCoords, flattenedOptions]);
+  }, [isOpen, focusedIndex, closeMenu, handleSelect, calculateCoords, activeFlattenedOptions, isSearchable]);
 
   const popoverStyle: React.CSSProperties = coords.isMobile
     ? {}
@@ -242,7 +305,7 @@ export function LibrarySelect<T extends string | number = string>({
         ...(coords.top !== undefined ? { top: `${coords.top}px` } : {}),
         ...(coords.bottom !== undefined ? { bottom: `${coords.bottom}px` } : {}),
         left: `${coords.left}px`,
-        width: `${Math.max(coords.width, 210)}px`
+        width: `${Math.max(coords.width, 230)}px`
       };
 
   let globalIndexTracker = 0;
@@ -291,13 +354,67 @@ export function LibrarySelect<T extends string | number = string>({
               {coords.isMobile && (
                 <div className="w-10 h-1 rounded-full bg-amber-900/20 dark:bg-slate-700 mx-auto my-1.5" />
               )}
+
+              {/* Buscador de opciones integrado */}
+              {isSearchable && (
+                <div className="library-select-search-box" onClick={(e) => e.stopPropagation()}>
+                  <Search className="w-3.5 h-3.5 absolute left-3 text-stone-400 dark:text-slate-500 pointer-events-none" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setFocusedIndex(0);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (activeFlattenedOptions.length > 0) {
+                          setFocusedIndex(0);
+                          itemRefs.current[0]?.focus();
+                        }
+                      } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        closeMenu();
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (activeFlattenedOptions.length > 0) {
+                          handleSelect(activeFlattenedOptions[0].value);
+                        }
+                      }
+                    }}
+                    placeholder={searchPlaceholder || 'Buscar libro o autor...'}
+                    className="library-select-search-input"
+                    aria-label="Buscar opciones"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        searchInputRef.current?.focus();
+                      }}
+                      className="absolute right-3 p-0.5 text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 cursor-pointer"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div
                 tabIndex={-1}
                 style={{ maxHeight: `${coords.maxHeight}px` }}
                 className="overflow-y-auto overscroll-contain flex flex-col gap-0.5 pr-0.5 focus:outline-none"
               >
-                {groups && groups.length > 0 ? (
-                  groups.map((group, gIdx) => (
+                {activeFlattenedOptions.length === 0 ? (
+                  <div className="py-4 px-3 text-center text-xs text-stone-500 dark:text-slate-400 italic font-serif">
+                    No se encontraron resultados para «{searchQuery}»
+                  </div>
+                ) : filteredGroups && filteredGroups.length > 0 ? (
+                  filteredGroups.map((group, gIdx) => (
                     <div key={gIdx} className="mb-1 last:mb-0">
                       <div className="library-select-group-header">{group.groupLabel}</div>
                       {group.options.map((opt) => {
@@ -344,7 +461,7 @@ export function LibrarySelect<T extends string | number = string>({
                     </div>
                   ))
                 ) : (
-                  flattenedOptions.map((opt, optIdx) => {
+                  activeFlattenedOptions.map((opt, optIdx) => {
                     const isSelected = opt.value === value;
                     const isFocused = optIdx === focusedIndex;
                     const ItemIcon = opt.icon;
