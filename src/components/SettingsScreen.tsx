@@ -91,10 +91,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onOpenBookDetail,
   onOpenOrderModal
 }) => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('nexus_settings_tab') as SettingsTab;
+        if (stored) return stored;
+      } catch {
+        // ignorar
+      }
+    }
+    return initialTab;
+  });
 
   useEffect(() => {
-    setActiveTab(initialTab);
+    if (initialTab) {
+      setActiveTab(initialTab);
+      try {
+        sessionStorage.setItem('nexus_settings_tab', initialTab);
+      } catch {
+        // ignorar
+      }
+    }
   }, [initialTab]);
 
   const [, startTransition] = useTransition();
@@ -111,6 +128,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     startTransition(() => {
       setActiveTab(tab);
     });
+    try {
+      sessionStorage.setItem('nexus_settings_tab', tab);
+    } catch {
+      // ignorar
+    }
     setFeedback(null);
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => {

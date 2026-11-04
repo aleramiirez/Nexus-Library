@@ -101,20 +101,56 @@ const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
   'settings'
 ]);
 
+const isPageReload = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    if (navEntries && navEntries.length > 0) {
+      return navEntries[0].type === 'reload';
+    }
+    // Fallback para navegadores antiguos
+    return window.performance?.navigation?.type === 1;
+  } catch {
+    return false;
+  }
+};
+
 const getInitialActiveSection = (): NavigationSection => {
   if (typeof window === 'undefined') return 'dashboard';
   try {
-    const urlParam = new URLSearchParams(window.location.search).get('section') as NavigationSection;
-    if (urlParam && VALID_NAVIGATION_SECTIONS.has(urlParam)) {
-      return urlParam;
-    }
-    const stored = localStorage.getItem('nexus_active_section') as NavigationSection;
-    if (stored && VALID_NAVIGATION_SECTIONS.has(stored)) {
-      return stored;
+    // Si la página se está recargando (F5, recarga manual en la pestaña), preservamos la sección actual
+    if (isPageReload()) {
+      const urlParam = new URLSearchParams(window.location.search).get('section') as NavigationSection;
+      if (urlParam && VALID_NAVIGATION_SECTIONS.has(urlParam)) {
+        return urlParam;
+      }
+      const stored = sessionStorage.getItem('nexus_active_section') as NavigationSection;
+      if (stored && VALID_NAVIGATION_SECTIONS.has(stored)) {
+        return stored;
+      }
     }
   } catch {
     // ignorar
   }
+
+  // Si la aplicación se abre de nuevo (tras haberla cerrado, pestaña nueva o inicio fresco):
+  // La ventana que se abre es SIEMPRE la de Inicio ('dashboard')
+  try {
+    localStorage.removeItem('nexus_active_section');
+    sessionStorage.setItem('nexus_active_section', 'dashboard');
+    sessionStorage.removeItem('nexus_discover_tab');
+    if (window.location.search) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('section') || url.searchParams.has('tab')) {
+        url.searchParams.delete('section');
+        url.searchParams.delete('tab');
+        window.history.replaceState({}, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+      }
+    }
+  } catch {
+    // ignorar
+  }
+
   return 'dashboard';
 };
 
@@ -133,9 +169,17 @@ export const App: React.FC = () => {
       setActiveSection(section);
     });
     try {
-      localStorage.setItem('nexus_active_section', section);
+      sessionStorage.setItem('nexus_active_section', section);
       const url = new URL(window.location.href);
-      url.searchParams.set('section', section);
+      if (section === 'dashboard') {
+        url.searchParams.delete('section');
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('section', section);
+        if (section !== 'discover') {
+          url.searchParams.delete('tab');
+        }
+      }
       window.history.replaceState({}, '', url.toString());
     } catch {
       // ignorar
@@ -148,14 +192,25 @@ export const App: React.FC = () => {
     }
   };
 
-  // Sincroniza activeSection con localStorage y URL para persistir tras F5
+  // Sincroniza activeSection con sessionStorage y URL para persistir tras F5
   useEffect(() => {
     try {
-      localStorage.setItem('nexus_active_section', activeSection);
+      sessionStorage.setItem('nexus_active_section', activeSection);
       const url = new URL(window.location.href);
-      if (url.searchParams.get('section') !== activeSection) {
-        url.searchParams.set('section', activeSection);
-        window.history.replaceState({}, '', url.toString());
+      if (activeSection === 'dashboard') {
+        if (url.searchParams.has('section')) {
+          url.searchParams.delete('section');
+          url.searchParams.delete('tab');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } else {
+        if (url.searchParams.get('section') !== activeSection) {
+          url.searchParams.set('section', activeSection);
+          if (activeSection !== 'discover') {
+            url.searchParams.delete('tab');
+          }
+          window.history.replaceState({}, '', url.toString());
+        }
       }
     } catch {
       // ignorar
@@ -272,7 +327,6 @@ export const App: React.FC = () => {
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('account');
-  const [discoverInitialTab] = useState<'books' | 'atlas' | 'community'>('books');
 
   const handleNavigateToSettingsAccount = React.useCallback(() => {
     setSettingsInitialTab('account');
@@ -1375,7 +1429,6 @@ export const App: React.FC = () => {
                 currentUserId={currentUser?.id}
                 onAddBookFromCommunity={handleAddBookFromCommunity}
                 onOpenBookDetail={handleOpenCardDetail}
-                initialTab={discoverInitialTab}
                 userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
                 username={currentUserProfile?.username}
                 avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}

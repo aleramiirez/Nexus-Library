@@ -75,16 +75,17 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   avatarUrl
 }) => {
   const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas' | 'community'>(() => {
-    if (initialTab) return initialTab;
-    if (typeof window === 'undefined') return 'books';
-    try {
-      const urlTab = new URLSearchParams(window.location.search).get('tab');
-      if (urlTab === 'books' || urlTab === 'atlas' || urlTab === 'community') return urlTab;
-      const stored = localStorage.getItem('nexus_discover_tab');
-      if (stored === 'books' || stored === 'atlas' || stored === 'community') return stored as 'books' | 'atlas' | 'community';
-    } catch {
-      // ignorar
+    if (typeof window !== 'undefined') {
+      try {
+        const urlTab = new URLSearchParams(window.location.search).get('tab');
+        if (urlTab === 'books' || urlTab === 'atlas' || urlTab === 'community') return urlTab;
+        const stored = sessionStorage.getItem('nexus_discover_tab') || localStorage.getItem('nexus_discover_tab');
+        if (stored === 'books' || stored === 'atlas' || stored === 'community') return stored as 'books' | 'atlas' | 'community';
+      } catch {
+        // ignorar
+      }
     }
+    if (initialTab) return initialTab;
     return 'books';
   });
 
@@ -120,6 +121,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       setDiscoverTab(tab);
     });
     try {
+      sessionStorage.setItem('nexus_discover_tab', tab);
       localStorage.setItem('nexus_discover_tab', tab);
       const url = new URL(window.location.href);
       url.searchParams.set('tab', tab);
@@ -136,6 +138,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
 
   useEffect(() => {
     try {
+      sessionStorage.setItem('nexus_discover_tab', discoverTab);
       localStorage.setItem('nexus_discover_tab', discoverTab);
       const url = new URL(window.location.href);
       if (url.searchParams.get('tab') !== discoverTab) {

@@ -103,7 +103,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onRemoveSampleBooks,
   onKeepSampleBooks
 }) => {
-  const [viewMode, setViewMode] = useState<LibraryViewMode>('shelf');
+  const [viewMode, setViewMode] = useState<LibraryViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('nexus_library_view_mode') as LibraryViewMode;
+        if (stored === 'shelf' || stored === 'grid' || stored === 'list') return stored;
+      } catch {
+        // ignorar
+      }
+    }
+    return 'shelf';
+  });
+
+  const handleViewModeChange = (mode: LibraryViewMode) => {
+    setViewMode(mode);
+    try {
+      sessionStorage.setItem('nexus_library_view_mode', mode);
+    } catch {
+      // ignorar
+    }
+  };
 
   const renderMobileShelfTabs = () => {
     const shelfTabs: { id: NavigationSection; label: string; count: number }[] = [
@@ -310,7 +329,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <div className="inline-flex rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-1 shadow-sm">
             <button
               type="button"
-              onClick={() => setViewMode('shelf')}
+              onClick={() => handleViewModeChange('shelf')}
               className={
                 'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                 (viewMode === 'shelf'
@@ -323,7 +342,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('grid')}
+              onClick={() => handleViewModeChange('grid')}
               className={
                 'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                 (viewMode === 'grid'
@@ -336,7 +355,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('list')}
+              onClick={() => handleViewModeChange('list')}
               className={
                 'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1 transition ' +
                 (viewMode === 'list'
