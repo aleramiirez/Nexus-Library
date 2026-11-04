@@ -30,6 +30,19 @@ export interface HeatmapDayData {
   dayOfWeek: number; // 0 = domingo, 1 = lunes...
 }
 
+export interface CalendarDayView {
+  date: string; // 'YYYY-MM-DD'
+  dayNumber: number; // 1..31
+  monthShort: string; // 'Oct', 'Nov'
+  weekdayIndex: number; // 0 = Lun, 1 = Mar ... 6 = Dom
+  pagesRead: number;
+  level: 0 | 1 | 2 | 3 | 4;
+  isToday: boolean;
+  isFuture: boolean;
+  source: 'log' | 'retroactive';
+  bookIds: string[];
+}
+
 export interface ReadingStreakStats {
   currentStreak: number;
   bestStreak: number;
@@ -266,6 +279,49 @@ class ReadingStreakService {
           this.assignDayRetroactive(map, ini, Math.min(30, pages), book.id);
         }
       }
+
+      // Fusión retroactiva para libros en curso ('⏳ Leyendo') con páginas leídas y fecha de inicio
+      if (
+        book.progreso === '⏳ Leyendo' &&
+        typeof book.paginaActual === 'number' &&
+        book.paginaActual > 0 &&
+        book.fechaInicio
+      ) {
+        const ini = book.fechaInicio.trim();
+        const today = getTodayLocalDateString();
+        if (ini && ini <= today) {
+          const dIni = new Date(ini + 'T00:00:00');
+          const dHoy = new Date(today + 'T00:00:00');
+          const diffDays = Math.max(1, Math.round((dHoy.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+          // Rango sensato (hasta 90 días atrás para lecturas activas en curso)
+          if (diffDays <= 90) {
+            const pagesPerDay = Math.max(1, Math.round(book.paginaActual / diffDays));
+            const cursor = new Date(dIni);
+
+            while (cursor <= dHoy) {
+              const iso = cursor.toISOString().slice(0, 10);
+              if (iso.startsWith(prefix)) {
+                const existing = map.get(iso);
+                const currentP = existing ? existing.pagesRead : 0;
+                // Si ya había páginas leídas (por ejemplo registradas hoy), tomar el máximo
+                const newP = Math.max(currentP, pagesPerDay);
+                const booksList = existing ? Array.from(new Set([...existing.bookIds, book.id])) : [book.id];
+
+                map.set(iso, {
+                  date: iso,
+                  pagesRead: newP,
+                  level: this.calculateLevel(newP),
+                  bookIds: booksList,
+                  source: existing && existing.source === 'log' ? 'log' : 'retroactive',
+                  dayOfWeek: cursor.getDay()
+                });
+              }
+              cursor.setDate(cursor.getDate() + 1);
+            }
+          }
+        }
+      }
     });
 
     return map;
@@ -424,6 +480,64 @@ class ReadingStreakService {
     }
 
     return result;
+  }
+
+  /**
+   * Obtiene las últimas N semanas completas (Lunes a Domingo) para un calendario real y ordenado.
+   */
+  public getRecentCalendarWeeks(books: Book[], weeksCount = 4): CalendarDayView[][] {
+    const currentYear = new Date().getFullYear();
+    const heatmap = this.buildReadingHeatmapData(books, currentYear);
+    const today = getTodayLocalDateString();
+
+    const now = new Date();
+    // 0 = Lunes, 6 = Domingo
+    const currentDayOfWeek = (now.getDay() + 6) % 7;
+
+    // Lunes de la semana actual
+    const mondayThisWeek = new Date(now);
+    mondayThisWeek.setDate(now.getDate() - currentDayOfWeek);
+    mondayThisWeek.setHours(0, 0, 0, 0);
+
+    // Lunes de hace (weeksCount - 1) semanas
+    const startMonday = new Date(mondayThisWeek);
+    startMonday.setDate(mondayThisWeek.getDate() - (weeksCount - 1) * 7);
+
+    const weeks: CalendarDayView[][] = [];
+    const cursor = new Date(startMonday);
+
+    const MONTH_NAMES_SHORT = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+
+    for (let w = 0; w < weeksCount; w++) {
+      const currentWeek: CalendarDayView[] = [];
+      for (let d = 0; d < 7; d++) {
+        const iso = cursor.toISOString().slice(0, 10);
+        const isToday = iso === today;
+        const isFuture = iso > today;
+        const existing = heatmap.get(iso);
+
+        currentWeek.push({
+          date: iso,
+          dayNumber: cursor.getDate(),
+          monthShort: MONTH_NAMES_SHORT[cursor.getMonth()],
+          weekdayIndex: d,
+          pagesRead: existing && !isFuture ? existing.pagesRead : 0,
+          level: existing && !isFuture ? existing.level : 0,
+          isToday,
+          isFuture,
+          source: existing ? existing.source : 'log',
+          bookIds: existing ? existing.bookIds : []
+        });
+
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      weeks.push(currentWeek);
+    }
+
+    return weeks;
   }
 }
 

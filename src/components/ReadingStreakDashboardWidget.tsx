@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Flame, Trophy, Calendar, Check, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
 import { Book } from '../types/models';
-import { readingStreakService, ReadingStreakStats, HeatmapDayData } from '../services/readingStreakService';
+import {
+  readingStreakService,
+  ReadingStreakStats,
+  CalendarDayView
+} from '../services/readingStreakService';
 import { soundService } from '../services/soundService';
 
 interface ReadingStreakDashboardWidgetProps {
@@ -10,10 +14,8 @@ interface ReadingStreakDashboardWidgetProps {
   onShowToast?: (message: string, options?: { type?: 'success' | 'info' | 'error' }) => void;
 }
 
-const MONTH_NAMES_SHORT = [
-  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-];
+const WEEKDAY_NAMES_SHORT = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const WEEKDAY_NAMES_FULL = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidgetProps> = ({
   books,
@@ -33,60 +35,62 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
     return readingStreakService.getReadingStreakStats(books);
   }, [books]);
 
-  const recentDays: HeatmapDayData[] = useMemo(() => {
-    return readingStreakService.getRecentDaysData(books, 28);
+  // Semanas reales estructuradas de Lunes a Domingo (4 semanas)
+  const recentWeeks: CalendarDayView[][] = useMemo(() => {
+    return readingStreakService.getRecentCalendarWeeks(books, 4);
   }, [books]);
 
   const handleManualCheckIn = () => {
-    readingStreakService.markReadTodayManually(20);
+    readingStreakService.markReadTodayManually(25);
     soundService.playWaxSeal(true);
     soundService.playBrassBell(true);
-    onShowToast?.('🔥 ¡Lectura de hoy registrada! Mantén encendida tu racha ceremonial.', {
+    onShowToast?.('🔥 ¡Lectura de hoy registrada! Mantén viva tu llama ceremonial.', {
       type: 'success'
     });
   };
 
-  const formatDayTooltip = (day: HeatmapDayData): string => {
-    const parts = day.date.split('-');
-    if (parts.length === 3) {
-      const dayNum = parseInt(parts[2], 10);
-      const monthIdx = parseInt(parts[1], 10) - 1;
-      const monthName = MONTH_NAMES_SHORT[monthIdx] || parts[1];
-      if (day.pagesRead > 0) {
-        return `${dayNum} de ${monthName}: ${day.pagesRead} págs leídas`;
-      }
-      return `${dayNum} de ${monthName}: sin lectura registrada`;
+  const getDayTooltip = (day: CalendarDayView): string => {
+    const weekday = WEEKDAY_NAMES_FULL[day.weekdayIndex] || '';
+    if (day.isFuture) {
+      return `${weekday}, ${day.dayNumber} de ${day.monthShort} (Día próximo)`;
     }
-    return day.date;
+    if (day.pagesRead > 0) {
+      return `${weekday}, ${day.dayNumber} de ${day.monthShort}: ${day.pagesRead} páginas leídas`;
+    }
+    return `${weekday}, ${day.dayNumber} de ${day.monthShort}: sin lectura registrada`;
   };
 
-  const getDayColorClass = (level: number, isToday: boolean): string => {
-    let base = '';
-    switch (level) {
+  const getCellClasses = (day: CalendarDayView): string => {
+    if (day.isFuture) {
+      return 'border border-dashed border-amber-900/15 dark:border-[#222E40] bg-amber-950/5 dark:bg-[#0e1420]/40 text-stone-400 dark:text-slate-600 opacity-60';
+    }
+
+    let colorStyle = '';
+    switch (day.level) {
       case 1:
-        base = 'bg-amber-400/40 dark:bg-amber-600/40 border-amber-500/40';
+        colorStyle = 'bg-amber-400/35 dark:bg-amber-700/40 border-amber-500/35 text-amber-950 dark:text-amber-200';
         break;
       case 2:
-        base = 'bg-amber-500/70 dark:bg-amber-500/60 border-amber-500/60';
+        colorStyle = 'bg-amber-500/60 dark:bg-amber-600/55 border-amber-500/50 text-amber-950 dark:text-amber-100 font-bold';
         break;
       case 3:
-        base = 'bg-amber-600/90 dark:bg-amber-400/80 border-amber-400/80 shadow-[0_0_8px_rgba(245,158,11,0.35)]';
+        colorStyle = 'bg-amber-600/85 dark:bg-amber-500/80 border-amber-400 text-stone-950 font-bold shadow-xs';
         break;
       case 4:
-        base = 'bg-gradient-to-br from-amber-500 to-amber-300 dark:from-amber-400 dark:to-amber-200 border-amber-300 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.55)]';
+        colorStyle = 'bg-gradient-to-br from-amber-500 to-amber-300 dark:from-amber-400 dark:to-amber-200 border-amber-300 text-slate-950 font-black shadow-sm';
         break;
       case 0:
       default:
-        base = 'bg-amber-950/10 dark:bg-[#1A2232] border-amber-900/10 dark:border-[#273349]';
+        colorStyle = 'bg-[#f4ead4]/60 dark:bg-[#141C29]/80 border-amber-900/10 dark:border-[#20293B] text-stone-600 dark:text-slate-400';
         break;
     }
-    if (isToday) {
-      base += ' ring-2 ring-amber-500 dark:ring-amber-400 ring-offset-1 ring-offset-[#fbf6ea] dark:ring-offset-[#131926]';
-    }
-    return base;
-  };
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+    if (day.isToday) {
+      colorStyle += ' ring-2 ring-amber-500 dark:ring-amber-400 ring-offset-1 ring-offset-[#fbf6ea] dark:ring-offset-[#131926] shadow-[0_0_10px_rgba(245,158,11,0.45)]';
+    }
+
+    return colorStyle;
+  };
 
   return (
     <div className="rounded-2xl border border-amber-900/20 dark:border-[#273248] bg-[#fbf6ea]/95 dark:bg-[#131926]/95 p-4 sm:p-5 shadow-sm space-y-4 transition-colors">
@@ -94,7 +98,12 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-900/10 dark:border-[#242F43] pb-3">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-600/35 text-amber-800 dark:text-amber-300">
-            <Flame className={'w-5 h-5 ' + (stats.readToday ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-stone-400')} />
+            <Flame
+              className={
+                'w-5 h-5 ' +
+                (stats.readToday ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-stone-400')
+              }
+            />
           </div>
           <div>
             <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900 dark:text-[#f8f5ee] flex items-center gap-1.5">
@@ -151,39 +160,78 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
         </div>
       </div>
 
-      {/* Mini-calendario de los últimos 28 días (4 semanas) */}
+      {/* Calendario Semanal de las Últimas 4 Semanas (Lunes a Domingo) */}
       <div className="space-y-2 pt-1">
         <div className="flex items-center justify-between text-[11px] text-stone-600 dark:text-slate-400">
-          <span className="font-medium">Últimas 4 semanas (28 días):</span>
+          <span className="font-medium">Calendario de lectura (últimas 4 semanas):</span>
           <div className="flex items-center gap-1 text-[10px]">
             <span>Menos</span>
-            <div className="w-2.5 h-2.5 rounded-xs bg-amber-950/10 dark:bg-[#1A2232] border border-amber-900/15" />
-            <div className="w-2.5 h-2.5 rounded-xs bg-amber-400/40 dark:bg-amber-600/40" />
-            <div className="w-2.5 h-2.5 rounded-xs bg-amber-500/70 dark:bg-amber-500/60" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-[#f4ead4] dark:bg-[#141C29] border border-amber-900/15" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-amber-400/35 dark:bg-amber-700/40" />
+            <div className="w-2.5 h-2.5 rounded-xs bg-amber-500/60 dark:bg-amber-600/55" />
             <div className="w-2.5 h-2.5 rounded-xs bg-amber-600 dark:bg-amber-400" />
             <span>Más</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5 p-2 rounded-xl border border-amber-900/15 dark:border-[#232E43] bg-[#f5ecda]/60 dark:bg-[#101622]/80">
-          {recentDays.map((day) => {
-            const isToday = day.date === todayIso;
-            const tooltip = formatDayTooltip(day);
-            return (
-              <div
-                key={day.date}
-                title={tooltip}
-                className={
-                  'h-6 sm:h-7 rounded-md border flex items-center justify-center cursor-default transition-transform hover:scale-110 ' +
-                  getDayColorClass(day.level, isToday)
-                }
-              >
-                {day.pagesRead > 0 ? (
-                  <span className="text-[9px] font-bold opacity-80">{day.pagesRead}</span>
-                ) : null}
+        <div className="p-2 sm:p-3 rounded-xl border border-amber-900/15 dark:border-[#232E43] bg-[#f5ecda]/60 dark:bg-[#101622]/80 space-y-2">
+          {/* Cabecera de los 7 días de la semana */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] sm:text-[11px] uppercase font-bold text-stone-600 dark:text-slate-400">
+            {WEEKDAY_NAMES_SHORT.map((name) => (
+              <span key={name}>{name}</span>
+            ))}
+          </div>
+
+          {/* Cuadrícula semanal: 4 semanas × 7 días */}
+          <div className="space-y-1.5 sm:space-y-2">
+            {recentWeeks.map((week, wIdx) => (
+              <div key={wIdx} className="grid grid-cols-7 gap-1 sm:gap-2">
+                {week.map((day) => {
+                  const tooltip = getDayTooltip(day);
+                  return (
+                    <div
+                      key={day.date}
+                      title={tooltip}
+                      className={
+                        'h-11 sm:h-12 rounded-xl border flex flex-col justify-between p-1 sm:p-1.5 cursor-default transition-all hover:scale-105 ' +
+                        getCellClasses(day)
+                      }
+                    >
+                      {/* Fila superior: Día del mes y badge HOY */}
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[10px] sm:text-[11px] font-bold leading-none">
+                          {day.dayNumber}
+                          {day.dayNumber === 1 && (
+                            <span className="text-[8px] font-normal opacity-70 ml-0.5">
+                              {day.monthShort}
+                            </span>
+                          )}
+                        </span>
+                        {day.isToday && (
+                          <span className="text-[8px] font-black tracking-tight text-amber-950 dark:text-amber-200 bg-amber-400 dark:bg-amber-500 px-1 py-0.2 rounded">
+                            HOY
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Fila inferior: Páginas leídas o indicador */}
+                      <div className="text-right">
+                        {day.isFuture ? (
+                          <span className="text-[9px] opacity-40">·</span>
+                        ) : day.pagesRead > 0 ? (
+                          <span className="text-[9px] sm:text-[10px] font-black leading-none tracking-tight">
+                            {day.pagesRead}p
+                          </span>
+                        ) : (
+                          <span className="text-[9px] opacity-35 leading-none">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
