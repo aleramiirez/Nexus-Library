@@ -66,7 +66,31 @@ test.describe('Sagas: Búsqueda interactiva al asignar libro', () => {
     await expect(vincularBtn).toBeEnabled();
     await vincularBtn.click();
 
-    // 11. Verificar que el libro aparece asignado dentro de la saga
-    await expect(page.getByText('La música del silencio')).toBeVisible({ timeout: 10000 });
+    // 11. Verificar que la vitrina se abre al vincular y el libro aparece en la balda con su insignia y placa
+    await expect(page.locator('.saga-vitrine.is-open').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.vit-book-plate', { hasText: 'La música del silencio' }).first()).toBeVisible();
+    await expect(page.locator('.vit-chip', { hasText: 'Vol. 1' }).first()).toBeVisible();
+
+    // 12. Verificar barra de herramientas (filtros Todas / En curso / Sin empezar / Completadas y Abrir/Cerrar todas)
+    const toolbar = page.getByRole('toolbar', { name: 'Filtrar sagas' });
+    await expect(toolbar).toBeVisible();
+    await expect(toolbar.getByRole('button', { name: /^Todas/i })).toHaveAttribute('aria-pressed', 'true');
+    await expect(toolbar.getByRole('button', { name: /En curso/i })).toBeVisible();
+    await expect(toolbar.getByRole('button', { name: /Sin empezar/i })).toBeVisible();
+    await expect(toolbar.getByRole('button', { name: /Completadas/i })).toBeVisible();
+
+    // Cerrar todas las vitrinas desde el botón global y comprobar que pasa a estado cerrado con lomos
+    const toggleAllBtn = toolbar.getByRole('button', { name: 'Cerrar todas' });
+    await expect(toggleAllBtn).toBeVisible();
+    await toggleAllBtn.click();
+    await expect(page.locator('.saga-vitrine.is-open')).toHaveCount(0);
+    await expect(toolbar.getByRole('button', { name: 'Abrir todas' })).toBeVisible();
+
+    // Reabrir con el botón accesible de la vitrina (aria-expanded)
+    const vitrineToggle = page.locator('.vit-toggle').first();
+    await expect(vitrineToggle).toHaveAttribute('aria-expanded', 'false');
+    await vitrineToggle.click();
+    await expect(vitrineToggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.saga-vitrine.is-open')).toHaveCount(1);
   });
 });
