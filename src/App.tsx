@@ -84,6 +84,7 @@ const CollectionsScreen = React.lazy(() =>
   import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
 );
 import { collectionService } from './services/collectionService';
+import { readingStreakService } from './services/readingStreakService';
 import { readingChallengeService } from './services/readingChallengeService';
 import { soundService } from './services/soundService';
 import type { SettingsTab } from './components/SettingsScreen';
@@ -833,6 +834,7 @@ export const App: React.FC = () => {
             if (mounted && prof) setCurrentUserProfile(prof);
           });
           collectionService.syncFromCloud(user.id).catch(() => {});
+          readingStreakService.syncFromCloud(user.id).catch(() => {});
           readingChallengeService.syncFromCloud(user.id).catch(() => {});
           await runCloudSync();
         } else {
@@ -940,6 +942,7 @@ export const App: React.FC = () => {
           // Solo lanzar sincronización pesada en inicio de sesión real
           if (isRealNewSignIn) {
             collectionService.syncFromCloud(nextUser.id).catch(() => {});
+            readingStreakService.syncFromCloud(nextUser.id).catch(() => {});
             readingChallengeService.syncFromCloud(nextUser.id).catch(() => {});
             runCloudSync();
           }

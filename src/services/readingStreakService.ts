@@ -1,4 +1,5 @@
 import { Book } from '../types/models';
+import { supabase } from './supabaseClient';
 
 export function formatDateToLocalIso(d: Date): string {
   const year = d.getFullYear();
@@ -87,6 +88,10 @@ class ReadingStreakService {
     };
   }
 
+  public invalidateCache(): void {
+    this.stateCache = null;
+  }
+
   private notify(): void {
     this.listeners.forEach((cb) => {
       try {
@@ -135,6 +140,140 @@ class ReadingStreakService {
       console.warn('Error al guardar logs de racha:', err);
     }
     this.notify();
+    this.syncToCloud().catch(() => {});
+  }
+
+  /**
+   * Exporta el estado completo de racha diaria para la copia de seguridad JSON.
+   */
+  public getExportData(): ReadingStreakStorageState {
+    this.stateCache = null;
+    return this.loadState();
+  }
+
+  /**
+   * Importa registros de racha diaria fusionándolos con los existentes.
+   */
+  public importData(importedState?: Partial<ReadingStreakStorageState>): void {
+    if (!importedState || typeof importedState.logs !== 'object') return;
+    this.stateCache = null;
+    const currentState = this.loadState();
+    const mergedLogs = { ...currentState.logs };
+
+    for (const [date, log] of Object.entries(importedState.logs)) {
+      if (!mergedLogs[date]) {
+        mergedLogs[date] = log;
+      } else {
+        const current = mergedLogs[date];
+        const combinedBooks = Array.from(new Set([...current.bookIds, ...log.bookIds]));
+        mergedLogs[date] = {
+          date,
+          pagesRead: Math.max(current.pagesRead, log.pagesRead),
+          bookIds: combinedBooks,
+          manualCheckIn: current.manualCheckIn || log.manualCheckIn
+        };
+      }
+    }
+
+    const mergedStartPages = {
+      ...(importedState.bookStartPageByDate || {}),
+      ...(currentState.bookStartPageByDate || {})
+    };
+
+    const newState: ReadingStreakStorageState = {
+      logs: mergedLogs,
+      bookStartPageByDate: mergedStartPages,
+      lastUpdated: new Date().toISOString()
+    };
+
+    this.saveState(newState);
+  }
+
+  /**
+   * Sincroniza el estado de racha diaria con la nube de Supabase (user_metadata).
+   */
+  public async syncToCloud(userId?: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      if (userId && user.id !== userId) return;
+
+      const state = this.loadState();
+      await supabase.auth.updateUser({
+        data: {
+          reading_streak_logs: state
+        }
+      });
+    } catch (e) {
+      console.warn('Could not sync reading streak to Supabase user_metadata:', e);
+    }
+  }
+
+  /**
+   * Descarga y fusiona el registro de racha diaria desde Supabase user_metadata.
+   */
+  public async syncFromCloud(userId?: string): Promise<ReadingStreakStorageState> {
+    if (typeof window === 'undefined') return this.loadState();
+    try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) return this.loadState();
+      if (userId && user.id !== userId) return this.loadState();
+
+      const remoteState = user.user_metadata?.reading_streak_logs as
+        | Partial<ReadingStreakStorageState>
+        | undefined;
+
+      if (remoteState && typeof remoteState.logs === 'object') {
+        const localState = this.loadState();
+        const mergedLogs = { ...localState.logs };
+
+        for (const [date, log] of Object.entries(remoteState.logs || {})) {
+          if (!mergedLogs[date]) {
+            mergedLogs[date] = log;
+          } else {
+            const current = mergedLogs[date];
+            const combinedBookIds = Array.from(new Set([...current.bookIds, ...log.bookIds]));
+            mergedLogs[date] = {
+              date,
+              pagesRead: Math.max(current.pagesRead, log.pagesRead),
+              bookIds: combinedBookIds,
+              manualCheckIn: current.manualCheckIn || log.manualCheckIn
+            };
+          }
+        }
+
+        const mergedStartPages = {
+          ...(remoteState.bookStartPageByDate || {}),
+          ...(localState.bookStartPageByDate || {})
+        };
+
+        const mergedState: ReadingStreakStorageState = {
+          logs: mergedLogs,
+          bookStartPageByDate: mergedStartPages,
+          lastUpdated: new Date().toISOString()
+        };
+
+        this.stateCache = mergedState;
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedState));
+        }
+        this.notify();
+        return mergedState;
+      } else {
+        const localState = this.loadState();
+        if (Object.keys(localState.logs).length > 0) {
+          this.syncToCloud(user.id).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Could not sync reading streak from Supabase:', e);
+    }
+    return this.loadState();
   }
 
   /**

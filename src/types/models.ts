@@ -124,6 +124,8 @@ export interface BackupPayload {
   sagas: Saga[];
   collections?: CustomCollection[];
   lentRecords?: LentRecord[];
+  readingStreakLogs?: any;
+  userReadingSpeedPph?: number;
 }
 
 export type ProfileVisibility = 'public' | 'friends' | 'private';

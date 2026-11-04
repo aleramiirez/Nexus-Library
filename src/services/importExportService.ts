@@ -1,4 +1,6 @@
 import { collectionService } from './collectionService';
+import { readingStreakService } from './readingStreakService';
+import { getUserReadingSpeedPph } from '../utils/readingTime';
 import { BackupPayload, Book, Saga, StarRating } from '../types/models';
 import { normalizeText, ReadingStatus } from '../constants/catalogs';
 import { buildOpenLibraryIsbnCover } from './coverService';
@@ -63,14 +65,18 @@ export function isDuplicateBook(
 
 export function exportLibraryToJson(books: Book[], sagas: Saga[], userId?: string): string {
   const { collections, lentRecords } = collectionService.exportData(userId);
+  const readingStreakLogs = readingStreakService.getExportData();
+  const userReadingSpeedPph = getUserReadingSpeedPph();
   const payload: BackupPayload = {
     app: 'NEXUS_LIBRARY',
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     books,
     sagas,
     collections,
-    lentRecords
+    lentRecords,
+    readingStreakLogs,
+    userReadingSpeedPph
   };
   return JSON.stringify(payload, null, 2);
 }

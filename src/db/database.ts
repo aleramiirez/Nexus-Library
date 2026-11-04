@@ -1252,6 +1252,16 @@ export async function restoreBackupPayload(
     );
   }
 
+  if (backup.readingStreakLogs) {
+    readingStreakService.importData(backup.readingStreakLogs);
+  }
+
+  if (backup.userReadingSpeedPph && typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem('nexus_user_reading_speed_pph', String(backup.userReadingSpeedPph));
+    } catch {}
+  }
+
   return { addedBooks, skippedDuplicates };
 }
 
