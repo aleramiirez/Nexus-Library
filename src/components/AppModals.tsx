@@ -63,6 +63,7 @@ export interface AppModalsProps {
   showToast: (message: string, optionsOrType?: ToastType | ToastOptions) => void;
   onOpenEditBook: (book: Book) => void;
   onBookStatusChange: (bookId: string, status: ReadingStatus) => void;
+  onUpdateBookReadingProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
   updateBookQuickRating: (bookId: string, rating: StarRating | null) => void;
   updateBookQuickDates: (bookId: string, fechaInicio: string, fechaFin: string) => Promise<void> | void;
   saveBookRecord: (bookData: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>, existingId?: string) => Promise<Book>;
@@ -90,6 +91,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
   showToast,
   onOpenEditBook,
   onBookStatusChange,
+  onUpdateBookReadingProgress,
   updateBookQuickRating,
   updateBookQuickDates,
   saveBookRecord,
@@ -117,6 +119,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
             onStatusChange={onBookStatusChange}
             onRatingChange={updateBookQuickRating}
             onDatesChange={updateBookQuickDates}
+            onUpdateProgress={onUpdateBookReadingProgress}
             currentUserId={currentUser?.id}
             readerName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
             onShowToast={showToast}

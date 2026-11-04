@@ -10,6 +10,7 @@ export interface Book {
   subgeneros: Subgenre[];
   fechaPublicacion: number | null;
   paginas: number | null;
+  paginaActual?: number | null;
   puntuacion: StarRating;
   progreso: ReadingStatus;
   sagaId: string | null;

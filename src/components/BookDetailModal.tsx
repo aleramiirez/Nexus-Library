@@ -52,6 +52,7 @@ import {
   BookStatusSnapshot,
   getTodayLocalDateString
 } from '../db/database';
+import { BookDetailReadingProgress } from './book-detail/BookDetailReadingProgress';
 
 export interface BookDetailModalProps {
   book: Book | null;
@@ -61,6 +62,7 @@ export interface BookDetailModalProps {
   onStatusChange?: (bookId: string, status: ReadingStatus) => void;
   onRatingChange?: (bookId: string, rating: StarRating) => void;
   onDatesChange?: (bookId: string, fechaInicio: string, fechaFin: string) => void;
+  onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
   currentUserId?: string;
   onShowToast?: (
     message: string,
@@ -99,6 +101,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onStatusChange,
   onRatingChange,
   onDatesChange,
+  onUpdateProgress,
   currentUserId,
   onShowToast,
   readOnly = false,
@@ -932,6 +935,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
                 )}
 
+                {/* Control de Progreso de lectura interactivo en móvil */}
+                {!readOnly && (book.progreso === '⏳ Leyendo' || (book.paginaActual && book.paginaActual > 0)) && (
+                  <BookDetailReadingProgress
+                    book={book}
+                    onUpdateProgress={onUpdateProgress}
+                    variant="mobile"
+                  />
+                )}
+
                 {/* Botón para pasar página a la Sinopsis en móvil */}
                 <button
                   type="button"
@@ -1427,6 +1439,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </span>
                         ))}
                       </div>
+
+                      {/* Control de Progreso de lectura interactivo en desktop */}
+                      {!readOnly && (book.progreso === '⏳ Leyendo' || (book.paginaActual && book.paginaActual > 0)) && (
+                        <BookDetailReadingProgress
+                          book={book}
+                          onUpdateProgress={onUpdateProgress}
+                          variant="desktop"
+                        />
+                      )}
 
                       {/* Fila principal con las 3 métricas protagonistas: Año, Páginas y Tiempo de lectura */}
                       <BookDetailMetricsGrid

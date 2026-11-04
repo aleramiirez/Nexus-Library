@@ -30,6 +30,7 @@ import {
   updateBookQuickDates,
   updateBookQuickRating,
   updateBookQuickStatus,
+  updateBookReadingProgress,
   upsertSaga
 } from './db/database';
 import {
@@ -81,6 +82,7 @@ const CollectionsScreen = React.lazy(() =>
 );
 import { collectionService } from './services/collectionService';
 import { readingChallengeService } from './services/readingChallengeService';
+import { soundService } from './services/soundService';
 import type { SettingsTab } from './components/SettingsScreen';
 import { calculateReaderLevel } from './services/levelingService';
 import { useLibraryFilters } from './hooks/useLibraryFilters';
@@ -1067,6 +1069,32 @@ export const App: React.FC = () => {
     [books]
   );
 
+  const handleUpdateBookReadingProgress = useCallback(
+    async (bookId: string, paginaActual: number, totalPaginas?: number) => {
+      try {
+        const result = await updateBookReadingProgress(bookId, paginaActual, totalPaginas);
+
+        if (result.justFinished) {
+          soundService.playWaxSeal(true);
+          soundService.playBrassBell(true);
+          setCelebrationBook(result.book);
+          showToast(`¡Enhorabuena! Has completado "${result.book.nombre}" 🎉`, {
+            type: 'success'
+          });
+        } else {
+          showToast(
+            `Progreso actualizado: pág. ${result.book.paginaActual} de ${result.book.paginas || '?'}`,
+            { type: 'info' }
+          );
+        }
+      } catch (err) {
+        console.error('Error al actualizar el progreso de lectura:', err);
+        showToast('Error al actualizar el progreso de lectura', { type: 'error' });
+      }
+    },
+    [showToast, setCelebrationBook]
+  );
+
   const handleQuickAddFromDiscover = async (candidate: BibliographicCandidate) => {
     const bookInput = candidateToBookInput(candidate);
     await saveBookRecord(bookInput);
@@ -1375,6 +1403,7 @@ export const App: React.FC = () => {
               onOpenBookDetail={handleOpenBookDetail}
               onLoadSampleBooks={handleLoadSampleBooks}
               onOpenImport={() => setIsImportOpen(true)}
+              onUpdateProgress={handleUpdateBookReadingProgress}
             />
           )}
 
@@ -1619,6 +1648,7 @@ export const App: React.FC = () => {
         showToast={showToast}
         onOpenEditBook={handleOpenEditBook}
         onBookStatusChange={handleBookStatusChange}
+        onUpdateBookReadingProgress={handleUpdateBookReadingProgress}
         updateBookQuickRating={updateBookQuickRating}
         updateBookQuickDates={updateBookQuickDates}
         saveBookRecord={saveBookRecord}

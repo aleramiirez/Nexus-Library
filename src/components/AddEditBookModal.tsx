@@ -107,6 +107,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   const [showAllSubgenres, setShowAllSubgenres] = useState(false);
   const [fechaPublicacion, setFechaPublicacion] = useState<string>('');
   const [paginas, setPaginas] = useState<string>('');
+  const [paginaActual, setPaginaActual] = useState<string>('');
   const [puntuacion, setPuntuacion] = useState<StarRating>(null);
   const [progreso, setProgreso] = useState<ReadingStatus>('❌ No Leído');
   const [sagaMode, setSagaMode] = useState<'none' | 'existing' | 'new'>('none');
@@ -174,6 +175,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
         editingBook.fechaPublicacion ? String(editingBook.fechaPublicacion) : ''
       );
       setPaginas(editingBook.paginas ? String(editingBook.paginas) : '');
+      setPaginaActual(editingBook.paginaActual ? String(editingBook.paginaActual) : '');
       setPuntuacion(editingBook.puntuacion);
       setProgreso(editingBook.progreso);
       if (editingBook.sagaId) {
@@ -251,6 +253,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
       setSubgeneros([]);
       setFechaPublicacion('');
       setPaginas('');
+      setPaginaActual('');
       setPuntuacion(null);
       setProgreso('❌ No Leído');
       setSagaMode('none');
@@ -570,6 +573,7 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
           subgeneros,
           fechaPublicacion: fechaPublicacion ? Number(fechaPublicacion) : null,
           paginas: paginas ? Number(paginas) : null,
+          paginaActual: paginaActual.trim() ? Number(paginaActual.trim()) : null,
           puntuacion,
           progreso,
           sagaId: finalSagaId,
@@ -900,6 +904,8 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   lecturaVirtual={lecturaVirtual}
                   setLecturaVirtual={setLecturaVirtual}
                   paginas={paginas}
+                  paginaActual={paginaActual}
+                  setPaginaActual={setPaginaActual}
                   progreso={progreso}
                   tiempoLectura={tiempoLectura}
                   sagas={sagas}

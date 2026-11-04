@@ -34,6 +34,7 @@ export interface DashboardViewProps {
   onOpenBookDetail: (bookId: string) => void;
   onLoadSampleBooks: () => void;
   onOpenImport: () => void;
+  onUpdateProgress?: (bookId: string, paginaActual: number, totalPaginas?: number) => Promise<void>;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -51,7 +52,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateToSettingsAccount,
   onOpenBookDetail,
   onLoadSampleBooks,
-  onOpenImport
+  onOpenImport,
+  onUpdateProgress
 }) => {
   return (
     <div className="space-y-6">
@@ -172,6 +174,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             readingBooks={books.filter((b) => b.progreso === '⏳ Leyendo')}
             onOpenDetail={onOpenBookDetail}
             onNavigateToShelf={() => onNavigate('shelf-reading')}
+            onUpdateProgress={onUpdateProgress}
           />
         </div>
 

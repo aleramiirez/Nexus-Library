@@ -94,6 +94,31 @@ const BookCardComponent: React.FC<BookCardProps> = ({
               {book.genero}
             </p>
           )}
+
+          {book.progreso === '⏳ Leyendo' &&
+            book.paginas &&
+            book.paginas > 0 &&
+            book.paginaActual &&
+            book.paginaActual > 0 && (
+              <div className="mt-2.5 pt-2 border-t border-amber-900/10 dark:border-[#283246]">
+                <div className="flex items-center justify-between text-[10px] text-amber-900/80 dark:text-amber-300/80 font-medium mb-1">
+                  <span>
+                    Pág. {book.paginaActual} / {book.paginas}
+                  </span>
+                  <span className="font-semibold">
+                    {Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-amber-950/15 dark:bg-amber-400/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 transition-all duration-300 shadow-[0_0_6px_rgba(245,158,11,0.4)]"
+                    style={{
+                      width: `${Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
         </div>
       </div>
     </article>

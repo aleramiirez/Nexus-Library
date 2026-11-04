@@ -66,3 +66,18 @@ export function calculateReadingTime(
 
   return emptyFallback;
 }
+
+/**
+ * Calcula el tiempo estimado que le queda al lector para terminar el libro
+ * en base a las páginas restantes (1.8 min por página promedio).
+ */
+export function calculateRemainingReadingTime(remainingPages: number): string {
+  if (remainingPages <= 0) return 'Completado';
+  const totalMinutes = Math.round(remainingPages * 1.8);
+  const hours = Math.round(totalMinutes / 60);
+
+  if (hours < 1) {
+    return `~${Math.max(1, totalMinutes)} min restantes`;
+  }
+  return `~${hours} h restantes`;
+}

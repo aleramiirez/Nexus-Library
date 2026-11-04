@@ -8,7 +8,8 @@ import {
   Edit2,
   X,
   ChevronDown,
-  Search
+  Search,
+  Bookmark
 } from 'lucide-react';
 import { Book, Saga, StarRating } from '../../types/models';
 import { ReadingStatus, STAR_OPTIONS } from '../../constants/catalogs';
@@ -26,6 +27,8 @@ interface BookFormReadingTabProps {
   lecturaVirtual: string;
   setLecturaVirtual: (val: string) => void;
   paginas: string;
+  paginaActual: string;
+  setPaginaActual: (val: string) => void;
   progreso: ReadingStatus;
   tiempoLectura: string;
   sagas: Saga[];
@@ -57,6 +60,8 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
   lecturaVirtual,
   setLecturaVirtual,
   paginas,
+  paginaActual,
+  setPaginaActual,
   progreso,
   tiempoLectura,
   sagas,
@@ -138,6 +143,40 @@ export const BookFormReadingTab: React.FC<BookFormReadingTabProps> = ({
           />
         </div>
       </div>
+
+      {/* Progreso de lectura si está Leyendo */}
+      {progreso === '⏳ Leyendo' && (
+        <div className="rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#f7efe0]/90 dark:bg-[#121824]/95 p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="add-book-pagina-actual" className="font-serif font-bold text-xs text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+              <Bookmark className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              Página actual leída
+            </label>
+            {Number(paginas) > 0 && Number(paginaActual) > 0 && (
+              <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                {Math.min(100, Math.round((Number(paginaActual) / Number(paginas)) * 100))}% completado
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="add-book-pagina-actual"
+              type="number"
+              min={0}
+              max={Number(paginas) > 0 ? Number(paginas) : 99999}
+              value={paginaActual}
+              onChange={(e) => setPaginaActual(e.target.value)}
+              placeholder="Ej: 145"
+              className={inputCls}
+            />
+            {Number(paginas) > 0 && (
+              <span className="text-xs text-stone-500 dark:text-slate-400 whitespace-nowrap">
+                de {paginas} páginas
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Formato y Tiempo de lectura calculado */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -33,6 +33,20 @@ export class NexusLibraryDB extends Dexie {
             if (book.tiempoLectura === undefined) book.tiempoLectura = '';
           });
       });
+
+    this.version(3)
+      .stores({
+        books: 'id, nombre, autor, genero, progreso, sagaId, isbn, puntuacion, createdAt',
+        sagas: 'id, &nombre, createdAt'
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('books')
+          .toCollection()
+          .modify((book: Partial<Book>) => {
+            if (book.paginaActual === undefined) book.paginaActual = null;
+          });
+      });
   }
 }
 
@@ -184,6 +198,12 @@ export function mapRowToBook(row: SupabaseBookRow): Book {
     subgeneros: Array.isArray(d.subgeneros) ? d.subgeneros : [],
     fechaPublicacion: d.fechaPublicacion ?? null,
     paginas: d.paginas ?? null,
+    paginaActual:
+      typeof d.paginaActual === 'number'
+        ? d.paginaActual
+        : typeof (row as any).pagina_actual === 'number'
+        ? (row as any).pagina_actual
+        : null,
     puntuacion: d.puntuacion ?? null,
     progreso: d.progreso ?? '❌ No Leído',
     sagaId: d.sagaId ?? null,
@@ -741,6 +761,85 @@ export async function updateBookQuickStatus(
   }
 
   await db.books.put(updatedBook);
+}
+
+export async function updateBookReadingProgress(
+  bookId: string,
+  paginaActual: number,
+  totalPaginas?: number
+): Promise<{ book: Book; justFinished: boolean; pagesDelta: number }> {
+  const currentBook = await db.books.get(bookId);
+  if (!currentBook) {
+    throw new Error(`Obra con ID ${bookId} no encontrada en la biblioteca.`);
+  }
+
+  const previousPage =
+    typeof currentBook.paginaActual === 'number' && !isNaN(currentBook.paginaActual)
+      ? currentBook.paginaActual
+      : 0;
+  let newPage = Math.max(0, Math.round(paginaActual));
+
+  if (typeof totalPaginas === 'number' && !isNaN(totalPaginas) && totalPaginas > 0) {
+    currentBook.paginas = Math.round(totalPaginas);
+  }
+
+  const pagesDelta = Math.max(0, newPage - previousPage);
+  let justFinished = false;
+  const today = getTodayLocalDateString();
+
+  // Si no estaba en '⏳ Leyendo' ni '✅ Leído' y avanza páginas (> 0), pasar a '⏳ Leyendo'
+  if (
+    currentBook.progreso !== '⏳ Leyendo' &&
+    currentBook.progreso !== '✅ Leído' &&
+    newPage > 0
+  ) {
+    currentBook.progreso = '⏳ Leyendo';
+    if (!currentBook.fechaInicio) {
+      currentBook.fechaInicio = today;
+    }
+  }
+
+  // Si alcanza o sobrepasa el total de páginas (siempre que el total exista y sea > 0)
+  if (
+    currentBook.paginas &&
+    currentBook.paginas > 0 &&
+    newPage >= currentBook.paginas
+  ) {
+    newPage = currentBook.paginas;
+    const wasNotFinished = currentBook.progreso !== '✅ Leído';
+    currentBook.progreso = '✅ Leído';
+    if (!currentBook.fechaFin) {
+      currentBook.fechaFin = today;
+    }
+    if (wasNotFinished) {
+      justFinished = true;
+    }
+  }
+
+  currentBook.paginaActual = newPage;
+  currentBook.tiempoLectura = calculateReadingTimeLabel(
+    currentBook.fechaInicio,
+    currentBook.fechaFin,
+    currentBook.tiempoLectura
+  );
+  currentBook.updatedAt = new Date().toISOString();
+
+  const user = await getActiveUser();
+  if (user) {
+    try {
+      await upsertBookToSupabase(user.id, currentBook);
+    } catch (err) {
+      console.warn('Advertencia al sincronizar progreso con Supabase:', err);
+    }
+  }
+
+  await db.books.put(currentBook);
+
+  return {
+    book: currentBook,
+    justFinished,
+    pagesDelta
+  };
 }
 
 export interface BookStatusSnapshot {
