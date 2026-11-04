@@ -210,17 +210,18 @@ class ReadingStreakService {
 
   /**
    * Genera el mapa de calor completo combinando los logs locales y el historial de libros.
+   * Si year está definido, se filtran los resultados para ese año (útil para el mapa anual de 365 días).
+   * Si year es undefined, incluye todo el histórico (útil para rachas continuas y calendarios recientes).
    */
   public buildReadingHeatmapData(books: Book[], year?: number): Map<string, HeatmapDayData> {
     const state = this.loadState();
-    const targetYear = year || new Date().getFullYear();
-    const prefix = `${targetYear}-`;
+    const prefix = year ? `${year}-` : '';
 
     const map = new Map<string, HeatmapDayData>();
 
     // 1. Añadir registros directos del log local
     Object.values(state.logs).forEach((log) => {
-      if (log.date.startsWith(prefix) && log.pagesRead > 0) {
+      if ((!prefix || log.date.startsWith(prefix)) && log.pagesRead > 0) {
         const d = new Date(log.date + 'T00:00:00');
         map.set(log.date, {
           date: log.date,
@@ -233,8 +234,11 @@ class ReadingStreakService {
       }
     });
 
-    // 2. Fusión retroactiva con la biblioteca (para que no aparezca vacío en libros completados)
+    const today = getTodayLocalDateString();
+
+    // 2. Fusión retroactiva con la biblioteca (libros completados, en curso y pausados)
     books.forEach((book) => {
+      // 2.1 Libros completados ('✅ Leído')
       if (book.progreso === '✅ Leído') {
         const fin = book.fechaFin ? book.fechaFin.trim() : '';
         const ini = book.fechaInicio ? book.fechaInicio.trim() : '';
@@ -252,7 +256,7 @@ class ReadingStreakService {
 
             while (cursor <= dFin) {
               const iso = cursor.toISOString().slice(0, 10);
-              if (iso.startsWith(prefix)) {
+              if (!prefix || iso.startsWith(prefix)) {
                 const existing = map.get(iso);
                 const currentP = existing ? existing.pagesRead : 0;
                 const newP = currentP > 0 ? currentP : pagesPerDay;
@@ -269,26 +273,20 @@ class ReadingStreakService {
               }
               cursor.setDate(cursor.getDate() + 1);
             }
-          } else if (fin.startsWith(prefix)) {
+          } else if (!prefix || fin.startsWith(prefix)) {
             // Rango demasiado largo (> 120 días), asignar la finalización al día de fin
             this.assignDayRetroactive(map, fin, pages, book.id);
           }
-        } else if (fin && fin.startsWith(prefix)) {
+        } else if (fin && (!prefix || fin.startsWith(prefix))) {
           this.assignDayRetroactive(map, fin, pages, book.id);
-        } else if (ini && ini.startsWith(prefix)) {
+        } else if (ini && (!prefix || ini.startsWith(prefix))) {
           this.assignDayRetroactive(map, ini, Math.min(30, pages), book.id);
         }
       }
 
-      // Fusión retroactiva para libros en curso ('⏳ Leyendo') con páginas leídas y fecha de inicio
-      if (
-        book.progreso === '⏳ Leyendo' &&
-        typeof book.paginaActual === 'number' &&
-        book.paginaActual > 0 &&
-        book.fechaInicio
-      ) {
+      // 2.2 Libros en curso ('⏳ Leyendo') con fecha de inicio
+      if (book.progreso === '⏳ Leyendo' && book.fechaInicio) {
         const ini = book.fechaInicio.trim();
-        const today = getTodayLocalDateString();
         if (ini && ini <= today) {
           const dIni = new Date(ini + 'T00:00:00');
           const dHoy = new Date(today + 'T00:00:00');
@@ -296,12 +294,19 @@ class ReadingStreakService {
 
           // Rango sensato (hasta 90 días atrás para lecturas activas en curso)
           if (diffDays <= 90) {
-            const pagesPerDay = Math.max(1, Math.round(book.paginaActual / diffDays));
+            const pagesTotal =
+              typeof book.paginaActual === 'number' && book.paginaActual > 0
+                ? book.paginaActual
+                : book.paginas && book.paginas > 0
+                  ? Math.min(book.paginas, diffDays * 25)
+                  : diffDays * 25;
+
+            const pagesPerDay = Math.max(1, Math.round(pagesTotal / diffDays));
             const cursor = new Date(dIni);
 
             while (cursor <= dHoy) {
               const iso = cursor.toISOString().slice(0, 10);
-              if (iso.startsWith(prefix)) {
+              if (!prefix || iso.startsWith(prefix)) {
                 const existing = map.get(iso);
                 const currentP = existing ? existing.pagesRead : 0;
                 // Si ya había páginas leídas (por ejemplo registradas hoy), tomar el máximo
@@ -319,6 +324,82 @@ class ReadingStreakService {
               }
               cursor.setDate(cursor.getDate() + 1);
             }
+          }
+        }
+      }
+
+      // 2.3 Libros pausados ('⏸️ Pausado') con lectura registrada antes de detenerse
+      if (book.progreso === '⏸️ Pausado') {
+        const ini = (book.fechaInicio ? book.fechaInicio.trim() : '') || (book.fechaFin ? book.fechaFin.trim() : '');
+        if (ini && ini <= today) {
+          // Determinar la fecha en que se detuvo la lectura antes de pausar:
+          let fin = book.fechaFin ? book.fechaFin.trim() : '';
+
+          if (!fin || fin < ini) {
+            // Si el usuario no especificó fechaFin, buscar si hay una siguiente lectura que empezó después
+            const nextBookStarts = books
+              .filter((b) => b.id !== book.id && b.fechaInicio && b.fechaInicio.trim() > ini)
+              .map((b) => b.fechaInicio.trim())
+              .sort();
+
+            if (nextBookStarts.length > 0) {
+              // El día anterior al comienzo del siguiente libro (ej. pausó el 29 y el 30 empezó Juego de tronos)
+              const nextStart = nextBookStarts[0];
+              const dNext = new Date(nextStart + 'T00:00:00');
+              dNext.setDate(dNext.getDate() - 1);
+              const dayBeforeNext = dNext.toISOString().slice(0, 10);
+              fin = dayBeforeNext >= ini ? dayBeforeNext : ini;
+            } else if (book.updatedAt) {
+              const updatedIso = book.updatedAt.slice(0, 10);
+              if (updatedIso >= ini && updatedIso <= today) {
+                fin = updatedIso;
+              }
+            }
+          }
+
+          if (!fin || fin < ini) {
+            fin = ini;
+          }
+          if (fin > today) {
+            fin = today;
+          }
+
+          const dIni = new Date(ini + 'T00:00:00');
+          const dFin = new Date(fin + 'T00:00:00');
+          const diffDays = Math.max(1, Math.round((dFin.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+          if (diffDays <= 90) {
+            const pagesTotal =
+              typeof book.paginaActual === 'number' && book.paginaActual > 0
+                ? book.paginaActual
+                : book.paginas && book.paginas > 0
+                  ? Math.min(book.paginas, diffDays * 25)
+                  : diffDays * 25;
+
+            const pagesPerDay = Math.max(1, Math.round(pagesTotal / diffDays));
+            const cursor = new Date(dIni);
+
+            while (cursor <= dFin) {
+              const iso = cursor.toISOString().slice(0, 10);
+              if (!prefix || iso.startsWith(prefix)) {
+                const existing = map.get(iso);
+                const currentP = existing ? existing.pagesRead : 0;
+                const newP = Math.max(currentP, pagesPerDay);
+                const booksList = existing ? Array.from(new Set([...existing.bookIds, book.id])) : [book.id];
+
+                map.set(iso, {
+                  date: iso,
+                  pagesRead: newP,
+                  level: this.calculateLevel(newP),
+                  bookIds: booksList,
+                  source: existing && existing.source === 'log' ? 'log' : 'retroactive',
+                  dayOfWeek: cursor.getDay()
+                });
+              }
+              cursor.setDate(cursor.getDate() + 1);
+            }
+          } else if (!prefix || fin.startsWith(prefix)) {
+            this.assignDayRetroactive(map, fin, 25, book.id);
           }
         }
       }
@@ -362,7 +443,7 @@ class ReadingStreakService {
    */
   public getReadingStreakStats(books: Book[]): ReadingStreakStats {
     const currentYear = new Date().getFullYear();
-    const heatmap = this.buildReadingHeatmapData(books, currentYear);
+    const heatmap = this.buildReadingHeatmapData(books);
     const today = getTodayLocalDateString();
 
     const todayEntry = heatmap.get(today);
@@ -372,7 +453,9 @@ class ReadingStreakService {
     // Calcular días activos este año
     let activeDaysThisYear = 0;
     heatmap.forEach((entry) => {
-      if (entry.pagesRead > 0) activeDaysThisYear++;
+      if (entry.pagesRead > 0 && entry.date.startsWith(`${currentYear}-`)) {
+        activeDaysThisYear++;
+      }
     });
 
     // Calcular racha actual
@@ -454,8 +537,7 @@ class ReadingStreakService {
    * Obtiene los últimos N días para el mini-widget de racha (ej: 28 días).
    */
   public getRecentDaysData(books: Book[], daysCount = 28): HeatmapDayData[] {
-    const currentYear = new Date().getFullYear();
-    const heatmap = this.buildReadingHeatmapData(books, currentYear);
+    const heatmap = this.buildReadingHeatmapData(books);
     const result: HeatmapDayData[] = [];
 
     const now = new Date();
@@ -486,8 +568,7 @@ class ReadingStreakService {
    * Obtiene las últimas N semanas completas (Lunes a Domingo) para un calendario real y ordenado.
    */
   public getRecentCalendarWeeks(books: Book[], weeksCount = 4): CalendarDayView[][] {
-    const currentYear = new Date().getFullYear();
-    const heatmap = this.buildReadingHeatmapData(books, currentYear);
+    const heatmap = this.buildReadingHeatmapData(books);
     const today = getTodayLocalDateString();
 
     const now = new Date();
