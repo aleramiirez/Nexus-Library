@@ -869,11 +869,10 @@ export async function updateBookReadingProgress(
   await db.books.put(currentBook);
 
   try {
-    readingStreakService.recordBookReadingProgress(
+    readingStreakService.recordReadingProgress(
       bookId,
-      newPage,
       previousPage,
-      pagesDelta,
+      newPage,
       today
     );
   } catch (err) {

@@ -27,7 +27,16 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
   onNavigateToStats,
   onShowToast
 }) => {
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
+
+  // Estado para el editor manual de día
+  const [editingDay, setEditingDay] = useState<{
+    date: string;
+    label: string;
+    pages: number;
+    hasEntry: boolean;
+  } | null>(null);
+  const [editPagesInput, setEditPagesInput] = useState('');
 
   // Suscribirse a cambios en la racha
   useEffect(() => {
@@ -38,12 +47,12 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
 
   const stats: ReadingStreakStats = useMemo(() => {
     return readingStreakService.getReadingStreakStats(books);
-  }, [books]);
+  }, [books, tick]);
 
   // 4 semanas completas estructuradas de Lunes a Domingo (28 días)
   const flatDays: CalendarDayView[] = useMemo(() => {
     return readingStreakService.getRecentCalendarWeeks(books, 4).flat();
-  }, [books]);
+  }, [books, tick]);
 
   // Determinar qué tramo del calendario pertenece a la racha activa actual para iluminar el cordón dorado
   const { streakStartIdx, streakEndIdx } = useMemo(() => {
@@ -74,6 +83,54 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
     onShowToast?.('🔥 ¡Lectura de hoy registrada! La llama sigue encendida.', {
       type: 'success'
     });
+  };
+
+  const handleOpenDayEditor = (day: CalendarDayView) => {
+    if (day.isFuture) return;
+    const monthIdx = Math.max(0, Math.min(11, parseInt(day.date.split('-')[1] || '1', 10) - 1));
+    const mFull = MONTH_FULL_LOWER[monthIdx];
+    const wShort = WEEKDAY_SHORT_LOWER[day.weekdayIndex] || '';
+    const label = `${wShort} ${day.dayNumber} de ${mFull}`;
+
+    setEditingDay({
+      date: day.date,
+      label,
+      pages: day.pagesRead,
+      hasEntry: day.pagesRead > 0 || day.level > 0
+    });
+    setEditPagesInput(day.pagesRead > 0 ? String(day.pagesRead) : '');
+  };
+
+  const handleSaveDayPages = () => {
+    if (!editingDay) return;
+    const parsed = parseInt(editPagesInput.trim(), 10);
+    const pagesToSave = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    readingStreakService.setManualReadingLogForDate(editingDay.date, pagesToSave, pagesToSave > 0);
+    soundService.playWaxSeal(true);
+    onShowToast?.(`✓ Lectura del ${editingDay.label} guardada (${pagesToSave} págs).`, {
+      type: 'success'
+    });
+    setEditingDay(null);
+  };
+
+  const handleMarkDayReadNoPages = () => {
+    if (!editingDay) return;
+    readingStreakService.setManualReadingLogForDate(editingDay.date, 0, true);
+    soundService.playWaxSeal(true);
+    onShowToast?.(`✓ Día marcado como leído (${editingDay.label}).`, {
+      type: 'success'
+    });
+    setEditingDay(null);
+  };
+
+  const handleDeleteDayEntry = () => {
+    if (!editingDay) return;
+    readingStreakService.setManualReadingLogForDate(editingDay.date, 0, false);
+    soundService.playPageTurn(true);
+    onShowToast?.(`Registro del ${editingDay.label} eliminado.`, {
+      type: 'info'
+    });
+    setEditingDay(null);
   };
 
   const progressPercentage = useMemo(() => {
@@ -256,14 +313,23 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
                 {day.isToday && <span className="nx-streak-tg">HOY</span>}
 
                 <div
-                  className={`nx-streak-s ${lvClass}`}
+                  className={`nx-streak-s ${lvClass} ${!day.isFuture ? 'cursor-pointer' : ''}`}
                   style={{ '--i': i } as React.CSSProperties}
-                  tabIndex={0}
+                  tabIndex={!day.isFuture ? 0 : undefined}
+                  role={!day.isFuture ? 'button' : undefined}
                   title={tooltip || undefined}
                   aria-label={ariaLabel}
-                  onClick={
-                    day.isToday && !stats.readToday ? handleManualCheckIn : undefined
-                  }
+                  onClick={() => {
+                    if (!day.isFuture) {
+                      handleOpenDayEditor(day);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !day.isFuture) {
+                      e.preventDefault();
+                      handleOpenDayEditor(day);
+                    }
+                  }}
                 >
                   {day.dayNumber}
                 </div>
@@ -285,6 +351,82 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
           <span className="nx-streak-s l4" />
           Más
         </div>
+
+        {/* Editor manual de lectura al pulsar en un día */}
+        {editingDay && (
+          <div
+            className="nx-streak-editor-box mt-3 p-3 sm:p-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#FAF3E5] dark:bg-[#151B27] shadow-md animate-in fade-in duration-200"
+            role="region"
+            aria-label="Editor manual de lectura"
+          >
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <div className="text-xs font-serif font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5 flex-wrap">
+                <span>📅</span>
+                <span>{editingDay.label}</span>
+                <span className="text-stone-400">·</span>
+                <span className="text-amber-800 dark:text-amber-300 font-sans font-semibold text-[11px]">
+                  {editingDay.pages > 0
+                    ? `${editingDay.pages} ${editingDay.pages === 1 ? 'página registrada' : 'páginas registradas'}`
+                    : editingDay.hasEntry
+                      ? 'Día marcado como leído'
+                      : 'Sin registro'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingDay(null)}
+                className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 text-xs px-2 py-0.5 rounded cursor-pointer"
+                aria-label="Cerrar editor"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1 bg-white dark:bg-[#0D1017] border border-[#D8C4A0] dark:border-[#283246] rounded-lg px-2.5 py-1">
+                <input
+                  id="manual-day-pages-input"
+                  type="number"
+                  min="0"
+                  max="9999"
+                  value={editPagesInput}
+                  onChange={(e) => setEditPagesInput(e.target.value)}
+                  placeholder="0"
+                  className="w-16 text-right font-serif font-bold text-sm bg-transparent text-stone-900 dark:text-stone-100 outline-none"
+                  autoFocus
+                  aria-label="Páginas leídas ese día"
+                />
+                <span className="text-xs text-stone-500 dark:text-stone-400 select-none">págs</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveDayPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-xs transition cursor-pointer"
+              >
+                Guardar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleMarkDayReadNoPages}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-amber-400/20 bg-white/70 dark:bg-black/30 hover:bg-amber-500/10 text-stone-800 dark:text-stone-200 transition cursor-pointer"
+              >
+                Marcar día leído (sin págs)
+              </button>
+
+              {editingDay.hasEntry && (
+                <button
+                  type="button"
+                  onClick={handleDeleteDayEntry}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 transition ml-auto cursor-pointer"
+                >
+                  Borrar día
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pie con línea lateral dorada y frase en cursiva Cormorant */}

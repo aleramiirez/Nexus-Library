@@ -48,8 +48,17 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
   const [selectedYear, setSelectedYear] = useState<number>(initialYear || currentYear);
   const [selectedDay, setSelectedDay] = useState<DayCellData | null>(null);
   const [hoveredDay, setHoveredDay] = useState<DayCellData | null>(null);
+  const [editPagesInput, setEditPagesInput] = useState('');
+  const [tick, setTick] = useState(0);
 
   const scRef = useRef<HTMLDivElement>(null);
+
+  // Suscribirse a cambios en la racha para actualizar el mapa en vivo
+  useEffect(() => {
+    return readingStreakService.subscribe(() => {
+      setTick((t) => t + 1);
+    });
+  }, []);
 
   // Años disponibles (año actual y hasta 3 anteriores)
   const availableYears = useMemo(() => {
@@ -63,7 +72,31 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
   // Mapa de calor para el año seleccionado
   const heatmapMap = useMemo(() => {
     return readingStreakService.buildReadingHeatmapData(books, selectedYear);
-  }, [books, selectedYear]);
+  }, [books, selectedYear, tick]);
+
+  const handleSelectDay = (day: DayCellData) => {
+    if (day.isFuture) return;
+    setSelectedDay(day);
+    setEditPagesInput(day.pages > 0 ? String(day.pages) : '');
+  };
+
+  const handleSaveSelectedDayPages = () => {
+    if (!selectedDay) return;
+    const p = parseInt(editPagesInput.trim(), 10);
+    const pagesToSave = isNaN(p) ? 0 : Math.max(0, p);
+    readingStreakService.setManualReadingLogForDate(selectedDay.iso, pagesToSave, pagesToSave > 0);
+  };
+
+  const handleMarkSelectedDayReadNoPages = () => {
+    if (!selectedDay) return;
+    readingStreakService.setManualReadingLogForDate(selectedDay.iso, 0, true);
+  };
+
+  const handleDeleteSelectedDayEntry = () => {
+    if (!selectedDay) return;
+    readingStreakService.setManualReadingLogForDate(selectedDay.iso, 0, false);
+    setEditPagesInput('');
+  };
 
   // Helpers de fechas locales
   const isLeap = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0);
@@ -411,29 +444,23 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
                     <div
                       key={day.iso}
                       className={cellClasses}
-                      tabIndex={day.pages > 0 && !day.isFuture ? 0 : undefined}
-                      role={day.pages > 0 && !day.isFuture ? 'button' : undefined}
+                      tabIndex={!day.isFuture ? 0 : undefined}
+                      role={!day.isFuture ? 'button' : undefined}
                       aria-label={ariaLabel}
                       onMouseEnter={() => setHoveredDay(day)}
                       onMouseLeave={() => setHoveredDay(null)}
                       onFocus={() => setHoveredDay(day)}
                       onBlur={() => setHoveredDay(null)}
-                      onClick={() => {
-                        if (day.pages > 0 && !day.isFuture) {
-                          setSelectedDay(day);
-                        }
-                      }}
+                      onClick={() => handleSelectDay(day)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if ((e.key === 'Enter' || e.key === ' ') && !day.isFuture) {
                           e.preventDefault();
-                          if (day.pages > 0 && !day.isFuture) {
-                            setSelectedDay(day);
-                          }
+                          handleSelectDay(day);
                         }
                       }}
                     >
                       <b
-                        className={`nx-heatmap-s ${day.levelClass}`}
+                        className={`nx-heatmap-s ${day.levelClass} ${!day.isFuture ? 'cursor-pointer' : ''}`}
                         style={{ '--col': col } as React.CSSProperties}
                       />
                     </div>
@@ -481,6 +508,82 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
             Más
           </div>
         </div>
+
+        {/* Editor manual de lectura al pulsar en un día del mapa de calor */}
+        {selectedDay && !selectedDay.isFuture && (
+          <div
+            className="nx-heatmap-editor-box mt-3 p-3 sm:p-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#FAF3E5] dark:bg-[#151B27] shadow-md animate-in fade-in duration-200"
+            role="region"
+            aria-label="Editor manual de lectura"
+          >
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <div className="text-xs font-serif font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5 flex-wrap">
+                <span>📅</span>
+                <span>
+                  {selectedDay.weekdayFull} {selectedDay.dayNumber} de {selectedDay.monthFull} {selectedYear}
+                </span>
+                <span className="text-stone-400">·</span>
+                <span className="text-amber-800 dark:text-amber-300 font-sans font-semibold text-[11px]">
+                  {selectedDay.pages > 0
+                    ? `${selectedDay.pages} ${selectedDay.pages === 1 ? 'página registrada' : 'páginas registradas'}`
+                    : 'Sin registro'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDay(null)}
+                className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 text-xs px-2 py-0.5 rounded cursor-pointer"
+                aria-label="Cerrar editor"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1 bg-white dark:bg-[#0D1017] border border-[#D8C4A0] dark:border-[#283246] rounded-lg px-2.5 py-1">
+                <input
+                  id="manual-heatmap-pages-input"
+                  type="number"
+                  min="0"
+                  max="9999"
+                  value={editPagesInput}
+                  onChange={(e) => setEditPagesInput(e.target.value)}
+                  placeholder="0"
+                  className="w-16 text-right font-serif font-bold text-sm bg-transparent text-stone-900 dark:text-stone-100 outline-none"
+                  autoFocus
+                  aria-label="Páginas leídas en esta fecha"
+                />
+                <span className="text-xs text-stone-500 dark:text-stone-400 select-none">págs</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveSelectedDayPages}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-xs transition cursor-pointer"
+              >
+                Guardar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleMarkSelectedDayReadNoPages}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-amber-400/20 bg-white/70 dark:bg-black/30 hover:bg-amber-500/10 text-stone-800 dark:text-stone-200 transition cursor-pointer"
+              >
+                Marcar día leído (sin págs)
+              </button>
+
+              {selectedDay.pages > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteSelectedDayEntry}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 transition ml-auto cursor-pointer"
+                >
+                  Borrar día
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

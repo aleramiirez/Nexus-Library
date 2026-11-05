@@ -14,8 +14,10 @@ export function getTodayLocalDateString(): string {
 
 export interface DailyReadingLog {
   date: string; // 'YYYY-MM-DD'
-  pagesRead: number;
+  pagesRead: number; // Total del día (suma de pagesByBook + manualPages)
   bookIds: string[];
+  pagesByBook?: Record<string, number>; // Páginas reales avanzadas en cada libro ese día
+  manualPages?: number; // Páginas añadidas manualmente sin libro o por ajuste directo
   manualCheckIn?: boolean;
 }
 
@@ -166,10 +168,20 @@ class ReadingStreakService {
       } else {
         const current = mergedLogs[date];
         const combinedBooks = Array.from(new Set([...current.bookIds, ...log.bookIds]));
+        const mergedPagesByBook: Record<string, number> = {
+          ...(current.pagesByBook || {}),
+          ...(log.pagesByBook || {})
+        };
+        const manualPages = Math.max(current.manualPages || 0, log.manualPages || 0);
+        const bookPagesSum = Object.values(mergedPagesByBook).reduce((acc, v) => acc + (v || 0), 0);
+        const totalPages = Math.max(current.pagesRead, log.pagesRead, bookPagesSum + manualPages);
+
         mergedLogs[date] = {
           date,
-          pagesRead: Math.max(current.pagesRead, log.pagesRead),
+          pagesRead: totalPages,
           bookIds: combinedBooks,
+          pagesByBook: mergedPagesByBook,
+          manualPages,
           manualCheckIn: current.manualCheckIn || log.manualCheckIn
         };
       }
@@ -238,10 +250,20 @@ class ReadingStreakService {
           } else {
             const current = mergedLogs[date];
             const combinedBookIds = Array.from(new Set([...current.bookIds, ...log.bookIds]));
+            const mergedPagesByBook: Record<string, number> = {
+              ...(current.pagesByBook || {}),
+              ...(log.pagesByBook || {})
+            };
+            const manualPages = Math.max(current.manualPages || 0, log.manualPages || 0);
+            const bookPagesSum = Object.values(mergedPagesByBook).reduce((acc, v) => acc + (v || 0), 0);
+            const totalPages = Math.max(current.pagesRead, log.pagesRead, bookPagesSum + manualPages);
+
             mergedLogs[date] = {
               date,
-              pagesRead: Math.max(current.pagesRead, log.pagesRead),
+              pagesRead: totalPages,
               bookIds: combinedBookIds,
+              pagesByBook: mergedPagesByBook,
+              manualPages,
               manualCheckIn: current.manualCheckIn || log.manualCheckIn
             };
           }
@@ -277,16 +299,14 @@ class ReadingStreakService {
   }
 
   /**
-   * Registra el avance de lectura de un libro.
-   * Protección contra errores de tecleo: guarda la página inicial del día para ese libro.
+   * Registra el avance de lectura diario de un libro según la fórmula exacta día a día.
    */
-  public recordBookReadingProgress(
+  public recordReadingProgress(
     bookId: string,
-    newPage: number,
     previousPage: number,
-    pagesDelta?: number,
+    newPage: number,
     dateStr?: string
-  ): void {
+  ): DailyReadingLog | null {
     const state = this.loadState();
     const today = dateStr || getTodayLocalDateString();
 
@@ -294,294 +314,164 @@ class ReadingStreakService {
       state.bookStartPageByDate[today] = {};
     }
 
-    // Si es la primera interacción de hoy con este libro, fijamos la página de inicio
+    // 1. Si startPages[today][bookId] aún no existe, fijarlo con previousPage
     if (state.bookStartPageByDate[today][bookId] === undefined) {
-      state.bookStartPageByDate[today][bookId] = previousPage;
+      state.bookStartPageByDate[today][bookId] = Math.max(0, previousPage || 0);
     }
 
-    const startPage = state.bookStartPageByDate[today][bookId];
-    // Páginas netas leídas hoy en este libro
-    const netPagesForBookToday = Math.max(0, newPage - startPage);
+    const startPageForToday = state.bookStartPageByDate[today][bookId];
+    const safeNew = Math.max(0, newPage || 0);
 
-    // Obtener o crear el log del día
-    const currentLog: DailyReadingLog = state.logs[today] || {
+    // 2. Páginas netas leídas hoy en este libro
+    const readInBookToday = Math.max(0, safeNew - startPageForToday);
+
+    // 3. Guardar en log del día
+    const log: DailyReadingLog = state.logs[today] || {
       date: today,
       pagesRead: 0,
-      bookIds: []
+      bookIds: [],
+      pagesByBook: {},
+      manualPages: 0
     };
 
-    if (!currentLog.bookIds.includes(bookId)) {
-      currentLog.bookIds.push(bookId);
+    if (!log.pagesByBook) {
+      log.pagesByBook = {};
     }
+    log.pagesByBook[bookId] = readInBookToday;
 
-    // Si se pasa delta manual o calculamos con netPages
-    if (typeof pagesDelta === 'number' && pagesDelta > 0) {
-      currentLog.pagesRead = Math.max(currentLog.pagesRead, netPagesForBookToday, pagesDelta);
+    // Actualizar lista de bookIds activos
+    const activeBookIds = Object.keys(log.pagesByBook).filter(
+      (bId) => (log.pagesByBook?.[bId] || 0) > 0
+    );
+    log.bookIds = activeBookIds;
+
+    // 4. Recalcular total del día sumando todos los pagesByBook + manualPages
+    const bookPagesSum = Object.values(log.pagesByBook).reduce((acc, v) => acc + (v || 0), 0);
+    log.pagesRead = bookPagesSum + (log.manualPages || 0);
+
+    // 5. Si pagesRead === 0 y no hubo check-in manual, eliminar entrada
+    if (log.pagesRead === 0 && !log.manualCheckIn) {
+      delete state.logs[today];
+      this.saveState(state);
+      return null;
     } else {
-      currentLog.pagesRead = Math.max(currentLog.pagesRead, netPagesForBookToday);
+      state.logs[today] = log;
+      this.saveState(state);
+      return log;
+    }
+  }
+
+  /**
+   * Alias de compatibilidad con código existente
+   */
+  public recordBookReadingProgress(
+    bookId: string,
+    newPage: number,
+    previousPage: number,
+    _pagesDelta?: number,
+    dateStr?: string
+  ): void {
+    this.recordReadingProgress(bookId, previousPage, newPage, dateStr);
+  }
+
+  /**
+   * Fija o corrige directamente el número total de páginas leídas en una fecha específica (YYYY-MM-DD),
+   * o lo elimina si totalPages === 0 y markAsRead === false.
+   */
+  public setManualReadingLogForDate(
+    dateStr: string,
+    totalPages: number,
+    markAsRead = true
+  ): DailyReadingLog | null {
+    const state = this.loadState();
+    const safePages = Math.max(0, totalPages || 0);
+
+    if (safePages === 0 && !markAsRead) {
+      delete state.logs[dateStr];
+      if (state.bookStartPageByDate[dateStr]) {
+        delete state.bookStartPageByDate[dateStr];
+      }
+      this.saveState(state);
+      this.syncToCloud().catch(() => {});
+      return null;
     }
 
-    state.logs[today] = currentLog;
+    const existingLog = state.logs[dateStr];
+    const log: DailyReadingLog = {
+      date: dateStr,
+      pagesRead: safePages,
+      bookIds: existingLog?.bookIds || [],
+      pagesByBook: existingLog?.pagesByBook || {},
+      manualPages: safePages,
+      manualCheckIn: markAsRead
+    };
+
+    state.logs[dateStr] = log;
     this.saveState(state);
+    this.syncToCloud().catch(() => {});
+    return log;
+  }
+
+  /**
+   * Reinicia/limpia el historial de racha por completo.
+   */
+  public clearAllReadingStreakLogs(): void {
+    const emptyState = getEmptyState();
+    this.saveState(emptyState);
+    this.syncToCloud().catch(() => {});
   }
 
   /**
    * Marca el día de hoy manualmente como leído ("🔥 He leído hoy").
    */
   public markReadTodayManually(pagesOptional?: number, bookId?: string): void {
-    const state = this.loadState();
     const today = getTodayLocalDateString();
-
-    const currentLog: DailyReadingLog = state.logs[today] || {
-      date: today,
-      pagesRead: 0,
-      bookIds: []
-    };
-
-    currentLog.manualCheckIn = true;
+    const state = this.loadState();
+    const current = state.logs[today];
     const addedPages = pagesOptional && pagesOptional > 0 ? pagesOptional : 15;
-    currentLog.pagesRead = Math.max(currentLog.pagesRead, addedPages);
-
-    if (bookId && !currentLog.bookIds.includes(bookId)) {
-      currentLog.bookIds.push(bookId);
+    const newTotal = Math.max(current?.pagesRead || 0, addedPages);
+    this.setManualReadingLogForDate(today, newTotal, true);
+    if (bookId) {
+      const updatedState = this.loadState();
+      const log = updatedState.logs[today];
+      if (log && !log.bookIds.includes(bookId)) {
+        log.bookIds.push(bookId);
+        this.saveState(updatedState);
+      }
     }
-
-    state.logs[today] = currentLog;
-    this.saveState(state);
   }
 
   /**
-   * Genera el mapa de calor completo combinando los logs locales y el historial de libros.
-   * Si year está definido, se filtran los resultados para ese año (útil para el mapa anual de 365 días).
-   * Si year es undefined, incluye todo el histórico (útil para rachas continuas y calendarios recientes).
+   * Genera el mapa de calor basado 100% en los registros reales de DailyReadingLog.
+   * La única fuente de la verdad son los eventos diarios registrados en nexus_reading_streak_logs_v1.
+   * Sin suposiciones ni promedios retroactivos entre fechaInicio y fechaFin.
    */
-  public buildReadingHeatmapData(books: Book[], year?: number): Map<string, HeatmapDayData> {
+  public buildReadingHeatmapData(_books?: Book[], year?: number): Map<string, HeatmapDayData> {
     const state = this.loadState();
     const prefix = year ? `${year}-` : '';
 
     const map = new Map<string, HeatmapDayData>();
 
-    // 1. Añadir registros directos del log local
+    // Única fuente de la verdad: registros reales de DailyReadingLog
     Object.values(state.logs).forEach((log) => {
-      if ((!prefix || log.date.startsWith(prefix)) && log.pagesRead > 0) {
+      if ((!prefix || log.date.startsWith(prefix)) && (log.pagesRead > 0 || log.manualCheckIn)) {
         const d = new Date(log.date + 'T00:00:00');
         map.set(log.date, {
           date: log.date,
-          pagesRead: log.pagesRead,
-          level: this.calculateLevel(log.pagesRead),
+          pagesRead: log.pagesRead || 0,
+          level: this.calculateLevel(log.pagesRead || 0, log.manualCheckIn),
           bookIds: log.bookIds || [],
           source: 'log',
-          dayOfWeek: d.getDay()
+          dayOfWeek: isNaN(d.getTime()) ? 0 : d.getDay()
         });
-      }
-    });
-
-    const today = getTodayLocalDateString();
-
-    // 2. Fusión retroactiva con la biblioteca (libros completados, en curso y pausados)
-    books.forEach((book) => {
-      // 2.1 Libros completados ('✅ Leído')
-      if (book.progreso === '✅ Leído') {
-        const fin = book.fechaFin ? book.fechaFin.trim() : '';
-        const ini = book.fechaInicio ? book.fechaInicio.trim() : '';
-        const pages = book.paginas || 50;
-
-        if (ini && fin && ini <= fin) {
-          const dIni = new Date(ini + 'T00:00:00');
-          const dFin = new Date(fin + 'T00:00:00');
-          const diffDays = Math.max(1, Math.round((dFin.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
-          if (diffDays <= 120) {
-            // Reparto proporcional entre los días leídos
-            const pagesPerDay = Math.max(1, Math.round(pages / diffDays));
-            const cursor = new Date(dIni);
-
-            while (cursor <= dFin) {
-              const iso = formatDateToLocalIso(cursor);
-              if (!prefix || iso.startsWith(prefix)) {
-                const existing = map.get(iso);
-                const currentP = existing ? existing.pagesRead : 0;
-                const newP = currentP > 0 ? currentP : pagesPerDay;
-                const booksList = existing ? Array.from(new Set([...existing.bookIds, book.id])) : [book.id];
-
-                map.set(iso, {
-                  date: iso,
-                  pagesRead: newP,
-                  level: this.calculateLevel(newP),
-                  bookIds: booksList,
-                  source: existing ? existing.source : 'retroactive',
-                  dayOfWeek: cursor.getDay()
-                });
-              }
-              cursor.setDate(cursor.getDate() + 1);
-            }
-          } else if (!prefix || fin.startsWith(prefix)) {
-            // Rango demasiado largo (> 120 días), asignar la finalización al día de fin
-            this.assignDayRetroactive(map, fin, pages, book.id);
-          }
-        } else if (fin && (!prefix || fin.startsWith(prefix))) {
-          this.assignDayRetroactive(map, fin, pages, book.id);
-        } else if (ini && (!prefix || ini.startsWith(prefix))) {
-          this.assignDayRetroactive(map, ini, Math.min(30, pages), book.id);
-        }
-      }
-
-      // 2.2 Libros en curso ('⏳ Leyendo') con fecha de inicio
-      if (book.progreso === '⏳ Leyendo' && book.fechaInicio) {
-        const ini = book.fechaInicio.trim();
-        if (ini && ini <= today) {
-          const dIni = new Date(ini + 'T00:00:00');
-          const dHoy = new Date(today + 'T00:00:00');
-          const diffDays = Math.max(1, Math.round((dHoy.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
-          // Rango sensato (hasta 90 días atrás para lecturas activas en curso)
-          if (diffDays <= 90) {
-            const pagesTotal =
-              typeof book.paginaActual === 'number' && book.paginaActual > 0
-                ? book.paginaActual
-                : book.paginas && book.paginas > 0
-                  ? Math.min(book.paginas, diffDays * 25)
-                  : diffDays * 25;
-
-            const pagesPerDay = Math.max(1, Math.round(pagesTotal / diffDays));
-            const cursor = new Date(dIni);
-
-            while (cursor <= dHoy) {
-              const iso = formatDateToLocalIso(cursor);
-              if (!prefix || iso.startsWith(prefix)) {
-                const existing = map.get(iso);
-                const currentP = existing ? existing.pagesRead : 0;
-                // Si ya había páginas leídas (por ejemplo registradas hoy), tomar el máximo
-                const newP = Math.max(currentP, pagesPerDay);
-                const booksList = existing ? Array.from(new Set([...existing.bookIds, book.id])) : [book.id];
-
-                map.set(iso, {
-                  date: iso,
-                  pagesRead: newP,
-                  level: this.calculateLevel(newP),
-                  bookIds: booksList,
-                  source: existing && existing.source === 'log' ? 'log' : 'retroactive',
-                  dayOfWeek: cursor.getDay()
-                });
-              }
-              cursor.setDate(cursor.getDate() + 1);
-            }
-          }
-        }
-      }
-
-      // 2.3 Libros pausados ('⏸️ Pausado') con lectura registrada antes de detenerse
-      if (book.progreso === '⏸️ Pausado') {
-        const ini = (book.fechaInicio ? book.fechaInicio.trim() : '') || (book.fechaFin ? book.fechaFin.trim() : '');
-        if (ini && ini <= today) {
-          // Determinar la fecha en que se detuvo la lectura antes de pausar:
-          let fin =
-            (book.fechaPausado ? book.fechaPausado.trim() : '') ||
-            (book.fechaFin ? book.fechaFin.trim() : '');
-
-          // Buscar lecturas que empezaron después de este libro
-          const nextBookStarts = books
-            .filter((b) => b.id !== book.id && b.fechaInicio && b.fechaInicio.trim() > ini)
-            .map((b) => b.fechaInicio.trim())
-            .sort();
-
-          if (nextBookStarts.length > 0) {
-            // El día anterior al comienzo del siguiente libro (ej. si Juego de Tronos empezó el 30,
-            // el libro pausado se leyó hasta el 29 inclusive como día de lectura)
-            const nextStart = nextBookStarts[0];
-            const dNext = new Date(nextStart + 'T00:00:00');
-            dNext.setDate(dNext.getDate() - 1);
-            const dayBeforeNext = formatDateToLocalIso(dNext);
-
-            // Si no había fecha fin, o si fin sobrepasa el inicio del nuevo libro,
-            // acotar fin a dayBeforeNext (ej. 29 de octubre)
-            if (!fin || fin < ini || fin > dayBeforeNext) {
-              fin = dayBeforeNext >= ini ? dayBeforeNext : ini;
-            }
-          } else if (!fin || fin < ini) {
-            if (book.updatedAt) {
-              const updatedIso = book.updatedAt.slice(0, 10);
-              if (updatedIso >= ini && updatedIso <= today) {
-                fin = updatedIso;
-              }
-            }
-          }
-
-          if (!fin || fin < ini) {
-            fin = ini;
-          }
-          if (fin > today) {
-            fin = today;
-          }
-
-          const dIni = new Date(ini + 'T00:00:00');
-          const dFin = new Date(fin + 'T00:00:00');
-          const diffDays = Math.max(1, Math.round((dFin.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
-          if (diffDays <= 90) {
-            const pagesTotal =
-              typeof book.paginaActual === 'number' && book.paginaActual > 0
-                ? book.paginaActual
-                : book.paginas && book.paginas > 0
-                  ? Math.min(book.paginas, diffDays * 25)
-                  : diffDays * 25;
-
-            const pagesPerDay = Math.max(1, Math.round(pagesTotal / diffDays));
-            const cursor = new Date(dIni);
-
-            while (cursor <= dFin) {
-              const iso = formatDateToLocalIso(cursor);
-              if (!prefix || iso.startsWith(prefix)) {
-                const existing = map.get(iso);
-                const currentP = existing ? existing.pagesRead : 0;
-                const newP = Math.max(currentP, pagesPerDay);
-                const booksList = existing ? Array.from(new Set([...existing.bookIds, book.id])) : [book.id];
-
-                map.set(iso, {
-                  date: iso,
-                  pagesRead: newP,
-                  level: this.calculateLevel(newP),
-                  bookIds: booksList,
-                  source: existing && existing.source === 'log' ? 'log' : 'retroactive',
-                  dayOfWeek: cursor.getDay()
-                });
-              }
-              cursor.setDate(cursor.getDate() + 1);
-            }
-          } else if (!prefix || fin.startsWith(prefix)) {
-            this.assignDayRetroactive(map, fin, 25, book.id);
-          }
-        }
       }
     });
 
     return map;
   }
 
-  private assignDayRetroactive(
-    map: Map<string, HeatmapDayData>,
-    dateStr: string,
-    pages: number,
-    bookId: string
-  ): void {
-    const existing = map.get(dateStr);
-    if (!existing || existing.pagesRead < 10) {
-      const d = new Date(dateStr + 'T00:00:00');
-      const pagesToSet = Math.max(15, Math.min(pages, 60));
-      const bList = existing ? Array.from(new Set([...existing.bookIds, bookId])) : [bookId];
-      map.set(dateStr, {
-        date: dateStr,
-        pagesRead: pagesToSet,
-        level: this.calculateLevel(pagesToSet),
-        bookIds: bList,
-        source: 'retroactive',
-        dayOfWeek: isNaN(d.getTime()) ? 0 : d.getDay()
-      });
-    }
-  }
-
-  private calculateLevel(pages: number): 0 | 1 | 2 | 3 | 4 {
-    if (pages <= 0) return 0;
+  private calculateLevel(pages: number, manualCheckIn?: boolean): 0 | 1 | 2 | 3 | 4 {
+    if (pages <= 0) return manualCheckIn ? 1 : 0;
     if (pages <= 15) return 1;
     if (pages <= 35) return 2;
     if (pages <= 65) return 3;
@@ -773,3 +663,24 @@ class ReadingStreakService {
 }
 
 export const readingStreakService = new ReadingStreakService();
+
+export function setManualReadingLogForDate(
+  dateStr: string,
+  totalPages: number,
+  markAsRead?: boolean
+): DailyReadingLog | null {
+  return readingStreakService.setManualReadingLogForDate(dateStr, totalPages, markAsRead);
+}
+
+export function clearAllReadingStreakLogs(): void {
+  readingStreakService.clearAllReadingStreakLogs();
+}
+
+export function recordReadingProgress(
+  bookId: string,
+  previousPage: number,
+  newPage: number,
+  dateStr?: string
+): DailyReadingLog | null {
+  return readingStreakService.recordReadingProgress(bookId, previousPage, newPage, dateStr);
+}
