@@ -260,7 +260,7 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
             {/* 1. Autor más leído */}
             {highlights.mostRead && (
-              <div className="p-4 rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-gradient-to-br from-[#fffdf8] to-[#f5ebd7] dark:from-[#151D2C] dark:to-[#0F1420] shadow-sm relative overflow-hidden">
+              <div className="p-4 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 shadow-xs relative overflow-hidden">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                   <Trophy className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>Más Leído</span>
@@ -284,7 +284,7 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
 
             {/* 2. Autor predilecto / Mejor valorado */}
             {highlights.topRated && (
-              <div className="p-4 rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-gradient-to-br from-[#fffdf8] to-[#f5ebd7] dark:from-[#151D2C] dark:to-[#0F1420] shadow-sm relative overflow-hidden">
+              <div className="p-4 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 shadow-xs relative overflow-hidden">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
                   <span>Mejor Valorado</span>
@@ -309,7 +309,7 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
 
             {/* 3. Mayor volumen de páginas leídas */}
             {highlights.mostPages && (
-              <div className="p-4 rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-gradient-to-br from-[#fffdf8] to-[#f5ebd7] dark:from-[#151D2C] dark:to-[#0F1420] shadow-sm relative overflow-hidden">
+              <div className="p-4 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 shadow-xs relative overflow-hidden">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                   <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>Mayor Extensión</span>
@@ -346,7 +346,7 @@ export const AuthorsStatsPanel: React.FC<AuthorsStatsPanelProps> = ({
               return (
                 <div
                   key={author.name}
-                  className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fffdf8] dark:bg-[#131A26] transition-all hover:border-amber-600/40 shadow-xs overflow-hidden"
+                  className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 transition-all hover:border-amber-600/40 shadow-xs overflow-hidden"
                 >
                   {/* Fila principal del autor */}
                   <div

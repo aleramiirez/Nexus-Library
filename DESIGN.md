@@ -153,9 +153,18 @@ La tridimensionalidad no se simula con sombras planas de software genérico, sin
     3. **`shelf` («Favoritos»):** Contenedor de papel apilado que aloja en su interior la hornacina de roble tallado (`.dashboard-shelf-niche`) con lamas y baldas de madera.
     4. **`base` («Hábito y Racha de Lectura»):** Fondo de papel táctil neutro con módulos internos traslúcidos biselados (`.nx-streak-rc`, `.nx-streak-sx`), cordón ceremonial de racha, anillos iluminados para el día actual y sellos de lacre con contraste AA reforzado en modo claro y oscuro.
   - **Cabecera Unificada (`DashboardCardHeader`):**
-    - Icono de línea SVG de 20px en ámbar noble (`text-amber-700` / dark `text-amber-400`). Favoritos porta `Star` de línea; Racha porta `Flame` de línea; Leyendo porta `Clock` de línea.
+    - Icono de línea SVG de 20px en ámbar noble (`text-amber-700` / dark `text-amber-400`). Favoritos porta `Star` de línea; Racha porta `Flame` de línea; Leyendo porta `Clock` de línea; Cadencia mensual porta `Calendar`; Extremos porta `Award`; Géneros porta `Layers`; Autores porta `Users`.
     - Título editorial en Cormorant Garamond.
     - Enlace de acción común (`.dashboard-card-action`): tipografía seminegrita de 12px, tono ámbar noble, chevron integrado «›» (`ChevronRight`), sin subrayado inicial y subrayado selectivo en `:hover` / `:focus-visible`.
+- **`.dashboard-metric-card` (Tarjetas de Métrica Clave Unificadas):** Contenedor compacto de cuadrícula (utilizado en el Reto Anual y Estadísticas) con:
+  - Mismo grano de papel táctil (`--dashboard-card-bg-base`, `--dashboard-card-bg-image`), borde fino y marco interior `::before`.
+  - Cifra protagonista en `Cormorant Garamond` de 36px/42px con `tabular-nums` en tono carmesí ceremonial (`#8E2434` / dark `#C2485A`).
+  - Cabecera con etiqueta en mayúsculas seminegrita en ámbar cálido (`text-amber-900` / dark `text-amber-400`) e icono en el extremo opuesto.
+  - Elevación interactiva suave al pasar el ratón (`translateY(-2px)` con resplandor dorado sutil).
+- **`.nx-heatmap-w` (Mapa Anual de Calor 365 Días):** Migrado a las variables y proporciones de `--dashboard-card-*`:
+  - Contenedor con radio de 18px, borde exterior y marco interior fino biselado `::before` a 6px.
+  - Cajas de estadísticas interiores (`.nx-heatmap-sx`) y retícula (`.nx-heatmap-cal`) con biseles interiores iluminados.
+  - Sellos de lacre con contraste optimizado sobre el fondo pergamino.
 - **`.catalog-brass-tab`:** Pestaña superior grabada de latón, colocada a `top: -12px` con texto en Cormorant Garamond negrita.
 - **`UserAvatar`:** Avatar con o sin marco heráldico de la Orden. Al equipar un marco, incorpora capas de textura (madera tallada, remaches, orla de plata, gema, estrella astral).
 - **`BookShelf`:** Mueble de lectura que organiza los libros en baldas de madera física según su estado (`Leyendo`, `Pendientes`, `Leídos`).

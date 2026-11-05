@@ -913,31 +913,35 @@ html.dark .nx-day-editor-badge.has-pages {
 
 /* ===== Widget Ceremonial de Mapa de Calor de Lectura Anual (Sellos y Cordones 365d) ===== */
 .nx-heatmap-w {
-  --card: #FBF4E4;
-  --in: #F5EAD3;
-  --bd: #D8C4A0;
+  --card: var(--dashboard-card-bg-base);
+  --in: rgba(255, 255, 255, 0.58);
+  --bd: rgba(160, 115, 55, 0.22);
   --tx: #2B1A10;
-  --mu: #7A6650;
+  --mu: #634832;
   --gold: #B07A1E;
   --cord: #C9A66B;
   --crim: #8E2434;
   --glow: rgba(176, 122, 30, 0.35);
-  background: var(--card);
-  color: var(--tx);
-  border: 1px solid var(--bd);
-  border-radius: 22px;
-  padding: 1.4rem;
+
   position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  isolation: isolate;
+  background-color: var(--dashboard-card-bg-base);
+  background-image: var(--dashboard-card-bg-image);
+  color: var(--tx);
+  border: var(--dashboard-card-border);
+  border-radius: var(--dashboard-card-radius);
+  padding: var(--dashboard-card-padding);
+  box-shadow: var(--dashboard-card-shadow);
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   max-width: 1100px;
   margin: 0 auto;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 html.dark .nx-heatmap-w {
-  --card: #1B2230;
-  --in: #151A24;
-  --bd: #283246;
+  --card: var(--dashboard-card-bg-base);
+  --in: rgba(16, 21, 32, 0.68);
+  --bd: rgba(220, 180, 100, 0.16);
   --tx: #EDE3CF;
   --mu: #9AA3B5;
   --gold: #E5C158;
@@ -949,11 +953,17 @@ html.dark .nx-heatmap-w {
 .nx-heatmap-w::before {
   content: "";
   position: absolute;
-  inset: 7px;
-  border: 1px solid var(--bd);
-  border-radius: 16px;
+  inset: var(--dashboard-card-inner-inset);
+  border-radius: var(--dashboard-card-inner-radius);
+  border: var(--dashboard-card-inner-border);
   pointer-events: none;
-  opacity: 0.7;
+  z-index: 1;
+}
+
+@media (max-width: 639px) {
+  .nx-heatmap-w {
+    padding: var(--dashboard-card-padding-mobile);
+  }
 }
 
 .nx-heatmap-hd {
@@ -1050,6 +1060,11 @@ html.dark .nx-heatmap-w {
   display: flex;
   gap: 0.9rem;
   align-items: center;
+  box-shadow: 0 1px 3px rgba(60, 35, 10, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html.dark .nx-heatmap-sx {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .nx-heatmap-sx .nx-heatmap-lb {
@@ -1126,6 +1141,16 @@ html.dark .nx-heatmap-w {
   border: 1px solid var(--bd);
   border-radius: 16px;
   padding: 1rem 0.9rem 0.8rem;
+  box-shadow: 0 1px 3px rgba(60, 35, 10, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+html.dark .nx-heatmap-cal {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html.dark .nx-heatmap-s.l0 {
+  background: rgba(220, 180, 100, 0.28);
+  opacity: 0.7;
 }
 
 .nx-heatmap-sc {

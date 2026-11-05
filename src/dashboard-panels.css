@@ -1803,6 +1803,100 @@ html.dark .rpb-action-icon-btn.is-active {
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45), 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
+/* ===== Tarjetas de Métrica Unificada (Reto, Estadísticas y Archivo) ===== */
+.dashboard-metric-card {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--dashboard-card-bg-base);
+  background-image: var(--dashboard-card-bg-image);
+  border-radius: var(--dashboard-card-radius);
+  border: var(--dashboard-card-border);
+  box-shadow: var(--dashboard-card-shadow);
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+
+.dashboard-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--dashboard-card-shadow-hero);
+  border-color: rgba(217, 119, 6, 0.45);
+}
+
+.dashboard-metric-card::before {
+  content: '';
+  position: absolute;
+  inset: var(--dashboard-card-inner-inset);
+  border-radius: var(--dashboard-card-inner-radius);
+  border: var(--dashboard-card-inner-border);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dashboard-metric-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-metric-card-label {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #78350f; /* amber-900 */
+}
+
+html.dark .dashboard-metric-card-label {
+  color: #fbbf24; /* amber-400 */
+}
+
+.dashboard-metric-card-icon {
+  color: #b45309;
+}
+
+html.dark .dashboard-metric-card-icon {
+  color: #fbbf24;
+}
+
+.dashboard-metric-card-value {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #8E2434; /* Crimson Dark Academia */
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 640px) {
+  .dashboard-metric-card-value {
+    font-size: 2.6rem;
+  }
+}
+
+html.dark .dashboard-metric-card-value {
+  color: #C2485A;
+}
+
+.dashboard-metric-card-sub {
+  font-size: 0.75rem;
+  color: #78716c; /* stone-500 */
+  position: relative;
+  z-index: 2;
+}
+
+html.dark .dashboard-metric-card-sub {
+  color: #94a3b8; /* slate-400 */
+}
+
 .rpb-toast {
   font-size: 0.8rem;
   font-weight: 600;

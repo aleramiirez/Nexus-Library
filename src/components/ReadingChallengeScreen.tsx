@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Plus,
   Minus,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
 import {
@@ -30,6 +31,7 @@ import { ReadingWrappedModal } from './ReadingWrappedModal';
 import { formatStars } from '../constants/catalogs';
 import { ReadingHeatmapCalendar } from './ReadingHeatmapCalendar';
 import { AuthorsStatsPanel } from './AuthorsStatsPanel';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import '../dashboard-panels.css';
 
 interface ReadingChallengeScreenProps {
@@ -285,7 +287,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
           </div>
 
           {/* Medidor visual tipo marcapáginas con barra dorada */}
-          <div className="w-full lg:w-72 bg-white/70 dark:bg-[#0E131D]/80 border border-amber-900/20 dark:border-[#222B3D] rounded-2xl p-4 shadow-inner space-y-2.5">
+          <div className="w-full lg:w-72 rounded-2xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-4 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="text-stone-600 dark:text-slate-400">Progreso del reto</span>
               <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">
@@ -321,7 +323,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             </div>
 
             {/* Vitrina editorial cálida (integrada con el estilo del catálogo) */}
-            <div className="rounded-2xl editorial-card-surface p-4 sm:p-5 relative shadow-xs">
+            <div className="rounded-2xl border border-amber-900/20 dark:border-amber-400/15 bg-amber-950/5 dark:bg-[#121824]/80 p-4 sm:p-5 relative shadow-xs">
               <div className="flex flex-wrap items-start justify-center gap-3.5 sm:gap-5">
                 {displayedCompletedBooks.map((book) => {
                   const datesLabel = formatReadingDates(book.fechaInicio, book.fechaFin);
@@ -386,55 +388,62 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
       {/* ─── Cuadrícula de 4 Métricas Clave ─── */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
-          <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
-            <span className="text-xs uppercase font-medium">Libros Leídos</span>
-            <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="dashboard-metric-card">
+          <div className="dashboard-metric-card-header">
+            <span className="dashboard-metric-card-label">Libros Leídos</span>
+            <BookOpen className="w-4 h-4 dashboard-metric-card-icon" />
           </div>
-          <p className="font-serif text-3xl sm:text-4xl font-bold text-emerald-700 dark:text-emerald-400">
+          <div className="dashboard-metric-card-value">
             {stats.completedCount}
-          </p>
-          <span className="text-[11px] text-stone-500 dark:text-slate-400 block pt-0.5">
+          </div>
+          <span className="dashboard-metric-card-sub">
             {stats.percentage}% de la meta ({stats.targetGoal} total)
           </span>
         </div>
 
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
-          <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
-            <span className="text-xs uppercase font-medium">Páginas Devoradas</span>
-            <Layers className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <div className="dashboard-metric-card">
+          <div className="dashboard-metric-card-header">
+            <span className="dashboard-metric-card-label">Páginas Devoradas</span>
+            <Layers className="w-4 h-4 dashboard-metric-card-icon" />
           </div>
-          <p className="font-serif text-3xl sm:text-4xl font-bold text-stone-900 dark:text-white">
+          <div className="dashboard-metric-card-value">
             {stats.totalPagesRead.toLocaleString('es-ES')}
-          </p>
-          <span className="text-[11px] text-stone-500 dark:text-slate-400 block pt-0.5">
-            Promedio de ~{stats.avgPagesPerBook} páginas por libro
+          </div>
+          <span className="dashboard-metric-card-sub">
+            Promedio de ~{stats.avgPagesPerBook} págs por libro
           </span>
         </div>
 
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
-          <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
-            <span className="text-xs uppercase font-medium">Tiempo Invertido</span>
-            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <div className="dashboard-metric-card">
+          <div className="dashboard-metric-card-header">
+            <span className="dashboard-metric-card-label">Tiempo Invertido</span>
+            <Clock className="w-4 h-4 dashboard-metric-card-icon" />
           </div>
-          <p className="font-serif text-3xl sm:text-4xl font-bold text-amber-700 dark:text-amber-300">
+          <div className="dashboard-metric-card-value">
             ~{stats.estimatedHoursRead}h
-          </p>
-          <span className="text-[11px] text-stone-500 dark:text-slate-400 block pt-0.5">
-            Basado en un ritmo de lectura medio
+          </div>
+          <span className="dashboard-metric-card-sub">
+            Basado en ritmo de lectura medio
           </span>
         </div>
 
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-1">
-          <div className="flex items-center justify-between text-stone-500 dark:text-slate-400">
-            <span className="text-xs uppercase font-medium">Valoración Media</span>
-            <Star className="w-4 h-4 text-amber-500" />
+        <div className="dashboard-metric-card">
+          <div className="dashboard-metric-card-header">
+            <span className="dashboard-metric-card-label">Valoración Media</span>
+            <Star className="w-4 h-4 dashboard-metric-card-icon" />
           </div>
-          <p className="font-serif text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-400">
-            {stats.avgRating !== null ? `${stats.avgRating} ⭐` : '—'}
-          </p>
-          <span className="text-[11px] text-stone-500 dark:text-slate-400 block pt-0.5">
-            {stats.ratedCount} libros puntuados con estrellas
+          <div className="dashboard-metric-card-value flex items-baseline gap-1">
+            {stats.avgRating !== null ? (
+              <>
+                <span>{stats.avgRating}</span>
+                <span className="text-xl font-normal text-amber-600 dark:text-amber-400">★</span>
+              </>
+            ) : (
+              '—'
+            )}
+          </div>
+          <span className="dashboard-metric-card-sub">
+            {stats.ratedCount} libros con estrellas
           </span>
         </div>
       </section>
@@ -443,27 +452,14 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
       <ReadingHeatmapCalendar books={books} initialYear={activeYearNum} />
 
       {/* ─── Cadencia Mensual de Lectura (Gráfico 12 meses) ─── */}
-      <section className="rounded-2xl editorial-card-surface p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-900/15 dark:border-[#222B3C] pb-3">
-          <div>
-            <h2 className="font-serif text-lg sm:text-xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Cadencia Mensual de Lectura</span>
-            </h2>
-            <p className="text-xs text-stone-600 dark:text-slate-400 mt-0.5">
-              Libros terminados cada mes. Haz clic sobre un mes para ver sus obras.
-            </p>
-          </div>
-          {selectedMonth && (
-            <button
-              type="button"
-              onClick={() => setSelectedMonth(null)}
-              className="text-xs text-amber-700 dark:text-amber-400 hover:underline font-semibold self-start sm:self-auto"
-            >
-              Ver todos los meses
-            </button>
-          )}
-        </div>
+      <DashboardCard as="section" variant="base" className="space-y-5">
+        <DashboardCardHeader
+          icon={<Calendar className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Cadencia Mensual de Lectura"
+          subtitle="Libros terminados cada mes. Haz clic sobre un mes para ver sus obras."
+          actionText={selectedMonth ? 'Ver todos los meses' : undefined}
+          onAction={selectedMonth ? () => setSelectedMonth(null) : undefined}
+        />
 
         {/* Gráfico de barras mensual */}
         <div className="grid grid-cols-12 gap-1.5 sm:gap-3 items-end h-44 pt-6 px-1">
@@ -526,7 +522,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
         {/* Detalle del mes seleccionado */}
         {selectedMonth && (
-          <div className="p-4 rounded-2xl border border-amber-600/30 bg-amber-500/10 dark:bg-amber-500/5 animate-fade-in space-y-3">
+          <div className="p-4 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 animate-fade-in space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-serif font-bold text-sm text-stone-900 dark:text-white">
                 Obras leídas en {selectedMonth.monthFullName}: {selectedMonth.booksCount} libros (
@@ -571,27 +567,23 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             )}
           </div>
         )}
-      </section>
+      </DashboardCard>
 
       {/* ─── Hitos & Obras Destacadas ─── */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Libro más extenso y más breve */}
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-4">
-          <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-2.5">
-            <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Extremos de Lectura</span>
-            </h2>
-            <p className="text-xs text-stone-600 dark:text-slate-400">
-              Las lecturas más voluminosas y condensadas del año
-            </p>
-          </div>
+        <DashboardCard variant="base" className="space-y-4">
+          <DashboardCardHeader
+            icon={<Award className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title="Extremos de Lectura"
+            subtitle="Las lecturas más voluminosas y condensadas del año"
+          />
 
           <div className="space-y-3">
             {stats.longestBook ? (
               <div
                 onClick={() => onOpenBookDetail?.(stats.longestBook!)}
-                className="cursor-pointer p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-3.5"
+                className="cursor-pointer p-3 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/80 hover:border-amber-600/50 transition flex items-center gap-3.5"
               >
                 <div className="w-12 shrink-0 relative transition-transform duration-300 hover:scale-105">
                   <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
@@ -625,7 +617,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             {stats.shortestBook && stats.shortestBook.id !== stats.longestBook?.id ? (
               <div
                 onClick={() => onOpenBookDetail?.(stats.shortestBook!)}
-                className="cursor-pointer p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-3.5"
+                className="cursor-pointer p-3 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/80 hover:border-amber-600/50 transition flex items-center gap-3.5"
               >
                 <div className="w-12 shrink-0 relative transition-transform duration-300 hover:scale-105">
                   <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
@@ -662,19 +654,15 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               </p>
             )}
           </div>
-        </div>
+        </DashboardCard>
 
         {/* Favoritos y Mejor Valorados */}
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-4">
-          <div className="border-b border-amber-900/15 dark:border-[#222B3C] pb-2.5">
-            <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-500" />
-              <span>Tus Favoritos de {selectedYear === 'all' ? 'Siempre' : selectedYear}</span>
-            </h2>
-            <p className="text-xs text-stone-600 dark:text-slate-400">
-              Obras con la puntuación más alta registradas en el período
-            </p>
-          </div>
+        <DashboardCard variant="base" className="space-y-4">
+          <DashboardCardHeader
+            icon={<Star className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title={`Tus Favoritos de ${selectedYear === 'all' ? 'Siempre' : selectedYear}`}
+            subtitle="Obras con la puntuación más alta registradas en el período"
+          />
 
           {stats.favoriteBooks.length > 0 ? (
             <div className="grid grid-cols-2 gap-2.5">
@@ -682,7 +670,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 <div
                   key={b.id}
                   onClick={() => onOpenBookDetail?.(b)}
-                  className="cursor-pointer p-2.5 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-white/60 dark:bg-slate-900/50 hover:border-amber-600/50 transition flex items-center gap-2.5"
+                  className="cursor-pointer p-2.5 rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/80 hover:border-amber-600/50 transition flex items-center gap-2.5"
                 >
                   <div className="w-10 shrink-0 relative transition-transform duration-300 hover:scale-105">
                     <div className="absolute -bottom-1 left-0.5 right-0.5 h-1.5 bg-black/40 blur-[1px] rounded-full pointer-events-none" />
@@ -714,16 +702,17 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               <p>Aún no has valorado libros leídos con 5 estrellas en este año.</p>
             </div>
           )}
-        </div>
+        </DashboardCard>
       </section>
 
       {/* ─── Desgloses: Géneros, Autores y Puntuaciones ─── */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Desglose por Género */}
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
-          <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
-            Géneros Más Leídos
-          </h2>
+        <DashboardCard variant="base" className="space-y-3">
+          <DashboardCardHeader
+            icon={<Layers className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title="Géneros Más Leídos"
+          />
           {stats.genreDistribution.length === 0 ? (
             <p className="text-xs text-stone-500 dark:text-slate-400">Sin datos registrados.</p>
           ) : (
@@ -746,13 +735,14 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               ))}
             </div>
           )}
-        </div>
+        </DashboardCard>
 
         {/* Autores más leídos */}
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
-          <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
-            Autores de Cabecera
-          </h2>
+        <DashboardCard variant="base" className="space-y-3">
+          <DashboardCardHeader
+            icon={<Users className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title="Autores de Cabecera"
+          />
           {stats.authorDistribution.length === 0 ? (
             <p className="text-xs text-stone-500 dark:text-slate-400">Sin autores registrados.</p>
           ) : (
@@ -767,13 +757,14 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               ))}
             </div>
           )}
-        </div>
+        </DashboardCard>
 
         {/* Desglose de estrellas */}
-        <div className="rounded-2xl editorial-card-surface p-5 space-y-3">
-          <h2 className="font-serif text-base font-bold text-stone-900 dark:text-white">
-            Distribución de Puntuaciones
-          </h2>
+        <DashboardCard variant="base" className="space-y-3">
+          <DashboardCardHeader
+            icon={<Star className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title="Distribución de Puntuaciones"
+          />
           <div className="space-y-2">
             {([5, 4, 3, 2, 1] as const).map((stars) => {
               const count = stats.ratingDistribution[stars] || 0;
@@ -797,7 +788,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
               );
             })}
           </div>
-        </div>
+        </DashboardCard>
       </section>
 
       {/* ─── Sala de Autores: Ranking & Estadísticas ─── */}
