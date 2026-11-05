@@ -32,7 +32,6 @@ import {
 } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
 import { normalizeText } from '../constants/catalogs';
-import { CommunityReadersView } from './CommunityReadersView';
 import { BookDetailModal } from './BookDetailModal';
 import { LiteraryAtlasView } from './LiteraryAtlasView';
 import { literaryGeographyService } from '../services/literaryGeographyService';
@@ -45,8 +44,8 @@ interface DiscoverBooksScreenProps {
   currentUserId?: string;
   onAddBookFromCommunity?: (book: Book) => Promise<void>;
   onOpenBookDetail?: (book: Book) => void;
-  initialTab?: 'books' | 'atlas' | 'community';
-  onTabChange?: (tab: 'books' | 'atlas' | 'community') => void;
+  initialTab?: 'books' | 'atlas';
+  onTabChange?: (tab: 'books' | 'atlas') => void;
   userDisplayName?: string | null;
   username?: string | null;
   avatarUrl?: string | null;
@@ -79,13 +78,13 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   avatarUrl,
   onOpenBarcodeScanner
 }) => {
-  const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas' | 'community'>(() => {
+  const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas'>(() => {
     if (typeof window !== 'undefined') {
       try {
         const urlTab = new URLSearchParams(window.location.search).get('tab');
-        if (urlTab === 'books' || urlTab === 'atlas' || urlTab === 'community') return urlTab;
+        if (urlTab === 'books' || urlTab === 'atlas') return urlTab;
         const stored = sessionStorage.getItem('nexus_discover_tab') || localStorage.getItem('nexus_discover_tab');
-        if (stored === 'books' || stored === 'atlas' || stored === 'community') return stored as 'books' | 'atlas' | 'community';
+        if (stored === 'books' || stored === 'atlas') return stored as 'books' | 'atlas';
       } catch {
         // ignorar
       }
@@ -94,7 +93,6 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     return 'books';
   });
 
-  const [hasVisitedCommunity, setHasVisitedCommunity] = useState(() => discoverTab === 'community');
   const [hasVisitedAtlas, setHasVisitedAtlas] = useState(() => discoverTab === 'atlas');
   const [, startTransition] = useTransition();
 
@@ -110,15 +108,11 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   useEffect(() => {
     if (initialTab && initialTab !== discoverTab) {
       if (initialTab === 'atlas' && !hasVisitedAtlas) setHasVisitedAtlas(true);
-      if (initialTab === 'community' && !hasVisitedCommunity) setHasVisitedCommunity(true);
       setDiscoverTab(initialTab);
     }
   }, [initialTab]);
 
-  const handleTabChange = (tab: 'books' | 'atlas' | 'community') => {
-    if (tab === 'community' && !hasVisitedCommunity) {
-      setHasVisitedCommunity(true);
-    }
+  const handleTabChange = (tab: 'books' | 'atlas') => {
     if (tab === 'atlas' && !hasVisitedAtlas) {
       setHasVisitedAtlas(true);
     }
@@ -468,12 +462,12 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       )}
 
       {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Atlas Literario vs Comunidad de Lectores) ─── */}
-      <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
         <button
           type="button"
           onClick={() => handleTabChange('books')}
           className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (discoverTab === 'books'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
@@ -488,7 +482,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
           type="button"
           onClick={() => handleTabChange('atlas')}
           className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (discoverTab === 'atlas'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
@@ -509,20 +503,6 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
               {conqueredCount}
             </span>
           )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleTabChange('community')}
-          className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-[11px] sm:text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
-            (discoverTab === 'community'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
-          }
-        >
-          <Users className="w-4 h-4 shrink-0" />
-          <span className="whitespace-nowrap">Comunidad</span>
         </button>
       </div>
 
@@ -1137,17 +1117,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
         </div>
       )}
 
-      {/* ─── Contenedor Comunidad de Lectores: montaje perezoso y preservado ─── */}
-      {hasVisitedCommunity && (
-        <div className={discoverTab === 'community' ? 'block' : 'hidden'}>
-          <CommunityReadersView
-            currentUserId={currentUserId}
-            existingBooks={books}
-            onAddBookToMyLibrary={onAddBookFromCommunity || (async () => {})}
-            onOpenBookDetail={onOpenBookDetail}
-          />
-        </div>
-      )}
+      
     </div>
   );
 };

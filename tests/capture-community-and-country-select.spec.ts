@@ -19,22 +19,22 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
     await page.waitForTimeout(1000);
   }
 
-  // Check desktop sidebar header has the Comunidad button
-  const communityHeaderBtn = page.getByRole('button', { name: /Comunidad y Círculo de Lectores/i }).first();
-  await expect(communityHeaderBtn).toBeVisible({ timeout: 5000 });
-
-  // Sidebar header screenshot (showing Comunidad next to Mail)
+  // Check desktop sidebar header is clean with logo and mailbox
   const sidebarHeader = page.locator('aside.book-page .px-5.pt-4').first();
   await sidebarHeader.screenshot({
-    path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/sidebar-header-comunidad-light.png'
+    path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/sidebar-header-clean-light.png'
   });
 
-  // Click Comunidad header button
-  await communityHeaderBtn.click();
+  // Check desktop sidebar index has "Comunidad de Lectores"
+  const communityNavBtn = page.getByRole('button', { name: /Comunidad de Lectores/i }).first();
+  await expect(communityNavBtn).toBeVisible({ timeout: 5000 });
+
+  // Click Comunidad in sidebar menu
+  await communityNavBtn.click();
   await page.waitForTimeout(800);
 
-  // Verify URL and Comunidad view is visible
-  await expect(page).toHaveURL(/tab=community/);
+  // Verify URL and Comunidad view is visible directly
+  await expect(page).toHaveURL(/section=community/);
   const friendsTabBtn = page.getByRole('button', { name: /Mis Amigos/i }).first();
   await expect(friendsTabBtn).toBeVisible({ timeout: 5000 });
 
@@ -62,7 +62,7 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
   await mobileGuest.click();
   await page.waitForTimeout(1000);
 
-  // Check top mobile bar
+  // Check top mobile bar (clean 4 buttons)
   const mobileTopHeader = page.locator('header').first();
   await expect(mobileTopHeader).toBeVisible({ timeout: 10000 });
 
@@ -76,10 +76,14 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
     path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/mobile-header-top-dark.png'
   });
 
-  // Click Comunidad on mobile
-  const mobileCommunityBtn = mobileTopHeader.getByRole('button', { name: /Comunidad y Círculo de Lectores/i });
-  await expect(mobileCommunityBtn).toBeVisible({ timeout: 5000 });
-  await mobileCommunityBtn.click();
+  // Open mobile drawer and click Comunidad
+  const menuBtn = page.getByRole('button', { name: /Abrir índice y menú lateral/i }).first();
+  await menuBtn.click();
+  await page.waitForTimeout(600);
+
+  const drawerCommunityBtn = page.getByRole('button', { name: /Comunidad de Lectores/i }).first();
+  await expect(drawerCommunityBtn).toBeVisible({ timeout: 5000 });
+  await drawerCommunityBtn.click();
   await page.waitForTimeout(800);
 
   await page.screenshot({
@@ -112,9 +116,13 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
     await page.waitForTimeout(500);
   }
 
-  // Navigate to atlas tab
+  // Verify only 2 tabs exist in Discover: Catálogo and Atlas (no community tab)
+  const catalogTabBtn = page.getByRole('button', { name: /Catálogo/i }).first();
+  await expect(catalogTabBtn).toBeVisible({ timeout: 5000 });
   const atlasTabBtn = page.getByRole('button', { name: /Atlas/i }).first();
   await expect(atlasTabBtn).toBeVisible({ timeout: 8000 });
+
+  // Navigate to atlas tab
   await atlasTabBtn.click();
   await page.waitForTimeout(1000);
 

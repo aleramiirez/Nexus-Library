@@ -74,6 +74,9 @@ import { ReadingOracleModal } from './components/ReadingOracleModal';
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
+const CommunityReadersView = React.lazy(() =>
+  import('./components/CommunityReadersView').then((m) => ({ default: m.CommunityReadersView }))
+);
 const SettingsScreen = React.lazy(() =>
   import('./components/SettingsScreen').then((m) => ({ default: m.SettingsScreen }))
 );
@@ -183,11 +186,7 @@ export const App: React.FC = () => {
         url.searchParams.delete('tab');
       } else {
         url.searchParams.set('section', section);
-        if (section !== 'discover' && section !== 'community') {
-          url.searchParams.delete('tab');
-        } else if (section === 'community') {
-          url.searchParams.set('tab', 'community');
-        }
+        if (section !== 'discover') { url.searchParams.delete('tab'); }
       }
       window.history.replaceState({}, '', url.toString());
     } catch {
@@ -215,11 +214,7 @@ export const App: React.FC = () => {
       } else {
         if (url.searchParams.get('section') !== activeSection) {
           url.searchParams.set('section', activeSection);
-          if (activeSection !== 'discover' && activeSection !== 'community') {
-            url.searchParams.delete('tab');
-          } else if (activeSection === 'community') {
-            url.searchParams.set('tab', 'community');
-          }
+          if (activeSection !== 'discover') { url.searchParams.delete('tab'); }
           window.history.replaceState({}, '', url.toString());
         }
       }
@@ -1382,20 +1377,6 @@ export const App: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleNavigate('community')}
-            className={
-              'relative w-9 h-9 inline-flex items-center justify-center rounded-xl border transition active:scale-95 ' +
-              (activeSection === 'community'
-                ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold shadow-xs'
-                : 'border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400')
-            }
-            title="Comunidad y Círculo de Lectores"
-            aria-label="Comunidad y Círculo de Lectores"
-          >
-            <Users className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
             onClick={() => setIsInboxOpen(true)}
             className="relative w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition"
             title="Buzón Literario"
@@ -1503,7 +1484,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {(activeSection === 'discover' || activeSection === 'community') && (
+          {activeSection === 'discover' && (
             <React.Suspense
               fallback={
                 <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
@@ -1513,24 +1494,33 @@ export const App: React.FC = () => {
               }
             >
               <DiscoverBooksScreen
-                initialTab={activeSection === 'community' ? 'community' : undefined}
-                onTabChange={(tab) => {
-                  if (tab === 'community' && activeSection !== 'community') {
-                    handleNavigate('community');
-                  } else if (tab !== 'community' && activeSection === 'community') {
-                    handleNavigate('discover');
-                  }
-                }}
                 books={books}
                 onQuickAddBook={handleQuickAddFromDiscover}
                 onCustomizeBook={handleCustomizeFromDiscover}
                 currentUserId={currentUser?.id}
-                onAddBookFromCommunity={handleAddBookFromCommunity}
                 onOpenBookDetail={handleOpenCardDetail}
                 userDisplayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || undefined}
                 username={currentUserProfile?.username}
                 avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
                 onOpenBarcodeScanner={modals.handleOpenBarcodeScanner}
+              />
+            </React.Suspense>
+          )}
+
+          {activeSection === 'community' && (
+            <React.Suspense
+              fallback={
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                  <span className="font-serif text-sm">Cargando Comunidad de Lectores...</span>
+                </div>
+              }
+            >
+              <CommunityReadersView
+                currentUserId={currentUser?.id}
+                existingBooks={books}
+                onAddBookToMyLibrary={handleAddBookFromCommunity}
+                onOpenBookDetail={handleOpenCardDetail}
               />
             </React.Suspense>
           )}
@@ -1658,7 +1648,7 @@ export const App: React.FC = () => {
             id: 'discover' as NavigationSection,
             label: 'Descubrir',
             icon: Compass,
-            isActive: activeSection === 'discover' || activeSection === 'community'
+            isActive: activeSection === 'discover'
           },
           {
             id: 'sagas' as NavigationSection,

@@ -228,23 +228,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                   <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  handleSelectSection('community');
-                  onCloseMobile?.();
-                }}
-                title="Comunidad y Círculo de Lectores"
-                aria-label="Abrir Comunidad y Círculo de Lectores"
-                className={
-                  'p-2 rounded-lg border transition group ' +
-                  (activeSection === 'community'
-                    ? 'border-amber-600/70 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold shadow-xs'
-                    : 'border-stone-300 dark:border-[#283246] text-stone-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/40')
-                }
-              >
-                <Users className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              </button>
+
               <button
                 type="button"
                 onClick={() => {

@@ -172,10 +172,10 @@ La tridimensionalidad no se simula con sombras planas de software genérico, sin
 - **`UserAvatar`:** Avatar con o sin marco heráldico de la Orden. Al equipar un marco, incorpora capas de textura (madera tallada, remaches, orla de plata, gema, estrella astral).
 - **`BookShelf`:** Mueble de lectura que organiza los libros en baldas de madera física según su estado (`Leyendo`, `Pendientes`, `Leídos`).
 - **`BookmarkMarker`:** Cinta marcapáginas de seda con pico cortado en ángulo que señala la sección activa.
-- **Acceso Directo a Comunidad («Hub Social»):**
-  - Botón de acceso directo con icono `Users` de línea contiguo a `Mail` (Buzón Literario) tanto en la cabecera fija superior móvil como en la cabecera del menú lateral de escritorio.
-  - Entrada estructural de primer orden en el índice lateral de lectura («Comunidad de Lectores»).
-  - Enlace fluido con `DiscoverBooksScreen` mediante `tab=community`, manteniendo la barra de pestañas y resaltando el estado activo en ámbar noble.
+- **Sección Soberana de Comunidad (`CommunityReadersView`):**
+  - Emancipada de *Descubrir Libros* como sección autónoma de primer orden en el índice ceremonial del libro (`BookSidebar`).
+  - Las cabeceras móviles y de escritorio mantienen su ergonomía limpia y desahogada con las 4 acciones esenciales (`[+] [Escanear] [Buzón Literario] [Ajustes]`), evitando la congestión de iconos en pantallas móviles estrechas.
+  - *Descubrir Libros* (`DiscoverBooksScreen`) se enfoca exclusivamente en la exploración bibliográfica mediante 2 pestañas nítidas y balanceadas: *Catálogo de Libros* y *Atlas Literario*.
 - **`LibrarySelect` (Estándar Global de Desplegables Ceremoniados):**
   - Desplegable artesanal personalizado que erradica los controles `<select>` nativos del navegador.
   - Utilizado en el Atlas Literario (`LiteraryAtlasView`) para la asignación rápida de territorios de origen a libros sin país y en los formularios de edición bibliográfica (`BookFormEditionTab`).
