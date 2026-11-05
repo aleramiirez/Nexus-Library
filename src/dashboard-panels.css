@@ -1738,53 +1738,69 @@ html.dark .rpb-wrap {
   margin-left: auto;
 }
 
+/* Botones de icono de acción (reloj y lápiz): tono cálido naranja/ámbar como .dashboard-reading-badge */
 .rpb-action-icon-btn {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1px solid var(--rpb-bd);
-  background: var(--rpb-card);
-  color: var(--rpb-tx);
+  border-radius: 9999px;
+  border: 1px solid #d8a45c;
+  background: #fbf5e7;
+  color: #b45309;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 1px 2px rgba(60, 35, 10, 0.05);
+  box-shadow: 0 1px 2px rgba(120, 60, 10, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.rpb-action-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
 }
 
 .rpb-action-icon-btn:hover:not(:disabled) {
-  border-color: var(--rpb-gold);
-  color: var(--rpb-gold);
-  background: var(--rpb-in);
+  border-color: #c2610d;
+  color: #9a3412;
+  background: #fef3c7;
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(60, 35, 10, 0.12);
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .rpb-action-icon-btn:focus-visible {
-  outline: 2px solid var(--rpb-gold);
+  outline: 2px solid #d97706;
   outline-offset: 2px;
 }
 
 .rpb-action-icon-btn.is-active {
-  background: rgba(180, 115, 30, 0.18);
-  border-color: var(--rpb-gold);
-  color: var(--rpb-gold);
-  box-shadow: 0 0 0 1px var(--rpb-gold), 0 0 8px var(--rpb-glow);
+  background: #fde68a;
+  border-color: #b45309;
+  color: #78350f;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.35), 0 2px 5px rgba(120, 50, 10, 0.18);
 }
 
 html.dark .rpb-action-icon-btn {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  background: #1e1913;
+  color: #fbbf24;
+  border: 1px solid #7d5f2a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 html.dark .rpb-action-icon-btn:hover:not(:disabled) {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  border-color: #d97706;
+  color: #fde68a;
+  background: #2a2015;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 html.dark .rpb-action-icon-btn.is-active {
-  background: rgba(229, 193, 88, 0.22);
+  background: #382813;
+  border-color: #f59e0b;
+  color: #fef3c7;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.45), 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .rpb-toast {
