@@ -740,7 +740,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-900/15 dark:border-amber-400/20 font-medium transition cursor-pointer"
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
-                  <span>📷 Subir o tomar foto</span>
+                  <span>Subir o tomar foto</span>
                 </button>
 
                 {/* Botón Escribir a Mano */}

@@ -986,7 +986,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border border-amber-600/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 transition shadow-xs cursor-pointer active:scale-95"
               >
                 <Compass className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>🪪 Pasaporte Literario</span>
+                <span>Pasaporte Literario</span>
               </button>
 
               {/* Acciones de amistad */}
@@ -1114,7 +1114,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <BookOpen className="w-4 h-4 shrink-0" />
-            <span>📚 Estantería</span>
+            <span>Estantería</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
               {readerBooks.length}
             </span>
@@ -1131,7 +1131,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <Layers className="w-4 h-4 shrink-0" />
-            <span>🏛️ Sagas</span>
+            <span>Sagas</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
               {sagasCount}
             </span>
@@ -1148,7 +1148,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <Globe className="w-4 h-4 shrink-0" />
-            <span>🌍 Atlas</span>
+            <span>Atlas</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
               {conqueredCountries}
             </span>
@@ -1165,7 +1165,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <Quote className="w-4 h-4 shrink-0" />
-            <span>💬 Reseñas</span>
+            <span>Reseñas</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
               {readerReviewsAndQuotes.length}
             </span>
@@ -1182,7 +1182,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <HeartHandshake className="w-4 h-4 shrink-0" />
-            <span>🤝 En Común</span>
+            <span>En Común</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
               {bookAffinity.percentage}%
             </span>
@@ -1898,7 +1898,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             }
           >
             <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <span>🔥 Actividad</span>
+            <span>Actividad</span>
           </button>
 
           {/* Pestaña 👥 Mis Amigos */}

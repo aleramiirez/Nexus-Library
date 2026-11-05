@@ -1021,7 +1021,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                     className="w-full py-2.5 px-3.5 rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition cursor-pointer shadow-xs"
                   >
                     <RotateCcw className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                    <span>🔄 Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
+                    <span>Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
                   </button>
                 )}
 
@@ -1582,7 +1582,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           className="w-full py-2 px-3 rounded-xl border border-amber-600/40 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition cursor-pointer shadow-xs"
                         >
                           <RotateCcw className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                          <span>🔄 Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
+                          <span>Iniciar nueva relectura {book.vecesLeido && book.vecesLeido > 1 ? `(${book.vecesLeido + 1}ª)` : '(2ª)'}</span>
                         </button>
                       )}
 
