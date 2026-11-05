@@ -55,7 +55,55 @@ export const communityService = {
       return [];
     }
 
-    return data.map((r) => mapRowToProfile(r as RawProfileRow));
+    const profiles = data.map((r) => mapRowToProfile(r as RawProfileRow));
+
+    // Enriquecer cada perfil con su escalafón y marco de la Orden computado a partir de sus libros públicos
+    const userIds = profiles.map((p) => p.id);
+    if (userIds.length > 0) {
+      try {
+        let { data: bRows, error: bError } = await supabase
+          .from('books')
+          .select('*')
+          .in('user_id', userIds)
+          .order('updated_at', { ascending: false });
+
+        if (bError && bError.message?.includes('column')) {
+          const fallback = await supabase
+            .from('books')
+            .select('id, user_id, data, created_at, updated_at')
+            .in('user_id', userIds)
+            .order('updated_at', { ascending: false });
+          bRows = fallback.data;
+          bError = fallback.error;
+        }
+
+        if (Array.isArray(bRows) && bRows.length > 0) {
+          const booksByUser: Record<string, Book[]> = {};
+          for (const row of bRows as any[]) {
+            const uid = row.user_id;
+            if (!booksByUser[uid]) booksByUser[uid] = [];
+            booksByUser[uid].push(mapRowToBook(row));
+          }
+
+          for (const profile of profiles) {
+            const uBooks = booksByUser[profile.id] || [];
+            if (uBooks.length > 0) {
+              const progress = calculateGuardianProgress(uBooks);
+              if (!profile.orderFrame) {
+                profile.orderFrame = progress.rank.id;
+              }
+              if (profile.level === undefined) {
+                profile.level = progress.level;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error enriqueciendo perfiles con escalafón:', err);
+      }
+    }
+
+    return profiles;
   },
 
   /**

@@ -2298,8 +2298,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           avatarUrl={profile.avatarUrl}
                           displayName={profile.displayName}
                           username={profile.username}
-                          frameRankId={profile.orderFrame}
-                          level={profile.level}
+                          frameRankId={friendsActivity.friendsRanks?.[profile.id]?.orderFrame || profile.orderFrame}
+                          level={friendsActivity.friendsRanks?.[profile.id]?.level ?? profile.level}
                           size="md"
                         />
                         <div className="min-w-0 flex-1">
