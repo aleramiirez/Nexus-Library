@@ -1,6 +1,7 @@
 import React from 'react';
 import { SagaProgressBar } from './SagaProgressBar';
 import { Book, Saga } from '../types/models';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import '../dashboard-panels.css';
 
 interface SagaWithBooksItem {
@@ -31,28 +32,26 @@ export const DashboardSagasPanel: React.FC<DashboardSagasPanelProps> = ({
       : Math.max(0, sagasWithBooks.length - visibleSagas.length);
 
   return (
-    <div className="catalog-card-panel h-full flex flex-col justify-between">
+    <DashboardCard variant="list" className="h-full flex flex-col justify-between">
       {/* Pestaña de latón de la ficha de biblioteca */}
       <div className="catalog-brass-tab" aria-hidden="true">
         Mis sagas
       </div>
 
-      <div className="flex-1 flex flex-col justify-between">
+      <div className="flex-1 flex flex-col justify-between relative z-[2]">
         {/* Cabecera con enlace a gestión */}
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <span className="text-[11px] font-serif italic text-stone-600 dark:text-slate-400">
-            {sagasWithBooks.length > 0
-              ? `${sagasWithBooks.length} ${sagasWithBooks.length === 1 ? 'saga activa' : 'sagas activas'}`
-              : 'Colecciones'}
-          </span>
-          <button
-            type="button"
-            onClick={onNavigateToSagas}
-            className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors ml-auto"
-          >
-            Gestionar ({totalSagasCount})
-          </button>
-        </div>
+        <DashboardCardHeader
+          customHeader={
+            <span className="text-[11px] font-serif italic text-stone-600 dark:text-slate-400">
+              {sagasWithBooks.length > 0
+                ? `${sagasWithBooks.length} ${sagasWithBooks.length === 1 ? 'saga activa' : 'sagas activas'}`
+                : 'Colecciones'}
+            </span>
+          }
+          actionText={`Gestionar (${totalSagasCount})`}
+          onAction={onNavigateToSagas}
+          className="mb-3 sm:mb-4"
+        />
 
         {/* Lista de fichas de sagas */}
         {sagasWithBooks.length === 0 ? (
@@ -106,6 +105,6 @@ export const DashboardSagasPanel: React.FC<DashboardSagasPanelProps> = ({
           </button>
         </div>
       )}
-    </div>
+    </DashboardCard>
   );
 };
