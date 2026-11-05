@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Check, Sparkles, Image as ImageIcon, Upload, Trash2, Crown, Lock, CheckCircle2 } from 'lucide-react';
-import { AVATAR_PRESETS } from '../constants/avatarPresets';
+import { AVATAR_PRESETS, getAvatarPreset } from '../constants/avatarPresets';
 import { UserAvatar } from './UserAvatar';
 import {
   ORDER_RANKS,
@@ -48,10 +48,41 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
     return getSelectedOrderFrame(levelInfo?.rank?.id || 'I', unlockedRanks);
   });
 
+  // Sincronizar estado al abrir el modal o si cambia el nivel/avatar del lector
+  useEffect(() => {
+    if (isOpen) {
+      setSelected(currentAvatarUrl || null);
+      setCustomUrl(
+        currentAvatarUrl && !currentAvatarUrl.startsWith('preset:') ? currentAvatarUrl : ''
+      );
+      const currentRankId = levelInfo?.rank?.id || 'I';
+      const activeFrame = getSelectedOrderFrame(currentRankId, unlockedRanks);
+      setSelectedFrameId(activeFrame);
+    }
+  }, [isOpen, currentAvatarUrl, levelInfo?.rank?.id, levelInfo?.level]);
+
+  // Escuchar cambios reactivos en el marco de la Orden
+  useEffect(() => {
+    const handleFrameChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<OrderRankId>;
+      if (customEvent.detail) {
+        setSelectedFrameId(customEvent.detail);
+      }
+    };
+    window.addEventListener('nexus_order_frame_changed', handleFrameChanged);
+    return () => window.removeEventListener('nexus_order_frame_changed', handleFrameChanged);
+  }, []);
+
   if (!isOpen) return null;
 
   const handleSelectPreset = (presetId: string) => {
     setSelected(presetId);
+    soundService.playBrassBell();
+    onSaveAvatar(presetId, selectedFrameId || undefined).catch(() => {});
+    const preset = getAvatarPreset(presetId);
+    if (preset) {
+      onShowToast?.(`¡Sello «${preset.title}» aplicado a tu carnet!`, 'success');
+    }
   };
 
   const handleSelectFrame = (rank: OrderRank) => {
@@ -61,6 +92,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
     }
     setSelectedFrameId(rank.id);
     setSelectedOrderFrame(rank.id);
+    onSaveAvatar(selected, rank.id).catch(() => {});
     soundService.playBrassBell();
     onShowToast?.(`¡Marco «${rank.visualFrame}» equipado en tu perfil!`, 'success');
   };
@@ -103,6 +135,8 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   const handleClearAvatar = () => {
     setSelected(null);
     setCustomUrl('');
+    onSaveAvatar(null, selectedFrameId || undefined).catch(() => {});
+    onShowToast?.('Avatar restablecido a las iniciales de tu carnet.', 'info');
   };
 
   const handleSave = async () => {
@@ -241,6 +275,19 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
+
+                    <div className="mt-2 w-full">
+                      {isCurrent ? (
+                        <span className="inline-flex items-center justify-center gap-1 w-full py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          <span>Equipado</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center w-full py-1 rounded-lg border border-amber-800/30 dark:border-amber-400/30 text-amber-900 dark:text-amber-200 group-hover:bg-amber-500/20 text-[11px] font-bold transition">
+                          Equipar
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}

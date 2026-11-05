@@ -228,10 +228,13 @@ export function mapRowToBook(row: SupabaseBookRow): Book {
     idioma: d.idioma ?? '',
     edicion: d.edicion ?? '',
     sinopsis: d.sinopsis ?? '',
+    resena: d.resena ?? (row as any).resena ?? d.notasPersonales ?? '',
+    notasPersonales: d.notasPersonales ?? (row as any).notas_personales ?? (row as any).resena ?? d.resena ?? '',
+    citas: Array.isArray(d.citas) ? d.citas : (Array.isArray((row as any).citas) ? (row as any).citas : []),
     portadaUrl: d.portadaUrl ?? '',
     portadaFallbackUrl: d.portadaFallbackUrl ?? '',
     portadaDataUrl: d.portadaDataUrl,
-    pais: d.pais ?? '',
+    pais: d.pais ?? (row as any).pais ?? '',
     createdAt: row.created_at || d.createdAt || new Date().toISOString(),
     updatedAt: row.updated_at || d.updatedAt || new Date().toISOString()
   };

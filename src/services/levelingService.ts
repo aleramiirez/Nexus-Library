@@ -284,6 +284,7 @@ export function getRankForLevel(level: number): OrderRank {
 
 export const HONORIFIC_STORAGE_KEY = 'nexus_selected_honorific_title';
 export const ORDER_FRAME_STORAGE_KEY = 'nexus_selected_order_frame';
+export const HIGHEST_RANK_STORAGE_KEY = 'nexus_highest_reached_rank';
 
 /**
  * Lee el título honorífico activo guardado en localStorage o asigna el más alto desbloqueado.
@@ -316,11 +317,27 @@ export function setSelectedHonorificTitle(title: string): void {
 
 /**
  * Lee el marco de la Orden activo guardado en localStorage o asigna el del rango actual si no se ha elegido otro.
+ * Si el lector asciende a un nuevo escalafón de rango superior, actualiza automáticamente el marco equipado al nuevo rango.
  */
 export function getSelectedOrderFrame(defaultRankId: OrderRankId = 'I', unlockedRanks?: OrderRank[]): OrderRankId {
   if (typeof window === 'undefined') return defaultRankId;
   try {
     const saved = localStorage.getItem(ORDER_FRAME_STORAGE_KEY) as OrderRankId | null;
+    const highestRecordedRank = localStorage.getItem(HIGHEST_RANK_STORAGE_KEY) as OrderRankId | null;
+
+    const defaultIdx = ORDER_RANKS.findIndex((r) => r.id === defaultRankId);
+    const highestIdx = highestRecordedRank ? ORDER_RANKS.findIndex((r) => r.id === highestRecordedRank) : -1;
+
+    // Subida de escalafón detectada: si el rango alcanzado es superior al máximo registrado anteriormente,
+    // equipar automáticamente el nuevo marco del rango superior y sincronizar el estado global.
+    if (defaultIdx > highestIdx) {
+      localStorage.setItem(HIGHEST_RANK_STORAGE_KEY, defaultRankId);
+      localStorage.setItem(ORDER_FRAME_STORAGE_KEY, defaultRankId);
+      window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: defaultRankId }));
+      return defaultRankId;
+    }
+
+    // Si ya existe un registro de rango máximo, pero el marco guardado no es válido o está desactualizado
     if (saved && ORDER_RANKS.some((r) => r.id === saved)) {
       if (!unlockedRanks || unlockedRanks.some((r) => r.id === saved)) {
         return saved;
@@ -339,6 +356,13 @@ export function setSelectedOrderFrame(rankId: OrderRankId): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(ORDER_FRAME_STORAGE_KEY, rankId);
+    // Asegurar que el rango más alto alcanzado también quede fijado al menos en este rango
+    const currentHighest = localStorage.getItem(HIGHEST_RANK_STORAGE_KEY) as OrderRankId | null;
+    const currentIdx = currentHighest ? ORDER_RANKS.findIndex((r) => r.id === currentHighest) : -1;
+    const chosenIdx = ORDER_RANKS.findIndex((r) => r.id === rankId);
+    if (chosenIdx > currentIdx) {
+      localStorage.setItem(HIGHEST_RANK_STORAGE_KEY, rankId);
+    }
     window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: rankId }));
   } catch {
     // ignorar

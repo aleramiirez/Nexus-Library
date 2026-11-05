@@ -21,6 +21,7 @@ export interface UserAvatarProps {
   frameRank?: OrderRank;
   frameRankId?: OrderRankId;
   showLevelBadge?: boolean;
+  isCurrentUser?: boolean;
 }
 
 const SIZE_MAP = {
@@ -61,7 +62,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   level,
   rank: rankProp,
   frameRank: frameRankProp,
-  frameRankId: frameRankIdProp
+  frameRankId: frameRankIdProp,
+  isCurrentUser = false
 }) => {
   const [imageError, setImageError] = useState(false);
   const [storedFrameId, setStoredFrameId] = useState<OrderRankId | null>(() => {
@@ -106,14 +108,23 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const validLevel = typeof level === 'number' && !isNaN(level) ? level : undefined;
   const activeRank = rankProp || (validLevel !== undefined ? getRankForLevel(validLevel) : undefined);
 
-  // Marco activo: preferencia específica > rango actual derivado > preferencia guardada
-  const resolvedFrameRank: OrderRank | undefined =
+  // Marco activo a mostrar:
+  // 1. Marco explícito de objeto (prop frameRank)
+  // 2. Marco explícito por ID (prop frameRankId, e.g. reader.orderFrame de otro perfil)
+  // 3. Marco equipado en preferencias locales (storedFrameId) ÚNICAMENTE para el usuario de esta sesión (isCurrentUser)
+  // 4. Fallback al marco derivado del escalafón/nivel de este lector (activeRank)
+  // 5. Fallback base al Rango I (Aprendiz de Pergamino)
+  const isStoredFrameUnlocked =
+    Boolean(isCurrentUser &&
+    storedFrameId &&
+    (!validLevel || validLevel >= (ORDER_RANKS.find((r) => r.id === storedFrameId)?.minLevel ?? 1)));
+
+  const resolvedFrameRank: OrderRank =
     frameRankProp ||
     (frameRankIdProp ? ORDER_RANKS.find((r) => r.id === frameRankIdProp) : undefined) ||
+    (isStoredFrameUnlocked ? ORDER_RANKS.find((r) => r.id === storedFrameId) : undefined) ||
     activeRank ||
-    (storedFrameId && (!validLevel || validLevel >= (ORDER_RANKS.find((r) => r.id === storedFrameId)?.minLevel ?? 1))
-      ? ORDER_RANKS.find((r) => r.id === storedFrameId)
-      : undefined);
+    ORDER_RANKS[0];
 
   const isLarge = size === 'lg' || size === 'xl' || size === '2xl';
 

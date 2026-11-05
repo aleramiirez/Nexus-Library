@@ -78,6 +78,9 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
   const [profileVisibility, setProfileVisibility] = useState<ProfileVisibility>(
     userProfile?.visibility ?? (userProfile?.isPublic === false ? 'private' : 'public')
   );
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(
+    currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar
+  );
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isExportCarnetOpen, setIsExportCarnetOpen] = useState(false);
@@ -94,12 +97,15 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
       setProfileUsername(userProfile.username || '');
       setProfileBio(userProfile.bio || '');
       setProfileVisibility(userProfile.visibility ?? (userProfile.isPublic === false ? 'private' : 'public'));
+      setCurrentAvatar(userProfile.avatarUrl ?? null);
     } else if (!currentUser) {
       setProfileDisplayName(guestAlias);
+      setCurrentAvatar(guestAvatar);
     }
-  }, [currentUser, userProfile, guestAlias]);
+  }, [currentUser, userProfile, guestAlias, guestAvatar]);
 
   const handleAvatarSelect = async (avatarUrl: string | null, frameId?: any) => {
+    setCurrentAvatar(avatarUrl);
     if (currentUser) {
       if (onUpdateProfile) {
         await onUpdateProfile({ avatarUrl, ...(frameId ? { orderFrame: frameId } : {}) });
@@ -249,13 +255,15 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
             <div className="relative group shrink-0">
               <div className="p-1 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-md transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg">
                 <UserAvatar
-                  avatarUrl={currentUser ? userProfile?.avatarUrl : guestAvatar}
+                  avatarUrl={currentAvatar}
                   displayName={profileDisplayName}
                   username={profileUsername}
                   size="2xl"
                   className="rounded-xl"
                   level={readerLevelInfo.level}
                   rank={readerLevelInfo.rank}
+                  frameRank={readerLevelInfo.activeFrameRank}
+                  isCurrentUser={true}
                 />
               </div>
               <button
@@ -689,7 +697,7 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
         <AvatarPickerModal
           isOpen={isAvatarModalOpen}
           onClose={() => setIsAvatarModalOpen(false)}
-          currentAvatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+          currentAvatarUrl={currentAvatar}
           displayName={profileDisplayName}
           username={profileUsername}
           onSaveAvatar={handleAvatarSelect}
