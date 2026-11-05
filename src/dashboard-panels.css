@@ -2,6 +2,261 @@
 
 :root {
   --lib-paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.28 -0.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)'/%3E%3C/svg%3E");
+
+  /* ===== Sistema Unificado de Tarjetas de Inicio (Tokens) ===== */
+  --dashboard-card-radius: 18px;
+  --dashboard-card-inner-radius: 12px;
+  --dashboard-card-inner-inset: 7px;
+  --dashboard-card-padding: 22px 24px;
+  --dashboard-card-padding-mobile: 16px;
+
+  /* Modo Claro */
+  --dashboard-card-bg-base: #f7f0df;
+  --dashboard-card-bg-image:
+    var(--lib-paper-grain),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.45), transparent 70%),
+    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
+  --dashboard-card-border: 1px solid rgba(160, 115, 55, 0.25);
+  --dashboard-card-inner-border: 1px solid rgba(175, 130, 75, 0.22);
+  --dashboard-card-shadow:
+    0 1px 2px rgba(60, 35, 10, 0.05),
+    0 3px 0 0 #ede0c7,
+    0 4px 2px rgba(60, 35, 10, 0.07),
+    0 6px 0 0 #e4d4b6,
+    0 7px 3px rgba(60, 35, 10, 0.08),
+    0 12px 24px -6px rgba(60, 35, 10, 0.14);
+  --dashboard-card-shadow-hero:
+    0 1px 2px rgba(60, 35, 10, 0.06),
+    0 3px 0 0 #ede0c7,
+    0 4px 2px rgba(60, 35, 10, 0.08),
+    0 6px 0 0 #e4d4b6,
+    0 8px 4px rgba(60, 35, 10, 0.09),
+    0 16px 32px -6px rgba(60, 35, 10, 0.18);
+}
+
+html.dark {
+  /* Modo Oscuro (Textura de grano más sutil y profunda) */
+  --dashboard-card-bg-base: #101520;
+  --dashboard-card-bg-image:
+    var(--lib-paper-grain),
+    radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 255, 255, 0.04), transparent 70%),
+    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
+  --dashboard-card-border: 1px solid rgba(220, 180, 100, 0.16);
+  --dashboard-card-inner-border: 1px solid rgba(220, 180, 100, 0.12);
+  --dashboard-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 3px 0 0 #18202d,
+    0 4px 2px rgba(0, 0, 0, 0.4),
+    0 6px 0 0 #0f141f,
+    0 7px 3px rgba(0, 0, 0, 0.5),
+    0 16px 28px -6px rgba(0, 0, 0, 0.7);
+  --dashboard-card-shadow-hero:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 3px 0 0 #18202d,
+    0 4px 2px rgba(0, 0, 0, 0.4),
+    0 6px 0 0 #0f141f,
+    0 8px 4px rgba(0, 0, 0, 0.5),
+    0 20px 36px -6px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== Clases Comunes del Sistema de Tarjetas (Unificado) ===== */
+.dashboard-card {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--dashboard-card-bg-base);
+  background-image: var(--dashboard-card-bg-image);
+  border-radius: var(--dashboard-card-radius);
+  border: var(--dashboard-card-border);
+  box-shadow: var(--dashboard-card-shadow);
+  padding: var(--dashboard-card-padding);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+@media (max-width: 639px) {
+  .dashboard-card {
+    padding: var(--dashboard-card-padding-mobile);
+  }
+}
+
+/* Marco interior fino común */
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  inset: var(--dashboard-card-inner-inset);
+  border-radius: var(--dashboard-card-inner-radius);
+  border: var(--dashboard-card-inner-border);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Variante Hero («Leyendo actualmente»): Sombra protagonista más marcada */
+.dashboard-card--hero {
+  box-shadow: var(--dashboard-card-shadow-hero);
+}
+
+/* Variante List («Mis sagas»): Líneas de papel pautado de archivo */
+.dashboard-card--list {
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(160, 120, 70, 0.12) 33px, rgba(160, 120, 70, 0.12) 34px),
+    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
+  background-position: 0 10px;
+}
+
+html.dark .dashboard-card--list {
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(255, 255, 255, 0.038) 33px, rgba(255, 255, 255, 0.038) 34px),
+    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
+}
+
+/* Variante Shelf («Favoritos»): Contenedor común (la balda de madera vive en su interior) */
+.dashboard-card--shelf {
+  /* Contenedor base de papel apilado */
+}
+
+/* Variante Base («Hábito y Racha»): Contenedor común puro sin adornos exteriores */
+.dashboard-card--base {
+  /* Contenedor base puro */
+}
+
+/* Cabecera Común Unificada */
+.dashboard-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+}
+
+/* En variante hero, reservar espacio a la derecha para la cinta marcapáginas */
+.dashboard-card-header--hero {
+  padding-right: 2rem;
+}
+
+@media (min-width: 640px) {
+  .dashboard-card-header--hero {
+    padding-right: 2.5rem;
+  }
+}
+
+.dashboard-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.dashboard-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #b45309; /* amber-700 */
+  flex-shrink: 0;
+}
+
+html.dark .dashboard-card-icon {
+  color: #fbbf24; /* amber-400 */
+}
+
+.dashboard-card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dashboard-card-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1c1917; /* stone-900 */
+  font-size: 1.125rem; /* text-lg */
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .dashboard-card-title {
+    font-size: 1.25rem; /* text-xl */
+  }
+}
+
+/* Título un poco mayor en variante hero */
+.dashboard-card-title--hero {
+  font-size: 1.25rem; /* text-xl */
+}
+
+@media (min-width: 640px) {
+  .dashboard-card-title--hero {
+    font-size: 1.5rem; /* text-2xl */
+  }
+}
+
+html.dark .dashboard-card-title {
+  color: #f8fafc; /* stone-100 */
+}
+
+.dashboard-card-subtitle {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 0.8125rem; /* 13px */
+  color: #78716c; /* stone-500 */
+}
+
+html.dark .dashboard-card-subtitle {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Enlace de acción común unificado a la derecha */
+.dashboard-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 600;
+  color: #92400e; /* amber-800 */
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  margin: -0.25rem -0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+  margin-left: auto;
+}
+
+.dashboard-card-action:hover {
+  color: #78350f; /* amber-900 */
+  text-decoration: underline;
+}
+
+.dashboard-card-action:focus-visible {
+  outline: 2px solid #d97706; /* amber-600 */
+  outline-offset: 2px;
+}
+
+html.dark .dashboard-card-action {
+  color: #fbbf24; /* amber-400 */
+}
+
+html.dark .dashboard-card-action:hover {
+  color: #fde68a; /* amber-300 */
+}
+
+.dashboard-card-action-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.dashboard-card-action:hover .dashboard-card-action-chevron {
+  transform: translateX(2px);
 }
 
 /* 1. Base común: Papel de biblioteca apilado */
