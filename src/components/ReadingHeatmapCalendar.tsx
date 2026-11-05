@@ -77,7 +77,19 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
   const handleSelectDay = (day: DayCellData) => {
     if (day.isFuture) return;
     setSelectedDay(day);
-    setEditPagesInput(day.pages > 0 ? String(day.pages) : '');
+    setEditPagesInput(day.pages > 0 ? String(day.pages) : '0');
+  };
+
+  const handleStepPages = (delta: number) => {
+    const current = parseInt(editPagesInput.trim(), 10) || 0;
+    const next = Math.max(0, current + delta);
+    setEditPagesInput(String(next));
+  };
+
+  const handleShortcutPages = (add: number) => {
+    const current = parseInt(editPagesInput.trim(), 10) || 0;
+    const next = Math.max(0, current + add);
+    setEditPagesInput(String(next));
   };
 
   const handleSaveSelectedDayPages = () => {
@@ -85,17 +97,14 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
     const p = parseInt(editPagesInput.trim(), 10);
     const pagesToSave = isNaN(p) ? 0 : Math.max(0, p);
     readingStreakService.setManualReadingLogForDate(selectedDay.iso, pagesToSave, pagesToSave > 0);
-  };
-
-  const handleMarkSelectedDayReadNoPages = () => {
-    if (!selectedDay) return;
-    readingStreakService.setManualReadingLogForDate(selectedDay.iso, 0, true);
+    setSelectedDay((prev) => (prev ? { ...prev, pages: pagesToSave } : null));
   };
 
   const handleDeleteSelectedDayEntry = () => {
     if (!selectedDay) return;
     readingStreakService.setManualReadingLogForDate(selectedDay.iso, 0, false);
-    setEditPagesInput('');
+    setEditPagesInput('0');
+    setSelectedDay((prev) => (prev ? { ...prev, pages: 0 } : null));
   };
 
   // Helpers de fechas locales
@@ -512,75 +521,132 @@ export const ReadingHeatmapCalendar: React.FC<ReadingHeatmapCalendarProps> = ({
         {/* Editor manual de lectura al pulsar en un día del mapa de calor */}
         {selectedDay && !selectedDay.isFuture && (
           <div
-            className="nx-heatmap-editor-box mt-3 p-3 sm:p-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#FAF3E5] dark:bg-[#151B27] shadow-md animate-in fade-in duration-200"
+            className="nx-heatmap-editor-box nx-day-editor-box"
             role="region"
             aria-label="Editor manual de lectura"
           >
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-              <div className="text-xs font-serif font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5 flex-wrap">
-                <span>📅</span>
-                <span>
-                  {selectedDay.weekdayFull} {selectedDay.dayNumber} de {selectedDay.monthFull} {selectedYear}
+            {/* Cabecera editorial con icono, fecha, badge de páginas y botón cerrar */}
+            <div className="nx-day-editor-header">
+              <div className="nx-day-editor-title-wrap">
+                <svg
+                  className="nx-day-editor-ribbon-icon"
+                  viewBox="0 0 16 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M3 2h10v16l-5-4-5 4z" />
+                </svg>
+                <span className="nx-day-editor-title">
+                  📅 {selectedDay.weekdayFull} {selectedDay.dayNumber} de {selectedDay.monthFull} {selectedYear}
                 </span>
-                <span className="text-stone-400">·</span>
-                <span className="text-amber-800 dark:text-amber-300 font-sans font-semibold text-[11px]">
+                <span className="opacity-40">·</span>
+                <span
+                  className={`nx-day-editor-badge ${selectedDay.pages > 0 ? 'has-pages' : ''}`}
+                >
                   {selectedDay.pages > 0
-                    ? `${selectedDay.pages} ${selectedDay.pages === 1 ? 'página registrada' : 'páginas registradas'}`
+                    ? `${selectedDay.pages} ${selectedDay.pages === 1 ? 'pág' : 'págs'} registradas`
                     : 'Sin registro'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedDay(null)}
-                className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 text-xs px-2 py-0.5 rounded cursor-pointer"
+                className="nx-day-editor-close"
                 aria-label="Cerrar editor"
+                title="Cerrar"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1 bg-white dark:bg-[#0D1017] border border-[#D8C4A0] dark:border-[#283246] rounded-lg px-2.5 py-1">
+            {/* Fila principal de controles: botones circulares +/- , atajos y acciones */}
+            <div className="nx-day-editor-body">
+              {/* Selector con botones redondos - y + */}
+              <div className="nx-day-input-group">
+                <button
+                  type="button"
+                  onClick={() => handleStepPages(-1)}
+                  className="nx-day-step-btn"
+                  aria-label="Restar una página"
+                  title="-1 pág"
+                >
+                  −
+                </button>
                 <input
                   id="manual-heatmap-pages-input"
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   max="9999"
                   value={editPagesInput}
                   onChange={(e) => setEditPagesInput(e.target.value)}
                   placeholder="0"
-                  className="w-16 text-right font-serif font-bold text-sm bg-transparent text-stone-900 dark:text-stone-100 outline-none"
+                  className="nx-day-number-input"
                   autoFocus
                   aria-label="Páginas leídas en esta fecha"
                 />
-                <span className="text-xs text-stone-500 dark:text-stone-400 select-none">págs</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSaveSelectedDayPages}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-xs transition cursor-pointer"
-              >
-                Guardar
-              </button>
-
-              <button
-                type="button"
-                onClick={handleMarkSelectedDayReadNoPages}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-amber-400/20 bg-white/70 dark:bg-black/30 hover:bg-amber-500/10 text-stone-800 dark:text-stone-200 transition cursor-pointer"
-              >
-                Marcar día leído (sin págs)
-              </button>
-
-              {selectedDay.pages > 0 && (
+                <span className="nx-day-suffix">págs</span>
                 <button
                   type="button"
-                  onClick={handleDeleteSelectedDayEntry}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 hover:bg-rose-500/10 transition ml-auto cursor-pointer"
+                  onClick={() => handleStepPages(1)}
+                  className="nx-day-step-btn"
+                  aria-label="Sumar una página"
+                  title="+1 pág"
                 >
-                  Borrar día
+                  +
                 </button>
-              )}
+              </div>
+
+              {/* Atajos rápidos en pastillas doradas punteadas estilo Dark Academia */}
+              <div className="nx-day-shortcuts">
+                <button
+                  type="button"
+                  onClick={() => handleShortcutPages(10)}
+                  className="nx-day-shortcut-btn"
+                  title="Añadir 10 páginas"
+                >
+                  +10
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShortcutPages(25)}
+                  className="nx-day-shortcut-btn"
+                  title="Añadir 25 páginas"
+                >
+                  +25
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShortcutPages(50)}
+                  className="nx-day-shortcut-btn"
+                  title="Añadir 50 páginas"
+                >
+                  +50
+                </button>
+              </div>
+
+              {/* Acciones: Guardar y Borrar */}
+              <div className="nx-day-actions">
+                {selectedDay.pages > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelectedDayEntry}
+                    className="nx-day-delete-btn"
+                    title="Eliminar registro de esta fecha"
+                  >
+                    Borrar día
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveSelectedDayPages}
+                  className="nx-day-save-btn"
+                >
+                  ✓ Guardar
+                </button>
+              </div>
             </div>
           </div>
         )}

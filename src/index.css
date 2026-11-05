@@ -640,6 +640,304 @@ html.dark .nx-streak-w {
   }
 }
 
+/* ===== Panel Editorial de Edición Manual de Lectura Diaria ===== */
+.nx-day-editor-box {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--card);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, var(--in) 0%, var(--card) 100%);
+  border: 1px solid var(--bd);
+  border-radius: 18px;
+  padding: 1.1rem 1.25rem;
+  margin-top: 1rem;
+  box-shadow:
+    0 2px 4px rgba(60, 35, 10, 0.05),
+    0 8px 20px -4px rgba(60, 35, 10, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: nxDayEditorIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark .nx-day-editor-box {
+  background-color: var(--card);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%),
+    linear-gradient(180deg, var(--in) 0%, var(--card) 100%);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 10px 24px -4px rgba(0, 0, 0, 0.6);
+  border-color: rgba(220, 180, 100, 0.2);
+}
+
+/* Marco interior fino con esquinas redondeadas tipo placa/pergamino */
+.nx-day-editor-box::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 13px;
+  border: 1px solid var(--bd);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+html.dark .nx-day-editor-box::before {
+  border-color: rgba(220, 180, 100, 0.12);
+}
+
+@keyframes nxDayEditorIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nx-day-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.nx-day-editor-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.nx-day-editor-ribbon-icon {
+  width: 14px;
+  height: 18px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.nx-day-editor-title {
+  font: 700 1.22rem/1.2 'Cormorant Garamond', Georgia, serif;
+  color: var(--tx);
+  letter-spacing: -0.01em;
+}
+
+.nx-day-editor-badge {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  color: var(--mu);
+  border: 1px solid var(--bd);
+  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nx-day-editor-badge.has-pages {
+  color: var(--crim);
+  border-color: rgba(142, 36, 52, 0.3);
+  background: rgba(142, 36, 52, 0.08);
+}
+
+html.dark .nx-day-editor-badge.has-pages {
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.nx-day-editor-close {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--mu);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.nx-day-editor-close:hover {
+  border-color: var(--bd);
+  color: var(--tx);
+  background: var(--in);
+}
+
+.nx-day-editor-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+
+.nx-day-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--in);
+  border: 1px solid var(--bd);
+  border-radius: 99px;
+  padding: 3px 6px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.nx-day-input-group:focus-within {
+  box-shadow: 0 0 0 2px var(--gold), 0 0 10px var(--glow);
+  border-color: var(--gold);
+}
+
+.nx-day-step-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  line-height: 1;
+  background: var(--card);
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+.nx-day-step-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: scale(1.06);
+}
+
+.nx-day-step-btn:active {
+  transform: scale(0.95);
+}
+
+.nx-day-number-input {
+  width: 4.2ch;
+  min-width: 3ch;
+  border: 0;
+  background: transparent;
+  color: var(--tx);
+  font: 700 1.25rem 'Cormorant Garamond', Georgia, serif;
+  text-align: right;
+  outline: none;
+  padding: 0 0.15rem;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.nx-day-number-input::-webkit-inner-spin-button,
+.nx-day-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.nx-day-suffix {
+  color: var(--mu);
+  font-size: 0.8rem;
+  margin-right: 0.4rem;
+  user-select: none;
+  font-weight: 500;
+}
+
+.nx-day-shortcuts {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.nx-day-shortcut-btn {
+  padding: 0.28rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: transparent;
+  border: 1px dashed var(--gold);
+  border-radius: 99px;
+  cursor: pointer;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.nx-day-shortcut-btn:hover {
+  background: var(--glow);
+  transform: translateY(-1px);
+}
+
+.nx-day-shortcut-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.nx-day-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.nx-day-save-btn {
+  padding: 0.42rem 1.1rem;
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #E5C158, #C98A1B);
+  color: #2B1A10;
+  border: 1px solid #C98A1B;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nx-day-save-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.nx-day-save-btn:active {
+  transform: translateY(0);
+}
+
+.nx-day-delete-btn {
+  padding: 0.38rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--crim);
+  background: transparent;
+  border: 1px dashed rgba(194, 72, 90, 0.45);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.nx-day-delete-btn:hover {
+  background: rgba(194, 72, 90, 0.12);
+  border-color: var(--crim);
+}
+
 /* ===== Widget Ceremonial de Mapa de Calor de Lectura Anual (Sellos y Cordones 365d) ===== */
 .nx-heatmap-w {
   --card: #FBF4E4;
