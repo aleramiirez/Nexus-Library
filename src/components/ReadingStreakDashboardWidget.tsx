@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Flame } from 'lucide-react';
 import { Book } from '../types/models';
 import {
   readingStreakService,
@@ -6,6 +7,7 @@ import {
   CalendarDayView
 } from '../services/readingStreakService';
 import { soundService } from '../services/soundService';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 
 interface ReadingStreakDashboardWidgetProps {
   books: Book[];
@@ -161,26 +163,25 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
   };
 
   return (
-    <section className="nx-streak-w" aria-label="Hábito y racha de lectura">
-      {/* Cabecera */}
-      <div className="nx-streak-hd">
-        <div>
-          <h2 className="nx-streak-title">Hábito y Racha de Lectura</h2>
-          <p className="nx-streak-sub">
+    <DashboardCard
+      as="section"
+      variant="base"
+      aria-label="Hábito y racha de lectura"
+      className="nx-streak-w"
+    >
+      {/* Cabecera unificada */}
+      <DashboardCardHeader
+        icon={<Flame className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+        title="Hábito y Racha de Lectura"
+        subtitle={
+          <span>
             {stats.activeDaysThisYear} {stats.activeDaysThisYear === 1 ? 'día activo' : 'días activos'} en {new Date().getFullYear()}
-          </p>
-        </div>
-
-        {onNavigateToStats && (
-          <button
-            type="button"
-            onClick={onNavigateToStats}
-            className="nx-streak-lk"
-          >
-            Mapa anual (365d) ›
-          </button>
-        )}
-      </div>
+          </span>
+        }
+        actionText={onNavigateToStats ? 'Mapa anual (365d)' : undefined}
+        onAction={onNavigateToStats}
+        actionAriaLabel="Ver mapa de lectura anual de 365 días"
+      />
 
       {/* Hero: Tarjeta protagonista de Racha Actual + 2 filas compactas */}
       <div className="nx-streak-hero">
@@ -531,6 +532,6 @@ export const ReadingStreakDashboardWidget: React.FC<ReadingStreakDashboardWidget
             : 'Unos minutos al día mantienen viva la llama.'}
         </i>
       </div>
-    </section>
+    </DashboardCard>
   );
 };
