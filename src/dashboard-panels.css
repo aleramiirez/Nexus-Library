@@ -1014,3 +1014,492 @@ html.dark .reader-avatar-stamp {
     opacity: 0.8;
   }
 }
+
+/* ===== Bloque Editorial de Avance de Lectura ===== */
+.rpb-wrap {
+  --rpb-bg: #EFE3CB;
+  --rpb-card: #FBF4E4;
+  --rpb-in: #F5EAD3;
+  --rpb-bd: #D8C4A0;
+  --rpb-tx: #2B1A10;
+  --rpb-mu: #7A6650;
+  --rpb-gold: #B07A1E;
+  --rpb-crim: #8E2434;
+  --rpb-glow: rgba(176, 122, 30, 0.35);
+  --rpb-fld: #FFFBF1;
+  position: relative;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+html.dark .rpb-wrap {
+  --rpb-bg: #0D1017;
+  --rpb-card: #1B2230;
+  --rpb-in: #151A24;
+  --rpb-bd: #283246;
+  --rpb-tx: #EDE3CF;
+  --rpb-mu: #9AA3B5;
+  --rpb-gold: #E5C158;
+  --rpb-crim: #C2485A;
+  --rpb-glow: rgba(229, 193, 88, 0.35);
+  --rpb-fld: #0F131B;
+}
+
+/* 1. Cabecera en una sola línea (en móvil, el resumen baja a segunda línea) */
+.rpb-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  position: relative;
+}
+
+.rpb-bookmark-icon {
+  width: 16px;
+  height: 20px;
+  color: var(--rpb-gold);
+  flex: none;
+}
+
+.rpb-header b {
+  font-weight: 400;
+  color: var(--rpb-tx);
+  font-size: 0.85rem;
+}
+
+.rpb-header em {
+  font: 700 1.35rem/1 "Cormorant Garamond", Georgia, serif;
+  font-style: normal;
+  color: var(--rpb-crim);
+}
+
+.rpb-percent-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--rpb-gold);
+  border: 1px solid var(--rpb-gold);
+  border-radius: 99px;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 1;
+}
+
+.rpb-summary {
+  color: var(--rpb-mu);
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.rpb-summary b {
+  color: var(--rpb-crim);
+  font-weight: 600;
+}
+
+.rpb-btn-ghost {
+  font: 600 0.82rem "Plus Jakarta Sans", system-ui, sans-serif;
+  color: var(--rpb-tx);
+  cursor: pointer;
+  border: 1px solid var(--rpb-bd);
+  background: var(--rpb-card);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  margin-left: 0.2rem;
+}
+
+.rpb-btn-ghost:hover:not(:disabled) {
+  border-color: var(--rpb-gold);
+  color: var(--rpb-gold);
+}
+
+.rpb-btn-ghost:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 2px;
+}
+
+.rpb-btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rpb-timer-btn {
+  font: 600 0.82rem "Plus Jakarta Sans", system-ui, sans-serif;
+  color: var(--rpb-tx);
+  cursor: pointer;
+  border: 1px solid var(--rpb-bd);
+  background: var(--rpb-card);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.rpb-timer-btn:hover:not(:disabled) {
+  border-color: var(--rpb-gold);
+  color: var(--rpb-gold);
+}
+
+.rpb-timer-btn:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 2px;
+}
+
+/* 2. Barra: pista de 12px con sombra interior y relleno ámbar→dorado */
+.rpb-track {
+  position: relative;
+  height: 12px;
+  border-radius: 99px;
+  background: var(--rpb-bd);
+  margin: 0.9rem 0.6rem 0.5rem;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.rpb-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #B8601A, #E5A03C 65%, #F6D08A);
+  transition: width 0.25s ease;
+  box-shadow: 0 0 8px var(--rpb-glow);
+}
+
+/* Sello de lacre carmesí con marcapáginas blanco */
+.rpb-seal {
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 52% 48% 50% 50% / 50% 52% 48% 50%;
+  background: radial-gradient(circle at 35% 30%, #CF5560, #8E2434 72%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  transition: left 0.25s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rpb-seal svg {
+  width: 10px;
+  height: 12px;
+  color: #FFE9D6;
+}
+
+.rpb-wrap.is-editing .rpb-seal {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px var(--rpb-glow), 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+}
+
+.rpb-seal.pop {
+  animation: rpbSealPop 0.5s ease-out;
+}
+
+@keyframes rpbSealPop {
+  40% {
+    transform: scale(1.5) rotate(-12deg);
+  }
+}
+
+/* Range input invisible en modo edición */
+.rpb-range-input {
+  position: absolute;
+  left: -12px;
+  right: -12px;
+  top: -12px;
+  width: calc(100% + 24px);
+  height: 36px;
+  margin: 0;
+  opacity: 0;
+  cursor: grab;
+  display: none;
+  z-index: 3;
+}
+
+.rpb-range-input:active {
+  cursor: grabbing;
+}
+
+.rpb-wrap.is-editing .rpb-range-input {
+  display: block;
+}
+
+.rpb-range-input:focus-visible ~ .rpb-seal {
+  box-shadow: 0 0 0 3px var(--rpb-gold);
+}
+
+/* 4. Panel de edición compacto */
+.rpb-edit-panel {
+  display: none;
+  margin-top: 0.8rem;
+  background: var(--rpb-in);
+  border: 1px solid var(--rpb-bd);
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.8rem;
+}
+
+.rpb-wrap.is-editing .rpb-edit-panel {
+  display: flex;
+  animation: rpbFadeIn 0.25s ease-out;
+}
+
+@keyframes rpbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Selector segmentado # Página / % Porcentaje */
+.rpb-segmented {
+  display: inline-flex;
+  border: 1px solid var(--rpb-bd);
+  border-radius: 99px;
+  padding: 2px;
+  background: var(--rpb-card);
+}
+
+.rpb-segmented button {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--rpb-tx);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  min-height: 28px;
+}
+
+.rpb-segmented button[aria-pressed="true"] {
+  background: linear-gradient(135deg, #E5C158, #C98A1B);
+  color: #2B1A10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.rpb-segmented button:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 1px;
+}
+
+/* Campo numérico con botones − y + */
+.rpb-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--rpb-fld);
+  border: 1px solid var(--rpb-bd);
+  border-radius: 99px;
+  padding: 3px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.rpb-input-group:focus-within {
+  box-shadow: 0 0 0 2px var(--rpb-gold), 0 0 12px var(--rpb-glow);
+  border-color: var(--rpb-gold);
+}
+
+.rpb-step-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+  background: var(--rpb-in);
+  border: 1px solid var(--rpb-bd);
+  color: var(--rpb-tx);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.rpb-step-btn:hover {
+  border-color: var(--rpb-gold);
+}
+
+.rpb-step-btn:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 1px;
+}
+
+.rpb-number-input {
+  width: 4.2ch;
+  min-width: 3ch;
+  border: 0;
+  background: transparent;
+  color: var(--rpb-tx);
+  font: 700 1.25rem "Cormorant Garamond", Georgia, serif;
+  text-align: right;
+  outline: none;
+  padding: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.rpb-number-input::-webkit-inner-spin-button,
+.rpb-number-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rpb-suffix {
+  color: var(--rpb-mu);
+  font-size: 0.8rem;
+  margin: 0 0.35rem 0 0.1rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Campo para total de páginas si no estuviera establecido */
+.rpb-total-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--rpb-fld);
+  border: 1px solid var(--rpb-bd);
+  border-radius: 99px;
+  padding: 3px 8px;
+}
+
+.rpb-total-field input {
+  width: 5ch;
+  border: 0;
+  background: transparent;
+  color: var(--rpb-tx);
+  font: 700 1.1rem "Cormorant Garamond", Georgia, serif;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Atajos */
+.rpb-shortcuts {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.rpb-shortcut-btn {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--rpb-gold);
+  background: transparent;
+  border: 1px dashed var(--rpb-gold);
+  border-radius: 99px;
+  cursor: pointer;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.rpb-shortcut-btn:hover {
+  background: rgba(176, 122, 30, 0.1);
+  transform: translateY(-1px);
+}
+
+.rpb-shortcut-btn:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 2px;
+}
+
+/* Indicador de cambio respecto a lo guardado */
+.rpb-delta {
+  font-size: 0.75rem;
+  color: var(--rpb-mu);
+  min-width: 5.5em;
+  user-select: none;
+}
+
+/* Acciones: Cancelar y Guardar */
+.rpb-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.rpb-btn-cancel {
+  border-color: transparent !important;
+  color: var(--rpb-mu) !important;
+  background: transparent !important;
+}
+
+.rpb-btn-cancel:hover {
+  color: var(--rpb-tx) !important;
+  border-color: var(--rpb-bd) !important;
+}
+
+.rpb-btn-save {
+  background: linear-gradient(135deg, #E5C158, #C98A1B) !important;
+  border: 1px solid #C98A1B !important;
+  color: #2B1A10 !important;
+  padding-inline: 1.1rem !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(176, 122, 30, 0.3);
+}
+
+.rpb-btn-save:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.rpb-btn-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Toast de guardado */
+.rpb-toast {
+  height: 1.2rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--rpb-gold);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.rpb-toast.on {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 560px) {
+  .rpb-summary {
+    margin-left: 0;
+    flex-basis: 100%;
+    order: 3;
+  }
+  .rpb-header .rpb-btn-ghost {
+    margin-left: auto;
+    order: 2;
+  }
+  .rpb-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpb-wrap * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

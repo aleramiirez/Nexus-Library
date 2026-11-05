@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Clock,
   BookOpen,
   ChevronRight,
   ChevronLeft,
-  Check,
-  X,
-  Percent,
-  Hash,
-  Bookmark,
   Timer
 } from 'lucide-react';
 import { Book } from '../types/models';
@@ -75,11 +70,18 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
 
   // Estado para la edición rápida inline del progreso
   const [isInlineEditing, setIsInlineEditing] = useState(false);
-  const [editMode, setEditMode] = useState<'page' | 'percent'>('page');
-  const [pageInputValue, setPageInputValue] = useState('');
-  const [percentInputValue, setPercentInputValue] = useState('');
+  const [unitMode, setUnitMode] = useState<'page' | 'percent'>('page');
+  const [savedPage, setSavedPage] = useState(0);
+  const [draftPage, setDraftPage] = useState(0);
+  const [pageInputStr, setPageInputStr] = useState('0');
+  const [percentInputStr, setPercentInputStr] = useState('0');
   const [totalPagesInput, setTotalPagesInput] = useState('');
+  const [isPopping, setIsPopping] = useState(false);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const total = readingBooks.length;
   const safeIndex = total > 0 ? Math.min(currentIndex, total - 1) : 0;
@@ -90,28 +92,126 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
     if (currentBook) {
       const pActual = currentBook.paginaActual || 0;
       const pTotal = currentBook.paginas || 0;
-      setPageInputValue(String(pActual));
+      setSavedPage(pActual);
+      setDraftPage(pActual);
+      setPageInputStr(String(pActual));
       const calculatedPct = pTotal > 0 ? Math.min(100, Math.round((pActual / pTotal) * 100)) : 0;
-      setPercentInputValue(String(calculatedPct));
+      setPercentInputStr(String(calculatedPct));
       setTotalPagesInput(pTotal > 0 ? String(pTotal) : '');
       setIsInlineEditing(false);
     }
   }, [currentBook?.id, currentBook?.paginaActual, currentBook?.paginas]);
 
-  // Cálculos de progreso
-  const currentPage = currentBook?.paginaActual || 0;
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
+
   const totalPages = currentBook?.paginas || 0;
-  const percentage = totalPages > 0 ? Math.min(100, Math.round((currentPage / totalPages) * 100)) : 0;
-  const remainingPages = Math.max(0, totalPages - currentPage);
+  const effectiveTotal = (() => {
+    if (totalPagesInput.trim()) {
+      const parsed = parseInt(totalPagesInput.trim(), 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    return totalPages > 0 ? totalPages : 0;
+  })();
+
+  const percentage = effectiveTotal > 0 ? Math.min(100, Math.round((draftPage / effectiveTotal) * 100)) : 0;
+  const clampedPercent = effectiveTotal > 0
+    ? Math.min(100, Math.max(0, (draftPage / effectiveTotal) * 100))
+    : draftPage > 0 ? 100 : 0;
+  const remainingPages = Math.max(0, effectiveTotal - draftPage);
   const remainingTimeStr = calculateRemainingReadingTime(remainingPages);
 
-  const handleSaveInlineProgress = async (e?: React.FormEvent) => {
+  const delta = draftPage - savedPage;
+  const deltaText = delta === 0 ? 'sin cambios' : `${delta > 0 ? '+' : '−'}${Math.abs(delta)} págs`;
+
+  const updateDraft = (val: number) => {
+    const maxVal = effectiveTotal > 0 ? effectiveTotal : 99999;
+    const clamped = Math.max(0, Math.min(maxVal, Math.round(val)));
+    setDraftPage(clamped);
+    setPageInputStr(String(clamped));
+    if (effectiveTotal > 0) {
+      setPercentInputStr(String(Math.round((clamped / effectiveTotal) * 100)));
+    }
+  };
+
+  const handleUnitChange = (newMode: 'page' | 'percent') => {
+    setUnitMode(newMode);
+    if (newMode === 'page') {
+      setPageInputStr(String(draftPage));
+    } else {
+      setPercentInputStr(String(effectiveTotal > 0 ? Math.round((draftPage / effectiveTotal) * 100) : 0));
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (unitMode === 'page') {
+      setPageInputStr(raw);
+      if (raw.trim() !== '') {
+        const parsed = parseInt(raw, 10);
+        if (!isNaN(parsed)) {
+          const maxVal = effectiveTotal > 0 ? effectiveTotal : 99999;
+          const clamped = Math.max(0, Math.min(maxVal, parsed));
+          setDraftPage(clamped);
+          if (effectiveTotal > 0) {
+            setPercentInputStr(String(Math.round((clamped / effectiveTotal) * 100)));
+          }
+        }
+      }
+    } else {
+      setPercentInputStr(raw);
+      if (raw.trim() !== '') {
+        const parsed = parseFloat(raw);
+        if (!isNaN(parsed) && effectiveTotal > 0) {
+          const clampedPct = Math.max(0, Math.min(100, parsed));
+          const targetP = Math.round((clampedPct / 100) * effectiveTotal);
+          setDraftPage(targetP);
+          setPageInputStr(String(targetP));
+        }
+      }
+    }
+  };
+
+  const handleInputBlur = () => {
+    setPageInputStr(String(draftPage));
+    if (effectiveTotal > 0) {
+      setPercentInputStr(String(Math.round((draftPage / effectiveTotal) * 100)));
+    }
+  };
+
+  const handleStep = (stepDelta: number) => {
+    if (unitMode === 'page') {
+      updateDraft(draftPage + stepDelta);
+    } else {
+      if (effectiveTotal > 0) {
+        const curPct = Math.round((draftPage / effectiveTotal) * 100);
+        const newPct = Math.max(0, Math.min(100, curPct + stepDelta));
+        updateDraft(Math.round((newPct / 100) * effectiveTotal));
+      }
+    }
+  };
+
+  const handleShortcut = (action: number | 'all') => {
+    if (action === 'all') {
+      updateDraft(effectiveTotal > 0 ? effectiveTotal : draftPage + 100);
+    } else {
+      updateDraft(draftPage + action);
+    }
+  };
+
+  const handleCancel = () => {
+    updateDraft(savedPage);
+    setIsInlineEditing(false);
+  };
+
+  const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!currentBook || !onUpdateProgress || isSubmitting) return;
 
-    let targetPage = currentPage;
-    let targetTotal = totalPages > 0 ? totalPages : undefined;
-
+    let targetTotal: number | undefined = totalPages > 0 ? totalPages : undefined;
     if (totalPagesInput.trim()) {
       const parsedTotal = parseInt(totalPagesInput.trim(), 10);
       if (!isNaN(parsedTotal) && parsedTotal > 0) {
@@ -119,29 +219,24 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
       }
     }
 
-    const effectiveTotal = targetTotal || totalPages;
-
-    if (editMode === 'page') {
-      const parsedP = parseInt(pageInputValue.trim(), 10);
-      if (!isNaN(parsedP)) {
-        targetPage = Math.max(0, parsedP);
-      }
-    } else {
-      const parsedPct = parseFloat(percentInputValue.trim());
-      if (!isNaN(parsedPct) && effectiveTotal > 0) {
-        const safePct = Math.max(0, Math.min(100, parsedPct));
-        targetPage = Math.round((safePct / 100) * effectiveTotal);
-      }
-    }
-
-    if (effectiveTotal > 0 && targetPage > effectiveTotal) {
-      targetPage = effectiveTotal;
-    }
-
+    const gain = draftPage - savedPage;
     try {
       setIsSubmitting(true);
-      await onUpdateProgress(currentBook.id, targetPage, targetTotal);
+      await onUpdateProgress(currentBook.id, draftPage, targetTotal);
+      setSavedPage(draftPage);
       setIsInlineEditing(false);
+
+      // Sello de lacre hace un pequeño pop de feedback
+      setIsPopping(true);
+      setTimeout(() => setIsPopping(false), 500);
+
+      // Línea de guardado que se desvanece a los 2,6 s
+      const msg = gain > 0 ? `✓ Avance guardado · +${gain} págs hoy` : '✓ Avance guardado';
+      setToast({ message: msg, visible: true });
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = setTimeout(() => {
+        setToast((prev) => ({ ...prev, visible: false }));
+      }, 2600);
     } finally {
       setIsSubmitting(false);
     }
@@ -229,44 +324,44 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
             </div>
           </div>
 
-          {/* Bloque de Barra de Progreso y Edición Rápida Inline */}
-          <div className="mt-3 sm:mt-4 pt-3 border-t border-amber-900/15 dark:border-[#263147]">
-            {/* Barra y Métricas de lectura */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
-                <div className="flex items-center gap-1.5 font-medium text-stone-800 dark:text-slate-200">
-                  <Bookmark className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  {totalPages > 0 ? (
-                    <span>
-                      Pág. <strong className="font-bold text-amber-900 dark:text-amber-300">{currentPage}</strong> de {totalPages} ({percentage}%)
-                    </span>
+          {/* Bloque Editorial de Progreso y Registro de Avance */}
+          <div
+            className={`rpb-wrap mt-3 sm:mt-4 pt-3 border-t border-amber-900/15 dark:border-[#263147] ${
+              isInlineEditing ? 'is-editing' : ''
+            }`}
+            aria-label="Avance de lectura"
+          >
+            {/* 1. Cabecera en una sola línea (en móvil, el resumen baja a segunda línea) */}
+            <div className="rpb-header">
+              <svg
+                className="rpb-bookmark-icon"
+                viewBox="0 0 16 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="M3 2h10v16l-5-4-5 4z" />
+              </svg>
+
+              <b>
+                Pág. <em>{draftPage}</em> {effectiveTotal > 0 ? <>de <span>{effectiveTotal}</span></> : <>leídas</>}
+              </b>
+
+              {effectiveTotal > 0 && <span className="rpb-percent-badge">{percentage}%</span>}
+
+              {effectiveTotal > 0 && (
+                <span className="rpb-summary">
+                  {remainingPages > 0 ? (
+                    <>
+                      Faltan {remainingPages} págs · <b>{remainingTimeStr}</b>
+                    </>
                   ) : (
-                    <span>
-                      Pág. <strong className="font-bold text-amber-900 dark:text-amber-300">{currentPage}</strong> leídas
-                    </span>
+                    <b>¡Libro terminado!</b>
                   )}
-                </div>
+                </span>
+              )}
 
-                {totalPages > 0 && (
-                  <div className="text-[11px] text-stone-500 dark:text-slate-400 flex items-center gap-1.5">
-                    <span>Faltan {remainingPages} págs</span>
-                    <span>·</span>
-                    <span className="text-amber-800 dark:text-amber-400 font-semibold">{remainingTimeStr}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Barra de progreso artesanal con brillo dorado */}
-              <div className="w-full h-2 rounded-full bg-amber-950/15 dark:bg-amber-400/10 overflow-hidden shadow-inner">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all duration-500 ease-out"
-                  style={{ width: `${totalPages > 0 ? percentage : currentPage > 0 ? 100 : 0}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Botón de Iniciar sesión y Actualizar página */}
-            <div className="flex items-center justify-end gap-2 mt-3">
               {onStartReadingSession && currentBook && (
                 <button
                   type="button"
@@ -274,11 +369,12 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
                     e.stopPropagation();
                     onStartReadingSession(currentBook);
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-600/40 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="rpb-timer-btn"
                   title="Iniciar sesión de lectura con cronómetro y velocidad real"
                 >
                   <Timer className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                  <span>⏱️ Iniciar sesión</span>
+                  <span className="hidden sm:inline">⏱️ Iniciar sesión</span>
+                  <span className="sm:hidden">⏱️</span>
                 </button>
               )}
 
@@ -286,161 +382,185 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsInlineEditing((prev) => !prev);
+                  if (isInlineEditing) {
+                    handleCancel();
+                  } else {
+                    setIsInlineEditing(true);
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                  }
                 }}
-                className={
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold border transition shadow-xs flex items-center gap-1.5 ' +
-                  (isInlineEditing
-                    ? 'border-amber-600 bg-amber-500 text-slate-950 font-bold shadow-sm'
-                    : 'border-amber-900/25 dark:border-[#2D394E] bg-[#fbf6ea] dark:bg-[#161C28] text-stone-800 dark:text-stone-200 hover:border-amber-600/60 hover:bg-amber-500/10')
-                }
+                className="rpb-btn-ghost"
+                aria-expanded={isInlineEditing}
+                aria-controls="rpb-compact-panel"
               >
-                <span>{isInlineEditing ? 'Cerrar edición' : 'Actualizar página'}</span>
+                <span>{isInlineEditing ? 'Cerrar' : '✎ Editar avance'}</span>
               </button>
             </div>
 
-            {/* Panel de edición rápida inline desplegable */}
-            {isInlineEditing && (
-              <form
-                onSubmit={handleSaveInlineProgress}
-                className="mt-3 p-3 rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#f4ead4]/90 dark:bg-[#0F1420]/90 space-y-3 animate-in fade-in duration-200"
+            {/* 2. Barra: pista de 12px con relleno ámbar→dorado, range slider y sello de lacre */}
+            <div className="rpb-track">
+              <div className="rpb-fill" style={{ width: `${clampedPercent}%` }} />
+              <input
+                id="rpb-range"
+                type="range"
+                min={0}
+                max={effectiveTotal > 0 ? effectiveTotal : 100}
+                step={1}
+                value={draftPage}
+                onChange={(e) => updateDraft(Number(e.target.value))}
+                className="rpb-range-input"
+                aria-label="Página actual"
+              />
+              <div
+                className={`rpb-seal ${isPopping ? 'pop' : ''}`}
+                style={{ left: `${clampedPercent}%` }}
+                aria-hidden="true"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-serif font-bold text-amber-950 dark:text-amber-200">
-                    Registrar avance de lectura
-                  </span>
-                  {/* Selector de modo Página vs Porcentaje */}
-                  <div className="inline-flex rounded-lg border border-amber-900/20 dark:border-[#2E3B52] bg-[#fbf6ea] dark:bg-[#171F2E] p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setEditMode('page')}
-                      className={
-                        'px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition ' +
-                        (editMode === 'page'
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-2xs'
-                          : 'text-stone-600 dark:text-slate-400')
-                      }
-                    >
-                      <Hash className="w-2.5 h-2.5" />
-                      <span>Página</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditMode('percent')}
-                      className={
-                        'px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition ' +
-                        (editMode === 'percent'
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-2xs'
-                          : 'text-stone-600 dark:text-slate-400')
-                      }
-                    >
-                      <Percent className="w-2.5 h-2.5" />
-                      <span>Porcentaje</span>
-                    </button>
-                  </div>
+                <svg viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
+                  <path d="M0 0h10v12L5 8.500 0 12z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* 4. Panel de edición compacto */}
+            <div
+              id="rpb-compact-panel"
+              className="rpb-edit-panel"
+              role="region"
+              aria-label="Registro de avance de lectura"
+            >
+              {/* Selector # Página | % Porcentaje */}
+              <div className="rpb-segmented" role="group" aria-label="Unidad">
+                <button
+                  type="button"
+                  onClick={() => handleUnitChange('page')}
+                  aria-pressed={unitMode === 'page'}
+                >
+                  # Página
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnitChange('percent')}
+                  aria-pressed={unitMode === 'percent'}
+                >
+                  % Porcentaje
+                </button>
+              </div>
+
+              {/* Campo con botones - y + */}
+              <div className="rpb-input-group">
+                <button
+                  type="button"
+                  onClick={() => handleStep(-1)}
+                  className="rpb-step-btn"
+                  aria-label="Restar una unidad"
+                >
+                  −
+                </button>
+                <input
+                  ref={inputRef}
+                  id="rpb-number"
+                  type="number"
+                  inputMode="numeric"
+                  value={unitMode === 'page' ? pageInputStr : percentInputStr}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  className="rpb-number-input"
+                  aria-label="Valor actual"
+                />
+                <span className="rpb-suffix">
+                  {unitMode === 'page' ? (effectiveTotal > 0 ? `/ ${effectiveTotal}` : 'págs') : '/ 100 %'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleStep(1)}
+                  className="rpb-step-btn"
+                  aria-label="Sumar una unidad"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Si el libro no tiene total de páginas registrado, permitir introducirlo aquí */}
+              {totalPages <= 0 && (
+                <div className="rpb-total-field" title="Total de páginas de tu edición">
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400">Total:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={totalPagesInput}
+                    onChange={(e) => setTotalPagesInput(e.target.value)}
+                    placeholder="Ej: 380"
+                    aria-label="Total de páginas de la edición"
+                  />
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400">págs</span>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-end">
-                  {editMode === 'page' ? (
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400 mb-1">
-                        Página actual
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min={0}
-                          max={totalPages > 0 ? totalPages : 99999}
-                          value={pageInputValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setPageInputValue(val);
-                            const parsedP = parseInt(val, 10);
-                            const effTotal = parseInt(totalPagesInput, 10) || totalPages;
-                            if (!isNaN(parsedP) && effTotal > 0) {
-                              setPercentInputValue(String(Math.min(100, Math.round((parsedP / effTotal) * 100))));
-                            }
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-[#2D394E] bg-white dark:bg-[#151B27] text-stone-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
-                          placeholder="Ej: 145"
-                          autoFocus
-                        />
-                        {totalPages > 0 && (
-                          <span className="absolute right-2.5 top-1.5 text-[10px] text-stone-500 dark:text-slate-400">
-                            / {totalPages}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400 mb-1">
-                        Porcentaje leído (%)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={percentInputValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setPercentInputValue(val);
-                            const parsedPct = parseFloat(val);
-                            const effTotal = parseInt(totalPagesInput, 10) || totalPages;
-                            if (!isNaN(parsedPct) && effTotal > 0) {
-                              setPageInputValue(String(Math.round((parsedPct / 100) * effTotal)));
-                            }
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-[#2D394E] bg-white dark:bg-[#151B27] text-stone-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
-                          placeholder="Ej: 45"
-                          autoFocus
-                        />
-                        <span className="absolute right-2.5 top-1.5 text-[10px] text-stone-500 dark:text-slate-400">
-                          %
-                        </span>
-                      </div>
-                    </div>
-                  )}
+              {/* Atajos */}
+              <div className="rpb-shortcuts">
+                <button
+                  type="button"
+                  onClick={() => handleShortcut(10)}
+                  className="rpb-shortcut-btn"
+                >
+                  +10
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShortcut(25)}
+                  className="rpb-shortcut-btn"
+                >
+                  +25
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShortcut(50)}
+                  className="rpb-shortcut-btn"
+                >
+                  +50
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShortcut('all')}
+                  className="rpb-shortcut-btn"
+                >
+                  Lo terminé
+                </button>
+              </div>
 
-                  {/* Si el libro no tiene total de páginas registrado, permitir introducirlo aquí */}
-                  {totalPages <= 0 && (
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider font-semibold text-stone-600 dark:text-slate-400 mb-1">
-                        Total de páginas de tu edición
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={totalPagesInput}
-                        onChange={(e) => setTotalPagesInput(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-amber-900/20 dark:border-[#2D394E] bg-white dark:bg-[#151B27] text-stone-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
-                        placeholder="Ej: 380 páginas"
-                      />
-                    </div>
-                  )}
+              {/* Indicador de cambio respecto a lo guardado */}
+              <span className="rpb-delta" aria-live="polite">
+                {deltaText}
+              </span>
 
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setIsInlineEditing(false)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs border border-amber-900/20 dark:border-[#2E3B52] text-stone-600 dark:text-slate-400 hover:bg-stone-500/10 transition"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-xs flex items-center gap-1"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{isSubmitting ? 'Guardando...' : 'Guardar'}</span>
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
+              {/* Acciones: Cancelar y Guardar */}
+              <div className="rpb-actions">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rpb-btn-ghost rpb-btn-cancel"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSubmitting || delta === 0}
+                  className="rpb-btn-ghost rpb-btn-save"
+                >
+                  {isSubmitting ? 'Guardando...' : '✓ Guardar'}
+                </button>
+              </div>
+            </div>
+
+            {/* 5. Toast de guardado */}
+            <div
+              className={`rpb-toast ${toast.visible ? 'on' : ''}`}
+              aria-live="polite"
+            >
+              {toast.message}
+            </div>
           </div>
 
           {/* Navegación entre libros si hay más de 1 en lectura */}

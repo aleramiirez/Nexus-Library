@@ -12,34 +12,62 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
     await expect(guestBtn).toBeVisible({ timeout: 10000 });
     await guestBtn.click();
 
-    // 2. Si hay botón de cargar muestra o ya hay libro en lectura
-    const readingPanel = page.locator('.library-paper-panel').first();
-    await expect(readingPanel).toBeVisible({ timeout: 15000 });
-
-    // Si no hay libro en lectura, cargar obras de muestra
-    const loadSampleBtn = page.getByRole('button', { name: /Cargar catálogo ceremonial|Explorar biblioteca/i }).first();
-    if (await loadSampleBtn.isVisible()) {
-      // Cargar colección de muestra para tener libros en curso
-      const sampleBtn = page.getByRole('button', { name: /Cargar catálogo ceremonial/i }).first();
-      if (await sampleBtn.isVisible()) {
-        await sampleBtn.click();
-        await page.waitForTimeout(1000);
-      }
+    // 2. Si no hay libro en lectura, cargar obras de muestra
+    const sampleBtn = page.getByRole('button', { name: /Cargar.*(libros de muestra|catálogo)/i }).first();
+    if (await sampleBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await sampleBtn.click();
+      await page.waitForTimeout(1500);
     }
 
     // 3. Verificar que aparece el panel de "Leyendo actualmente"
     await expect(page.getByText('Leyendo actualmente')).toBeVisible({ timeout: 10000 });
 
-    // 4. Probar desplegar edición rápida inline con botón "Actualizar página" en el panel
-    const updatePageBtn = page.getByRole('button', { name: /Actualizar página/i }).first();
-    if (await updatePageBtn.isVisible()) {
-      await updatePageBtn.click();
-      await expect(page.getByText(/Registrar avance de lectura/i)).toBeVisible();
-      // Cerrar edición
-      const closeBtn = page.getByRole('button', { name: /Cerrar edición/i }).first();
-      await closeBtn.click();
-      await expect(page.getByText(/Registrar avance de lectura/i)).not.toBeVisible();
-    }
+    // 4. Probar desplegar edición rápida con botón "✎ Editar avance"
+    const toggleEditBtn = page.locator('.rpb-header .rpb-btn-ghost');
+    await expect(toggleEditBtn).toBeVisible({ timeout: 6000 });
+    await expect(toggleEditBtn).toHaveText(/Editar avance/i);
+    await expect(toggleEditBtn).toHaveAttribute('aria-expanded', 'false');
+
+    await toggleEditBtn.click();
+    await expect(toggleEditBtn).toHaveText('Cerrar');
+    await expect(toggleEditBtn).toHaveAttribute('aria-expanded', 'true');
+
+    // Comprobar panel de edición compacto (# Página | % Porcentaje, atajos, delta)
+    const compactPanel = page.locator('#rpb-compact-panel');
+    await expect(compactPanel).toBeVisible();
+    await expect(page.getByRole('button', { name: '# Página' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '% Porcentaje' })).toBeVisible();
+    await expect(page.locator('.rpb-delta')).toHaveText('sin cambios');
+
+    // Botón Guardar debe estar deshabilitado inicialmente al no haber cambios
+    const saveBtn = page.getByRole('button', { name: /Guardar/i }).first();
+    await expect(saveBtn).toBeDisabled();
+
+    // Pulsar atajo +10
+    const plus10Btn = page.getByRole('button', { name: '+10' }).first();
+    await expect(plus10Btn).toBeVisible();
+    await plus10Btn.click();
+
+    // Comprobar que el indicador de delta y el botón de guardar se actualizan
+    await expect(page.locator('.rpb-delta')).toContainText('+10');
+    await expect(saveBtn).toBeEnabled();
+
+    // Probar botón Cancelar (restaura valor guardado y cierra)
+    const cancelBtn = page.getByRole('button', { name: /Cancelar/i }).first();
+    await cancelBtn.click();
+    await expect(compactPanel).not.toBeVisible();
+    await expect(toggleEditBtn).toHaveText(/Editar avance/i);
+
+    // Reabrir y guardar un avance real
+    await toggleEditBtn.click();
+    await expect(compactPanel).toBeVisible();
+    await plus10Btn.click();
+    await saveBtn.click();
+
+    // Al guardar: se cierra el panel y aparece el toast de confirmación
+    await expect(compactPanel).not.toBeVisible();
+    const toast = page.locator('.rpb-toast');
+    await expect(toast).toContainText(/Avance guardado/i);
 
     // 5. Abrir ficha del libro y comprobar que los botones de avance (+25p) y slider están en el detalle
     const bookTitle = page.locator('.library-paper-panel h3').first();
