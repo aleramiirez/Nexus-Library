@@ -9,6 +9,7 @@ import {
 import { Book } from '../types/models';
 import { BookCover, preloadBookCover } from './BookCover';
 import { calculateRemainingReadingTime } from '../utils/readingTime';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import '../dashboard-panels.css';
 
 interface DashboardReadingPanelProps {
@@ -243,25 +244,15 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
   };
 
   return (
-    <div className="library-paper-panel h-full flex flex-col justify-between">
-      {/* Marcapáginas burdeos colgando */}
-      <div className="dashboard-ribbon" aria-hidden="true" />
-
+    <DashboardCard variant="hero" className="h-full flex flex-col justify-between">
       {/* Cabecera */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-5 pr-8 sm:pr-10">
-        <h2 className="font-serif text-lg sm:text-xl font-bold flex items-center gap-2 text-stone-900 dark:text-stone-100">
-          <Clock className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-          <span>Leyendo actualmente</span>
-        </h2>
-        <button
-          type="button"
-          onClick={onNavigateToShelf}
-          className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors flex items-center gap-0.5"
-        >
-          <span>Ver estantería</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      <DashboardCardHeader
+        variant="hero"
+        icon={<Clock className="w-5 h-5" />}
+        title="Leyendo actualmente"
+        actionText="Ver estantería"
+        onAction={onNavigateToShelf}
+      />
 
       {/* Contenido principal */}
       {!currentBook ? (
@@ -597,6 +588,6 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
           )}
         </div>
       )}
-    </div>
+    </DashboardCard>
   );
 };

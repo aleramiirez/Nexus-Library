@@ -134,12 +134,12 @@ html.dark .dashboard-card--list {
 
 /* En variante hero, reservar espacio a la derecha para la cinta marcapáginas */
 .dashboard-card-header--hero {
-  padding-right: 2rem;
+  padding-right: 2.5rem;
 }
 
 @media (min-width: 640px) {
   .dashboard-card-header--hero {
-    padding-right: 2.5rem;
+    padding-right: 3rem;
   }
 }
 
