@@ -22,14 +22,14 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
     // 3. Verificar que aparece el panel de "Leyendo actualmente"
     await expect(page.getByText('Leyendo actualmente')).toBeVisible({ timeout: 10000 });
 
-    // 4. Probar desplegar edición rápida con botón "✎ Editar avance"
-    const toggleEditBtn = page.locator('.rpb-header .rpb-btn-ghost');
+    // 4. Probar desplegar edición rápida con botón de lápiz abajo a la derecha
+    const toggleEditBtn = page.locator('.rpb-btn-edit-toggle');
     await expect(toggleEditBtn).toBeVisible({ timeout: 6000 });
-    await expect(toggleEditBtn).toHaveText(/Editar avance/i);
+    await expect(toggleEditBtn).toHaveAttribute('aria-label', /Editar avance/i);
     await expect(toggleEditBtn).toHaveAttribute('aria-expanded', 'false');
 
     await toggleEditBtn.click();
-    await expect(toggleEditBtn).toHaveText('Cerrar');
+    await expect(toggleEditBtn).toHaveAttribute('aria-label', /Cerrar/i);
     await expect(toggleEditBtn).toHaveAttribute('aria-expanded', 'true');
 
     // Comprobar panel de edición compacto (# Página | % Porcentaje, atajos, delta)
@@ -56,7 +56,7 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
     const cancelBtn = page.getByRole('button', { name: /Cancelar/i }).first();
     await cancelBtn.click();
     await expect(compactPanel).not.toBeVisible();
-    await expect(toggleEditBtn).toHaveText(/Editar avance/i);
+    await expect(toggleEditBtn).toHaveAttribute('aria-label', /Editar avance/i);
 
     // Reabrir y guardar un avance real
     await toggleEditBtn.click();

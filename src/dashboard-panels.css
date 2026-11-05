@@ -1721,16 +1721,82 @@ html.dark .rpb-wrap {
   box-shadow: none;
 }
 
-/* Toast de guardado */
+/* Toast de guardado y barra inferior de acciones */
+.rpb-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  min-height: 32px;
+}
+
+.rpb-bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.rpb-action-icon-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--rpb-bd);
+  background: var(--rpb-card);
+  color: var(--rpb-tx);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 2px rgba(60, 35, 10, 0.05);
+}
+
+.rpb-action-icon-btn:hover:not(:disabled) {
+  border-color: var(--rpb-gold);
+  color: var(--rpb-gold);
+  background: var(--rpb-in);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(60, 35, 10, 0.12);
+}
+
+.rpb-action-icon-btn:focus-visible {
+  outline: 2px solid var(--rpb-gold);
+  outline-offset: 2px;
+}
+
+.rpb-action-icon-btn.is-active {
+  background: rgba(180, 115, 30, 0.18);
+  border-color: var(--rpb-gold);
+  color: var(--rpb-gold);
+  box-shadow: 0 0 0 1px var(--rpb-gold), 0 0 8px var(--rpb-glow);
+}
+
+html.dark .rpb-action-icon-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .rpb-action-icon-btn:hover:not(:disabled) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+html.dark .rpb-action-icon-btn.is-active {
+  background: rgba(229, 193, 88, 0.22);
+}
+
 .rpb-toast {
-  height: 1.2rem;
-  margin-top: 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--rpb-gold);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rpb-toast.on {
@@ -1742,11 +1808,6 @@ html.dark .rpb-wrap {
   .rpb-summary {
     margin-left: 0;
     flex-basis: 100%;
-    order: 3;
-  }
-  .rpb-header .rpb-btn-ghost {
-    margin-left: auto;
-    order: 2;
   }
   .rpb-actions {
     width: 100%;

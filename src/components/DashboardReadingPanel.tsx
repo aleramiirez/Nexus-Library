@@ -4,7 +4,8 @@ import {
   BookOpen,
   ChevronRight,
   ChevronLeft,
-  Timer
+  Timer,
+  Pencil
 } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover, preloadBookCover } from './BookCover';
@@ -352,40 +353,6 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
                   )}
                 </span>
               )}
-
-              {onStartReadingSession && currentBook && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStartReadingSession(currentBook);
-                  }}
-                  className="rpb-timer-btn"
-                  title="Iniciar sesión de lectura con cronómetro y velocidad real"
-                >
-                  <Timer className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                  <span className="hidden sm:inline">⏱️ Iniciar sesión</span>
-                  <span className="sm:hidden">⏱️</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isInlineEditing) {
-                    handleCancel();
-                  } else {
-                    setIsInlineEditing(true);
-                    setTimeout(() => inputRef.current?.focus(), 50);
-                  }
-                }}
-                className="rpb-btn-ghost"
-                aria-expanded={isInlineEditing}
-                aria-controls="rpb-compact-panel"
-              >
-                <span>{isInlineEditing ? 'Cerrar' : '✎ Editar avance'}</span>
-              </button>
             </div>
 
             {/* 2. Barra: pista de 12px con relleno ámbar→dorado, range slider y sello de lacre */}
@@ -545,12 +512,51 @@ export const DashboardReadingPanel: React.FC<DashboardReadingPanelProps> = ({
               </div>
             </div>
 
-            {/* 5. Toast de guardado */}
-            <div
-              className={`rpb-toast ${toast.visible ? 'on' : ''}`}
-              aria-live="polite"
-            >
-              {toast.message}
+            {/* 5. Barra inferior: Toast a la izquierda y acciones (reloj y lápiz) abajo a la derecha */}
+            <div className="rpb-bottom-bar">
+              <div
+                className={`rpb-toast ${toast.visible ? 'on' : ''}`}
+                aria-live="polite"
+              >
+                {toast.message}
+              </div>
+
+              <div className="rpb-bottom-actions">
+                {onStartReadingSession && currentBook && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStartReadingSession(currentBook);
+                    }}
+                    className="rpb-action-icon-btn"
+                    title="Iniciar sesión de lectura con cronómetro"
+                    aria-label="Iniciar sesión de lectura"
+                  >
+                    <Timer className="w-4 h-4" />
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isInlineEditing) {
+                      handleCancel();
+                    } else {
+                      setIsInlineEditing(true);
+                      setTimeout(() => inputRef.current?.focus(), 50);
+                    }
+                  }}
+                  className={`rpb-action-icon-btn rpb-btn-edit-toggle ${isInlineEditing ? 'is-active' : ''}`}
+                  title={isInlineEditing ? 'Cerrar edición' : 'Editar avance de lectura'}
+                  aria-label={isInlineEditing ? 'Cerrar edición' : 'Editar avance'}
+                  aria-expanded={isInlineEditing}
+                  aria-controls="rpb-compact-panel"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
