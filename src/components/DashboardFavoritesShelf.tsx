@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, Sparkles, FileUp, Loader2 } from 'lucide-react';
+import { Star, Sparkles, FileUp, Loader2 } from 'lucide-react';
 import { Book } from '../types/models';
 import { BookCover, preloadBookCover } from './BookCover';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import '../book-shelf.css';
 import '../dashboard-panels.css';
 
@@ -90,22 +91,13 @@ export const DashboardFavoritesShelf: React.FC<DashboardFavoritesShelfProps> = (
   );
 
   return (
-    <div className="library-paper-panel">
-      {/* Cabecera del panel */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-lg sm:text-xl font-bold flex items-center gap-2 text-stone-900 dark:text-stone-100">
-          <span className="text-amber-600 dark:text-amber-400">★</span>
-          <span>Favoritos</span>
-        </h2>
-        <button
-          type="button"
-          onClick={onNavigateToLibrary}
-          className="text-xs font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 hover:underline transition-colors flex items-center gap-1"
-        >
-          <span>Ver biblioteca completa</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+    <DashboardCard variant="shelf">
+      <DashboardCardHeader
+        icon={<Star className="w-5 h-5" />}
+        title="Favoritos"
+        actionText="Ver biblioteca completa"
+        onAction={onNavigateToLibrary}
+      />
 
       {/* Caso: Biblioteca totalmente vacía */}
       {!hasAnyBooks ? (
@@ -240,6 +232,6 @@ export const DashboardFavoritesShelf: React.FC<DashboardFavoritesShelfProps> = (
           </div>
         </div>
       )}
-    </div>
+    </DashboardCard>
   );
 };
