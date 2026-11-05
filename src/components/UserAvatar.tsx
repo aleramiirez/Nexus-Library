@@ -109,9 +109,10 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const activeRank = rankProp || (validLevel !== undefined ? getRankForLevel(validLevel) : undefined);
 
   // Marco activo a mostrar:
-  // 1. Marco explícito de objeto (prop frameRank)
-  // 2. Marco explícito por ID (prop frameRankId, e.g. reader.orderFrame de otro perfil)
-  // 3. Marco equipado en preferencias locales (storedFrameId) ÚNICAMENTE para el usuario de esta sesión (isCurrentUser)
+  // 1. Para el usuario actual (isCurrentUser), el marco equipado en sus preferencias locales
+  //    (storedFrameId) tiene máxima prioridad para que cualquier cambio se refleje reactivamente de inmediato.
+  // 2. Marco explícito de objeto (prop frameRank, usado en previsualizaciones de rangos individuales en tarjetas)
+  // 3. Marco explícito por ID (prop frameRankId, e.g. en perfiles comunitarios o modales)
   // 4. Fallback al marco derivado del escalafón/nivel de este lector (activeRank)
   // 5. Fallback base al Rango I (Aprendiz de Pergamino)
   const isStoredFrameUnlocked =
@@ -120,9 +121,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     (!validLevel || validLevel >= (ORDER_RANKS.find((r) => r.id === storedFrameId)?.minLevel ?? 1)));
 
   const resolvedFrameRank: OrderRank =
+    (isCurrentUser && isStoredFrameUnlocked && storedFrameId
+      ? ORDER_RANKS.find((r) => r.id === storedFrameId)
+      : undefined) ||
     frameRankProp ||
     (frameRankIdProp ? ORDER_RANKS.find((r) => r.id === frameRankIdProp) : undefined) ||
-    (isStoredFrameUnlocked ? ORDER_RANKS.find((r) => r.id === storedFrameId) : undefined) ||
     activeRank ||
     ORDER_RANKS[0];
 

@@ -262,7 +262,6 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
                   className="rounded-xl"
                   level={readerLevelInfo.level}
                   rank={readerLevelInfo.rank}
-                  frameRank={readerLevelInfo.activeFrameRank}
                   isCurrentUser={true}
                 />
               </div>

@@ -40,7 +40,6 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
     currentAvatarUrl && !currentAvatarUrl.startsWith('preset:') ? currentAvatarUrl : ''
   );
   const [activeTab, setActiveTab] = useState<'presets' | 'custom' | 'frames'>('presets');
-  const [isSaving, setIsSaving] = useState(false);
 
   const userLevel = levelInfo?.level ?? 1;
   const unlockedRanks = levelInfo?.unlockedRanks || ORDER_RANKS.filter((r) => userLevel >= r.minLevel);
@@ -117,6 +116,9 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
       if (dataUrl) {
         setCustomUrl(dataUrl);
         setSelected(dataUrl);
+        soundService.playBrassBell();
+        onSaveAvatar(dataUrl, selectedFrameId || undefined).catch(() => {});
+        onShowToast?.('¡Foto personalizada aplicada a tu carnet!', 'success');
         setActiveTab('custom');
       }
     };
@@ -130,26 +132,17 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
       return;
     }
     setSelected(clean);
+    soundService.playBrassBell();
+    onSaveAvatar(clean, selectedFrameId || undefined).catch(() => {});
+    onShowToast?.('¡Foto personalizada aplicada a tu carnet!', 'success');
   };
 
   const handleClearAvatar = () => {
     setSelected(null);
     setCustomUrl('');
+    soundService.playPageTurn();
     onSaveAvatar(null, selectedFrameId || undefined).catch(() => {});
     onShowToast?.('Avatar restablecido a las iniciales de tu carnet.', 'info');
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSaveAvatar(selected, selectedFrameId || undefined);
-      onShowToast?.('¡Sello y marco de avatar actualizados en tu carnet!', 'success');
-      onClose();
-    } catch {
-      onShowToast?.('Error al guardar el avatar.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const modalContent = (
@@ -432,7 +425,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     onClick={handleApplyCustomUrl}
                     className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-xs transition cursor-pointer"
                   >
-                    Aplicar
+                    Equipar
                   </button>
                 </div>
               </div>
@@ -441,7 +434,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
         </div>
 
         {/* Pie con acciones */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3.5 border-t border-amber-900/15 dark:border-[#242E42]">
+        <div className="flex items-center justify-between gap-3 pt-3.5 border-t border-amber-900/15 dark:border-[#242E42]">
           <button
             type="button"
             onClick={handleClearAvatar}
@@ -451,24 +444,13 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
             <span>Usar monograma clásico por defecto</span>
           </button>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-amber-900/25 dark:border-[#283246] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition cursor-pointer"
-            >
-              Cerrar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
-            >
-              <Check className="w-3.5 h-3.5" />
-              <span>{isSaving ? 'Guardando...' : 'Aplicar a mi Carnet'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 rounded-xl border border-amber-900/25 dark:border-[#283246] text-xs font-semibold text-stone-700 dark:text-slate-300 hover:bg-amber-900/10 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </div>

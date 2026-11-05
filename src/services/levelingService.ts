@@ -328,16 +328,18 @@ export function getSelectedOrderFrame(defaultRankId: OrderRankId = 'I', unlocked
     const defaultIdx = ORDER_RANKS.findIndex((r) => r.id === defaultRankId);
     const highestIdx = highestRecordedRank ? ORDER_RANKS.findIndex((r) => r.id === highestRecordedRank) : -1;
 
-    // Subida de escalafón detectada: si el rango alcanzado es superior al máximo registrado anteriormente,
-    // equipar automáticamente el nuevo marco del rango superior y sincronizar el estado global.
+    // Si el lector asciende de nivel conquistando un nuevo escalafón récord superior:
     if (defaultIdx > highestIdx) {
       localStorage.setItem(HIGHEST_RANK_STORAGE_KEY, defaultRankId);
-      localStorage.setItem(ORDER_FRAME_STORAGE_KEY, defaultRankId);
-      window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: defaultRankId }));
-      return defaultRankId;
+      // Solo auto-equipar el nuevo marco superior si el usuario no tenía ya un marco explícito personalizado
+      if (!saved) {
+        localStorage.setItem(ORDER_FRAME_STORAGE_KEY, defaultRankId);
+        window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: defaultRankId }));
+        return defaultRankId;
+      }
     }
 
-    // Si ya existe un registro de rango máximo, pero el marco guardado no es válido o está desactualizado
+    // Si el usuario tiene un marco guardado y está desbloqueado para su nivel, respetarlo siempre
     if (saved && ORDER_RANKS.some((r) => r.id === saved)) {
       if (!unlockedRanks || unlockedRanks.some((r) => r.id === saved)) {
         return saved;
@@ -356,13 +358,6 @@ export function setSelectedOrderFrame(rankId: OrderRankId): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(ORDER_FRAME_STORAGE_KEY, rankId);
-    // Asegurar que el rango más alto alcanzado también quede fijado al menos en este rango
-    const currentHighest = localStorage.getItem(HIGHEST_RANK_STORAGE_KEY) as OrderRankId | null;
-    const currentIdx = currentHighest ? ORDER_RANKS.findIndex((r) => r.id === currentHighest) : -1;
-    const chosenIdx = ORDER_RANKS.findIndex((r) => r.id === rankId);
-    if (chosenIdx > currentIdx) {
-      localStorage.setItem(HIGHEST_RANK_STORAGE_KEY, rankId);
-    }
     window.dispatchEvent(new CustomEvent('nexus_order_frame_changed', { detail: rankId }));
   } catch {
     // ignorar

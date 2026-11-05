@@ -421,7 +421,6 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                   className="shrink-0"
                   level={levelInfo?.level}
                   rank={levelInfo?.rank}
-                  frameRank={levelInfo?.activeFrameRank}
                   isCurrentUser={true}
                 />
               </button>
