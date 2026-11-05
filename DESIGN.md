@@ -139,7 +139,23 @@ La tridimensionalidad no se simula con sombras planas de software genérico, sin
 
 ## Components
 
-- **`.catalog-card-panel`:** Contenedor de pergamino con borde suave, apto para pestañas de latón en la cabecera. Siempre debe permitir `overflow-visible` si aloja la pestaña `.catalog-brass-tab` para no cortarla.
+- **`.catalog-card-panel`:** Contenedor de pergamino con borde suave, apto para pestañas de latón en la cabecera. Siempre debe permitir `overflow-visible` si aloja la pestaña `.catalog-brass-tab` para no cortarla. Se mantiene en modales y pantallas completas (Atlas, Códice, Pasaporte, Ajustes, Colecciones).
+- **`DashboardCard` (Sistema Unificado de Tarjetas del Panel de Inicio):** Contenedor común de papel apilado (`.dashboard-card`) que unifica la experiencia visual del Dashboard principal con tokens compartidos y variaciones deliberadas:
+  - **Tokens de Card (`src/dashboard-panels.css`):**
+    - Fondo con grano de papel táctil (`--dashboard-card-bg-base`, `--dashboard-card-bg-image`).
+    - Borde exterior doble con marco interior fino (`--dashboard-card-border`, `--dashboard-card-inner-border` a 6px).
+    - Radios proporcionales: exterior `18px`, marco interior `12px`.
+    - Relleno unificado: escritorio `22px 24px`, móvil estricto de `16px` (`p-4`).
+    - Sombra multicapa apilada (`--dashboard-card-shadow`) y sombra de volumen protagonista (`--dashboard-card-shadow-hero`).
+  - **4 Variantes:**
+    1. **`hero` («Leyendo actualmente»):** Sombra protagonista ampliada, cinta marcapáginas carmesí colgante (`.dashboard-ribbon`), título escalado en Cormorant Garamond (`1.25rem` móvil / `1.375rem` escritorio) y despeje lateral (`padding-right: 2.5rem` móvil / `3rem` escritorio) para garantizar >100px de margen respecto a la cinta en pantallas móviles de 390px.
+    2. **`list` («Mis sagas»):** Pautado de archivo encuadernado (líneas sutiles a 34px), pestaña grabada de latón exterior (`.catalog-brass-tab`) a `top: -12px` y contenedor interior con elevación `z-[2]`.
+    3. **`shelf` («Favoritos»):** Contenedor de papel apilado que aloja en su interior la hornacina de roble tallado (`.dashboard-shelf-niche`) con lamas y baldas de madera.
+    4. **`base` («Hábito y Racha de Lectura»):** Fondo de papel táctil neutro con módulos internos traslúcidos biselados (`.nx-streak-rc`, `.nx-streak-sx`), cordón ceremonial de racha, anillos iluminados para el día actual y sellos de lacre con contraste AA reforzado en modo claro y oscuro.
+  - **Cabecera Unificada (`DashboardCardHeader`):**
+    - Icono de línea SVG de 20px en ámbar noble (`text-amber-700` / dark `text-amber-400`). Favoritos porta `Star` de línea; Racha porta `Flame` de línea; Leyendo porta `Clock` de línea.
+    - Título editorial en Cormorant Garamond.
+    - Enlace de acción común (`.dashboard-card-action`): tipografía seminegrita de 12px, tono ámbar noble, chevron integrado «›» (`ChevronRight`), sin subrayado inicial y subrayado selectivo en `:hover` / `:focus-visible`.
 - **`.catalog-brass-tab`:** Pestaña superior grabada de latón, colocada a `top: -12px` con texto en Cormorant Garamond negrita.
 - **`UserAvatar`:** Avatar con o sin marco heráldico de la Orden. Al equipar un marco, incorpora capas de textura (madera tallada, remaches, orla de plata, gema, estrella astral).
 - **`BookShelf`:** Mueble de lectura que organiza los libros en baldas de madera física según su estado (`Leyendo`, `Pendientes`, `Leídos`).

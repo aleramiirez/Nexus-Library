@@ -70,7 +70,7 @@ test.describe('Fase 1: Barra de Progreso y Actualización Rápida Inline', () =>
     await expect(toast).toContainText(/Avance guardado/i);
 
     // 5. Abrir ficha del libro y comprobar que los botones de avance (+25p) y slider están en el detalle
-    const bookTitle = page.locator('.library-paper-panel h3').first();
+    const bookTitle = page.locator('.dashboard-card--hero h3, .library-paper-panel h3').first();
     if (await bookTitle.isVisible()) {
       await bookTitle.click();
       await expect(page.getByRole('dialog')).toBeVisible({ timeout: 6000 });
