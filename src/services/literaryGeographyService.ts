@@ -696,6 +696,283 @@ export const COUNTRIES_CATALOG: Record<string, CountryInfo> = {
 };
 
 // ─── Diccionario Base de Autores Famosos y su País ───
+export const COUNTRY_NAME_OR_ALIAS_MAP: Record<string, string> = {
+  // US
+  'estados unidos': 'US',
+  'estados unidos de américa': 'US',
+  'estados unidos de america': 'US',
+  'eeuu': 'US',
+  'ee.uu.': 'US',
+  'ee. uu.': 'US',
+  'ee uu': 'US',
+  'usa': 'US',
+  'u.s.a.': 'US',
+  'united states': 'US',
+  'united states of america': 'US',
+  'us': 'US',
+
+  // GB
+  'reino unido': 'GB',
+  'uk': 'GB',
+  'u.k.': 'GB',
+  'gran bretaña': 'GB',
+  'gran bretana': 'GB',
+  'great britain': 'GB',
+  'inglaterra': 'GB',
+  'england': 'GB',
+  'escocia': 'GB',
+  'scotland': 'GB',
+  'gales': 'GB',
+  'wales': 'GB',
+  'irlanda del norte': 'GB',
+  'northern ireland': 'GB',
+  'united kingdom': 'GB',
+  'gb': 'GB',
+
+  // ES
+  'españa': 'ES',
+  'espana': 'ES',
+  'spain': 'ES',
+  'es': 'ES',
+
+  // FR
+  'francia': 'FR',
+  'france': 'FR',
+  'fr': 'FR',
+
+  // DE
+  'alemania': 'DE',
+  'germany': 'DE',
+  'deutschland': 'DE',
+  'de': 'DE',
+
+  // IT
+  'italia': 'IT',
+  'italy': 'IT',
+  'it': 'IT',
+
+  // JP
+  'japón': 'JP',
+  'japon': 'JP',
+  'japan': 'JP',
+  'nihon': 'JP',
+  'nippon': 'JP',
+  'jp': 'JP',
+
+  // RU
+  'rusia': 'RU',
+  'russia': 'RU',
+  'federación rusa': 'RU',
+  'federacion rusa': 'RU',
+  'ru': 'RU',
+
+  // MX
+  'méxico': 'MX',
+  'mexico': 'MX',
+  'mx': 'MX',
+
+  // AR
+  'argentina': 'AR',
+  'ar': 'AR',
+
+  // CO
+  'colombia': 'CO',
+  'co': 'CO',
+
+  // CL
+  'chile': 'CL',
+  'cl': 'CL',
+
+  // PE
+  'perú': 'PE',
+  'peru': 'PE',
+  'pe': 'PE',
+
+  // UY
+  'uruguay': 'UY',
+  'uy': 'UY',
+
+  // BR
+  'brasil': 'BR',
+  'brazil': 'BR',
+  'br': 'BR',
+
+  // CU
+  'cuba': 'CU',
+  'cu': 'CU',
+
+  // VE
+  'venezuela': 'VE',
+  've': 'VE',
+
+  // EC
+  'ecuador': 'EC',
+  'ec': 'EC',
+
+  // BO
+  'bolivia': 'BO',
+  'bo': 'BO',
+
+  // CR
+  'costa rica': 'CR',
+  'cr': 'CR',
+
+  // PT
+  'portugal': 'PT',
+  'pt': 'PT',
+
+  // SE
+  'suecia': 'SE',
+  'sweden': 'SE',
+  'se': 'SE',
+
+  // NO
+  'noruega': 'NO',
+  'norway': 'NO',
+  'no': 'NO',
+
+  // CA
+  'canadá': 'CA',
+  'canada': 'CA',
+  'ca': 'CA',
+
+  // AU
+  'australia': 'AU',
+  'au': 'AU',
+
+  // IE
+  'irlanda': 'IE',
+  'ireland': 'IE',
+  'ie': 'IE',
+
+  // PL
+  'polonia': 'PL',
+  'poland': 'PL',
+  'pl': 'PL',
+
+  // GR
+  'grecia': 'GR',
+  'greece': 'GR',
+  'gr': 'GR',
+
+  // AT
+  'austria': 'AT',
+  'at': 'AT',
+
+  // CH
+  'suiza': 'CH',
+  'switzerland': 'CH',
+  'ch': 'CH',
+
+  // NL
+  'países bajos': 'NL',
+  'paises bajos': 'NL',
+  'holanda': 'NL',
+  'netherlands': 'NL',
+  'nl': 'NL',
+
+  // BE
+  'bélgica': 'BE',
+  'belgica': 'BE',
+  'belgium': 'BE',
+  'be': 'BE',
+
+  // TR
+  'turquía': 'TR',
+  'turquia': 'TR',
+  'turkey': 'TR',
+  'tr': 'TR',
+
+  // IS
+  'islandia': 'IS',
+  'iceland': 'IS',
+  'is': 'IS',
+
+  // FI
+  'finlandia': 'FI',
+  'finland': 'FI',
+  'fi': 'FI',
+
+  // NZ
+  'nueva zelanda': 'NZ',
+  'new zealand': 'NZ',
+  'nz': 'NZ',
+
+  // IR
+  'irán': 'IR',
+  'iran': 'IR',
+  'persia': 'IR',
+  'ir': 'IR',
+
+  // LB
+  'líbano': 'LB',
+  'libano': 'LB',
+  'lebanon': 'LB',
+  'lb': 'LB',
+
+  // MA
+  'marruecos': 'MA',
+  'morocco': 'MA',
+  'ma': 'MA',
+
+  // DZ
+  'argelia': 'DZ',
+  'algeria': 'DZ',
+  'dz': 'DZ',
+
+  // KE
+  'kenia': 'KE',
+  'kenya': 'KE',
+  'ke': 'KE',
+
+  // SN
+  'senegal': 'SN',
+  'sn': 'SN',
+
+  // KR
+  'corea del sur': 'KR',
+  'corea': 'KR',
+  'south korea': 'KR',
+  'korea': 'KR',
+  'kr': 'KR',
+
+  // CN
+  'china': 'CN',
+  'cn': 'CN',
+
+  // IN
+  'india': 'IN',
+  'in': 'IN',
+
+  // EG
+  'egipto': 'EG',
+  'egypt': 'EG',
+  'eg': 'EG',
+
+  // ZA
+  'sudáfrica': 'ZA',
+  'sudafrica': 'ZA',
+  'south africa': 'ZA',
+  'za': 'ZA',
+
+  // NG
+  'nigeria': 'NG',
+  'ng': 'NG',
+
+  // CZ
+  'república checa': 'CZ',
+  'republica checa': 'CZ',
+  'chequia': 'CZ',
+  'czech republic': 'CZ',
+  'czechia': 'CZ',
+  'cz': 'CZ',
+
+  // DK
+  'dinamarca': 'DK',
+  'denmark': 'DK',
+  'dk': 'DK'
+};
+
 const AUTHOR_COUNTRY_MAP: Record<string, string> = {
   // España
   'miguel de cervantes': 'ES',
@@ -1614,11 +1891,23 @@ class LiteraryGeographyService {
   public resolveBookCountry(
     book: Book | { autor?: string; nombre?: string; pais?: string; idioma?: string }
   ): CountryInfo | null {
-    // 1. Respetar book.pais manual
+    // 1. Respetar book.pais manual (código ISO 2, alias común o nombre del catálogo)
     if (book.pais) {
-      const manualCode = book.pais.trim().toUpperCase();
+      const trimmed = book.pais.trim();
+      const manualCode = trimmed.toUpperCase();
       if (COUNTRIES_CATALOG[manualCode]) {
         return COUNTRIES_CATALOG[manualCode];
+      }
+      const lower = trimmed.toLowerCase();
+      const aliasCode = COUNTRY_NAME_OR_ALIAS_MAP[lower];
+      if (aliasCode && COUNTRIES_CATALOG[aliasCode]) {
+        return COUNTRIES_CATALOG[aliasCode];
+      }
+      const matchByName = Object.values(COUNTRIES_CATALOG).find(
+        (c) => c.name.toLowerCase() === lower
+      );
+      if (matchByName) {
+        return matchByName;
       }
     }
 

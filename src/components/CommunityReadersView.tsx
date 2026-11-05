@@ -45,7 +45,7 @@ import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { UserAvatar } from './UserAvatar';
 import { calculateGuardianProgress, ReaderLevelInfo } from '../services/levelingService';
-import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats } from '../services/literaryGeographyService';
+import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats, literaryGeographyService } from '../services/literaryGeographyService';
 import { LiteraryAtlasMap, CountryMapNode, ContinentId } from './LiteraryAtlasMap';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { StarRatingDisplay } from './StarRatingInteractive';
@@ -698,12 +698,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const readerMapCountries = useMemo<CountryMapNode[]>(() => {
     const booksByCode: Record<string, Book[]> = {};
     for (const b of readerBooks) {
-      if (b.pais) {
-        const country = COUNTRIES_CATALOG[b.pais] || Object.values(COUNTRIES_CATALOG).find((c) => c.name.toLowerCase() === b.pais?.toLowerCase());
-        if (country) {
-          if (!booksByCode[country.code]) booksByCode[country.code] = [];
-          booksByCode[country.code].push(b);
-        }
+      const country = literaryGeographyService.resolveBookCountry(b);
+      if (country) {
+        if (!booksByCode[country.code]) booksByCode[country.code] = [];
+        booksByCode[country.code].push(b);
       }
     }
 
@@ -740,8 +738,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     const country = COUNTRIES_CATALOG[selectedCountryCode];
     if (!country) return null;
     const books = readerBooks.filter((b) => {
-      if (!b.pais) return false;
-      return b.pais.toUpperCase() === country.code || b.pais.toLowerCase() === country.name.toLowerCase();
+      const resolved = literaryGeographyService.resolveBookCountry(b);
+      return resolved?.code === country.code;
     });
     return { country, books };
   }, [selectedCountryCode, readerBooks]);
@@ -1332,13 +1330,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           className="catalog-card-panel group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between p-3 space-y-2.5"
                         >
                           <div className="space-y-2">
-                            <div className="relative aspect-[2/3] rounded-md overflow-hidden shadow-xs">
+                            <div className="relative pr-1.5 pb-1">
                               <BookCover
                                 nombre={book.nombre}
                                 autor={book.autor}
                                 portadaUrl={book.portadaUrl}
                                 portadaFallbackUrl={book.portadaFallbackUrl}
                                 size="md"
+                                variant="book"
                               />
                               <span
                                 className={`absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-xs border ${
@@ -1533,13 +1532,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           onClick={() => handleOpenBookModal(b)}
                           className="p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-[#fbf6ea] dark:bg-[#141A26] flex items-center gap-3 cursor-pointer hover:border-amber-600 transition"
                         >
-                          <div className="w-10 shrink-0">
+                          <div className="w-12 shrink-0 pr-1 py-0.5">
                             <BookCover
                               nombre={b.nombre}
                               autor={b.autor}
                               portadaUrl={b.portadaUrl}
                               portadaFallbackUrl={b.portadaFallbackUrl}
                               size="sm"
+                              variant="book"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1577,13 +1577,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         >
                           <div className="space-y-3">
                             <div className="flex items-start gap-3">
-                              <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                              <div className="w-14 shrink-0 pr-1.5 py-0.5">
                                 <BookCover
                                   nombre={b.nombre}
                                   autor={b.autor}
                                   portadaUrl={b.portadaUrl}
                                   portadaFallbackUrl={b.portadaFallbackUrl}
                                   size="sm"
+                                  variant="book"
                                 />
                               </div>
                               <div className="min-w-0 flex-1 space-y-1">
@@ -1677,13 +1678,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           key={idx}
                           className="catalog-card-panel p-4 flex items-center gap-4 hover:shadow-md transition"
                         >
-                          <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                          <div className="w-14 shrink-0 pr-1.5 py-0.5">
                             <BookCover
                               nombre={cb.title}
                               autor={cb.author}
                               portadaUrl={cb.readerBook.portadaUrl || cb.myBook.portadaUrl}
                               portadaFallbackUrl={cb.readerBook.portadaFallbackUrl}
                               size="sm"
+                              variant="book"
                             />
                           </div>
 
@@ -1761,13 +1763,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           className="catalog-card-panel p-4 space-y-3 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
                         >
                           <div className="flex items-start gap-3">
-                            <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                            <div className="w-14 shrink-0 pr-1.5 py-0.5">
                               <BookCover
                                 nombre={gem.nombre}
                                 autor={gem.autor}
                                 portadaUrl={gem.portadaUrl}
                                 portadaFallbackUrl={gem.portadaFallbackUrl}
                                 size="sm"
+                                variant="book"
                               />
                             </div>
                             <div className="min-w-0 flex-1 space-y-1">
@@ -2036,13 +2039,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
                           {/* Portada y Libro */}
                           <div className="flex items-start gap-3">
-                            <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                            <div className="w-14 shrink-0 pr-1.5 py-0.5">
                               <BookCover
                                 nombre={book.nombre}
                                 autor={book.autor}
                                 portadaUrl={book.portadaUrl}
                                 portadaFallbackUrl={book.portadaFallbackUrl}
                                 size="sm"
+                                variant="book"
                               />
                             </div>
                             <div className="min-w-0 flex-1 space-y-1">
@@ -2158,13 +2162,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
                             {/* Portada, título y valoración */}
                             <div className="flex items-start gap-3">
-                              <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                              <div className="w-14 shrink-0 pr-1.5 py-0.5">
                                 <BookCover
                                   nombre={book.nombre}
                                   autor={book.autor}
                                   portadaUrl={book.portadaUrl}
                                   portadaFallbackUrl={book.portadaFallbackUrl}
                                   size="sm"
+                                  variant="book"
                                 />
                               </div>
                               <div className="min-w-0 flex-1 space-y-1">

@@ -290,20 +290,12 @@ html.dark .bookcase {
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%);
+    linear-gradient(115deg, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.24), transparent 28%),
+    var(--paper-grain);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 0 16px rgba(0, 0, 0, 0.28);
-}
-
-@media (min-width: 768px) {
-  .book-cover::after {
-    background:
-      linear-gradient(115deg, rgba(255, 255, 255, 0.2), transparent 34%),
-      linear-gradient(0deg, rgba(0, 0, 0, 0.22), transparent 28%),
-      var(--paper-grain);
-  }
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 16px rgba(0, 0, 0, 0.32);
 }
 
 /* Libro sin portada: cubierta de tela con título estampado en oro */
@@ -374,10 +366,11 @@ html.dark .bookcase {
 .book-cover-sm {
   border-radius: 1px 3px 3px 1px;
   box-shadow:
-    1px 0 0 #dccfae,
+    1px 0 0 #dfd4b7,
     2px 0 0 #b6a784,
-    3px 0 0 #8e8062,
-    0 5px 8px -2px rgba(0, 0, 0, 0.55);
+    3px 0 0 #d3c5a2,
+    4px 0 0 #8e8062,
+    0 5px 10px -2px rgba(0, 0, 0, 0.55);
 }
 .book-cover-sm .book-cover-cloth {
   padding: 6% 4% 6% 14%;
