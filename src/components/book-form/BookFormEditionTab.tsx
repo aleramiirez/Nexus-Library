@@ -1,6 +1,7 @@
 import React from 'react';
 import { Images, Book, Smartphone, Headphones, Library, BookmarkCheck, Heart, Share2 } from 'lucide-react';
 import { BookFormat, BookOwnership } from '../../types/models';
+import { LibrarySelect, LibrarySelectOption } from '../LibrarySelect';
 import { inputCls, labelCls } from './styles';
 
 interface CountryItem {
@@ -76,6 +77,18 @@ export const BookFormEditionTab: React.FC<BookFormEditionTabProps> = ({
     { value: 'biblioteca', label: 'Biblioteca pública', icon: '🔖' },
     { value: 'deseo', label: 'Lista de deseos', icon: '✨' }
   ];
+
+  const countryOptions = React.useMemo<LibrarySelectOption<string>[]>(() => [
+    {
+      value: '',
+      label: `✨ Detectar automáticamente por autor${autoDetectedCountry ? ` (${autoDetectedCountry.flag} ${autoDetectedCountry.name})` : ''}`
+    },
+    ...sortedCountries.map((c) => ({
+      value: c.code,
+      label: `${c.flag} ${c.name}`,
+      hint: c.code
+    }))
+  ], [sortedCountries, autoDetectedCountry]);
 
   return (
     <div className="space-y-5">
@@ -185,21 +198,16 @@ export const BookFormEditionTab: React.FC<BookFormEditionTabProps> = ({
           <label htmlFor="add-book-pais" className={labelCls}>
             País de origen / autor
           </label>
-          <select
+          <LibrarySelect
             id="add-book-pais"
+            ariaLabel="País de origen / autor"
             value={pais}
-            onChange={(e) => setPais(e.target.value)}
+            onChange={(val) => setPais(val)}
+            placeholder="Seleccionar país..."
+            searchPlaceholder="Buscar país o código..."
+            options={countryOptions}
             className={inputCls}
-          >
-            <option value="">
-              ✨ Detectar automáticamente por autor{autoDetectedCountry ? ` (${autoDetectedCountry.flag} ${autoDetectedCountry.name})` : ''}
-            </option>
-            {sortedCountries.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.flag} {c.name} ({c.code})
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 

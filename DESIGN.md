@@ -172,6 +172,14 @@ La tridimensionalidad no se simula con sombras planas de software genérico, sin
 - **`UserAvatar`:** Avatar con o sin marco heráldico de la Orden. Al equipar un marco, incorpora capas de textura (madera tallada, remaches, orla de plata, gema, estrella astral).
 - **`BookShelf`:** Mueble de lectura que organiza los libros en baldas de madera física según su estado (`Leyendo`, `Pendientes`, `Leídos`).
 - **`BookmarkMarker`:** Cinta marcapáginas de seda con pico cortado en ángulo que señala la sección activa.
+- **Acceso Directo a Comunidad («Hub Social»):**
+  - Botón de acceso directo con icono `Users` de línea contiguo a `Mail` (Buzón Literario) tanto en la cabecera fija superior móvil como en la cabecera del menú lateral de escritorio.
+  - Entrada estructural de primer orden en el índice lateral de lectura («Comunidad de Lectores»).
+  - Enlace fluido con `DiscoverBooksScreen` mediante `tab=community`, manteniendo la barra de pestañas y resaltando el estado activo en ámbar noble.
+- **`LibrarySelect` (Estándar Global de Desplegables Ceremoniados):**
+  - Desplegable artesanal personalizado que erradica los controles `<select>` nativos del navegador.
+  - Utilizado en el Atlas Literario (`LiteraryAtlasView`) para la asignación rápida de territorios de origen a libros sin país y en los formularios de edición bibliográfica (`BookFormEditionTab`).
+  - Incorpora menú portaleado inmune a desbordamientos `overflow`, buscador dinámico cuando la lista supera 8 elementos (con búsqueda por nombre de país y código ISO), indicadores de bandera y navegación accesible por teclado.
 
 ## Do's and Don'ts
 

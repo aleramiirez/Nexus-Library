@@ -97,6 +97,7 @@ const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
   'dashboard',
   'library',
   'discover',
+  'community',
   'shelf-unread',
   'shelf-reading',
   'shelf-paused',
@@ -182,8 +183,10 @@ export const App: React.FC = () => {
         url.searchParams.delete('tab');
       } else {
         url.searchParams.set('section', section);
-        if (section !== 'discover') {
+        if (section !== 'discover' && section !== 'community') {
           url.searchParams.delete('tab');
+        } else if (section === 'community') {
+          url.searchParams.set('tab', 'community');
         }
       }
       window.history.replaceState({}, '', url.toString());
@@ -212,8 +215,10 @@ export const App: React.FC = () => {
       } else {
         if (url.searchParams.get('section') !== activeSection) {
           url.searchParams.set('section', activeSection);
-          if (activeSection !== 'discover') {
+          if (activeSection !== 'discover' && activeSection !== 'community') {
             url.searchParams.delete('tab');
+          } else if (activeSection === 'community') {
+            url.searchParams.set('tab', 'community');
           }
           window.history.replaceState({}, '', url.toString());
         }
@@ -1377,6 +1382,20 @@ export const App: React.FC = () => {
           </button>
           <button
             type="button"
+            onClick={() => handleNavigate('community')}
+            className={
+              'relative w-9 h-9 inline-flex items-center justify-center rounded-xl border transition active:scale-95 ' +
+              (activeSection === 'community'
+                ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold shadow-xs'
+                : 'border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400')
+            }
+            title="Comunidad y Círculo de Lectores"
+            aria-label="Comunidad y Círculo de Lectores"
+          >
+            <Users className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => setIsInboxOpen(true)}
             className="relative w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition"
             title="Buzón Literario"
@@ -1484,7 +1503,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {activeSection === 'discover' && (
+          {(activeSection === 'discover' || activeSection === 'community') && (
             <React.Suspense
               fallback={
                 <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
@@ -1494,6 +1513,14 @@ export const App: React.FC = () => {
               }
             >
               <DiscoverBooksScreen
+                initialTab={activeSection === 'community' ? 'community' : undefined}
+                onTabChange={(tab) => {
+                  if (tab === 'community' && activeSection !== 'community') {
+                    handleNavigate('community');
+                  } else if (tab !== 'community' && activeSection === 'community') {
+                    handleNavigate('discover');
+                  }
+                }}
                 books={books}
                 onQuickAddBook={handleQuickAddFromDiscover}
                 onCustomizeBook={handleCustomizeFromDiscover}
@@ -1631,7 +1658,7 @@ export const App: React.FC = () => {
             id: 'discover' as NavigationSection,
             label: 'Descubrir',
             icon: Compass,
-            isActive: activeSection === 'discover'
+            isActive: activeSection === 'discover' || activeSection === 'community'
           },
           {
             id: 'sagas' as NavigationSection,

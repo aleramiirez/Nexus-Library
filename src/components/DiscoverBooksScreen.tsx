@@ -46,6 +46,7 @@ interface DiscoverBooksScreenProps {
   onAddBookFromCommunity?: (book: Book) => Promise<void>;
   onOpenBookDetail?: (book: Book) => void;
   initialTab?: 'books' | 'atlas' | 'community';
+  onTabChange?: (tab: 'books' | 'atlas' | 'community') => void;
   userDisplayName?: string | null;
   username?: string | null;
   avatarUrl?: string | null;
@@ -72,6 +73,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   onAddBookFromCommunity,
   onOpenBookDetail,
   initialTab,
+  onTabChange,
   userDisplayName,
   username,
   avatarUrl,
@@ -123,6 +125,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     startTransition(() => {
       setDiscoverTab(tab);
     });
+    onTabChange?.(tab);
     try {
       sessionStorage.setItem('nexus_discover_tab', tab);
       localStorage.setItem('nexus_discover_tab', tab);

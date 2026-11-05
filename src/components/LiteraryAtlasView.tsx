@@ -44,6 +44,7 @@ import { isBookAlreadyInLibrary } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { soundService } from '../services/soundService';
+import { LibrarySelect, LibrarySelectOption } from './LibrarySelect';
 import '../dashboard-panels.css';
 
 export interface LiteraryAtlasViewProps {
@@ -380,6 +381,14 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
       a.name.localeCompare(b.name, 'es')
     );
   }, []);
+
+  const countrySelectOptions = useMemo<LibrarySelectOption<string>[]>(() => {
+    return sortedCatalogCountries.map((c) => ({
+      value: c.code,
+      label: `${c.flag} ${c.name}`,
+      hint: c.code
+    }));
+  }, [sortedCatalogCountries]);
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -864,22 +873,17 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
                         </p>
                       </div>
 
-                      <div className="shrink-0">
-                        <select
+                      <div className="shrink-0 w-44 sm:w-52">
+                        <LibrarySelect
                           disabled={isBusy}
-                          defaultValue=""
-                          onChange={(e) => handleAssignCountry(book.id, e.target.value)}
-                          className="text-xs font-semibold px-2 py-1.5 rounded-lg border border-amber-900/20 dark:border-stone-700 bg-white dark:bg-[#0E131E] text-stone-800 dark:text-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                        >
-                          <option value="" disabled>
-                            {isBusy ? 'Asignando...' : 'Asignar país...'}
-                          </option>
-                          {sortedCatalogCountries.map((c) => (
-                            <option key={c.code} value={c.code}>
-                              {c.flag} {c.name}
-                            </option>
-                          ))}
-                        </select>
+                          value=""
+                          onChange={(code) => handleAssignCountry(book.id, code)}
+                          placeholder={isBusy ? 'Asignando...' : 'Asignar país...'}
+                          searchPlaceholder="Buscar país o código..."
+                          options={countrySelectOptions}
+                          ariaLabel={`Asignar país para ${book.nombre}`}
+                          className="!min-h-[34px] !py-1 !px-2.5 text-xs"
+                        />
                       </div>
                     </div>
                   );
