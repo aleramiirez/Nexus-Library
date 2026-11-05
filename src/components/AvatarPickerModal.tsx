@@ -20,7 +20,7 @@ interface AvatarPickerModalProps {
   currentAvatarUrl?: string | null;
   displayName?: string | null;
   username?: string | null;
-  onSaveAvatar: (avatarUrl: string | null) => Promise<void>;
+  onSaveAvatar: (avatarUrl: string | null, frameId?: OrderRankId) => Promise<void>;
   onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
   levelInfo?: ReaderLevelInfo;
 }
@@ -108,7 +108,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSaveAvatar(selected);
+      await onSaveAvatar(selected, selectedFrameId || undefined);
       onShowToast?.('¡Sello y marco de avatar actualizados en tu carnet!', 'success');
       onClose();
     } catch {

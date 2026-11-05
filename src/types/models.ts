@@ -140,6 +140,8 @@ export interface UserProfile {
   bio?: string | null;
   isPublic: boolean;
   visibility?: ProfileVisibility;
+  orderFrame?: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII' | 'IX' | 'X';
+  level?: number;
   createdAt?: string;
   updatedAt?: string;
 }

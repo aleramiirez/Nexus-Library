@@ -363,16 +363,12 @@ html.dark .dashboard-reading-badge {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* 4. Panel Ficha de Catálogo (Mis Sagas) */
+/* 4. Panel Ficha de Catálogo (Textura Pergamino Punteado Unificada) */
 .catalog-card-panel {
   position: relative;
   isolation: isolate;
-  background-color: #f7f0df;
-  background-image:
-    var(--lib-paper-grain),
-    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(160, 120, 70, 0.12) 33px, rgba(160, 120, 70, 0.12) 34px),
-    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
-  background-position: 0 10px;
+  background-color: var(--dashboard-card-bg-base);
+  background-image: var(--dashboard-card-bg-image);
   border-radius: 18px;
   box-shadow:
     0 1px 2px rgba(60, 35, 10, 0.05),
@@ -381,16 +377,13 @@ html.dark .dashboard-reading-badge {
     0 6px 0 0 #e4d4b6,
     0 7px 3px rgba(60, 35, 10, 0.08),
     0 12px 24px -6px rgba(60, 35, 10, 0.14);
-  border: 1px solid rgba(160, 115, 55, 0.25);
+  border: var(--dashboard-card-border);
   padding: 22px 24px;
 }
 
 html.dark .catalog-card-panel {
-  background-color: #101520;
-  background-image:
-    var(--lib-paper-grain),
-    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(255, 255, 255, 0.038) 33px, rgba(255, 255, 255, 0.038) 34px),
-    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
+  background-color: var(--dashboard-card-bg-base);
+  background-image: var(--dashboard-card-bg-image);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.5),
     0 3px 0 0 #18202d,
@@ -398,7 +391,23 @@ html.dark .catalog-card-panel {
     0 6px 0 0 #0f141f,
     0 7px 3px rgba(0, 0, 0, 0.5),
     0 16px 28px -6px rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(220, 180, 100, 0.16);
+  border: var(--dashboard-card-border);
+}
+
+/* Variante Ficha Pautada de Archivo (Líneas de cuaderno pautadas para cajón de archivo / listas) */
+.catalog-card-panel--lined {
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(160, 120, 70, 0.12) 33px, rgba(160, 120, 70, 0.12) 34px),
+    linear-gradient(180deg, #faf3e5 0%, #f5ecdc 50%, #eee1cb 100%);
+  background-position: 0 10px;
+}
+
+html.dark .catalog-card-panel--lined {
+  background-image:
+    var(--lib-paper-grain),
+    repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(255, 255, 255, 0.038) 33px, rgba(255, 255, 255, 0.038) 34px),
+    linear-gradient(180deg, #151b27 0%, #111622 50%, #0d121c 100%);
 }
 
 /* Marco fino de la ficha de catálogo */
@@ -1114,6 +1123,21 @@ html.dark .reader-avatar-stamp {
 .nexus-avatar-frame.size-lg  .nexus-avatar-inner { border-radius: 13px; }
 .nexus-avatar-frame.size-xl  .nexus-avatar-inner { border-radius: 15px; }
 .nexus-avatar-frame.size-2xl .nexus-avatar-inner { border-radius: 19px; }
+
+/* Variante Circular (para Círculo de Amigos / Stories / Medallones) */
+.nexus-avatar-frame.shape-circle,
+.nexus-avatar-frame.shape-circle.size-xs,
+.nexus-avatar-frame.shape-circle.size-sm,
+.nexus-avatar-frame.shape-circle.size-md,
+.nexus-avatar-frame.shape-circle.size-lg,
+.nexus-avatar-frame.shape-circle.size-xl,
+.nexus-avatar-frame.shape-circle.size-2xl {
+  border-radius: 9999px !important;
+}
+
+.nexus-avatar-frame.shape-circle .nexus-avatar-inner {
+  border-radius: 9999px !important;
+}
 
 /* ─── Rango I: Cuerda rústica de cáñamo ─── */
 .nexus-avatar-frame.frame-rank-i {

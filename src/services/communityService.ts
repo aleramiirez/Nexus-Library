@@ -3,6 +3,7 @@ import { UserProfile, Book } from '../types/models';
 import { mapRowToBook, SupabaseBookRow } from '../db/database';
 import { mapRowToProfile, RawProfileRow } from './profileService';
 import { friendshipService } from './friendshipService';
+import { calculateGuardianProgress, OrderRankId } from './levelingService';
 
 export interface CommunityReaderSummary {
   profile: UserProfile;
@@ -23,6 +24,7 @@ export interface FriendsActivitySummary {
   readingNow: FriendActivityItem[];
   recentReadsAndReviews: FriendActivityItem[];
   friendsReadingCounts: Record<string, number>;
+  friendsRanks: Record<string, { orderFrame: OrderRankId; level: number }>;
 }
 
 export const communityService = {
@@ -221,6 +223,14 @@ export const communityService = {
           else unreadCount++;
         }
 
+        const progress = calculateGuardianProgress(uBooks);
+        if (!profile.orderFrame) {
+          profile.orderFrame = progress.rank.id;
+        }
+        if (profile.level === undefined) {
+          profile.level = progress.level;
+        }
+
         return {
           profile,
           totalBooks: uBooks.length,
@@ -247,7 +257,8 @@ export const communityService = {
     const result: FriendsActivitySummary = {
       readingNow: [],
       recentReadsAndReviews: [],
-      friendsReadingCounts: {}
+      friendsReadingCounts: {},
+      friendsRanks: {}
     };
 
     if (!currentUserId) return result;
@@ -320,6 +331,22 @@ export const communityService = {
         } else if (isRead || (book.resena && book.resena.trim().length > 0) || book.puntuacion) {
           result.recentReadsAndReviews.push({ friend, book });
         }
+      }
+
+      // Calcular rango y marco de la Orden para cada amigo según su colección
+      for (const [fId, friend] of friendsMap.entries()) {
+        const friendBooks = (bRows as any[])
+          .filter((r) => r.user_id === fId)
+          .map((r) => mapRowToBook(r));
+        const progress = calculateGuardianProgress(friendBooks);
+        const effectiveFrame = friend.orderFrame || progress.rank.id;
+        const effectiveLevel = friend.level || progress.level;
+        friend.orderFrame = effectiveFrame;
+        friend.level = effectiveLevel;
+        result.friendsRanks[fId] = {
+          orderFrame: effectiveFrame,
+          level: effectiveLevel
+        };
       }
 
       return result;

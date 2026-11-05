@@ -31,12 +31,16 @@ import {
 } from '../services/levelingService';
 import { UserAvatar } from './UserAvatar';
 import { soundService } from '../services/soundService';
+import { profileService } from '../services/profileService';
+import { UserProfile } from '../types/models';
 
 export interface NexusOrderRankPanelProps {
   levelInfo: ReaderLevelInfo;
   avatarUrl?: string | null;
   displayName?: string | null;
   username?: string | null;
+  currentUserId?: string;
+  onUpdateProfile?: (updates: Partial<UserProfile>) => Promise<unknown>;
   onShowToast?: (message: string) => void;
   variant?: 'card' | 'embedded';
 }
@@ -59,6 +63,8 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
   avatarUrl,
   displayName,
   username,
+  currentUserId,
+  onUpdateProfile,
   onShowToast,
   variant = 'card'
 }) => {
@@ -116,6 +122,11 @@ export const NexusOrderRankPanel: React.FC<NexusOrderRankPanelProps> = ({
     setCurrentActiveFrameId(targetRank.id);
     setIsFrameSelectorOpen(false);
     soundService.playBrassBell();
+    if (onUpdateProfile) {
+      onUpdateProfile({ orderFrame: targetRank.id });
+    } else if (currentUserId) {
+      profileService.updateUserProfile(currentUserId, { orderFrame: targetRank.id }).catch(() => {});
+    }
     onShowToast?.(`Marco de la Orden cambiado a «${targetRank.visualFrame}»`);
   };
 

@@ -13,6 +13,7 @@ export interface UserAvatarProps {
   displayName?: string | null;
   username?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  shape?: 'circle' | 'square';
   className?: string;
   showBorder?: boolean;
   level?: number;
@@ -54,6 +55,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   displayName,
   username,
   size = 'md',
+  shape = 'square',
   className = '',
   showBorder = true,
   level,
@@ -88,8 +90,9 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     return () => window.removeEventListener('nexus_order_frame_changed', handleFrameChanged);
   }, []);
 
+  const isCircle = shape === 'circle';
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
-  const radiusClass = RADIUS_MAP[size] || RADIUS_MAP.md;
+  const radiusClass = isCircle ? 'rounded-full' : (RADIUS_MAP[size] || RADIUS_MAP.md);
   const iconSizeClass = ICON_SIZE_MAP[size] || ICON_SIZE_MAP.md;
 
   const safeName =
@@ -103,14 +106,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const validLevel = typeof level === 'number' && !isNaN(level) ? level : undefined;
   const activeRank = rankProp || (validLevel !== undefined ? getRankForLevel(validLevel) : undefined);
 
-  // Marco activo: preferencia específica > preferencia guardada > rango actual
+  // Marco activo: preferencia específica > rango actual derivado > preferencia guardada
   const resolvedFrameRank: OrderRank | undefined =
     frameRankProp ||
     (frameRankIdProp ? ORDER_RANKS.find((r) => r.id === frameRankIdProp) : undefined) ||
+    activeRank ||
     (storedFrameId && (!validLevel || validLevel >= (ORDER_RANKS.find((r) => r.id === storedFrameId)?.minLevel ?? 1))
       ? ORDER_RANKS.find((r) => r.id === storedFrameId)
-      : undefined) ||
-    activeRank;
+      : undefined);
 
   const isLarge = size === 'lg' || size === 'xl' || size === '2xl';
 
@@ -159,18 +162,19 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   // ─── Renderizado con Marco Distinguido de la Orden ───
   if (resolvedFrameRank) {
     const frameRankClass = `frame-rank-${resolvedFrameRank.id.toLowerCase()}`;
+    const circleClass = isCircle ? 'shape-circle rounded-full' : '';
     return (
       <div
-        className={`nexus-avatar-frame size-${size} ${frameRankClass} ${className}`}
+        className={`nexus-avatar-frame size-${size} ${frameRankClass} ${circleClass} ${className}`}
         title={titleText}
       >
         {/* Contenedor interior de la foto/sello */}
-        <div className="nexus-avatar-inner select-none">
+        <div className={`nexus-avatar-inner select-none ${isCircle ? 'rounded-full' : ''}`}>
           {renderInner()}
         </div>
 
         {/* Adornos y relieves de la heráldica según el Escalafón */}
-        {isLarge && resolvedFrameRank.id === 'II' && (
+        {!isCircle && isLarge && resolvedFrameRank.id === 'II' && (
           /* Remaches de latón tallados en madera para Ratón de Biblioteca */
           <>
             <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-amber-400 border border-amber-900 shadow-xs pointer-events-none" />
@@ -180,14 +184,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           </>
         )}
 
-        {isLarge && resolvedFrameRank.id === 'VII' && (
+        {!isCircle && isLarge && resolvedFrameRank.id === 'VII' && (
           /* Sello de lacre carmesí cancilleresco en esquina */
           <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-br from-red-600 to-red-950 border border-amber-400 text-[8px] text-amber-200 flex items-center justify-center shadow-md font-serif font-black pointer-events-none">
             §
           </span>
         )}
 
-        {isLarge && resolvedFrameRank.id === 'VIII' && (
+        {!isCircle && isLarge && resolvedFrameRank.id === 'VIII' && (
           /* Gemas de zafiro en las 4 esquinas para Gran Cronista */
           <>
             <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-cyan-300 border border-sky-800 shadow-[0_0_6px_#38bdf8] pointer-events-none" />
@@ -197,7 +201,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           </>
         )}
 
-        {isLarge && resolvedFrameRank.id === 'X' && (
+        {!isCircle && isLarge && resolvedFrameRank.id === 'X' && (
           /* Estrella cósmica imperial superior para Guardián del Nexus */
           <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-300 via-rose-300 to-amber-200 text-[8px] font-black text-slate-950 border border-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.9)] pointer-events-none leading-none">
             ★

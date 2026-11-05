@@ -65,7 +65,7 @@ export const friendshipService = {
       // Cargar perfiles de los amigos en bloque
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, is_public')
+        .select('*')
         .in('id', friendIds);
 
       const profileMap = new Map<string, UserProfile>();
@@ -166,7 +166,7 @@ export const friendshipService = {
 
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, is_public')
+        .select('*')
         .in('id', otherIds);
 
       const profileMap = new Map<string, UserProfile>();

@@ -99,10 +99,10 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
     }
   }, [currentUser, userProfile, guestAlias]);
 
-  const handleAvatarSelect = async (avatarUrl: string | null) => {
+  const handleAvatarSelect = async (avatarUrl: string | null, frameId?: any) => {
     if (currentUser) {
       if (onUpdateProfile) {
-        await onUpdateProfile({ avatarUrl });
+        await onUpdateProfile({ avatarUrl, ...(frameId ? { orderFrame: frameId } : {}) });
       }
       onShowFeedback({
         type: 'success',

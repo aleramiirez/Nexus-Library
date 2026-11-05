@@ -116,7 +116,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [friendsActivity, setFriendsActivity] = useState<FriendsActivitySummary>({
     readingNow: [],
     recentReadsAndReviews: [],
-    friendsReadingCounts: {}
+    friendsReadingCounts: {},
+    friendsRanks: {}
   });
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
 
@@ -259,6 +260,22 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       }
     };
   }, [currentUserId]);
+
+  // Puente de mocks para testing de entorno local
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__injectCommunityMocks = (mFriends: any, mActivity: any) => {
+        if (mFriends) setFriends(mFriends);
+        if (mActivity) setFriendsActivity(mActivity);
+      };
+      if ((window as any).__MOCK_FRIENDS__) {
+        setFriends((window as any).__MOCK_FRIENDS__);
+      }
+      if ((window as any).__MOCK_ACTIVITY__) {
+        setFriendsActivity((window as any).__MOCK_ACTIVITY__);
+      }
+    }
+  }, []);
 
   // Persistir subtab en URL y localStorage
   useEffect(() => {
@@ -1038,6 +1055,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   displayName={selectedReader.displayName}
                   username={selectedReader.username}
                   size="xl"
+                  frameRankId={selectedReader.orderFrame}
                   level={selectedReaderLevelInfo?.level}
                   rank={selectedReaderLevelInfo?.rank}
                 />
@@ -1964,6 +1982,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               if (!friend) return null;
               const readingCount = friendsActivity.friendsReadingCounts[friend.id] || 0;
               const isReadingNow = readingCount > 0;
+              const friendRankId = friendsActivity.friendsRanks?.[friend.id]?.orderFrame || friend.orderFrame || 'I';
+              const friendLevel = friendsActivity.friendsRanks?.[friend.id]?.level ?? friend.level;
 
               return (
                 <button
@@ -1975,16 +1995,19 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 >
                   <div
                     className={
-                      'relative p-0.5 rounded-full transition-transform group-hover:scale-105 ' +
+                      'relative p-1 rounded-full transition-transform group-hover:scale-105 ' +
                       (isReadingNow
                         ? 'bg-gradient-to-tr from-amber-500 via-amber-300 to-yellow-600 shadow-md ring-2 ring-amber-500/40'
-                        : 'border border-stone-300 dark:border-stone-700 hover:border-amber-500/50')
+                        : 'border border-stone-300/80 dark:border-stone-700/80 hover:border-amber-500/50')
                     }
                   >
                     <UserAvatar
                       avatarUrl={friend.avatarUrl}
                       displayName={friend.displayName}
                       username={friend.username}
+                      frameRankId={friendRankId}
+                      level={friendLevel}
+                      shape="circle"
                       size="md"
                     />
                     {isReadingNow && (
@@ -2141,6 +2164,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                               avatarUrl={friend.avatarUrl}
                               displayName={friend.displayName}
                               username={friend.username}
+                              frameRankId={friendsActivity.friendsRanks?.[friend.id]?.orderFrame || friend.orderFrame}
+                              level={friendsActivity.friendsRanks?.[friend.id]?.level ?? friend.level}
                               size="sm"
                             />
                             <div className="min-w-0 flex-1">
@@ -2261,6 +2286,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                                 avatarUrl={friend.avatarUrl}
                                 displayName={friend.displayName}
                                 username={friend.username}
+                                frameRankId={friendsActivity.friendsRanks?.[friend.id]?.orderFrame || friend.orderFrame}
+                                level={friendsActivity.friendsRanks?.[friend.id]?.level ?? friend.level}
                                 size="sm"
                               />
                               <div className="min-w-0 flex-1">
@@ -2406,9 +2433,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                        <div className="reader-avatar-stamp">
-                          {profile.displayName.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar
+                          avatarUrl={profile.avatarUrl}
+                          displayName={profile.displayName}
+                          username={profile.username}
+                          frameRankId={profile.orderFrame}
+                          level={profile.level}
+                          size="md"
+                        />
                         <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {profile.displayName}
@@ -2507,11 +2539,14 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                        <div className="reader-avatar-stamp">
-                          {reader.displayName
-                            ? reader.displayName.charAt(0).toUpperCase()
-                            : reader.username.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar
+                          avatarUrl={reader.avatarUrl}
+                          displayName={reader.displayName}
+                          username={reader.username}
+                          frameRankId={reader.orderFrame}
+                          level={reader.level}
+                          size="md"
+                        />
                         <div className="min-w-0 flex-1">
                           <h3 className="font-serif text-base font-bold truncate text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
                             {reader.displayName}
@@ -2615,6 +2650,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           avatarUrl={p.avatarUrl}
                           displayName={p.displayName}
                           username={p.username}
+                          frameRankId={p.orderFrame}
+                          level={p.level}
                           size="md"
                         />
                         <div className="min-w-0 flex-1">

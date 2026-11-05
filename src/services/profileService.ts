@@ -9,6 +9,8 @@ export interface RawProfileRow {
   bio?: string | null;
   is_public?: boolean | null;
   visibility?: string | null;
+  order_frame?: string | null;
+  level?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -42,8 +44,51 @@ export function extractVisibility(row: {
   return { visibility: vis, cleanBio };
 }
 
+export function extractMetadata(row: {
+  is_public?: boolean | null;
+  visibility?: string | null;
+  bio?: string | null;
+  order_frame?: string | null;
+  level?: number | null;
+}): {
+  visibility: ProfileVisibility;
+  cleanBio: string;
+  orderFrame?: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII' | 'IX' | 'X';
+  level?: number;
+} {
+  const { visibility } = extractVisibility(row);
+  let cleanBio = row.bio ? row.bio.replace(/<!--vis:(public|friends|private)-->/g, '').trim() : '';
+
+  let orderFrame: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII' | 'IX' | 'X' | undefined = undefined;
+  if (row.order_frame && /^(I|II|III|IV|V|VI|VII|VIII|IX|X)$/i.test(row.order_frame)) {
+    orderFrame = row.order_frame.toUpperCase() as any;
+  } else if (row.bio) {
+    const frameMatch = row.bio.match(/<!--frame:(I|II|III|IV|V|VI|VII|VIII|IX|X)-->/i);
+    if (frameMatch) {
+      orderFrame = frameMatch[1].toUpperCase() as any;
+    }
+  }
+
+  let level = typeof row.level === 'number' && !isNaN(row.level) ? row.level : undefined;
+  if (level === undefined && row.bio) {
+    const lvlMatch = row.bio.match(/<!--lvl:(\d+)-->/);
+    if (lvlMatch) {
+      level = parseInt(lvlMatch[1], 10);
+    }
+  }
+
+  if (row.bio) {
+    cleanBio = cleanBio
+      .replace(/<!--frame:[A-Za-z0-9]+-->/g, '')
+      .replace(/<!--lvl:\d+-->/g, '')
+      .trim();
+  }
+
+  return { visibility, cleanBio, orderFrame, level };
+}
+
 export function mapRowToProfile(row: RawProfileRow): UserProfile {
-  const { visibility, cleanBio } = extractVisibility(row);
+  const { visibility, cleanBio, orderFrame, level } = extractMetadata(row);
   return {
     id: row.id,
     username: row.username,
@@ -52,6 +97,8 @@ export function mapRowToProfile(row: RawProfileRow): UserProfile {
     bio: cleanBio,
     isPublic: visibility === 'public',
     visibility,
+    orderFrame,
+    level,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -161,11 +208,23 @@ export const profileService = {
     let rawBio = updates.bio ? updates.bio.trim() : (current?.bio || '');
     rawBio = rawBio.replace(/<!--vis:(public|friends|private)-->/g, '').trim();
 
+    const targetOrderFrame = updates.orderFrame !== undefined ? updates.orderFrame : current?.orderFrame;
+    const targetLevel = updates.level !== undefined ? updates.level : current?.level;
+
+    rawBio = rawBio
+      .replace(/<!--frame:[A-Za-z0-9]+-->/g, '')
+      .replace(/<!--lvl:\d+-->/g, '')
+      .trim();
+
+    const metadataTags: string[] = [];
+    if (targetVisibility === 'friends') metadataTags.push('<!--vis:friends-->');
+    else if (targetVisibility === 'private') metadataTags.push('<!--vis:private-->');
+    if (targetOrderFrame) metadataTags.push(`<!--frame:${targetOrderFrame}-->`);
+    if (typeof targetLevel === 'number') metadataTags.push(`<!--lvl:${targetLevel}-->`);
+
     let bioToSave: string | null = rawBio;
-    if (targetVisibility === 'friends') {
-      bioToSave = rawBio ? `${rawBio} <!--vis:friends-->` : '<!--vis:friends-->';
-    } else if (targetVisibility === 'private') {
-      bioToSave = rawBio ? `${rawBio} <!--vis:private-->` : '<!--vis:private-->';
+    if (metadataTags.length > 0) {
+      bioToSave = rawBio ? `${rawBio} ${metadataTags.join(' ')}` : metadataTags.join(' ');
     } else {
       bioToSave = rawBio || null;
     }
@@ -184,7 +243,13 @@ export const profileService = {
     if (updates.avatarUrl !== undefined) {
       payload.avatar_url = updates.avatarUrl;
     }
-    if (updates.bio !== undefined || updates.visibility !== undefined || updates.isPublic !== undefined) {
+    if (updates.orderFrame !== undefined) {
+      payload.order_frame = updates.orderFrame;
+    }
+    if (updates.level !== undefined) {
+      payload.level = updates.level;
+    }
+    if (updates.bio !== undefined || updates.visibility !== undefined || updates.isPublic !== undefined || updates.orderFrame !== undefined || updates.level !== undefined) {
       payload.bio = bioToSave;
     }
 
