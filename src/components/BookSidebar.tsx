@@ -8,7 +8,6 @@ import {
   BarChart3,
   Trophy,
   Settings,
-  Bookmark,
   BookMarked,
   BookmarkCheck,
   Clock,
@@ -379,15 +378,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               onSelect={handleSelectSection}
             />
 
-            <Chapter>Colección y Análisis</Chapter>
-            <NavItem
-              id="collections"
-              label="Colecciones"
-              icon={Bookmark}
-              count={collectionsCount}
-              active={activeSection === 'collections'}
-              onSelect={handleSelectSection}
-            />
+            <Chapter>Series y Análisis</Chapter>
             <NavItem
               id="sagas"
               label="Sagas"

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import {
+  BookOpen,
+  Bookmark,
+  Library,
   Search,
   X,
   Plus,
@@ -41,6 +44,10 @@ import { BookShelf } from './BookShelf';
 import { DashboardCard, DashboardCardHeader } from './DashboardCard';
 import '../dashboard-panels.css';
 
+const CollectionsScreen = React.lazy(() =>
+  import('./CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
+);
+
 export interface LibraryViewProps {
   activeSection: NavigationSection;
   books: Book[];
@@ -52,6 +59,9 @@ export interface LibraryViewProps {
   setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
   subgenreSelectGroups?: LibrarySelectGroup<string>[];
   allSubgenresOptions?: Array<{ value: string; label: string }>;
+  collectionsCount?: number;
+  currentUserId?: string;
+  onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
   metrics: {
     total: number;
     reading: number;
@@ -91,6 +101,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   subgenreSelectGroups,
   allSubgenresOptions,
   metrics,
+  collectionsCount = 0,
+  currentUserId,
+  onShowToast,
   isSampleActive,
   isLoadingSample,
   isRemovingSample,
@@ -110,6 +123,46 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onKeepSampleBooks,
   onOpenOracle
 }) => {
+  const [libraryTab, setLibraryTab] = useState<'books' | 'collections'>(() => {
+    if (activeSection === 'collections') return 'collections';
+    if (typeof window !== 'undefined') {
+      try {
+        const urlTab = new URLSearchParams(window.location.search).get('tab');
+        if (urlTab === 'collections' || urlTab === 'books') return urlTab;
+        const stored = sessionStorage.getItem('nexus_library_tab');
+        if (stored === 'collections' || stored === 'books') return stored as 'books' | 'collections';
+      } catch {
+        // ignorar
+      }
+    }
+    return 'books';
+  });
+
+  React.useEffect(() => {
+    if (activeSection === 'collections') {
+      setLibraryTab('collections');
+    }
+  }, [activeSection]);
+
+  const handleLibraryTabChange = (tab: 'books' | 'collections') => {
+    setLibraryTab(tab);
+    if (tab === 'books' && activeSection === 'collections') {
+      onNavigate('library');
+    }
+    try {
+      sessionStorage.setItem('nexus_library_tab', tab);
+      const url = new URL(window.location.href);
+      if (tab === 'collections') {
+        url.searchParams.set('tab', 'collections');
+      } else {
+        url.searchParams.delete('tab');
+      }
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // ignorar
+    }
+  };
+
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -243,7 +296,87 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {renderMobileShelfTabs()}
+      {/* ─── Pestañas Principales: Todos los Libros vs Mis Colecciones ─── */}
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+        <button
+          type="button"
+          onClick={() => handleLibraryTabChange('books')}
+          className={
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            (libraryTab === 'books'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+          }
+        >
+          <BookOpen className="w-4 h-4 shrink-0" />
+          <span className="sm:hidden whitespace-nowrap">Libros</span>
+          <span className="hidden sm:inline whitespace-nowrap">Todos los Libros</span>
+          <span
+            className={
+              'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+              (libraryTab === 'books'
+                ? 'bg-slate-950/20 text-slate-950'
+                : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+            }
+          >
+            {books.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleLibraryTabChange('collections')}
+          className={
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            (libraryTab === 'collections'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+          }
+        >
+          <Bookmark className="w-4 h-4 shrink-0" />
+          <span className="sm:hidden whitespace-nowrap">Colecciones</span>
+          <span className="hidden sm:inline whitespace-nowrap">Mis Colecciones</span>
+          {collectionsCount !== undefined && (
+            <span
+              className={
+                'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+                (libraryTab === 'collections'
+                  ? 'bg-slate-950/20 text-slate-950'
+                  : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+              }
+            >
+              {collectionsCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {libraryTab === 'collections' ? (
+        <React.Suspense
+          fallback={
+            <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+              <Loader2 className="w-8 h-8 text-amber-600 dark:text-amber-400 animate-spin" />
+              <span className="font-serif text-sm">Cargando colecciones & estanterías...</span>
+            </div>
+          }
+        >
+          <CollectionsScreen
+            books={books}
+            currentUserId={currentUserId}
+            onOpenBookDetail={(target) => {
+              const id = typeof target === 'string' ? target : target.id;
+              onOpenBookDetail(id);
+            }}
+            openedBookId={detailBookId}
+            onShowToast={onShowToast}
+            onEditBook={onOpenEditBook}
+            onDeleteBook={onDeleteBook}
+            onQuickStatusChange={onBookStatusChange}
+          />
+        </React.Suspense>
+      ) : (
+        <>
+          {renderMobileShelfTabs()}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
@@ -755,6 +888,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
       ) : (
         <BookShelf books={filteredBooks} onOpenDetail={onOpenBookDetail} openedBookId={detailBookId} />
+      )}
+        </>
       )}
     </div>
   );

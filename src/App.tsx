@@ -83,9 +83,6 @@ const SettingsScreen = React.lazy(() =>
 const ReadingChallengeScreen = React.lazy(() =>
   import('./components/ReadingChallengeScreen').then((m) => ({ default: m.ReadingChallengeScreen }))
 );
-const CollectionsScreen = React.lazy(() =>
-  import('./components/CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
-);
 import { collectionService } from './services/collectionService';
 import { readingStreakService } from './services/readingStreakService';
 import { readingChallengeService } from './services/readingChallengeService';
@@ -186,7 +183,7 @@ export const App: React.FC = () => {
         url.searchParams.delete('tab');
       } else {
         url.searchParams.set('section', section);
-        if (section !== 'discover') { url.searchParams.delete('tab'); }
+        if (section !== 'discover' && section !== 'library') { url.searchParams.delete('tab'); }
       }
       window.history.replaceState({}, '', url.toString());
     } catch {
@@ -214,7 +211,7 @@ export const App: React.FC = () => {
       } else {
         if (url.searchParams.get('section') !== activeSection) {
           url.searchParams.set('section', activeSection);
-          if (activeSection !== 'discover') { url.searchParams.delete('tab'); }
+          if (activeSection !== 'discover' && activeSection !== 'library') { url.searchParams.delete('tab'); }
           window.history.replaceState({}, '', url.toString());
         }
       }
@@ -1447,7 +1444,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {(activeSection === 'library' || activeSection.startsWith('shelf-')) && (
+          {(activeSection === 'library' || activeSection === 'collections' || activeSection.startsWith('shelf-')) && (
             <LibraryView
               activeSection={activeSection}
               books={books}
@@ -1460,6 +1457,9 @@ export const App: React.FC = () => {
               subgenreSelectGroups={subgenreSelectGroups}
               allSubgenresOptions={allSubgenresOptions}
               metrics={metrics}
+              collectionsCount={collectionsCount}
+              currentUserId={currentUser?.id}
+              onShowToast={showToast}
               isSampleActive={isSampleActive}
               isLoadingSample={isLoadingSample}
               isRemovingSample={isRemovingSample}
@@ -1521,31 +1521,6 @@ export const App: React.FC = () => {
                 existingBooks={books}
                 onAddBookToMyLibrary={handleAddBookFromCommunity}
                 onOpenBookDetail={handleOpenCardDetail}
-              />
-            </React.Suspense>
-          )}
-
-          {activeSection === 'collections' && (
-            <React.Suspense
-              fallback={
-                <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
-                  <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
-                  <span className="font-serif text-sm">Cargando colecciones & estanterías...</span>
-                </div>
-              }
-            >
-              <CollectionsScreen
-                books={books}
-                currentUserId={currentUser?.id}
-                onOpenBookDetail={(target) => {
-                  const id = typeof target === 'string' ? target : target.id;
-                  handleOpenBookDetail(id);
-                }}
-                openedBookId={detailBookId}
-                onShowToast={showToast}
-                onEditBook={handleOpenEditBook}
-                onDeleteBook={(b) => setBookToDelete(b)}
-                onQuickStatusChange={handleBookStatusChange}
               />
             </React.Suspense>
           )}
@@ -1642,7 +1617,7 @@ export const App: React.FC = () => {
             id: 'library' as NavigationSection,
             label: 'Biblioteca',
             icon: Library,
-            isActive: activeSection === 'library' || activeSection.startsWith('shelf-')
+            isActive: activeSection === 'library' || activeSection === 'collections' || activeSection.startsWith('shelf-')
           },
           {
             id: 'discover' as NavigationSection,
