@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
-import { Friendship, FriendshipStatus, UserProfile } from '../types/models';
+import { Friendship, FriendshipStatus, UserProfile, Book, StarRating } from '../types/models';
+import { normalizeText } from '../constants/catalogs';
 import { mapRowToProfile, RawProfileRow } from './profileService';
 import { broadcastInboxNotification, broadcastFriendshipSync } from './pushNotificationService';
 
@@ -435,5 +436,121 @@ export const friendshipService = {
     } catch {
       return { success: false, message: 'Error de conexión al cancelar la solicitud.' };
     }
-  }
+  },
+
+  calculateBookAffinity
 };
+
+
+export interface CommonBookComparison {
+  myBook: Book;
+  readerBook: Book;
+  title: string;
+  author: string;
+  myRating: StarRating | number | null;
+  readerRating: StarRating | number | null;
+}
+
+export interface BookAffinityResult {
+  percentage: number;
+  commonBooks: CommonBookComparison[];
+  commonAuthors: string[];
+  gemsForYou: Book[];
+  genresInCommon: string[];
+}
+
+export function calculateBookAffinity(myBooks: Book[] = [], readerBooks: Book[] = []): BookAffinityResult {
+  if (!Array.isArray(myBooks) || !Array.isArray(readerBooks) || myBooks.length === 0 || readerBooks.length === 0) {
+    return {
+      percentage: 0,
+      commonBooks: [],
+      commonAuthors: [],
+      gemsForYou: (readerBooks || []).filter((b) => (Number(b.puntuacion) >= 4)),
+      genresInCommon: []
+    };
+  }
+
+  const cleanKey = (str: string) => normalizeText(str || '').replace(/[^a-z0-9]/g, '');
+
+  // Indexar mis libros por título normalizado e ISBN
+  const myByTitle = new Map<string, Book>();
+  const myByIsbn = new Map<string, Book>();
+  const myAuthorsSet = new Set<string>();
+  const myGenresSet = new Set<string>();
+
+  for (const b of myBooks) {
+    if (b.nombre) myByTitle.set(cleanKey(b.nombre), b);
+    if (b.isbn) myByIsbn.set(b.isbn.replace(/[^0-9X]/gi, ''), b);
+    if (b.autor) myAuthorsSet.add(normalizeText(b.autor));
+    if (b.genero) myGenresSet.add(normalizeText(b.genero));
+  }
+
+  const commonBooks: CommonBookComparison[] = [];
+  const commonAuthorsSet = new Set<string>();
+  const genresInCommonSet = new Set<string>();
+  const matchedMyBookIds = new Set<string>();
+
+  for (const rb of readerBooks) {
+    const rKey = cleanKey(rb.nombre);
+    const rIsbn = rb.isbn ? rb.isbn.replace(/[^0-9X]/gi, '') : '';
+    const match = (rIsbn && myByIsbn.get(rIsbn)) || (rKey && myByTitle.get(rKey));
+
+    if (match) {
+      matchedMyBookIds.add(match.id);
+      commonBooks.push({
+        myBook: match,
+        readerBook: rb,
+        title: rb.nombre || match.nombre,
+        author: rb.autor || match.autor,
+        myRating: match.puntuacion,
+        readerRating: rb.puntuacion
+      });
+    }
+
+    if (rb.autor && myAuthorsSet.has(normalizeText(rb.autor))) {
+      commonAuthorsSet.add(rb.autor);
+    }
+    if (rb.genero && myGenresSet.has(normalizeText(rb.genero))) {
+      genresInCommonSet.add(rb.genero);
+    }
+  }
+
+  // Joyas para ti: libros de readerBooks valorados >= 4 que no están en mis libros
+  const gemsForYou = readerBooks.filter((rb) => {
+    const rKey = cleanKey(rb.nombre);
+    const rIsbn = rb.isbn ? rb.isbn.replace(/[^0-9X]/gi, '') : '';
+    const isInMyBooks = (rIsbn && myByIsbn.has(rIsbn)) || (rKey && myByTitle.has(rKey));
+    return !isInMyBooks && Number(rb.puntuacion) >= 4;
+  });
+
+  const commonAuthors = Array.from(commonAuthorsSet);
+  const genresInCommon = Array.from(genresInCommonSet);
+
+  // Cálculo del porcentaje de afinidad
+  let percentage = 0;
+  if (commonBooks.length > 0) {
+    let score = Math.min(80, 35 + commonBooks.length * 15 + commonAuthors.length * 6);
+    // Bonificación si las puntuaciones de los libros en común están alineadas
+    let ratingBonus = 0;
+    for (const cb of commonBooks) {
+      if (cb.myRating && cb.readerRating) {
+        const diff = Math.abs(Number(cb.myRating) - Number(cb.readerRating));
+        if (diff <= 0.5) ratingBonus += 8;
+        else if (diff <= 1) ratingBonus += 4;
+      }
+    }
+    percentage = Math.min(100, Math.round(score + ratingBonus));
+  } else if (commonAuthors.length > 0 || genresInCommon.length > 0) {
+    percentage = Math.min(55, Math.round(commonAuthors.length * 12 + genresInCommon.length * 8));
+  }
+
+  return {
+    percentage,
+    commonBooks,
+    commonAuthors,
+    gemsForYou,
+    genresInCommon
+  };
+}
+
+

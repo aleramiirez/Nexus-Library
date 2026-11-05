@@ -2008,3 +2008,33 @@ class LiteraryGeographyService {
 }
 
 export const literaryGeographyService = new LiteraryGeographyService();
+
+export interface AtlasStats {
+  conqueredCount: number;
+  exploringCount: number;
+  dominatedRegionsCount: number;
+  worldPercentage: number;
+  totalBooksMapped: number;
+  passportSummary: PassportSummary;
+}
+
+/**
+ * Calcula estadísticas de conquista geográfica literaria a partir de una lista de libros
+ */
+export function calculateAtlasStats(books: Book[] = []): AtlasStats {
+  const summary = literaryGeographyService.calculatePassport(books);
+  const conqueredCount = summary.totalCountriesStamped;
+  const dominatedRegionsCount = summary.totalContinentsStamped;
+  const exploringCount = summary.entries.filter((e) => e.books.length > 0 && e.readCount === 0).length;
+  // Cálculo sobre 195 países reconocidos mundialmente
+  const worldPercentage = Math.min(100, Math.round((conqueredCount / 195) * 100));
+
+  return {
+    conqueredCount,
+    exploringCount,
+    dominatedRegionsCount,
+    worldPercentage,
+    totalBooksMapped: summary.totalBooksMapped,
+    passportSummary: summary
+  };
+}

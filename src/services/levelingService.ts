@@ -608,3 +608,13 @@ export function calculateReaderLevel(
     return getDefaultReaderLevelInfo();
   }
 }
+
+/**
+ * Alias de progreso de guardián de la Orden para perfiles comunitarios
+ */
+export function calculateGuardianProgress(
+  books: Book[] = [],
+  sagas: Saga[] = []
+): ReaderLevelInfo {
+  return calculateReaderLevel(books, sagas);
+}

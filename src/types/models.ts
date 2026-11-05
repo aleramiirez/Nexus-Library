@@ -39,6 +39,7 @@ export interface Book {
   idioma: string;
   edicion: string;
   sinopsis: string;
+  resena?: string;
   notasPersonales?: string;
   citas?: string[];
   portadaUrl: string;
@@ -69,6 +70,7 @@ export interface BibliographicCandidate {
   idioma: string;
   edicion: string;
   sinopsis: string;
+  resena?: string;
   notasPersonales?: string;
   citas?: string[];
   portadaUrl: string;

@@ -25,17 +25,30 @@ import {
   UserPlus,
   UserCheck,
   UserMinus,
-  Lock
+  Lock,
+  Flame,
+  Award,
+  Star,
+  Quote,
+  Compass,
+  Bookmark,
+  Share2,
+  ExternalLink,
+  HeartHandshake,
+  CheckCircle2
 } from 'lucide-react';
-import { Book, UserProfile, Friendship, FriendshipStatus, ProfileVisibility } from '../types/models';
-import { communityService } from '../services/communityService';
-import { friendshipService } from '../services/friendshipService';
+import { Book, UserProfile, Friendship, FriendshipStatus, ProfileVisibility, ReadingHistoryEntry } from '../types/models';
+import { communityService, FriendsActivitySummary, FriendActivityItem } from '../services/communityService';
+import { friendshipService, calculateBookAffinity, BookAffinityResult } from '../services/friendshipService';
 import { supabase } from '../services/supabaseClient';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { UserAvatar } from './UserAvatar';
-import { calculateReaderLevel } from '../services/levelingService';
-import { BookDetailModal } from './BookDetailModal';
+import { calculateGuardianProgress, ReaderLevelInfo } from '../services/levelingService';
+import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats } from '../services/literaryGeographyService';
+import { LiteraryAtlasMap, CountryMapNode, ContinentId } from './LiteraryAtlasMap';
+import { LiteraryPassportModal } from './LiteraryPassportModal';
+import { StarRatingDisplay } from './StarRatingInteractive';
 import '../book-detail.css';
 import '../dashboard-panels.css';
 import { formatStars, ReadingStatus, READING_STATUSES } from '../constants/catalogs';
@@ -72,20 +85,26 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [isLoadingReaders, setIsLoadingReaders] = useState(true);
   const [, startTransition] = useTransition();
 
-  // Subpestañas: Mis Amigos vs Explorar Lectores con persistencia en localStorage y URL
-  const [communitySubTab, setCommunitySubTab] = useState<'friends' | 'explore'>(() => {
-    if (typeof window === 'undefined') return 'friends';
+  // Pestañas principales del directorio: Actividad, Mis Amigos, Explorar, Solicitudes
+  const [directoryTab, setDirectoryTab] = useState<'activity' | 'friends' | 'explore' | 'requests'>(() => {
+    if (typeof window === 'undefined') return 'activity';
     try {
-      const urlSubTab = new URLSearchParams(window.location.search).get('subtab');
-      if (urlSubTab === 'friends' || urlSubTab === 'explore') return urlSubTab;
-      const stored = localStorage.getItem('nexus_community_subtab');
-      if (stored === 'friends' || stored === 'explore') return stored;
+      const urlTab = new URLSearchParams(window.location.search).get('subtab') as any;
+      if (['activity', 'friends', 'explore', 'requests'].includes(urlTab)) return urlTab;
+      const stored = localStorage.getItem('nexus_community_directory_tab');
+      if (stored && ['activity', 'friends', 'explore', 'requests'].includes(stored)) return stored as any;
     } catch {
       // ignorar
     }
-    return 'friends';
+    return 'activity';
   });
+
+  // Datos de amigos y solicitudes
   const [friends, setFriends] = useState<Friendship[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<{ received: Friendship[]; sent: Friendship[] }>({
+    received: [],
+    sent: []
+  });
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [friendshipMap, setFriendshipMap] = useState<
     Record<string, { status: FriendshipStatus; friendshipId: string; isRequester: boolean }>
@@ -93,7 +112,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [friendToRemove, setFriendToRemove] = useState<{ id: string; name: string; friendshipId: string } | null>(null);
 
-  // Lector seleccionado para ver su estantería
+  // Feed de actividad y anillo de lectura de amigos
+  const [friendsActivity, setFriendsActivity] = useState<FriendsActivitySummary>({
+    readingNow: [],
+    recentReadsAndReviews: [],
+    friendsReadingCounts: {}
+  });
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+
+  // Lector seleccionado para ver su perfil público multivista
   const [selectedReader, setSelectedReader] = useState<UserProfile | null>(null);
   const selectedReaderRef = useRef<UserProfile | null>(null);
   useEffect(() => {
@@ -103,13 +130,46 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   const [readerBooks, setReaderBooks] = useState<Book[]>([]);
   const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
 
-  const selectedReaderLevelInfo = useMemo(() => {
-    if (!selectedReader) return null;
-    return calculateReaderLevel(readerBooks);
-  }, [selectedReader, readerBooks]);
-  const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'read' | 'unread'>('all');
+  // 5 Pestañas del Perfil del Lector Seleccionado
+  const [profileTab, setProfileTab] = useState<'shelf' | 'sagas' | 'atlas' | 'reviews' | 'affinity'>('shelf');
+  const [shelfFilter, setShelfFilter] = useState<'all' | 'reading' | 'paused' | 'read' | 'unread'>('all');
+  const [shelfSearchQuery, setShelfSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'shelf'>('shelf');
+
+  // Estado para el modal de pasaporte literario
+  const [isPassportModalOpen, setIsPassportModalOpen] = useState(false);
+
+  // Estado para el modal de ficha pública del libro
   const [selectedCommunityBook, setSelectedCommunityBook] = useState<Book | null>(null);
+
+  // Estados para el Atlas Literario interactivo en el perfil del amigo
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
+  const [activeContinent, setActiveContinent] = useState<ContinentId>('all');
+
+  // Estado para filtrado de saga en pestaña de Sagas
+  const [selectedSagaName, setSelectedSagaName] = useState<string | null>(null);
+
+  // Rango e información de nivel del lector seleccionado
+  const selectedReaderLevelInfo = useMemo<ReaderLevelInfo | null>(() => {
+    if (!selectedReader) return null;
+    return calculateGuardianProgress(readerBooks);
+  }, [selectedReader, readerBooks]);
+
+  // Estadísticas del Atlas del lector seleccionado
+  const selectedReaderAtlasStats = useMemo<AtlasStats | null>(() => {
+    if (!selectedReader) return null;
+    return calculateAtlasStats(readerBooks);
+  }, [selectedReader, readerBooks]);
+
+  // Afinidad literaria entre mis libros y los libros del lector seleccionado
+  const bookAffinity = useMemo<BookAffinityResult>(() => {
+    return calculateBookAffinity(existingBooks, readerBooks);
+  }, [existingBooks, readerBooks]);
+
+  // Amigos aceptados con perfil cargado
+  const acceptedFriends = useMemo(() => {
+    return friends.filter((f) => f.status === 'accepted' && f.friendProfile);
+  }, [friends]);
 
   const isSelectedReaderSelf = Boolean(
     currentUserId && selectedReader && currentUserId === selectedReader.id
@@ -124,28 +184,33 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     selectedReaderVisibility === 'public' ||
     (selectedReaderVisibility === 'friends' && isSelectedReaderFriend);
 
-  const loadFriendsData = async () => {
+  // Carga de amigos, solicitudes y actividad
+  const loadFriendsAndActivity = async () => {
     if (!currentUserId) return;
     setIsLoadingFriends(true);
     try {
-      const [friendsList, fMap] = await Promise.all([
+      const [friendsList, fMap, requests, activity] = await Promise.all([
         friendshipService.getFriends(currentUserId),
-        friendshipService.getFriendshipMap(currentUserId)
+        friendshipService.getFriendshipMap(currentUserId),
+        friendshipService.getPendingRequests(currentUserId),
+        communityService.fetchFriendsActivity(currentUserId)
       ]);
       setFriends(friendsList);
       setFriendshipMap(fMap);
-    } catch {
-      // Ignorado
+      setPendingRequests(requests);
+      setFriendsActivity(activity);
+    } catch (err) {
+      console.warn('Error al cargar amigos o actividad:', err);
     } finally {
       setIsLoadingFriends(false);
     }
   };
 
   useEffect(() => {
-    loadFriendsData();
+    loadFriendsAndActivity();
 
     const onFriendshipUpdated = () => {
-      loadFriendsData();
+      loadFriendsAndActivity();
       const curReader = selectedReaderRef.current;
       if (curReader && currentUserId) {
         communityService
@@ -195,29 +260,82 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     };
   }, [currentUserId]);
 
+  // Persistir subtab en URL y localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('nexus_community_subtab', communitySubTab);
+      localStorage.setItem('nexus_community_directory_tab', directoryTab);
       const url = new URL(window.location.href);
-      if (url.searchParams.get('subtab') !== communitySubTab) {
-        url.searchParams.set('subtab', communitySubTab);
+      if (url.searchParams.get('subtab') !== directoryTab) {
+        url.searchParams.set('subtab', directoryTab);
         window.history.replaceState({}, '', url.toString());
       }
     } catch {
       // ignorar
     }
-  }, [communitySubTab]);
+  }, [directoryTab]);
 
-  const handleShelfFilterChange = (filter: 'all' | 'reading' | 'read' | 'unread') => {
-    startTransition(() => {
-      setShelfFilter(filter);
-    });
-  };
+  // Debounce para búsqueda de lectores
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(deferredSearchQuery.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [deferredSearchQuery]);
 
-  const handleViewModeChange = (mode: 'shelf' | 'grid') => {
+  // Búsqueda de lectores en directorio
+  useEffect(() => {
+    let active = true;
+    setIsLoadingReaders(true);
+
+    communityService
+      .searchPublicProfiles(debouncedQuery, currentUserId)
+      .then((results) => {
+        if (!active) return;
+        setReaders(results);
+      })
+      .catch((err) => {
+        console.warn('Error en búsqueda de lectores:', err);
+      })
+      .finally(() => {
+        if (active) setIsLoadingReaders(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedQuery, currentUserId]);
+
+  // Seleccionar lector para abrir su perfil
+  const handleSelectReader = async (reader: UserProfile) => {
     startTransition(() => {
-      setViewMode(mode);
+      setSelectedReader(reader);
+      setProfileTab('shelf');
+      setShelfFilter('all');
+      setShelfSearchQuery('');
+      setSelectedCountryCode(null);
+      setSelectedSagaName(null);
     });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    setIsLoadingLibrary(true);
+
+    try {
+      const data = await communityService.fetchUserPublicLibrary(reader.id, currentUserId);
+      if (data) {
+        setSelectedReader(data.profile);
+        setReaderBooks(data.books);
+      } else {
+        setReaderBooks([]);
+      }
+    } catch (err) {
+      console.warn('Error al cargar libros del lector:', err);
+      setReaderBooks([]);
+    } finally {
+      setIsLoadingLibrary(false);
+    }
   };
 
   const handleBackToReaders = () => {
@@ -232,23 +350,75 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     }
   };
 
-  const handleSubTabChange = (tab: 'friends' | 'explore') => {
-    setCommunitySubTab(tab);
-    try {
-      localStorage.setItem('nexus_community_subtab', tab);
-      const url = new URL(window.location.href);
-      url.searchParams.set('subtab', tab);
-      window.history.replaceState({}, '', url.toString());
-    } catch {
-      // ignorar
+  // Añadir libro a mi biblioteca
+  const [addingBookId, setAddingBookId] = useState<string | null>(null);
+  const [addedBookKeys, setAddedBookKeys] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<{
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // Llaves de mis libros para comprobar existencia rápida
+  const myExistingBookKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of existingBooks) {
+      if (b.isbn) set.add(b.isbn.toLowerCase().trim());
+      set.add(`${b.nombre.toLowerCase().trim()}:::${b.autor.toLowerCase().trim()}`);
     }
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+    return set;
+  }, [existingBooks]);
+
+  const isAlreadyInMyLibrary = (book: Book): boolean => {
+    if (book.isbn && myExistingBookKeys.has(book.isbn.toLowerCase().trim())) return true;
+    const key = `${book.nombre.toLowerCase().trim()}:::${book.autor.toLowerCase().trim()}`;
+    return myExistingBookKeys.has(key) || addedBookKeys.has(key);
+  };
+
+  const getMyBookMatch = (book: Book): Book | undefined => {
+    if (book.isbn) {
+      const byIsbn = existingBooks.find((b) => b.isbn && b.isbn.trim() === book.isbn.trim());
+      if (byIsbn) return byIsbn;
+    }
+    const clean = (s: string) => s.toLowerCase().trim();
+    return existingBooks.find((b) => clean(b.nombre) === clean(book.nombre) && clean(b.autor) === clean(book.autor));
+  };
+
+  const handleAddBook = async (book: Book, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const key = `${book.nombre.toLowerCase().trim()}:::${book.autor.toLowerCase().trim()}`;
+    setAddingBookId(book.id);
+
+    try {
+      await onAddBookToMyLibrary(book);
+      setAddedBookKeys((prev) => new Set(prev).add(key));
+      setToast({
+        type: 'success',
+        title: '¡Libro guardado!',
+        message: `«${book.nombre}» ya está en tus lecturas pendientes de tu biblioteca personal.`
+      });
+    } catch (err) {
+      console.warn('Error al guardar libro de amigo:', err);
+      setToast({
+        type: 'error',
+        title: 'No se pudo guardar el libro',
+        message: formatFriendlyErrorMessage(
+          err,
+          'No hemos podido añadir este libro en este momento. Revisa tu conexión a internet e inténtalo de nuevo.'
+        )
+      });
+    } finally {
+      setAddingBookId(null);
     }
   };
 
+  // Acciones de Amistad
   const handleConfirmRemoveFriend = async () => {
     if (!friendToRemove) return;
     setActionLoadingId(friendToRemove.friendshipId);
@@ -305,7 +475,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           title: 'Solicitud enviada',
           message: `Solicitud de amistad enviada a ${targetName}.`
         });
-        await loadFriendsData();
+        await loadFriendsAndActivity();
         window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       } else {
         setToast({
@@ -335,7 +505,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         message: res.message
       });
       if (res.success) {
-        await loadFriendsData();
+        await loadFriendsAndActivity();
         window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
@@ -359,7 +529,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         message: res.success ? `Has rechazado la solicitud de ${targetName}.` : res.message
       });
       if (res.success) {
-        await loadFriendsData();
+        await loadFriendsAndActivity();
         window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
@@ -383,7 +553,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         message: res.success ? `¡Ahora eres amigo de ${targetName}!` : res.message
       });
       if (res.success) {
-        await loadFriendsData();
+        await loadFriendsAndActivity();
         window.dispatchEvent(new CustomEvent('nexus:friendship-updated'));
       }
     } catch {
@@ -397,145 +567,142 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     }
   };
 
-  // Estado de libros agregados en esta sesión
-  const [addingBookId, setAddingBookId] = useState<string | null>(null);
-  const [addedBookKeys, setAddedBookKeys] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<{
-    type: 'success' | 'error' | 'info';
-    title: string;
-    message: string;
-  } | null>(null);
+  // Libros filtrados en la estantería del lector seleccionado
+  const filteredReaderBooks = useMemo(() => {
+    let result = readerBooks;
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 4500);
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  // Set de títulos / ISBNs ya existentes en mi propia biblioteca para marcarlos
-  const myExistingBookKeys = useMemo(() => {
-    const set = new Set<string>();
-    for (const b of existingBooks) {
-      if (b.isbn) set.add(b.isbn.toLowerCase().trim());
-      set.add(`${b.nombre.toLowerCase().trim()}:::${b.autor.toLowerCase().trim()}`);
+    // Filtro de estado
+    if (shelfFilter === 'reading') {
+      result = result.filter((b) => (b.progreso || '').toLowerCase().includes('leyendo') || b.progreso === '⏳ Leyendo');
+    } else if (shelfFilter === 'paused') {
+      result = result.filter((b) => (b.progreso || '').toLowerCase().includes('pausado') || b.progreso === '⏸️ Pausado');
+    } else if (shelfFilter === 'read') {
+      result = result.filter(isBookRead);
+    } else if (shelfFilter === 'unread') {
+      result = result.filter((b) => !isBookRead(b) && !(b.progreso || '').toLowerCase().includes('leyendo') && !(b.progreso || '').toLowerCase().includes('pausado'));
     }
-    return set;
-  }, [existingBooks]);
 
-  const isAlreadyInMyLibrary = (book: Book): boolean => {
-    if (book.isbn && myExistingBookKeys.has(book.isbn.toLowerCase().trim())) return true;
-    const key = `${book.nombre.toLowerCase().trim()}:::${book.autor.toLowerCase().trim()}`;
-    return myExistingBookKeys.has(key) || addedBookKeys.has(key);
-  };
-
-  // Debounce búsqueda con valor diferido
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(deferredSearchQuery.trim());
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [deferredSearchQuery]);
-
-  // Cargar lectores (por búsqueda o sugeridos iniciales)
-  useEffect(() => {
-    let active = true;
-    setIsLoadingReaders(true);
-
-    communityService
-      .searchPublicProfiles(debouncedQuery, currentUserId)
-      .then((results) => {
-        if (!active) return;
-        setReaders(results);
-      })
-      .catch((err) => {
-        console.warn('Error en búsqueda de lectores:', err);
-      })
-      .finally(() => {
-        if (active) setIsLoadingReaders(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [debouncedQuery, currentUserId]);
-
-  // Cargar biblioteca cuando se selecciona un lector
-  const handleSelectReader = async (reader: UserProfile) => {
-    startTransition(() => {
-      setSelectedReader(reader);
-      setShelfFilter('all');
-      setViewMode('shelf');
-    });
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+    // Búsqueda por texto
+    if (shelfSearchQuery.trim()) {
+      const q = shelfSearchQuery.toLowerCase().trim();
+      result = result.filter(
+        (b) =>
+          b.nombre.toLowerCase().includes(q) ||
+          b.autor.toLowerCase().includes(q) ||
+          (b.sagaNombre && b.sagaNombre.toLowerCase().includes(q))
+      );
     }
-    setIsLoadingLibrary(true);
 
-    try {
-      const data = await communityService.fetchUserPublicLibrary(reader.id, currentUserId);
-      if (data) {
-        setSelectedReader(data.profile);
-        setReaderBooks(data.books);
-      } else {
-        setReaderBooks([]);
+    return result;
+  }, [readerBooks, shelfFilter, shelfSearchQuery]);
+
+  // Sagas del lector agrupadas
+  const readerSagas = useMemo(() => {
+    const map = new Map<string, Book[]>();
+    for (const b of readerBooks) {
+      if (b.sagaNombre && b.sagaNombre.trim().length > 0) {
+        const sName = b.sagaNombre.trim();
+        if (!map.has(sName)) map.set(sName, []);
+        map.get(sName)!.push(b);
       }
-    } catch (err) {
-      console.warn('Error al cargar libros del lector:', err);
-      setReaderBooks([]);
-    } finally {
-      setIsLoadingLibrary(false);
     }
-  };
 
-  // Guardar un libro de la estantería del amigo en la biblioteca propia
-  const handleAddBook = async (book: Book) => {
-    const key = `${book.nombre.toLowerCase().trim()}:::${book.autor.toLowerCase().trim()}`;
-    setAddingBookId(book.id);
+    return Array.from(map.entries()).map(([sagaName, books]) => {
+      const sortedBooks = [...books].sort((a, b) => (a.volumen ?? 999) - (b.volumen ?? 999));
+      const readCount = sortedBooks.filter(isBookRead).length;
+      const totalCount = sortedBooks.length;
+      const progressPercent = totalCount > 0 ? Math.round((readCount / totalCount) * 100) : 0;
+      const ratings = sortedBooks.map((b) => Number(b.puntuacion)).filter((r) => r > 0);
+      const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+      const mainAuthor = sortedBooks[0]?.autor || 'Varios autores';
 
-    try {
-      await onAddBookToMyLibrary(book);
-      setAddedBookKeys((prev) => new Set(prev).add(key));
-      setToast({
-        type: 'success',
-        title: '¡Libro guardado!',
-        message: `"${book.nombre}" ya está en tus lecturas pendientes de tu biblioteca personal.`
-      });
-    } catch (err) {
-      console.warn('Error al guardar libro de amigo:', err);
-      setToast({
-        type: 'error',
-        title: 'No se pudo guardar el libro',
-        message: formatFriendlyErrorMessage(
-          err,
-          'No hemos podido añadir este libro en este momento. Revisa tu conexión a internet e inténtalo de nuevo.'
-        )
-      });
-    } finally {
-      setAddingBookId(null);
+      return {
+        sagaName,
+        mainAuthor,
+        books: sortedBooks,
+        readCount,
+        totalCount,
+        progressPercent,
+        avgRating
+      };
+    });
+  }, [readerBooks]);
+
+  // Países del lector para el Atlas interactivo
+  const readerMapCountries = useMemo<CountryMapNode[]>(() => {
+    const booksByCode: Record<string, Book[]> = {};
+    for (const b of readerBooks) {
+      if (b.pais) {
+        const country = COUNTRIES_CATALOG[b.pais] || Object.values(COUNTRIES_CATALOG).find((c) => c.name.toLowerCase() === b.pais?.toLowerCase());
+        if (country) {
+          if (!booksByCode[country.code]) booksByCode[country.code] = [];
+          booksByCode[country.code].push(b);
+        }
+      }
     }
-  };
 
-  // Renderizado del Toast accesible y amigable
+    return Object.values(COUNTRIES_CATALOG).map((info) => {
+      const bList = booksByCode[info.code] || [];
+      const readBooks = bList.filter(isBookRead);
+      const readingBooks = bList.filter(
+        (b) => !isBookRead(b) && ((b.progreso || '').toLowerCase().includes('leyendo') || b.progreso === '⏳ Leyendo')
+      );
+      const unreadBooks = bList.filter(
+        (b) => !isBookRead(b) && !((b.progreso || '').toLowerCase().includes('leyendo') || b.progreso === '⏳ Leyendo')
+      );
+
+      return {
+        code: info.code,
+        name: info.name,
+        flag: info.flag,
+        continent: info.continent,
+        readCount: readBooks.length,
+        readingCount: readingBooks.length,
+        unreadCount: unreadBooks.length,
+        totalCount: bList.length,
+        canonCount: 0,
+        waxColor: info.waxColor,
+        waxDarkColor: info.waxDarkColor,
+        sealEmblem: info.sealEmblem,
+        sealLatinName: info.sealLatinName
+      };
+    });
+  }, [readerBooks]);
+
+  const activeCountryDetail = useMemo(() => {
+    if (!selectedCountryCode) return null;
+    const country = COUNTRIES_CATALOG[selectedCountryCode];
+    if (!country) return null;
+    const books = readerBooks.filter((b) => {
+      if (!b.pais) return false;
+      return b.pais.toUpperCase() === country.code || b.pais.toLowerCase() === country.name.toLowerCase();
+    });
+    return { country, books };
+  }, [selectedCountryCode, readerBooks]);
+
+  // Libros con reseñas, citas o notas
+  const readerReviewsAndQuotes = useMemo(() => {
+    return readerBooks.filter(
+      (b) =>
+        (b.resena && b.resena.trim().length > 0) ||
+        (b.notasPersonales && b.notasPersonales.trim().length > 0) ||
+        (b.citas && b.citas.length > 0) ||
+        (b.puntuacion && Number(b.puntuacion) > 0)
+    );
+  }, [readerBooks]);
+
+  // Render del Toast
   const renderToastNotification = () => {
     if (!toast) return null;
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className={
-          'fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-2xl border p-4 shadow-2xl backdrop-blur-md max-w-sm transition-all duration-300 animate-slide-up ' +
-          (toast.type === 'success'
-            ? 'border-emerald-500/40 bg-[#101824]/95 text-emerald-100 shadow-emerald-950/40'
-            : toast.type === 'error'
-            ? 'border-rose-500/40 bg-[#1e1014]/95 text-rose-100 shadow-rose-950/40'
-            : 'border-amber-500/40 bg-[#1a1610]/95 text-amber-100 shadow-amber-950/40')
-        }
-      >
+      <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-50 flex items-start gap-3 rounded-2xl border border-amber-900/30 dark:border-amber-500/30 bg-[#161D2B]/95 text-stone-100 px-4 py-3 shadow-2xl backdrop-blur-md animate-slide-up max-w-md">
         {toast.type === 'success' ? (
           <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
             <Check className="w-4 h-4" />
+          </div>
+        ) : toast.type === 'info' ? (
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+            <Sparkles className="w-4 h-4" />
           </div>
         ) : (
           <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -558,7 +725,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     );
   };
 
-  // Modal de confirmación para eliminar amigo montado en portal
+  // Modal de confirmación para eliminar amigo
   const renderRemoveFriendModal = () => {
     if (!friendToRemove || typeof document === 'undefined') return null;
 
@@ -589,7 +756,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
           </div>
 
           <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-            ¿Seguro que deseas eliminar a <strong>{friendToRemove.name}</strong> de tu lista de amigos? Dejaréis de estar conectados y ya no podréis recomendaros libros mutuamente.
+            ¿Seguro que deseas eliminar a <strong>{friendToRemove.name}</strong> de tu círculo de amigos?
           </p>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -622,117 +789,313 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     );
   };
 
-  // Métricas de la biblioteca del lector seleccionado
-  const readerMetrics = useMemo(() => {
-    return {
-      total: readerBooks.length,
-      reading: readerBooks.filter((b) => b.progreso === '⏳ Leyendo').length,
-      read: readerBooks.filter((b) => b.progreso === '✅ Leído').length,
-      unread: readerBooks.filter((b) => b.progreso === '❌ No Leído').length
-    };
-  }, [readerBooks]);
+  // Modal enriquecido de Ficha Pública del Libro (Bloque 5)
+  const renderPublicBookModal = () => {
+    if (!selectedCommunityBook || typeof document === 'undefined') return null;
 
-  const filteredReaderBooks = useMemo(() => {
-    if (shelfFilter === 'reading') return readerBooks.filter((b) => b.progreso === '⏳ Leyendo');
-    if (shelfFilter === 'read') return readerBooks.filter((b) => b.progreso === '✅ Leído');
-    if (shelfFilter === 'unread') return readerBooks.filter((b) => b.progreso === '❌ No Leído');
-    return readerBooks;
-  }, [readerBooks, shelfFilter]);
+    const book = selectedCommunityBook;
+    const isOwned = isAlreadyInMyLibrary(book);
+    const myMatch = getMyBookMatch(book);
+    const isReadingOrPaused =
+      (book.progreso || '').toLowerCase().includes('leyendo') ||
+      (book.progreso || '').toLowerCase().includes('pausado');
 
-  const handleOpenCommunityShelfBook = useCallback(
-    (bookId: string) => {
-      const book = filteredReaderBooks.find((b) => b.id === bookId);
-      if (book) setSelectedCommunityBook(book);
-    },
-    [filteredReaderBooks]
-  );
+    const totalPages = book.paginas || 0;
+    const curPage = book.paginaActual || 0;
+    const pagePercent = totalPages > 0 ? Math.min(100, Math.round((curPage / totalPages) * 100)) : 0;
+    const reviewText = book.resena || book.notasPersonales;
 
-  /* ─────────────────── VISTA 2: ESTANTERÍA PÚBLICA DE UN LECTOR ─────────────────── */
+    return createPortal(
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        onClick={() => setSelectedCommunityBook(null)}
+      >
+        <div
+          className="relative w-full max-w-xl rounded-2xl border border-amber-900/30 dark:border-amber-500/30 bg-[#fbf6ea] dark:bg-[#141A26] p-6 sm:p-7 shadow-2xl space-y-5 my-8 text-stone-900 dark:text-slate-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Pestaña de latón */}
+          <div className="catalog-brass-tab" aria-hidden="true">
+            Ficha Pública de Lectura
+          </div>
+
+          {/* Botón cerrar */}
+          <button
+            type="button"
+            onClick={() => setSelectedCommunityBook(null)}
+            className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-900 dark:hover:text-white rounded-lg transition"
+            aria-label="Cerrar modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Cabecera del libro */}
+          <div className="flex gap-4 sm:gap-5 pt-2">
+            <div className="w-24 sm:w-28 shrink-0 shadow-md rounded-lg overflow-hidden">
+              <BookCover
+                nombre={book.nombre}
+                autor={book.autor}
+                portadaUrl={book.portadaUrl}
+                portadaFallbackUrl={book.portadaFallbackUrl}
+                size="md"
+              />
+            </div>
+
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadgeStyles[book.progreso] || 'bg-stone-500/15'}`}>
+                {book.progreso}
+              </span>
+
+              <h3 className="font-serif text-xl sm:text-2xl font-bold leading-tight">
+                {book.nombre}
+              </h3>
+              <p className="text-sm font-medium text-stone-600 dark:text-slate-300">
+                {book.autor || 'Autor desconocido'}
+              </p>
+
+              {book.sagaNombre && (
+                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1 font-semibold">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>
+                    {book.sagaNombre} {book.volumen ? `· Libro #${book.volumen}` : ''}
+                  </span>
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-stone-500 dark:text-slate-400">
+                {book.pais && (
+                  <span className="inline-flex items-center gap-1 font-medium bg-amber-500/10 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded">
+                    🌍 {book.pais}
+                  </span>
+                )}
+                {book.formato && (
+                  <span className="inline-flex items-center gap-1 bg-stone-200 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    {book.formato}
+                  </span>
+                )}
+                {book.paginas && <span>{book.paginas} págs.</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Progreso de lectura del lector */}
+          {isReadingOrPaused && totalPages > 0 && curPage > 0 && (
+            <div className="rounded-xl border border-amber-900/15 dark:border-[#253044] bg-[#f5eddb]/80 dark:bg-[#111723] p-3.5 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className="text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Progreso de lectura
+                </span>
+                <span className="font-mono text-amber-800 dark:text-amber-300">
+                  pág. {curPage} de {totalPages} ({pagePercent}%)
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-slate-700 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-300"
+                  style={{ width: `${pagePercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Valoración del lector */}
+          {book.puntuacion && Number(book.puntuacion) > 0 && (
+            <div className="flex items-center gap-2.5 pt-1">
+              <span className="text-xs font-serif font-bold text-stone-700 dark:text-slate-300">
+                Valoración del lector:
+              </span>
+              <StarRatingDisplay value={book.puntuacion} size="md" showNumeric={true} />
+            </div>
+          )}
+
+          {/* Reseña del lector */}
+          {reviewText && reviewText.trim().length > 0 && (
+            <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-500/5 dark:bg-amber-400/5 p-4 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-amber-800 dark:text-amber-400">
+                <Quote className="w-4 h-4 shrink-0" />
+                <span>Reseña de {selectedReader?.displayName || 'este lector'}</span>
+              </div>
+              <p className="font-serif italic text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line pl-2 border-l-2 border-amber-600/40">
+                «{reviewText.trim()}»
+              </p>
+            </div>
+          )}
+
+          {/* Citas destacadas */}
+          {book.citas && book.citas.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-serif font-bold text-stone-700 dark:text-slate-300 block">
+                Citas guardadas:
+              </span>
+              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                {book.citas.map((quote, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-lg border border-stone-200 dark:border-slate-800 bg-white/60 dark:bg-[#171F2D] text-xs font-serif italic text-stone-700 dark:text-slate-300"
+                  >
+                    «{quote}»
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comparativa con mi biblioteca */}
+          <div className="pt-2 border-t border-amber-900/15 dark:border-[#253044] flex flex-col sm:flex-row items-center justify-between gap-3">
+            {isOwned ? (
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>
+                  En tu biblioteca: <strong>{myMatch?.progreso || 'Guardado'}</strong>
+                  {myMatch?.puntuacion ? ` · Tu nota: ${myMatch.puntuacion} ★` : ''}
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-stone-500 dark:text-slate-400">
+                No tienes esta obra en tu catálogo
+              </div>
+            )}
+
+            {!isOwned && (
+              <button
+                type="button"
+                disabled={addingBookId === book.id}
+                onClick={(e) => handleAddBook(book, e)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-md transition active:scale-95 disabled:opacity-50"
+              >
+                {addingBookId === book.id ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Añadir a mis pendientes
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  /* ─────────────────── VISTA 2: PERFIL SOCIAL DEL LECTOR SELECCIONADO ─────────────────── */
   if (selectedReader) {
+    const isFriend = friendshipMap[selectedReader.id]?.status === 'accepted';
+    const isPendingSent = friendshipMap[selectedReader.id]?.status === 'pending' && friendshipMap[selectedReader.id]?.isRequester;
+    const isPendingReceived = friendshipMap[selectedReader.id]?.status === 'pending' && !friendshipMap[selectedReader.id]?.isRequester;
+
+    const readBooksCount = readerBooks.filter(isBookRead).length;
+    const totalPagesRead = readerBooks.filter(isBookRead).reduce((acc, b) => acc + (b.paginas || 0), 0);
+    const sagasCount = readerSagas.length;
+    const conqueredCountries = selectedReaderAtlasStats?.conqueredCount || 0;
+
     return (
       <div className="space-y-6 animate-fade-in">
-        {/* Toast amigable */}
         {renderToastNotification()}
+        {renderRemoveFriendModal()}
+        {renderPublicBookModal()}
 
-        {/* Botón volver */}
+        {/* Pasaporte modal */}
+        {isPassportModalOpen && (
+          <LiteraryPassportModal
+            isOpen={isPassportModalOpen}
+            onClose={() => setIsPassportModalOpen(false)}
+            books={readerBooks}
+            displayName={selectedReader.displayName}
+            username={selectedReader.username}
+            avatarUrl={selectedReader.avatarUrl}
+            memberId={selectedReader.id}
+            onOpenBookDetail={(book) => setSelectedCommunityBook(book)}
+          />
+        )}
+
+        {/* Botón Volver */}
         <button
           type="button"
           onClick={handleBackToReaders}
           className="inline-flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition"
         >
-          <ArrowLeft className="w-4 h-4" /> Volver a buscar lectores
+          <ArrowLeft className="w-4 h-4" /> Volver al Círculo de la Comunidad
         </button>
 
-        {/* Cabecera del Lector (Ficha de biblioteca) */}
-        <div className="catalog-card-panel relative pt-8 sm:pt-9 p-6 shadow-md space-y-5 mt-3">
+        {/* ─── Cabecera Social Enriquecida Estilo Instagram (Bloque 3) ─── */}
+        <div className="catalog-card-panel relative pt-8 sm:pt-9 p-6 sm:p-7 shadow-lg space-y-6">
           <div className="catalog-brass-tab" aria-hidden="true">
-            Ficha de Lector · Comunidad
+            Ficha Consular de Lector
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                avatarUrl={selectedReader.avatarUrl}
-                displayName={selectedReader.displayName}
-                username={selectedReader.username}
-                size="xl"
-                level={selectedReaderLevelInfo?.level}
-                rank={selectedReaderLevelInfo?.rank}
-              />
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  {selectedReaderLevelInfo && (
-                    <>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs ${selectedReaderLevelInfo.rank.badgeStyle}`}>
-                        Rango {selectedReaderLevelInfo.rank.roman} · Nivel {selectedReaderLevelInfo.level}
-                      </span>
-                      <span className="font-serif italic text-xs font-bold text-amber-900 dark:text-amber-300">
-                        {selectedReaderLevelInfo.rank.name}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            {/* Avatar y Datos Personales */}
+            <div className="flex items-start sm:items-center gap-4 sm:gap-5 min-w-0">
+              <div className="relative shrink-0">
+                <UserAvatar
+                  avatarUrl={selectedReader.avatarUrl}
+                  displayName={selectedReader.displayName}
+                  username={selectedReader.username}
+                  size="xl"
+                  level={selectedReaderLevelInfo?.level}
+                  rank={selectedReaderLevelInfo?.rank}
+                />
+              </div>
+
+              <div className="min-w-0 space-y-1">
+                {/* Insignia de la Orden del Nexus */}
+                {selectedReaderLevelInfo && (
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border shadow-xs ${selectedReaderLevelInfo.rank.badgeStyle}`}>
+                      <Award className="w-3 h-3" />
+                      Nivel {selectedReaderLevelInfo.level} · {selectedReaderLevelInfo.rank.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-stone-500 dark:text-slate-400">
+                      ({selectedReaderLevelInfo.totalXp.toLocaleString()} XP)
+                    </span>
+                  </div>
+                )}
+
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold truncate text-stone-900 dark:text-slate-100">
                   {selectedReader.displayName}
-                </h2>
-                <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400">
+                </h1>
+                <p className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400">
                   @{selectedReader.username}
-                </span>
+                </p>
+
                 {selectedReader.bio && (
-                  <p className="text-xs text-stone-600 dark:text-slate-300 mt-1 max-w-xl leading-relaxed">
+                  <p className="text-xs text-stone-600 dark:text-slate-300 max-w-lg leading-relaxed pt-1">
                     "{selectedReader.bio}"
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-              {selectedReaderVisibility === 'public' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  Estantería Pública
-                </span>
-              ) : selectedReaderVisibility === 'friends' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 border border-sky-500/30 text-sky-800 dark:text-sky-300 text-xs font-semibold px-3 py-1">
-                  <Users className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                  Solo Amigos
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-500/15 border border-stone-400/30 text-stone-700 dark:text-slate-300 text-xs font-semibold px-3 py-1">
-                  <Lock className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400" />
-                  Biblioteca Privada
-                </span>
-              )}
+            {/* Acciones de Cabecera: Pasaporte y Estado de Amistad */}
+            <div className="flex flex-wrap items-center gap-2.5 self-stretch sm:self-auto justify-start md:justify-end">
+              {/* Botón Pasaporte Literario */}
+              <button
+                type="button"
+                onClick={() => setIsPassportModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold border border-amber-600/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 transition shadow-xs cursor-pointer active:scale-95"
+              >
+                <Compass className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span>🪪 Pasaporte Literario</span>
+              </button>
 
-              {/* Estado de amistad y acciones desde la vista de perfil */}
-              {friendshipMap[selectedReader.id]?.status === 'accepted' ? (
-                <>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold px-3 py-1">
-                    <UserIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    Amigo
+              {/* Acciones de amistad */}
+              {isSelectedReaderSelf ? (
+                <span className="px-3 py-1.5 rounded-xl bg-stone-200 dark:bg-slate-800 text-stone-600 dark:text-slate-400 text-xs font-semibold">
+                  Tu Perfil
+                </span>
+              ) : isFriend ? (
+                <div className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-3 py-2">
+                    <UserCheck className="w-3.5 h-3.5" /> Amigo
                   </span>
                   <button
                     type="button"
-                    disabled={Boolean(actionLoadingId)}
                     onClick={() =>
                       setFriendToRemove({
                         id: selectedReader.id,
@@ -740,462 +1103,932 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         friendshipId: friendshipMap[selectedReader.id].friendshipId
                       })
                     }
-                    className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
+                    className="p-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition"
                     title="Dejar de ser amigos"
                   >
                     <UserMinus className="w-3.5 h-3.5" />
-                    <span>Dejar de ser amigos</span>
                   </button>
-                </>
-              ) : currentUserId && currentUserId !== selectedReader.id ? (
-                friendshipMap[selectedReader.id]?.status === 'pending' ? (
-                  friendshipMap[selectedReader.id].isRequester ? (
-                    <div className="inline-flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold px-3 py-1">
-                        <Clock className="w-3.5 h-3.5" /> Solicitud enviada
-                      </span>
-                      <button
-                        type="button"
-                        disabled={Boolean(actionLoadingId)}
-                        onClick={() =>
-                          handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                        }
-                        className="inline-flex items-center justify-center p-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition disabled:opacity-50"
-                        title="Cancelar solicitud de amistad"
-                        aria-label="Cancelar solicitud de amistad"
-                      >
-                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <X className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        disabled={Boolean(actionLoadingId)}
-                        onClick={() =>
-                          handleAcceptFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                        }
-                        className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3 py-1 shadow-sm transition disabled:opacity-50"
-                      >
-                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <UserCheck className="w-3.5 h-3.5" />
-                        )}
-                        <span>Aceptar amistad</span>
-                      </button>
-                      <button
-                        type="button"
-                        disabled={Boolean(actionLoadingId)}
-                        onClick={() =>
-                          handleDeclineFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                        }
-                        className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
-                        title="Rechazar solicitud de amistad"
-                      >
-                        {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <X className="w-3.5 h-3.5" />
-                        )}
-                        <span>Rechazar</span>
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <button
-                    type="button"
-                    disabled={Boolean(actionLoadingId)}
-                    onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName || selectedReader.username)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-semibold px-3 py-1 transition disabled:opacity-50"
-                  >
-                    {actionLoadingId === selectedReader.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <UserPlus className="w-3.5 h-3.5" />
-                    )}
-                    <span>Añadir amigo</span>
-                  </button>
-                )
+                </div>
+              ) : isPendingSent ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCancelFriendRequest(
+                      friendshipMap[selectedReader.id].friendshipId,
+                      selectedReader.displayName
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold px-3.5 py-2 transition hover:bg-amber-500/20"
+                >
+                  <Clock className="w-3.5 h-3.5" /> Solicitud enviada
+                </button>
+              ) : isPendingReceived ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleAcceptFriendRequest(
+                      friendshipMap[selectedReader.id].friendshipId,
+                      selectedReader.displayName
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 transition shadow-md"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Aceptar solicitud
+                </button>
+              ) : currentUserId ? (
+                <button
+                  type="button"
+                  onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-4 py-2 transition shadow-md active:scale-95"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Conectar como amigo
+                </button>
               ) : null}
             </div>
           </div>
 
-          {/* Filtros de estantería y selector de vista (si tiene permiso para verla) */}
-          {canViewSelectedReaderShelf && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-amber-900/15 dark:border-[#222B3C]">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleShelfFilterChange('all')}
-                  className={
-                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                    (shelfFilter === 'all'
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                  }
-                >
-                  Todos ({readerMetrics.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShelfFilterChange('reading')}
-                  className={
-                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                    (shelfFilter === 'reading'
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                  }
-                >
-                  ⏳ Leyendo ({readerMetrics.reading})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShelfFilterChange('read')}
-                  className={
-                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                    (shelfFilter === 'read'
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                  }
-                >
-                  ✅ Leídos ({readerMetrics.read})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShelfFilterChange('unread')}
-                  className={
-                    'rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ' +
-                    (shelfFilter === 'unread'
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                      : 'bg-white/50 dark:bg-[#101520] text-stone-700 dark:text-slate-300 border border-amber-900/20 dark:border-[#283246] hover:border-amber-500/50')
-                  }
-                >
-                  🔖 Por leer ({readerMetrics.unread})
-                </button>
-              </div>
-
-              {/* Selector de vista: Estantería de madera vs Cuadrícula */}
-              <div className="flex items-center gap-1 bg-[#eedfbe]/70 dark:bg-[#101520] p-1 rounded-xl border border-amber-900/20 dark:border-[#242E42] shrink-0 self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange('shelf')}
-                  className={
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                    (viewMode === 'shelf'
-                      ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
-                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
-                  }
-                  title="Vista en estantería de madera"
-                >
-                  <Rows3 className="w-3.5 h-3.5" />
-                  <span>Estantería</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleViewModeChange('grid')}
-                  className={
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ' +
-                    (viewMode === 'grid'
-                      ? 'bg-white dark:bg-[#1A2232] text-amber-900 dark:text-amber-300 shadow-sm'
-                      : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-slate-200')
-                  }
-                  title="Vista en tarjetas"
-                >
-                  <Grid className="w-3.5 h-3.5" />
-                  <span>Cuadrícula</span>
-                </button>
-              </div>
+          {/* Estadísticas de Lectura Estilo Instagram */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-4 pt-3 border-t border-amber-900/15 dark:border-[#253044] text-center">
+            <div className="p-2.5 rounded-xl bg-[#f5eddb]/60 dark:bg-[#121824]/60 border border-amber-900/10 dark:border-[#253044]">
+              <span className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-slate-100 block">
+                {readerBooks.length}
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                Libros
+              </span>
             </div>
-          )}
+
+            <div className="p-2.5 rounded-xl bg-[#f5eddb]/60 dark:bg-[#121824]/60 border border-amber-900/10 dark:border-[#253044]">
+              <span className="font-serif font-bold text-lg sm:text-xl text-emerald-700 dark:text-emerald-400 block">
+                {readBooksCount}
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                Leídos
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-[#f5eddb]/60 dark:bg-[#121824]/60 border border-amber-900/10 dark:border-[#253044]">
+              <span className="font-serif font-bold text-lg sm:text-xl text-amber-700 dark:text-amber-400 block">
+                {totalPagesRead.toLocaleString()}
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                Páginas
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-[#f5eddb]/60 dark:bg-[#121824]/60 border border-amber-900/10 dark:border-[#253044]">
+              <span className="font-serif font-bold text-lg sm:text-xl text-stone-900 dark:text-slate-100 block">
+                {sagasCount}
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                Sagas
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-[#f5eddb]/60 dark:bg-[#121824]/60 border border-amber-900/10 dark:border-[#253044] col-span-2 sm:col-span-1">
+              <span className="font-serif font-bold text-lg sm:text-xl text-sky-700 dark:text-sky-400 block">
+                {conqueredCountries}
+              </span>
+              <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                Países
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Libros de la estantería del lector o aviso de biblioteca privada / solo amigos */}
+        {/* ─── Selector de 5 Pestañas del Perfil (Bloque 4) ─── */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+          <button
+            type="button"
+            onClick={() => setProfileTab('shelf')}
+            className={
+              'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+              (profileTab === 'shelf'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span>📚 Estantería</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
+              {readerBooks.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileTab('sagas')}
+            className={
+              'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+              (profileTab === 'sagas'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <Layers className="w-4 h-4 shrink-0" />
+            <span>🏛️ Sagas</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
+              {sagasCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileTab('atlas')}
+            className={
+              'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+              (profileTab === 'atlas'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <Globe className="w-4 h-4 shrink-0" />
+            <span>🌍 Atlas</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
+              {conqueredCountries}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileTab('reviews')}
+            className={
+              'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+              (profileTab === 'reviews'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <Quote className="w-4 h-4 shrink-0" />
+            <span>💬 Reseñas</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
+              {readerReviewsAndQuotes.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileTab('affinity')}
+            className={
+              'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+              (profileTab === 'affinity'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <HeartHandshake className="w-4 h-4 shrink-0" />
+            <span>🤝 En Común</span>
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-slate-950/20 dark:bg-slate-800">
+              {bookAffinity.percentage}%
+            </span>
+          </button>
+        </div>
+
+        {/* ─── Contenido de las 5 Pestañas ─── */}
         {!canViewSelectedReaderShelf ? (
-          <div className="rounded-2xl border border-amber-900/15 dark:border-[#242E42] bg-[#fbf6ea]/70 dark:bg-[#111622] p-8 sm:p-12 text-center space-y-4 shadow-sm my-2">
-            {selectedReaderVisibility === 'friends' ? (
-              <>
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-sky-700 dark:text-sky-400 shadow-sm">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div className="max-w-md mx-auto space-y-2">
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
-                    Estantería visible solo para amigos
-                  </h3>
-                  <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
-                    <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca para que solo sus amigos aceptados puedan ver sus libros y lecturas.
-                  </p>
-                </div>
-                {currentUserId && currentUserId !== selectedReader.id && (
-                  <div className="pt-2 max-w-sm mx-auto flex justify-center">
-                    {!friendshipMap[selectedReader.id] ? (
-                      <button
-                        type="button"
-                        disabled={Boolean(actionLoadingId)}
-                        onClick={() => handleSendFriendRequest(selectedReader.id, selectedReader.displayName || selectedReader.username)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition shadow-sm"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Enviar solicitud de amistad</span>
-                      </button>
-                    ) : friendshipMap[selectedReader.id].status === 'pending' ? (
-                      friendshipMap[selectedReader.id].isRequester ? (
-                        <div className="inline-flex items-center gap-2 flex-wrap justify-center">
-                          <span className="inline-flex items-center gap-1.5 text-xs text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-3 py-1.5 rounded-xl font-medium">
-                            <Clock className="w-3.5 h-3.5" /> Solicitud enviada
-                          </span>
-                          <button
-                            type="button"
-                            disabled={Boolean(actionLoadingId)}
-                            onClick={() =>
-                              handleCancelFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                            }
-                            className="inline-flex items-center justify-center p-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 transition disabled:opacity-50"
-                            title="Cancelar solicitud"
-                            aria-label="Cancelar solicitud"
-                          >
-                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <X className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-2 flex-wrap justify-center">
-                          <button
-                            type="button"
-                            disabled={Boolean(actionLoadingId)}
-                            onClick={() =>
-                              handleAcceptFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                            }
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-sm"
-                          >
-                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <UserCheck className="w-4 h-4" />
-                            )}
-                            <span>Aceptar amistad</span>
-                          </button>
-                          <button
-                            type="button"
-                            disabled={Boolean(actionLoadingId)}
-                            onClick={() =>
-                              handleDeclineFriendRequest(friendshipMap[selectedReader.id].friendshipId, selectedReader.displayName || selectedReader.username)
-                            }
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold text-xs transition"
-                          >
-                            {actionLoadingId === friendshipMap[selectedReader.id].friendshipId ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <X className="w-4 h-4" />
-                            )}
-                            <span>Rechazar</span>
-                          </button>
-                        </div>
-                      )
-                    ) : null}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400 shadow-sm">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <div className="max-w-md mx-auto space-y-2">
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100">
-                    Esta biblioteca es privada
-                  </h3>
-                  <p className="text-xs sm:text-sm text-stone-600 dark:text-slate-400 leading-relaxed">
-                    <strong>{selectedReader.displayName || `@${selectedReader.username}`}</strong> ha configurado su biblioteca en modo privado, por lo que su colección de libros y lecturas no son visibles para otros usuarios.
-                  </p>
-                </div>
-                {friendshipMap[selectedReader.id]?.status === 'accepted' && (
-                  <div className="pt-2 max-w-md mx-auto">
-                    <p className="text-xs text-amber-900 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-2.5 leading-relaxed font-medium">
-                      🤝 Sois amigos: aunque no puedas explorar su estantería, puedes seguir recomendándole libros desde la ficha de cualquier obra.
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+          <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] p-12 text-center space-y-3">
+            <Lock className="w-8 h-8 mx-auto text-amber-600" />
+            <h3 className="font-serif text-lg font-bold text-stone-800 dark:text-slate-200">
+              Biblioteca privada
+            </h3>
+            <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
+              Este lector ha configurado su catálogo para ser privado o accesible solo para amigos aceptados.
+            </p>
           </div>
         ) : isLoadingLibrary ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
-            <Loader2 className="w-7 h-7 text-amber-600 dark:text-amber-400 animate-spin" />
-            <span className="font-serif text-sm">Cargando la estantería de {selectedReader.displayName}...</span>
-          </div>
-        ) : filteredReaderBooks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center text-stone-600 dark:text-slate-400 space-y-2">
-            <BookOpen className="w-8 h-8 mx-auto text-amber-600/60 dark:text-amber-400/60" />
-            <p className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
-              No hay libros en esta categoría actualmente.
-            </p>
-            <p className="text-xs">Este lector aún no ha clasificado títulos en esta estantería.</p>
-          </div>
-        ) : viewMode === 'shelf' ? (
-          <div className="space-y-3">
-            <div className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 px-1 font-serif italic">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Haz clic sobre cualquier libro en la balda para consultar su ficha bibliográfica y añadirlo.</span>
-            </div>
-            <BookShelf
-              books={filteredReaderBooks}
-              openedBookId={selectedCommunityBook?.id ?? null}
-              onOpenDetail={handleOpenCommunityShelfBook}
-            />
+          <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+            <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+            <span className="font-serif text-sm">Cargando biblioteca del lector...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {filteredReaderBooks.map((book) => {
-              const alreadySaved = isAlreadyInMyLibrary(book);
-              const isAdding = addingBookId === book.id;
-
-              return (
-                <article
-                  key={book.id}
-                  data-book-id={book.id}
-                  className="group relative flex flex-col justify-between cursor-pointer rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/95 dark:bg-[#161C28]/95 hover:bg-[#fffcf5] dark:hover:bg-[#1B2333] p-2.5 sm:p-3 shadow-sm hover:-translate-y-1.5 hover:border-amber-600/60 dark:hover:border-amber-400/70 hover:shadow-[0_14px_30px_-8px_rgba(180,115,30,0.22)] dark:hover:shadow-[0_14px_30px_-8px_rgba(245,158,11,0.22)] transition-all duration-300 ease-out"
-                >
-                  <div
-                    onClick={() => setSelectedCommunityBook(book)}
-                    className="flex-1 flex flex-col"
-                  >
-                    {/* Portada con textura 3D realista sin máscara de corte */}
-                    <div className="relative mb-2 sm:mb-2.5">
-                      <BookCover
-                        portadaUrl={book.portadaUrl}
-                        portadaFallbackUrl={book.portadaFallbackUrl}
-                        portadaDataUrl={book.portadaDataUrl}
-                        nombre={book.nombre}
-                        autor={book.autor}
-                      />
-
-                      {book.sagaNombre && (
-                        <span className="absolute top-2 left-2 z-10 max-w-[88%] truncate rounded-md bg-[#0D1017]/90 backdrop-blur-sm border border-amber-400/30 px-1.5 sm:px-2 py-0.5 text-[9px] font-medium text-amber-200 shadow">
-                          {book.sagaNombre} {book.volumen ? '#' + String(book.volumen) : ''}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Metadatos y valoración */}
-                    <div className="flex-1 flex flex-col justify-between gap-1">
-                      <div>
-                        <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
-                          <span
-                            className={
-                              'inline-flex items-center whitespace-nowrap shrink-0 rounded-full border px-1.5 sm:px-2 py-0.5 text-[10px] font-medium ' +
-                              statusBadgeStyles[book.progreso]
-                            }
-                          >
-                            {book.progreso}
-                          </span>
-                          {book.puntuacion && (
-                            <span
-                              className="text-[10px] tracking-tighter whitespace-nowrap text-amber-600 dark:text-amber-400 font-bold"
-                              title={`${book.puntuacion} de 5 estrellas`}
-                            >
-                              {formatStars(book.puntuacion)}
-                            </span>
-                          )}
-                        </div>
-
-                        <h3
-                          className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 line-clamp-2 leading-snug"
-                          title={book.nombre}
-                        >
-                          {book.nombre}
-                        </h3>
-
-                        <p
-                          className="text-[11px] text-stone-600 dark:text-slate-400 truncate mt-0.5"
-                          title={book.autor}
-                        >
-                          {book.autor || 'Autor desconocido'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Botón de acción inferior */}
-                  <div className="pt-2 mt-2.5 border-t border-amber-900/10 dark:border-[#1F2738]">
-                    {alreadySaved ? (
-                      <span className="inline-flex items-center justify-center gap-1 w-full rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 py-1.5 text-[10px] font-bold">
-                        <Check className="w-3 h-3" /> En tu biblioteca
-                      </span>
-                    ) : (
+          <div>
+            {/* 1. PESTAÑA: 📚 ESTANTERÍA */}
+            {profileTab === 'shelf' && (
+              <div className="space-y-5">
+                {/* Barra de Búsqueda y Filtros */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={shelfSearchQuery}
+                      onChange={(e) => setShelfSearchQuery(e.target.value)}
+                      placeholder="Buscar por título, autor o saga..."
+                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none transition shadow-sm"
+                    />
+                    {shelfSearchQuery && (
                       <button
                         type="button"
-                        disabled={isAdding}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddBook(book);
-                        }}
-                        className="inline-flex items-center justify-center gap-1 w-full rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 py-1.5 text-[10px] font-bold shadow-sm transition"
+                        onClick={() => setShelfSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
                       >
-                        {isAdding ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Plus className="w-3 h-3" />
-                        )}
-                        {isAdding ? 'Guardando...' : 'Añadir a mi lista'}
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
-                </article>
-              );
-            })}
+
+                  {/* Chips de estado */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    {(
+                      [
+                        { id: 'all', label: 'Todos' },
+                        { id: 'reading', label: '⏳ Leyendo' },
+                        { id: 'paused', label: '⏸️ Pausados' },
+                        { id: 'read', label: '✅ Leídos' },
+                        { id: 'unread', label: '📚 Pendientes' }
+                      ] as const
+                    ).map((f) => {
+                      const isActive = shelfFilter === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setShelfFilter(f.id)}
+                          className={
+                            'px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition ' +
+                            (isActive
+                              ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                              : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-stone-950')
+                          }
+                        >
+                          {f.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {filteredReaderBooks.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center space-y-2">
+                    <p className="font-serif text-base text-stone-700 dark:text-slate-300">
+                      No se encontraron libros en esta sección
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+                    {filteredReaderBooks.map((book) => {
+                      const isReading = (book.progreso || '').toLowerCase().includes('leyendo');
+                      const isPaused = (book.progreso || '').toLowerCase().includes('pausado');
+                      const totalP = book.paginas || 0;
+                      const curP = book.paginaActual || 0;
+                      const pct = totalP > 0 ? Math.min(100, Math.round((curP / totalP) * 100)) : 0;
+                      const isOwned = isAlreadyInMyLibrary(book);
+
+                      return (
+                        <div
+                          key={book.id}
+                          onClick={() => setSelectedCommunityBook(book)}
+                          className="catalog-card-panel group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between p-3 space-y-2.5"
+                        >
+                          <div className="space-y-2">
+                            <div className="relative aspect-[2/3] rounded-md overflow-hidden shadow-xs">
+                              <BookCover
+                                nombre={book.nombre}
+                                autor={book.autor}
+                                portadaUrl={book.portadaUrl}
+                                portadaFallbackUrl={book.portadaFallbackUrl}
+                                size="md"
+                              />
+                              <span className={`absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-xs border ${statusBadgeStyles[book.progreso] || 'bg-stone-500/80 text-white'}`}>
+                                {book.progreso}
+                              </span>
+                            </div>
+
+                            <div className="min-w-0">
+                              <h4 className="font-serif font-bold text-xs sm:text-sm line-clamp-1 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                                {book.nombre}
+                              </h4>
+                              <p className="text-[11px] text-stone-500 dark:text-slate-400 truncate">
+                                {book.autor || '—'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5 pt-1 border-t border-amber-900/10 dark:border-[#20293C]">
+                            {/* Barra de progreso si está leyendo o pausado */}
+                            {(isReading || isPaused) && totalP > 0 && curP > 0 && (
+                              <div className="space-y-0.5">
+                                <div className="flex justify-between text-[10px] font-mono text-stone-500 dark:text-slate-400">
+                                  <span>Progreso</span>
+                                  <span>{pct}%</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-stone-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-amber-500 rounded-full"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Valoración con medios estrellas */}
+                            {book.puntuacion && Number(book.puntuacion) > 0 && (
+                              <div className="flex items-center justify-between">
+                                <StarRatingDisplay value={book.puntuacion} size="xs" showNumeric={true} />
+                              </div>
+                            )}
+
+                            {/* Botón rápido para añadir a pendientes */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleAddBook(book, e)}
+                              disabled={isOwned || addingBookId === book.id}
+                              className={
+                                'w-full py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 ' +
+                                (isOwned
+                                  ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                                  : 'bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500 hover:text-slate-950')
+                              }
+                            >
+                              {isOwned ? (
+                                <>
+                                  <Check className="w-3 h-3" /> En mi biblioteca
+                                </>
+                              ) : addingBookId === book.id ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" /> Guardando...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3 h-3" /> Añadir
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 2. PESTAÑA: 🏛️ SAGAS */}
+            {profileTab === 'sagas' && (
+              <div className="space-y-5">
+                {readerSagas.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center space-y-2">
+                    <Layers className="w-8 h-8 mx-auto text-amber-600" />
+                    <p className="font-serif text-base text-stone-700 dark:text-slate-300">
+                      Este lector no tiene sagas catalogadas en su estantería
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {readerSagas.map((saga) => (
+                      <div
+                        key={saga.sagaName}
+                        onClick={() =>
+                          setSelectedSagaName(selectedSagaName === saga.sagaName ? null : saga.sagaName)
+                        }
+                        className="catalog-card-panel p-5 space-y-4 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
+                                {saga.sagaName}
+                              </h3>
+                              <p className="text-xs text-stone-500 dark:text-slate-400">
+                                {saga.mainAuthor}
+                              </p>
+                            </div>
+                            <span className="text-[11px] font-mono font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
+                              {saga.readCount} / {saga.totalCount} leídos
+                            </span>
+                          </div>
+
+                          {/* Abanico de portadas */}
+                          <div className="flex items-center -space-x-4 pt-1 overflow-hidden">
+                            {saga.books.slice(0, 4).map((b, i) => (
+                              <div
+                                key={b.id}
+                                className="w-14 h-20 rounded-md overflow-hidden shadow-md ring-2 ring-[#fbf6ea] dark:ring-[#141A26] shrink-0 transform transition-transform hover:-translate-y-1 hover:z-10"
+                                style={{ zIndex: i }}
+                              >
+                                <BookCover
+                                  nombre={b.nombre}
+                                  autor={b.autor}
+                                  portadaUrl={b.portadaUrl}
+                                  portadaFallbackUrl={b.portadaFallbackUrl}
+                                  size="sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Barra de progreso de la saga */}
+                        <div className="space-y-1 pt-2 border-t border-amber-900/10 dark:border-[#20293C]">
+                          <div className="flex items-center justify-between text-[11px] font-mono">
+                            <span className="text-stone-500 dark:text-slate-400">Completado</span>
+                            <span className="font-bold text-amber-700 dark:text-amber-400">
+                              {saga.progressPercent}%
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-slate-700 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
+                              style={{ width: `${saga.progressPercent}%` }}
+                            />
+                          </div>
+
+                          {saga.avgRating && (
+                            <div className="flex items-center gap-1.5 pt-1 text-[11px]">
+                              <span className="text-stone-500">Nota media:</span>
+                              <StarRatingDisplay value={saga.avgRating} size="xs" showNumeric={true} />
+                            </div>
+                          )}
+
+                          {/* Lista desplegada de tomos si está seleccionada */}
+                          {selectedSagaName === saga.sagaName && (
+                            <div className="pt-3 space-y-2">
+                              <span className="text-[11px] font-bold text-stone-700 dark:text-slate-300 block uppercase tracking-wider">
+                                Tomos en su estantería:
+                              </span>
+                              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                {saga.books.map((b) => (
+                                  <div
+                                    key={b.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCommunityBook(b);
+                                    }}
+                                    className="p-2 rounded-lg bg-stone-100/80 dark:bg-[#1a2233] flex items-center justify-between gap-2 hover:bg-amber-500/10 transition text-xs"
+                                  >
+                                    <span className="truncate font-medium">
+                                      {b.volumen ? `#${b.volumen} · ` : ''}{b.nombre}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-stone-500 shrink-0">
+                                      {b.progreso}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. PESTAÑA: 🌍 ATLAS LITERARIO */}
+            {profileTab === 'atlas' && (
+              <div className="space-y-6">
+                {/* Panel de KPIs del Atlas */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="catalog-card-panel p-4 text-center">
+                    <span className="font-serif text-2xl font-bold text-amber-700 dark:text-amber-400 block">
+                      {selectedReaderAtlasStats?.conqueredCount || 0}
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                      Países Conquistados
+                    </span>
+                  </div>
+
+                  <div className="catalog-card-panel p-4 text-center">
+                    <span className="font-serif text-2xl font-bold text-stone-800 dark:text-slate-200 block">
+                      {selectedReaderAtlasStats?.exploringCount || 0}
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                      En Exploración
+                    </span>
+                  </div>
+
+                  <div className="catalog-card-panel p-4 text-center">
+                    <span className="font-serif text-2xl font-bold text-stone-800 dark:text-slate-200 block">
+                      {selectedReaderAtlasStats?.dominatedRegionsCount || 0}
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                      Regiones Dominadas
+                    </span>
+                  </div>
+
+                  <div className="catalog-card-panel p-4 text-center">
+                    <span className="font-serif text-2xl font-bold text-amber-700 dark:text-amber-400 block">
+                      {selectedReaderAtlasStats?.worldPercentage || 0}%
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                      del Mundo
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mapa Cartográfico Interactivo */}
+                <div className="rounded-2xl border border-amber-900/20 dark:border-[#242E42] overflow-hidden shadow-md">
+                  <LiteraryAtlasMap
+                    countries={readerMapCountries}
+                    selectedCountryCode={selectedCountryCode}
+                    activeContinent={activeContinent}
+                    onSelectCountry={(code) => setSelectedCountryCode(code)}
+                    onSelectContinent={setActiveContinent}
+                  />
+                </div>
+
+                {/* Detalle del País Seleccionado */}
+                {activeCountryDetail && (
+                  <div className="catalog-card-panel p-5 sm:p-6 space-y-4 animate-fade-in">
+                    <div className="flex items-center justify-between border-b border-amber-900/15 dark:border-[#242E42] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{activeCountryDetail.country.flag}</span>
+                        <div>
+                          <h3 className="font-serif text-xl font-bold text-stone-900 dark:text-slate-100">
+                            {activeCountryDetail.country.name}
+                          </h3>
+                          <span className="text-xs text-stone-500 font-mono">
+                            {activeCountryDetail.books.length} {activeCountryDetail.books.length === 1 ? 'obra leída o en biblioteca' : 'obras leídas o en biblioteca'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCountryCode(null)}
+                        className="text-stone-400 hover:text-stone-700 dark:hover:text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {activeCountryDetail.books.map((b) => (
+                        <div
+                          key={b.id}
+                          onClick={() => setSelectedCommunityBook(b)}
+                          className="p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-[#fbf6ea] dark:bg-[#141A26] flex items-center gap-3 cursor-pointer hover:border-amber-600 transition"
+                        >
+                          <div className="w-10 shrink-0">
+                            <BookCover
+                              nombre={b.nombre}
+                              autor={b.autor}
+                              portadaUrl={b.portadaUrl}
+                              portadaFallbackUrl={b.portadaFallbackUrl}
+                              size="sm"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-serif font-bold text-xs truncate">{b.nombre}</p>
+                            <p className="text-[11px] text-stone-500 truncate">{b.autor}</p>
+                            {b.puntuacion && <StarRatingDisplay value={b.puntuacion} size="xs" />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. PESTAÑA: 💬 RESEÑAS Y CITAS */}
+            {profileTab === 'reviews' && (
+              <div className="space-y-5">
+                {readerReviewsAndQuotes.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center space-y-2">
+                    <Quote className="w-8 h-8 mx-auto text-amber-600" />
+                    <p className="font-serif text-base text-stone-700 dark:text-slate-300">
+                      Este lector aún no ha publicado reseñas ni notas personales
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {readerReviewsAndQuotes.map((b) => {
+                      const reviewText = b.resena || b.notasPersonales;
+                      return (
+                        <div
+                          key={b.id}
+                          onClick={() => setSelectedCommunityBook(b)}
+                          className="catalog-card-panel p-5 space-y-3.5 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-3">
+                              <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                                <BookCover
+                                  nombre={b.nombre}
+                                  autor={b.autor}
+                                  portadaUrl={b.portadaUrl}
+                                  portadaFallbackUrl={b.portadaFallbackUrl}
+                                  size="sm"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <h4 className="font-serif font-bold text-base text-stone-900 dark:text-slate-100 truncate">
+                                  {b.nombre}
+                                </h4>
+                                <p className="text-xs text-stone-500 dark:text-slate-400 truncate">
+                                  {b.autor}
+                                </p>
+                                {b.puntuacion && (
+                                  <div className="pt-0.5">
+                                    <StarRatingDisplay value={b.puntuacion} size="sm" showNumeric={true} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Reseña escrita */}
+                            {reviewText && (
+                              <p className="font-serif italic text-xs sm:text-sm text-stone-800 dark:text-slate-200 leading-relaxed pl-3 border-l-2 border-amber-600/40 line-clamp-4">
+                                «{reviewText.trim()}»
+                              </p>
+                            )}
+
+                            {/* Citas destacadas */}
+                            {b.citas && b.citas.length > 0 && (
+                              <div className="space-y-1 pt-1">
+                                <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-wider block">
+                                  Cita memorable:
+                                </span>
+                                <div className="p-2.5 rounded-lg bg-stone-100/70 dark:bg-[#121824] text-[11px] font-serif italic text-stone-700 dark:text-slate-300 line-clamp-3">
+                                  «{b.citas[0]}»
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs">
+                            <span className="text-[11px] text-stone-500">{b.progreso}</span>
+                            <span className="text-amber-700 dark:text-amber-400 font-semibold group-hover:underline">
+                              Ver ficha completa →
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 5. PESTAÑA: 🤝 EN COMÚN (AFINIDAD LITERARIA) */}
+            {profileTab === 'affinity' && (
+              <div className="space-y-6">
+                {/* Hero Card de Afinidad */}
+                <div className="catalog-card-panel p-6 sm:p-7 shadow-md flex flex-col sm:flex-row items-center justify-between gap-6">
+                  <div className="space-y-2 text-center sm:text-left">
+                    <span className="text-xs uppercase tracking-wider font-bold text-amber-800 dark:text-amber-400 font-serif">
+                      Conexión de Almas Lectoras
+                    </span>
+                    <h3 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-slate-100">
+                      {bookAffinity.percentage}% de Afinidad Literaria
+                    </h3>
+                    <p className="text-xs text-stone-600 dark:text-slate-300 max-w-md leading-relaxed">
+                      Calculado comparando vuestras bibliotecas personales, autores predilectos y calificaciones de obras compartidas.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="w-20 h-20 rounded-full border-4 border-amber-500/40 bg-amber-500/15 flex items-center justify-center font-serif text-2xl font-bold text-amber-900 dark:text-amber-300 shadow-inner">
+                      {bookAffinity.percentage}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Libros en común: Comparativa cara a cara */}
+                <div className="space-y-3">
+                  <h4 className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-amber-600" />
+                    <span>Libros que ambos tenéis en común ({bookAffinity.commonBooks.length})</span>
+                  </h4>
+
+                  {bookAffinity.commonBooks.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-8 text-center text-xs text-stone-500 dark:text-slate-400">
+                      Aún no compartís libros idénticos en vuestros catálogos. ¡Explora sus joyas abajo para descubrir tu próxima lectura!
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {bookAffinity.commonBooks.map((cb, idx) => (
+                        <div
+                          key={idx}
+                          className="catalog-card-panel p-4 flex items-center gap-4 hover:shadow-md transition"
+                        >
+                          <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                            <BookCover
+                              nombre={cb.title}
+                              autor={cb.author}
+                              portadaUrl={cb.readerBook.portadaUrl || cb.myBook.portadaUrl}
+                              portadaFallbackUrl={cb.readerBook.portadaFallbackUrl}
+                              size="sm"
+                            />
+                          </div>
+
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <h5 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 truncate">
+                              {cb.title}
+                            </h5>
+                            <p className="text-xs text-stone-500 dark:text-slate-400 truncate">
+                              {cb.author}
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-amber-900/10 dark:border-[#20293C] text-[11px]">
+                              <div>
+                                <span className="text-stone-400 block text-[10px]">Tu nota:</span>
+                                {cb.myRating ? (
+                                  <StarRatingDisplay value={cb.myRating} size="xs" showNumeric={true} />
+                                ) : (
+                                  <span className="text-stone-400 italic">Sin valorar</span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-stone-400 block text-[10px]">Su nota:</span>
+                                {cb.readerRating ? (
+                                  <StarRatingDisplay value={cb.readerRating} size="xs" showNumeric={true} />
+                                ) : (
+                                  <span className="text-stone-400 italic">Sin valorar</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Autores en común */}
+                {bookAffinity.commonAuthors.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h4 className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span>Autores predilectos en común ({bookAffinity.commonAuthors.length})</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {bookAffinity.commonAuthors.map((author) => (
+                        <span
+                          key={author}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-xs font-semibold text-stone-800 dark:text-slate-200"
+                        >
+                          🪶 {author}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Joyas de su estantería para ti */}
+                {bookAffinity.gemsForYou.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-amber-900/15 dark:border-[#242E42]">
+                    <div className="space-y-0.5">
+                      <h4 className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-amber-600" />
+                        <span>Joyas de su estantería recomendadas para ti</span>
+                      </h4>
+                      <p className="text-xs text-stone-500 dark:text-slate-400">
+                        Obras que este lector valoró con 4 o 5 estrellas y que aún no tienes en tu biblioteca.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {bookAffinity.gemsForYou.slice(0, 6).map((gem) => (
+                        <div
+                          key={gem.id}
+                          onClick={() => setSelectedCommunityBook(gem)}
+                          className="catalog-card-panel p-4 space-y-3 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                              <BookCover
+                                nombre={gem.nombre}
+                                autor={gem.autor}
+                                portadaUrl={gem.portadaUrl}
+                                portadaFallbackUrl={gem.portadaFallbackUrl}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <h5 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 line-clamp-2">
+                                {gem.nombre}
+                              </h5>
+                              <p className="text-xs text-stone-500 dark:text-slate-400 truncate">
+                                {gem.autor}
+                              </p>
+                              {gem.puntuacion && (
+                                <StarRatingDisplay value={gem.puntuacion} size="xs" showNumeric={true} />
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddBook(gem, e)}
+                            disabled={addingBookId === gem.id}
+                            className="w-full py-1.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500 text-amber-900 dark:text-amber-300 hover:text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1.5"
+                          >
+                            {addingBookId === gem.id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Añadir a mis pendientes
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Modal de detalle de libro del lector amigo con createPortal */}
-        {/* Modal de detalle de libro del lector amigo con animación 3D */}
-        {selectedCommunityBook && selectedReader && (
-          <BookDetailModal
-            book={selectedCommunityBook}
-            onClose={() => setSelectedCommunityBook(null)}
-            readOnly={true}
-            readerName={selectedReader.displayName || selectedReader.username}
-            onAddToLibrary={handleAddBook}
-            isAlreadyInLibrary={isAlreadyInMyLibrary(selectedCommunityBook)}
-            currentUserId={currentUserId}
-            onShowToast={(msg) =>
-              setToast({
-                type: 'info',
-                title: 'Nexus',
-                message: msg
-              })
-            }
-          />
-        )}
-
-        {/* Modal de confirmación para eliminar amigo */}
-        {renderRemoveFriendModal()}
-
-        {/* Toast amigable */}
-        {renderToastNotification()}
       </div>
     );
   }
 
-  /* ─────────────────── VISTA 1: COMUNIDAD (MIS AMIGOS & EXPLORAR) ─────────────────── */
+  /* ─────────────────── VISTA 1: COMUNIDAD (STORIES + FEED + DIRECTORIO) ─────────────────── */
   return (
     <div className="space-y-6">
-      {/* Selector de subpestañas */}
+      {renderToastNotification()}
+      {renderRemoveFriendModal()}
+      {renderPublicBookModal()}
+
+      {/* ─── 1. Barra Superior «Círculo de Amigos» (Instagram Stories Bar) (Bloque 2) ─── */}
+      {acceptedFriends.length > 0 && (
+        <section aria-label="Círculo de Amigos en lectura" className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold px-1">
+            <span className="font-serif italic text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              Círculo de Lectores
+            </span>
+            <span className="text-[11px] text-stone-500">
+              {acceptedFriends.length} {acceptedFriends.length === 1 ? 'amigo conectado' : 'amigos conectados'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 pt-1 px-1 -mx-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {acceptedFriends.map((f) => {
+              const friend = f.friendProfile;
+              if (!friend) return null;
+              const readingCount = friendsActivity.friendsReadingCounts[friend.id] || 0;
+              const isReadingNow = readingCount > 0;
+
+              return (
+                <button
+                  key={friend.id}
+                  type="button"
+                  onClick={() => handleSelectReader(friend)}
+                  className="flex flex-col items-center gap-1.5 shrink-0 focus:outline-none group active:scale-95 transition"
+                  title={`${friend.displayName} (@${friend.username})${isReadingNow ? ` · Leyendo ${readingCount} libros` : ''}`}
+                >
+                  <div
+                    className={
+                      'relative p-0.5 rounded-full transition-transform group-hover:scale-105 ' +
+                      (isReadingNow
+                        ? 'bg-gradient-to-tr from-amber-500 via-amber-300 to-yellow-600 shadow-md ring-2 ring-amber-500/40'
+                        : 'border border-stone-300 dark:border-stone-700 hover:border-amber-500/50')
+                    }
+                  >
+                    <UserAvatar
+                      avatarUrl={friend.avatarUrl}
+                      displayName={friend.displayName}
+                      username={friend.username}
+                      size="md"
+                    />
+                    {isReadingNow && (
+                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-bold text-[9px] shadow-sm flex items-center gap-0.5 border border-amber-300">
+                        📖 {readingCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-[11px] font-medium text-stone-700 dark:text-slate-300 truncate w-16 text-center group-hover:text-amber-700 dark:group-hover:text-amber-400 transition">
+                    {friend.displayName ? friend.displayName.split(' ')[0] : `@${friend.username}`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ─── 2. Pestañas de Directorio y Feed Social (Bloque 2) ─── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Pestaña 🔥 Actividad */}
           <button
             type="button"
-            onClick={() => handleSubTabChange('friends')}
+            onClick={() => setDirectoryTab('activity')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
-              (communitySubTab === 'friends'
+              (directoryTab === 'activity'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+            }
+          >
+            <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span>🔥 Actividad</span>
+          </button>
+
+          {/* Pestaña 👥 Mis Amigos */}
+          <button
+            type="button"
+            onClick={() => setDirectoryTab('friends')}
+            className={
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+              (directoryTab === 'friends'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
@@ -1209,12 +2042,13 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             )}
           </button>
 
+          {/* Pestaña 🔍 Explorar Lectores */}
           <button
             type="button"
-            onClick={() => handleSubTabChange('explore')}
+            onClick={() => setDirectoryTab('explore')}
             className={
               'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
-              (communitySubTab === 'explore'
+              (directoryTab === 'explore'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
                 : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
             }
@@ -1222,11 +2056,303 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             <Search className="w-4 h-4" />
             <span>Explorar Lectores</span>
           </button>
+
+          {/* Pestaña 📬 Solicitudes */}
+          {currentUserId && (
+            <button
+              type="button"
+              onClick={() => setDirectoryTab('requests')}
+              className={
+                'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition shadow-sm ' +
+                (directoryTab === 'requests'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+                  : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+              }
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Solicitudes</span>
+              {pendingRequests.received.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-600 text-white animate-pulse">
+                  {pendingRequests.received.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
-      {communitySubTab === 'friends' ? (
-        /* Subvista: Mis Amigos */
+      {/* ─── PESTAÑA: 🔥 ACTIVIDAD (FEED SOCIAL LITERARIO) ─── */}
+      {directoryTab === 'activity' && (
+        <div className="space-y-6">
+          {friendsActivity.readingNow.length === 0 && friendsActivity.recentReadsAndReviews.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-amber-900/25 dark:border-[#283246] p-10 text-center space-y-3 bg-[#fbf6ea]/40 dark:bg-transparent">
+              <Flame className="w-9 h-9 mx-auto text-amber-600/70" />
+              <h4 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100">
+                Tu Círculo está en calma literaria
+              </h4>
+              <p className="text-xs text-stone-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                Aquí verás las lecturas en curso de tus amigos en tiempo real, sus páginas avanzadas y sus últimas reseñas terminadas.
+              </p>
+              <div className="flex justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setDirectoryTab('explore')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
+                >
+                  <Search className="w-3.5 h-3.5" /> Explorar nuevos lectores
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* 1. Lecturas en curso del Círculo ('⏳ Leyendo') */}
+              {friendsActivity.readingNow.length > 0 && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                    <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                      Lecturas en curso del Círculo
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {friendsActivity.readingNow.map((item, idx) => {
+                      const { friend, book } = item;
+                      const isOwned = isAlreadyInMyLibrary(book);
+                      const totalP = book.paginas || 0;
+                      const curP = book.paginaActual || 0;
+                      const pct = totalP > 0 ? Math.min(100, Math.round((curP / totalP) * 100)) : 0;
+
+                      return (
+                        <div
+                          key={`reading-${friend.id}-${book.id}-${idx}`}
+                          onClick={() => setSelectedCommunityBook(book)}
+                          className="catalog-card-panel p-4 space-y-3 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
+                        >
+                          {/* Cabecera del amigo */}
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectReader(friend);
+                            }}
+                            className="flex items-center gap-2.5 group/friend cursor-pointer"
+                          >
+                            <UserAvatar
+                              avatarUrl={friend.avatarUrl}
+                              displayName={friend.displayName}
+                              username={friend.username}
+                              size="sm"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <span className="font-serif font-bold text-xs text-stone-900 dark:text-slate-100 group-hover/friend:text-amber-700 dark:group-hover/friend:text-amber-400 block truncate">
+                                {friend.displayName}
+                              </span>
+                              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold block">
+                                está leyendo ahora:
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Portada y Libro */}
+                          <div className="flex items-start gap-3">
+                            <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                              <BookCover
+                                nombre={book.nombre}
+                                autor={book.autor}
+                                portadaUrl={book.portadaUrl}
+                                portadaFallbackUrl={book.portadaFallbackUrl}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 line-clamp-2">
+                                {book.nombre}
+                              </h4>
+                              <p className="text-xs text-stone-500 dark:text-slate-400 truncate">
+                                {book.autor}
+                              </p>
+                              {book.sagaNombre && (
+                                <p className="text-[10px] text-amber-700 dark:text-amber-400 truncate">
+                                  {book.sagaNombre}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Barra de progreso */}
+                          {totalP > 0 && curP > 0 && (
+                            <div className="space-y-1 pt-1 border-t border-amber-900/10 dark:border-[#20293C]">
+                              <div className="flex justify-between text-[10px] font-mono text-stone-500 dark:text-slate-400">
+                                <span>Progreso</span>
+                                <span>pág. {curP} / {totalP} ({pct}%)</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-stone-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Botón rápido */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddBook(book, e)}
+                            disabled={isOwned || addingBookId === book.id}
+                            className={
+                              'w-full py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ' +
+                              (isOwned
+                                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                                : 'bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500 hover:text-slate-950')
+                            }
+                          >
+                            {isOwned ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" /> En tu biblioteca
+                              </>
+                            ) : addingBookId === book.id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Añadir a pendientes
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Últimos libros leídos y reseñas de amigos ('✅ Leído') */}
+              {friendsActivity.recentReadsAndReviews.length > 0 && (
+                <div className="space-y-3.5">
+                  <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100 flex items-center gap-2">
+                    <Quote className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Últimas lecturas completadas y reseñas</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {friendsActivity.recentReadsAndReviews.map((item, idx) => {
+                      const { friend, book } = item;
+                      const isOwned = isAlreadyInMyLibrary(book);
+                      const reviewText = book.resena || book.notasPersonales;
+
+                      return (
+                        <div
+                          key={`read-${friend.id}-${book.id}-${idx}`}
+                          onClick={() => setSelectedCommunityBook(book)}
+                          className="catalog-card-panel p-5 space-y-3 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="space-y-3">
+                            {/* Amigo header */}
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectReader(friend);
+                              }}
+                              className="flex items-center gap-2.5 group/friend cursor-pointer"
+                            >
+                              <UserAvatar
+                                avatarUrl={friend.avatarUrl}
+                                displayName={friend.displayName}
+                                username={friend.username}
+                                size="sm"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <span className="font-serif font-bold text-xs text-stone-900 dark:text-slate-100 group-hover/friend:text-amber-700 dark:group-hover/friend:text-amber-400 block truncate">
+                                  {friend.displayName}
+                                </span>
+                                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold block">
+                                  completó esta obra:
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Portada, título y valoración */}
+                            <div className="flex items-start gap-3">
+                              <div className="w-14 shrink-0 shadow-xs rounded overflow-hidden">
+                                <BookCover
+                                  nombre={book.nombre}
+                                  autor={book.autor}
+                                  portadaUrl={book.portadaUrl}
+                                  portadaFallbackUrl={book.portadaFallbackUrl}
+                                  size="sm"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 line-clamp-2">
+                                  {book.nombre}
+                                </h4>
+                                <p className="text-xs text-stone-500 dark:text-slate-400 truncate">
+                                  {book.autor}
+                                </p>
+                                {book.puntuacion && (
+                                  <div className="pt-0.5">
+                                    <StarRatingDisplay value={book.puntuacion} size="sm" showNumeric={true} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Reseña si existe */}
+                            {reviewText && reviewText.trim().length > 0 && (
+                              <p className="font-serif italic text-xs sm:text-sm text-stone-800 dark:text-slate-200 leading-relaxed pl-3 border-l-2 border-amber-600/40 line-clamp-3">
+                                «{reviewText.trim()}»
+                              </p>
+                            )}
+
+                            {/* Cita si existe */}
+                            {book.citas && book.citas.length > 0 && (
+                              <div className="p-2 rounded bg-stone-100/70 dark:bg-[#121824] text-[11px] font-serif italic text-stone-700 dark:text-slate-300 line-clamp-2">
+                                «{book.citas[0]}»
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-stone-500">
+                              {book.pais ? `🌍 ${book.pais}` : 'Ficha completa'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleAddBook(book, e)}
+                              disabled={isOwned || addingBookId === book.id}
+                              className={
+                                'py-1 px-3 rounded-lg text-xs font-bold transition flex items-center gap-1 ' +
+                                (isOwned
+                                  ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                                  : 'bg-amber-500/15 text-amber-900 dark:text-amber-300 hover:bg-amber-500 hover:text-slate-950')
+                              }
+                            >
+                              {isOwned ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" /> En mi biblioteca
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3.5 h-3.5" /> Añadir
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── PESTAÑA: 👥 MIS AMIGOS ─── */}
+      {directoryTab === 'friends' && (
         <div className="space-y-4">
           <div className="border-b border-amber-900/15 dark:border-[#20293C] pb-2">
             <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100 flex items-center gap-2">
@@ -1242,9 +2368,6 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               <Users className="w-8 h-8 mx-auto text-amber-600/60" />
               <p className="font-serif font-bold text-base text-stone-800 dark:text-slate-200">
                 Inicia sesión para conectar con amigos
-              </p>
-              <p className="text-xs text-stone-600 dark:text-slate-400 max-w-sm mx-auto">
-                Con una cuenta puedes agregar amigos de confianza y enviarles recomendaciones con dedicatoria.
               </p>
             </div>
           ) : isLoadingFriends ? (
@@ -1263,7 +2386,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </p>
               <button
                 type="button"
-                onClick={() => handleSubTabChange('explore')}
+                onClick={() => setDirectoryTab('explore')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition"
               >
                 <Search className="w-3.5 h-3.5" /> Explorar lectores
@@ -1301,31 +2424,15 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Etiqueta de privacidad arriba a la derecha */}
                       <div className="shrink-0 pt-0.5">
-                        {profile.visibility === 'public' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
-                            <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
-                          </span>
-                        ) : profile.visibility === 'friends' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-full font-sans">
-                            <Users className="w-2.5 h-2.5 text-sky-600 dark:text-sky-400" /> Solo amigos
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
-                            <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
-                          </span>
-                        )}
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
+                          <Users className="w-2.5 h-2.5" /> Amigo
+                        </span>
                       </div>
                     </div>
 
                     <div className="pt-2 border-t border-amber-900/10 dark:border-[#20293C] flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-400">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg font-bold">
-                        <UserIcon className="w-3.5 h-3.5" /> Amigo
-                      </span>
-                      <span className="group-hover:translate-x-0.5 transition-transform text-right">
-                        {profile.visibility !== 'private' ? 'Ver estantería →' : 'Ver perfil →'}
-                      </span>
+                      <span>Ver estantería y perfil →</span>
                     </div>
                   </div>
                 );
@@ -1333,8 +2440,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
           )}
         </div>
-      ) : (
-        /* Subvista: Explorar Lectores */
+      )}
+
+      {/* ─── PESTAÑA: 🔍 EXPLORAR LECTORES ─── */}
+      {directoryTab === 'explore' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-4">
             <div>
@@ -1369,22 +2478,16 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             </div>
           </div>
 
-          {/* Lista de lectores encontrados */}
           {isLoadingReaders && readers.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
               <Loader2 className="w-7 h-7 text-amber-600 dark:text-amber-400 animate-spin" />
-              <span className="font-serif text-sm">Buscando lectores en Nexus Library...</span>
+              <span className="font-serif text-xs">Buscando lectores en el archivo...</span>
             </div>
           ) : readers.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center text-stone-600 dark:text-slate-400 space-y-2">
+            <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center space-y-2 text-stone-500 dark:text-slate-400">
               <Users className="w-8 h-8 mx-auto text-amber-600/60 dark:text-amber-400/60" />
               <p className="font-serif text-base font-bold text-stone-800 dark:text-slate-200">
                 {searchQuery ? `No encontramos lectores con "${searchQuery}"` : 'Aún no hay otros lectores registrados'}
-              </p>
-              <p className="text-xs max-w-md mx-auto">
-                {searchQuery
-                  ? 'Verifica que el nombre o el @usuario esté bien escrito.'
-                  : 'Invita a tus amigos a registrarse en Nexus Library para conectaros y compartir recomendaciones.'}
               </p>
             </div>
           ) : (
@@ -1395,7 +2498,6 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                 const isFriend = fInfo?.status === 'accepted';
                 const isPendingSent = fInfo?.status === 'pending' && fInfo.isRequester;
                 const isPendingReceived = fInfo?.status === 'pending' && !fInfo.isRequester;
-                const isBusy = actionLoadingId === reader.id || actionLoadingId === fInfo?.friendshipId;
 
                 return (
                   <div
@@ -1429,19 +2531,18 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                         </div>
                       </div>
 
-                      {/* Etiqueta de privacidad arriba a la derecha */}
                       <div className="shrink-0 pt-0.5">
                         {reader.visibility === 'public' ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full font-sans">
-                            <Globe className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" /> Público
+                            <Globe className="w-2.5 h-2.5" /> Público
                           </span>
                         ) : reader.visibility === 'friends' ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-800 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-full font-sans">
-                            <Users className="w-2.5 h-2.5 text-sky-600 dark:text-sky-400" /> Solo amigos
+                            <Users className="w-2.5 h-2.5" /> Solo amigos
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-700 dark:text-slate-300 bg-stone-500/15 border border-stone-400/30 px-2 py-0.5 rounded-full font-sans">
-                            <Lock className="w-2.5 h-2.5 text-stone-500 dark:text-slate-400" /> Privado
+                            <Lock className="w-2.5 h-2.5" /> Privado
                           </span>
                         )}
                       </div>
@@ -1455,69 +2556,28 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                           <UserIcon className="w-3.5 h-3.5" /> Amigo
                         </span>
                       ) : isPendingSent ? (
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
-                            <Clock className="w-3 h-3" /> Solicitud enviada
-                          </span>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancelFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
-                            }}
-                            className="inline-flex items-center justify-center p-1 text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 rounded-md transition disabled:opacity-50"
-                            title="Cancelar solicitud enviada"
-                            aria-label="Cancelar solicitud enviada"
-                          >
-                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                          </button>
-                        </div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                          <Clock className="w-3 h-3" /> Solicitud enviada
+                        </span>
                       ) : isPendingReceived ? (
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAcceptFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 px-2.5 py-1 rounded-lg shadow-sm transition disabled:opacity-50"
-                          >
-                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3 h-3" />}
-                            <span>Aceptar</span>
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeclineFriendRequest(fInfo.friendshipId, reader.displayName || reader.username);
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-lg transition disabled:opacity-50"
-                            title="Rechazar solicitud"
-                          >
-                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                            <span>Rechazar</span>
-                          </button>
-                        </div>
-                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 dark:text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-lg">
+                          <UserCheck className="w-3 h-3" /> Te ha enviado solicitud
+                        </span>
+                      ) : currentUserId ? (
                         <button
                           type="button"
-                          disabled={isBusy}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSendFriendRequest(reader.id, reader.displayName);
                           }}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 dark:text-amber-200 border border-amber-600/35 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1 rounded-lg transition disabled:opacity-50"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-500/20 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1 rounded-lg transition"
                         >
-                          {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserPlus className="w-3 h-3" />}
-                          <span>Añadir amigo</span>
+                          <UserPlus className="w-3 h-3" /> Conectar
                         </button>
-                      )}
+                      ) : null}
 
-                      <span className="text-amber-800 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform text-right">
-                        {reader.visibility === 'public' || (reader.visibility === 'friends' && isFriend) ? 'Estantería →' : 'Ver perfil →'}
+                      <span className="text-amber-700 dark:text-amber-400 group-hover:underline text-right text-[11px]">
+                        Ver estantería →
                       </span>
                     </div>
                   </div>
@@ -1528,11 +2588,109 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         </div>
       )}
 
-      {/* Modal de confirmación para eliminar amigo */}
-      {renderRemoveFriendModal()}
+      {/* ─── PESTAÑA: 📬 SOLICITUDES ─── */}
+      {directoryTab === 'requests' && currentUserId && (
+        <div className="space-y-6">
+          {/* Solicitudes Recibidas */}
+          <div className="space-y-3">
+            <h3 className="font-serif font-bold text-lg text-stone-900 dark:text-slate-100 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-amber-600" />
+              <span>Solicitudes Recibidas ({pendingRequests.received.length})</span>
+            </h3>
 
-      {/* Toast amigable */}
-      {renderToastNotification()}
+            {pendingRequests.received.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-8 text-center text-xs text-stone-500 dark:text-slate-400">
+                No tienes solicitudes de amistad pendientes por responder.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingRequests.received.map((req) => {
+                  const p = req.friendProfile;
+                  if (!p) return null;
+
+                  return (
+                    <div key={req.id} className="catalog-card-panel p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          avatarUrl={p.avatarUrl}
+                          displayName={p.displayName}
+                          username={p.username}
+                          size="md"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-serif font-bold text-sm truncate">{p.displayName}</h4>
+                          <span className="text-xs font-mono text-amber-700 dark:text-amber-400 truncate block">
+                            @{p.username}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptFriendRequest(req.id, p.displayName)}
+                          className="flex-1 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-xs"
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeclineFriendRequest(req.id, p.displayName)}
+                          className="py-1.5 px-3 rounded-xl border border-stone-300 dark:border-slate-700 hover:bg-stone-200/50 dark:hover:bg-slate-800 text-xs font-semibold transition"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Solicitudes Enviadas */}
+          {pendingRequests.sent.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-amber-900/15 dark:border-[#242E42]">
+              <h3 className="font-serif font-bold text-sm text-stone-700 dark:text-slate-300 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-stone-500" />
+                <span>Solicitudes Enviadas ({pendingRequests.sent.length})</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pendingRequests.sent.map((req) => {
+                  const p = req.friendProfile;
+                  if (!p) return null;
+
+                  return (
+                    <div key={req.id} className="p-3 rounded-xl border border-stone-200 dark:border-slate-800 bg-[#fbf6ea] dark:bg-[#141A26] flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <UserAvatar
+                          avatarUrl={p.avatarUrl}
+                          displayName={p.displayName}
+                          username={p.username}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-serif font-bold truncate">{p.displayName}</p>
+                          <p className="text-[10px] font-mono text-stone-500 truncate">@{p.username}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCancelFriendRequest(req.id, p.displayName)}
+                        className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline shrink-0 font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
