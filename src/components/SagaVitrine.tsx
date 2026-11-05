@@ -62,11 +62,12 @@ export interface SagaVitrineProps {
   onToggle: () => void;
   detailBookId: string | null;
   onOpenBookDetail: (id: string) => void;
-  isAssignActive: boolean;
-  isEditing: boolean;
-  onAssignClick: () => void;
-  onEditClick: () => void;
-  onDeleteClick: () => void;
+  isAssignActive?: boolean;
+  isEditing?: boolean;
+  onAssignClick?: () => void;
+  onEditClick?: () => void;
+  onDeleteClick?: () => void;
+  readOnly?: boolean;
   /** Formularios de asignar/editar que se despliegan bajo la barra superior */
   children?: React.ReactNode;
 }
@@ -108,11 +109,12 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
   onToggle,
   detailBookId,
   onOpenBookDetail,
-  isAssignActive,
-  isEditing,
+  isAssignActive = false,
+  isEditing = false,
   onAssignClick,
   onEditClick,
   onDeleteClick,
+  readOnly = false,
   children
 }) => {
   const { saga, books, readCount, pendingCount, registeredCount, progressPercent } = item;
@@ -203,35 +205,45 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
           {saga.descripcion && <span className="vit-summary-desc"> — {saga.descripcion}</span>}
         </p>
         <div className="vit-actions">
-          <button
-            type="button"
-            onClick={onAssignClick}
-            className={'vit-btn' + (isAssignActive ? ' is-active' : '')}
-            title={isAssignActive ? 'Cancelar asignación' : 'Asignar libro'}
-            aria-label={isAssignActive ? `Cancelar asignación en ${saga.nombre}` : `Asignar libro a ${saga.nombre}`}
-            aria-pressed={isAssignActive}
-          >
-            {isAssignActive ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={onEditClick}
-            className={'vit-btn' + (isEditing ? ' is-active' : '')}
-            title="Editar nombre o descripción"
-            aria-label={`Editar saga ${saga.nombre}`}
-            aria-pressed={isEditing}
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onDeleteClick}
-            className="vit-btn is-danger"
-            title="Eliminar saga"
-            aria-label={`Eliminar saga ${saga.nombre}`}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {!readOnly && (
+            <>
+              {onAssignClick && (
+                <button
+                  type="button"
+                  onClick={onAssignClick}
+                  className={'vit-btn' + (isAssignActive ? ' is-active' : '')}
+                  title={isAssignActive ? 'Cancelar asignación' : 'Asignar libro'}
+                  aria-label={isAssignActive ? `Cancelar asignación en ${saga.nombre}` : `Asignar libro a ${saga.nombre}`}
+                  aria-pressed={isAssignActive}
+                >
+                  {isAssignActive ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                </button>
+              )}
+              {onEditClick && (
+                <button
+                  type="button"
+                  onClick={onEditClick}
+                  className={'vit-btn' + (isEditing ? ' is-active' : '')}
+                  title="Editar nombre o descripción"
+                  aria-label={`Editar saga ${saga.nombre}`}
+                  aria-pressed={isEditing}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDeleteClick && (
+                <button
+                  type="button"
+                  onClick={onDeleteClick}
+                  className="vit-btn is-danger"
+                  title="Eliminar saga"
+                  aria-label={`Eliminar saga ${saga.nombre}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </>
+          )}
           <button
             type="button"
             onClick={onToggle}

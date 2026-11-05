@@ -49,8 +49,12 @@ import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats } from '
 import { LiteraryAtlasMap, CountryMapNode, ContinentId } from './LiteraryAtlasMap';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
 import { StarRatingDisplay } from './StarRatingInteractive';
+import { BookDetailModal } from './BookDetailModal';
+import { SagaVitrine } from './SagaVitrine';
+import type { SagaWithBooksItem } from './SagasScreen';
 import '../book-detail.css';
 import '../dashboard-panels.css';
+import '../saga-vitrine.css';
 import { formatStars, ReadingStatus, READING_STATUSES } from '../constants/catalogs';
 import { formatFriendlyErrorMessage } from '../utils/errorUtils';
 
@@ -149,6 +153,22 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   // Estado para filtrado de saga en pestaña de Sagas
   const [selectedSagaName, setSelectedSagaName] = useState<string | null>(null);
+  const [communityBookReaderName, setCommunityBookReaderName] = useState<string | null>(null);
+  const [openVitrineIds, setOpenVitrineIds] = useState<Set<string>>(() => new Set());
+
+  const handleToggleVitrine = useCallback((sagaId: string) => {
+    setOpenVitrineIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sagaId)) next.delete(sagaId);
+      else next.add(sagaId);
+      return next;
+    });
+  }, []);
+
+  const handleOpenBookModal = useCallback((book: Book, readerName?: string) => {
+    setCommunityBookReaderName(readerName || selectedReader?.displayName || null);
+    setSelectedCommunityBook(book);
+  }, [selectedReader?.displayName]);
 
   // Rango e información de nivel del lector seleccionado
   const selectedReaderLevelInfo = useMemo<ReaderLevelInfo | null>(() => {
@@ -268,11 +288,19 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
         if (mFriends) setFriends(mFriends);
         if (mActivity) setFriendsActivity(mActivity);
       };
+      (window as any).__injectSelectedReader = (reader: any, books: any) => {
+        setSelectedReader(reader);
+        setReaderBooks(books || []);
+      };
       if ((window as any).__MOCK_FRIENDS__) {
         setFriends((window as any).__MOCK_FRIENDS__);
       }
       if ((window as any).__MOCK_ACTIVITY__) {
         setFriendsActivity((window as any).__MOCK_ACTIVITY__);
+      }
+      if ((window as any).__MOCK_SELECTED_READER__) {
+        setSelectedReader((window as any).__MOCK_SELECTED_READER__.profile);
+        setReaderBooks((window as any).__MOCK_SELECTED_READER__.books || []);
       }
     }
   }, []);
@@ -645,6 +673,27 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     });
   }, [readerBooks]);
 
+  const readerVitrineSagas = useMemo<SagaWithBooksItem[]>(() => {
+    return readerSagas.map((s, idx) => ({
+      saga: {
+        id: `reader-saga-${s.sagaName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${idx}`,
+        nombre: s.sagaName,
+        descripcion: s.mainAuthor ? `Por ${s.mainAuthor}` : '',
+        createdAt: '',
+        updatedAt: ''
+      },
+      books: s.books,
+      readCount: s.readCount,
+      pendingCount: s.totalCount - s.readCount,
+      registeredCount: s.totalCount,
+      progressPercent: s.progressPercent
+    }));
+  }, [readerSagas]);
+
+  useEffect(() => {
+    setOpenVitrineIds(new Set());
+  }, [selectedReader?.id]);
+
   // Países del lector para el Atlas interactivo
   const readerMapCountries = useMemo<CountryMapNode[]>(() => {
     const booksByCode: Record<string, Book[]> = {};
@@ -806,197 +855,35 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     );
   };
 
-  // Modal enriquecido de Ficha Pública del Libro (Bloque 5)
+  const handleToastFromModal = (
+    message: string,
+    optionsOrType?: 'success' | 'error' | 'info' | { type?: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void }; duration?: number }
+  ) => {
+    const t = typeof optionsOrType === 'string' ? optionsOrType : optionsOrType?.type || 'info';
+    setToast({
+      type: t,
+      title: t === 'success' ? '¡Éxito!' : t === 'error' ? 'Aviso' : 'Información',
+      message
+    });
+  };
+
+  // Modal enriquecido con animación 3D de apertura ceremonial (BookDetailModal)
   const renderPublicBookModal = () => {
     if (!selectedCommunityBook || typeof document === 'undefined') return null;
 
-    const book = selectedCommunityBook;
-    const isOwned = isAlreadyInMyLibrary(book);
-    const myMatch = getMyBookMatch(book);
-    const isReadingOrPaused =
-      (book.progreso || '').toLowerCase().includes('leyendo') ||
-      (book.progreso || '').toLowerCase().includes('pausado');
-
-    const totalPages = book.paginas || 0;
-    const curPage = book.paginaActual || 0;
-    const pagePercent = totalPages > 0 ? Math.min(100, Math.round((curPage / totalPages) * 100)) : 0;
-    const reviewText = book.resena || book.notasPersonales;
-
-    return createPortal(
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150 overflow-y-auto"
-        role="dialog"
-        aria-modal="true"
-        onClick={() => setSelectedCommunityBook(null)}
-      >
-        <div
-          className="relative w-full max-w-xl rounded-2xl border border-amber-900/30 dark:border-amber-500/30 bg-[#fbf6ea] dark:bg-[#141A26] p-6 sm:p-7 shadow-2xl space-y-5 my-8 text-stone-900 dark:text-slate-100"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Pestaña de latón */}
-          <div className="catalog-brass-tab" aria-hidden="true">
-            Ficha Pública de Lectura
-          </div>
-
-          {/* Botón cerrar */}
-          <button
-            type="button"
-            onClick={() => setSelectedCommunityBook(null)}
-            className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-900 dark:hover:text-white rounded-lg transition"
-            aria-label="Cerrar modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Cabecera del libro */}
-          <div className="flex gap-4 sm:gap-5 pt-2">
-            <div className="w-24 sm:w-28 shrink-0 shadow-md rounded-lg overflow-hidden">
-              <BookCover
-                nombre={book.nombre}
-                autor={book.autor}
-                portadaUrl={book.portadaUrl}
-                portadaFallbackUrl={book.portadaFallbackUrl}
-                size="md"
-              />
-            </div>
-
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusBadgeStyles[book.progreso] || 'bg-stone-500/15'}`}>
-                {book.progreso}
-              </span>
-
-              <h3 className="font-serif text-xl sm:text-2xl font-bold leading-tight">
-                {book.nombre}
-              </h3>
-              <p className="text-sm font-medium text-stone-600 dark:text-slate-300">
-                {book.autor || 'Autor desconocido'}
-              </p>
-
-              {book.sagaNombre && (
-                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1 font-semibold">
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>
-                    {book.sagaNombre} {book.volumen ? `· Libro #${book.volumen}` : ''}
-                  </span>
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-stone-500 dark:text-slate-400">
-                {book.pais && (
-                  <span className="inline-flex items-center gap-1 font-medium bg-amber-500/10 dark:bg-amber-500/15 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded">
-                    🌍 {book.pais}
-                  </span>
-                )}
-                {book.formato && (
-                  <span className="inline-flex items-center gap-1 bg-stone-200 dark:bg-slate-800 px-2 py-0.5 rounded">
-                    {book.formato}
-                  </span>
-                )}
-                {book.paginas && <span>{book.paginas} págs.</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* Progreso de lectura del lector */}
-          {isReadingOrPaused && totalPages > 0 && curPage > 0 && (
-            <div className="rounded-xl border border-amber-900/15 dark:border-[#253044] bg-[#f5eddb]/80 dark:bg-[#111723] p-3.5 space-y-2">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="text-stone-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Progreso de lectura
-                </span>
-                <span className="font-mono text-amber-800 dark:text-amber-300">
-                  pág. {curPage} de {totalPages} ({pagePercent}%)
-                </span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-slate-700 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-300"
-                  style={{ width: `${pagePercent}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Valoración del lector */}
-          {book.puntuacion && Number(book.puntuacion) > 0 && (
-            <div className="flex items-center gap-2.5 pt-1">
-              <span className="text-xs font-serif font-bold text-stone-700 dark:text-slate-300">
-                Valoración del lector:
-              </span>
-              <StarRatingDisplay value={book.puntuacion} size="md" showNumeric={true} />
-            </div>
-          )}
-
-          {/* Reseña del lector */}
-          {reviewText && reviewText.trim().length > 0 && (
-            <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-500/5 dark:bg-amber-400/5 p-4 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-serif font-bold text-amber-800 dark:text-amber-400">
-                <Quote className="w-4 h-4 shrink-0" />
-                <span>Reseña de {selectedReader?.displayName || 'este lector'}</span>
-              </div>
-              <p className="font-serif italic text-sm leading-relaxed text-stone-800 dark:text-slate-200 whitespace-pre-line pl-2 border-l-2 border-amber-600/40">
-                «{reviewText.trim()}»
-              </p>
-            </div>
-          )}
-
-          {/* Citas destacadas */}
-          {book.citas && book.citas.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-serif font-bold text-stone-700 dark:text-slate-300 block">
-                Citas guardadas:
-              </span>
-              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                {book.citas.map((quote, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg border border-stone-200 dark:border-slate-800 bg-white/60 dark:bg-[#171F2D] text-xs font-serif italic text-stone-700 dark:text-slate-300"
-                  >
-                    «{quote}»
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Comparativa con mi biblioteca */}
-          <div className="pt-2 border-t border-amber-900/15 dark:border-[#253044] flex flex-col sm:flex-row items-center justify-between gap-3">
-            {isOwned ? (
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>
-                  En tu biblioteca: <strong>{myMatch?.progreso || 'Guardado'}</strong>
-                  {myMatch?.puntuacion ? ` · Tu nota: ${myMatch.puntuacion} ★` : ''}
-                </span>
-              </div>
-            ) : (
-              <div className="text-xs text-stone-500 dark:text-slate-400">
-                No tienes esta obra en tu catálogo
-              </div>
-            )}
-
-            {!isOwned && (
-              <button
-                type="button"
-                disabled={addingBookId === book.id}
-                onClick={(e) => handleAddBook(book, e)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-md transition active:scale-95 disabled:opacity-50"
-              >
-                {addingBookId === book.id ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Añadir a mis pendientes
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>,
-      document.body
+    return (
+      <BookDetailModal
+        book={selectedCommunityBook}
+        onClose={() => {
+          setSelectedCommunityBook(null);
+          setCommunityBookReaderName(null);
+        }}
+        readOnly={true}
+        readerName={communityBookReaderName || selectedReader?.displayName || 'Lector'}
+        isAlreadyInLibrary={isAlreadyInMyLibrary(selectedCommunityBook)}
+        onAddToLibrary={(b) => handleAddBook(b)}
+        onShowToast={handleToastFromModal}
+      />
     );
   };
 
@@ -1027,7 +914,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             username={selectedReader.username}
             avatarUrl={selectedReader.avatarUrl}
             memberId={selectedReader.id}
-            onOpenBookDetail={(book) => setSelectedCommunityBook(book)}
+            onOpenBookDetail={(book) => handleOpenBookModal(book)}
           />
         )}
 
@@ -1323,56 +1210,90 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
             {/* 1. PESTAÑA: 📚 ESTANTERÍA */}
             {profileTab === 'shelf' && (
               <div className="space-y-5">
-                {/* Barra de Búsqueda y Filtros */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={shelfSearchQuery}
-                      onChange={(e) => setShelfSearchQuery(e.target.value)}
-                      placeholder="Buscar por título, autor o saga..."
-                      className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none transition shadow-sm"
-                    />
-                    {shelfSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setShelfSearchQuery('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                {/* Barra de Búsqueda, Filtros y Conmutador de Vista */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={shelfSearchQuery}
+                        onChange={(e) => setShelfSearchQuery(e.target.value)}
+                        placeholder="Buscar por título, autor o saga..."
+                        className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none transition shadow-sm"
+                      />
+                      {shelfSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setShelfSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Chips de estado */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+                      {(
+                        [
+                          { id: 'all', label: 'Todos' },
+                          { id: 'reading', label: '⏳ Leyendo' },
+                          { id: 'paused', label: '⏸️ Pausados' },
+                          { id: 'read', label: '✅ Leídos' },
+                          { id: 'unread', label: '📚 Pendientes' }
+                        ] as const
+                      ).map((f) => {
+                        const isActive = shelfFilter === f.id;
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => setShelfFilter(f.id)}
+                            className={
+                              'px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition ' +
+                              (isActive
+                                ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                                : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-stone-950')
+                            }
+                          >
+                            {f.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Chips de estado */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                    {(
-                      [
-                        { id: 'all', label: 'Todos' },
-                        { id: 'reading', label: '⏳ Leyendo' },
-                        { id: 'paused', label: '⏸️ Pausados' },
-                        { id: 'read', label: '✅ Leídos' },
-                        { id: 'unread', label: '📚 Pendientes' }
-                      ] as const
-                    ).map((f) => {
-                      const isActive = shelfFilter === f.id;
-                      return (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => setShelfFilter(f.id)}
-                          className={
-                            'px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition ' +
-                            (isActive
-                              ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
-                              : 'border border-amber-900/20 dark:border-slate-800 bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:text-stone-950')
-                          }
-                        >
-                          {f.label}
-                        </button>
-                      );
-                    })}
+                  {/* Conmutador de vista: Balda de madera vs Cuadrícula */}
+                  <div className="flex items-center gap-1 bg-[#ecd9b8]/60 dark:bg-[#161D2B] p-1 rounded-xl border border-amber-900/15 dark:border-[#283246] shrink-0 self-end lg:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('shelf')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition ' +
+                        (viewMode === 'shelf'
+                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                      title="Vista de estantería física de madera"
+                    >
+                      <Rows3 className="w-3.5 h-3.5" />
+                      <span>Balda</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('grid')}
+                      className={
+                        'px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition ' +
+                        (viewMode === 'grid'
+                          ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                          : 'text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white')
+                      }
+                      title="Vista de cuadrícula de fichas"
+                    >
+                      <Grid className="w-3.5 h-3.5" />
+                      <span>Cuadrícula</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1381,6 +1302,17 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                     <p className="font-serif text-base text-stone-700 dark:text-slate-300">
                       No se encontraron libros en esta sección
                     </p>
+                  </div>
+                ) : viewMode === 'shelf' ? (
+                  <div className="space-y-4">
+                    <BookShelf
+                      books={filteredReaderBooks}
+                      onOpenDetail={(bookId) => {
+                        const b = readerBooks.find((x) => x.id === bookId);
+                        if (b) handleOpenBookModal(b);
+                      }}
+                      openedBookId={selectedCommunityBook?.id ?? null}
+                    />
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
@@ -1395,7 +1327,8 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       return (
                         <div
                           key={book.id}
-                          onClick={() => setSelectedCommunityBook(book)}
+                          data-book-id={book.id}
+                          onClick={() => handleOpenBookModal(book)}
                           className="catalog-card-panel group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between p-3 space-y-2.5"
                         >
                           <div className="space-y-2">
@@ -1407,7 +1340,11 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                                 portadaFallbackUrl={book.portadaFallbackUrl}
                                 size="md"
                               />
-                              <span className={`absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-xs border ${statusBadgeStyles[book.progreso] || 'bg-stone-500/80 text-white'}`}>
+                              <span
+                                className={`absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-xs border ${
+                                  statusBadgeStyles[book.progreso] || 'bg-stone-500/80 text-white'
+                                }`}
+                              >
                                 {book.progreso}
                               </span>
                             </div>
@@ -1481,10 +1418,10 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               </div>
             )}
 
-            {/* 2. PESTAÑA: 🏛️ SAGAS */}
+            {/* 2. PESTAÑA: 🏛️ SAGAS EN VITRINAS */}
             {profileTab === 'sagas' && (
               <div className="space-y-5">
-                {readerSagas.length === 0 ? (
+                {readerVitrineSagas.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-amber-900/20 dark:border-[#283246] p-12 text-center space-y-2">
                     <Layers className="w-8 h-8 mx-auto text-amber-600" />
                     <p className="font-serif text-base text-stone-700 dark:text-slate-300">
@@ -1492,101 +1429,20 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {readerSagas.map((saga) => (
-                      <div
-                        key={saga.sagaName}
-                        onClick={() =>
-                          setSelectedSagaName(selectedSagaName === saga.sagaName ? null : saga.sagaName)
-                        }
-                        className="catalog-card-panel p-5 space-y-4 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
-                                {saga.sagaName}
-                              </h3>
-                              <p className="text-xs text-stone-500 dark:text-slate-400">
-                                {saga.mainAuthor}
-                              </p>
-                            </div>
-                            <span className="text-[11px] font-mono font-bold bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full shrink-0">
-                              {saga.readCount} / {saga.totalCount} leídos
-                            </span>
-                          </div>
-
-                          {/* Abanico de portadas */}
-                          <div className="flex items-center -space-x-4 pt-1 overflow-hidden">
-                            {saga.books.slice(0, 4).map((b, i) => (
-                              <div
-                                key={b.id}
-                                className="w-14 h-20 rounded-md overflow-hidden shadow-md ring-2 ring-[#fbf6ea] dark:ring-[#141A26] shrink-0 transform transition-transform hover:-translate-y-1 hover:z-10"
-                                style={{ zIndex: i }}
-                              >
-                                <BookCover
-                                  nombre={b.nombre}
-                                  autor={b.autor}
-                                  portadaUrl={b.portadaUrl}
-                                  portadaFallbackUrl={b.portadaFallbackUrl}
-                                  size="sm"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Barra de progreso de la saga */}
-                        <div className="space-y-1 pt-2 border-t border-amber-900/10 dark:border-[#20293C]">
-                          <div className="flex items-center justify-between text-[11px] font-mono">
-                            <span className="text-stone-500 dark:text-slate-400">Completado</span>
-                            <span className="font-bold text-amber-700 dark:text-amber-400">
-                              {saga.progressPercent}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-slate-700 overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
-                              style={{ width: `${saga.progressPercent}%` }}
-                            />
-                          </div>
-
-                          {saga.avgRating && (
-                            <div className="flex items-center gap-1.5 pt-1 text-[11px]">
-                              <span className="text-stone-500">Nota media:</span>
-                              <StarRatingDisplay value={saga.avgRating} size="xs" showNumeric={true} />
-                            </div>
-                          )}
-
-                          {/* Lista desplegada de tomos si está seleccionada */}
-                          {selectedSagaName === saga.sagaName && (
-                            <div className="pt-3 space-y-2">
-                              <span className="text-[11px] font-bold text-stone-700 dark:text-slate-300 block uppercase tracking-wider">
-                                Tomos en su estantería:
-                              </span>
-                              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                                {saga.books.map((b) => (
-                                  <div
-                                    key={b.id}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedCommunityBook(b);
-                                    }}
-                                    className="p-2 rounded-lg bg-stone-100/80 dark:bg-[#1a2233] flex items-center justify-between gap-2 hover:bg-amber-500/10 transition text-xs"
-                                  >
-                                    <span className="truncate font-medium">
-                                      {b.volumen ? `#${b.volumen} · ` : ''}{b.nombre}
-                                    </span>
-                                    <span className="text-[10px] font-semibold text-stone-500 shrink-0">
-                                      {b.progreso}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <div className="vit-grid">
+                    {readerVitrineSagas.map((item) => (
+                      <SagaVitrine
+                        key={item.saga.id}
+                        item={item}
+                        isOpen={openVitrineIds.has(item.saga.id)}
+                        onToggle={() => handleToggleVitrine(item.saga.id)}
+                        detailBookId={selectedCommunityBook?.id ?? null}
+                        onOpenBookDetail={(bookId) => {
+                          const found = readerBooks.find((b) => b.id === bookId);
+                          if (found) handleOpenBookModal(found);
+                        }}
+                        readOnly={true}
+                      />
                     ))}
                   </div>
                 )}
@@ -1674,7 +1530,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       {activeCountryDetail.books.map((b) => (
                         <div
                           key={b.id}
-                          onClick={() => setSelectedCommunityBook(b)}
+                          onClick={() => handleOpenBookModal(b)}
                           className="p-3 rounded-xl border border-amber-900/15 dark:border-[#253044] bg-[#fbf6ea] dark:bg-[#141A26] flex items-center gap-3 cursor-pointer hover:border-amber-600 transition"
                         >
                           <div className="w-10 shrink-0">
@@ -1716,7 +1572,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       return (
                         <div
                           key={b.id}
-                          onClick={() => setSelectedCommunityBook(b)}
+                          onClick={() => handleOpenBookModal(b)}
                           className="catalog-card-panel p-5 space-y-3.5 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
                         >
                           <div className="space-y-3">
@@ -1901,7 +1757,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       {bookAffinity.gemsForYou.slice(0, 6).map((gem) => (
                         <div
                           key={gem.id}
-                          onClick={() => setSelectedCommunityBook(gem)}
+                          onClick={() => handleOpenBookModal(gem)}
                           className="catalog-card-panel p-4 space-y-3 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
                         >
                           <div className="flex items-start gap-3">
@@ -2149,7 +2005,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       return (
                         <div
                           key={`reading-${friend.id}-${book.id}-${idx}`}
-                          onClick={() => setSelectedCommunityBook(book)}
+                          onClick={() => handleOpenBookModal(book, friend.displayName || friend.username)}
                           className="catalog-card-panel p-4 space-y-3 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
                         >
                           {/* Cabecera del amigo */}
@@ -2270,7 +2126,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                       return (
                         <div
                           key={`read-${friend.id}-${book.id}-${idx}`}
-                          onClick={() => setSelectedCommunityBook(book)}
+                          onClick={() => handleOpenBookModal(book, friend.displayName || friend.username)}
                           className="catalog-card-panel p-5 space-y-3 hover:shadow-lg transition cursor-pointer flex flex-col justify-between"
                         >
                           <div className="space-y-3">

@@ -140,7 +140,7 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [isClosing, setIsClosing] = useState(false);
   const [animDone, setAnimDone] = useState(false);
   const [activeTab, setActiveTab] = useState<BookModalTab>('details');
-  const [localNotes, setLocalNotes] = useState(book?.notasPersonales || '');
+  const [localNotes, setLocalNotes] = useState(book?.resena || book?.notasPersonales || '');
   const [localQuotes, setLocalQuotes] = useState<string[]>(book?.citas || []);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [notesSavedSuccess, setNotesSavedSuccess] = useState(false);
@@ -154,12 +154,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   useEffect(() => {
     setLocalSynopsis(null);
-    setLocalNotes(book?.notasPersonales || '');
+    setLocalNotes(book?.resena || book?.notasPersonales || '');
     setLocalQuotes(book?.citas || []);
     setNewQuoteText('');
     setNewQuotePage('');
     setNotesSavedSuccess(false);
-  }, [book?.id, book?.notasPersonales, book?.citas]);
+  }, [book?.id, book?.notasPersonales, book?.resena, book?.citas]);
 
   const computedReadingTime = useMemo(() => {
     if (!book) return 'Sin calcular';
@@ -933,6 +933,22 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                             {book.progreso}
                           </span>
                         </div>
+                        {typeof book.paginaActual === 'number' && book.paginas && book.paginas > 0 && (book.progreso === '⏳ Leyendo' || book.progreso === '⏸️ Pausado') && (
+                          <div className="pt-2 border-t border-amber-900/15 dark:border-[#232D42] space-y-1">
+                            <div className="flex items-center justify-between text-[11px] text-stone-600 dark:text-slate-400 font-mono">
+                              <span>Progreso en lectura</span>
+                              <span className="font-semibold text-amber-700 dark:text-amber-400">
+                                Pág. {book.paginaActual} / {book.paginas} ({Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%)
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-amber-950/10 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+                                style={{ width: `${Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                     {recommendationReason && (
@@ -1243,6 +1259,20 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                     <span className="inline-flex items-center rounded-full border border-amber-600/35 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
                                       {book.progreso}
                                     </span>
+                                    {typeof book.paginaActual === 'number' && book.paginas && book.paginas > 0 && (book.progreso === '⏳ Leyendo' || book.progreso === '⏸️ Pausado') && (
+                                      <div className="mt-2 w-full space-y-1 text-left">
+                                        <div className="flex justify-between text-[11px] font-mono text-stone-600 dark:text-slate-400">
+                                          <span>Pág. {book.paginaActual} / {book.paginas}</span>
+                                          <span className="font-semibold text-amber-700 dark:text-amber-400">{Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-amber-950/10 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                          <div
+                                            className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+                                            style={{ width: `${Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </>
                               ) : recommendationReason ? (
