@@ -103,7 +103,7 @@ export const DashboardCardHeader: React.FC<DashboardCardHeaderProps> = ({
           <button
             type="button"
             onClick={onAction}
-            className="dashboard-card-action"
+            className="dashboard-card-action no-underline hover:underline"
             aria-label={actionAriaLabel}
           >
             <span>{actionText}</span>
@@ -112,7 +112,7 @@ export const DashboardCardHeader: React.FC<DashboardCardHeaderProps> = ({
         ) : actionHref ? (
           <a
             href={actionHref}
-            className="dashboard-card-action"
+            className="dashboard-card-action no-underline hover:underline"
             aria-label={actionAriaLabel}
           >
             <span>{actionText}</span>

@@ -255,9 +255,15 @@ html.dark .nx-streak-rc {
 .nx-streak-pr {
   height: 8px;
   border-radius: 99px;
-  background: var(--bd);
+  background: rgba(160, 115, 55, 0.22);
   margin: 0.55rem 0 0.25rem;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(60, 35, 10, 0.12);
+}
+
+html.dark .nx-streak-pr {
+  background: rgba(220, 180, 100, 0.25);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .nx-streak-pr i {
@@ -275,6 +281,7 @@ html.dark .nx-streak-rc {
 
 .nx-streak-st {
   display: grid;
+  grid-template-rows: 1fr 1fr;
   gap: 0.6rem;
 }
 
@@ -282,10 +289,10 @@ html.dark .nx-streak-rc {
   background: var(--in);
   border: 1px solid var(--bd);
   border-radius: 14px;
-  padding: 0.55rem 0.9rem;
+  padding: 0.7rem 1rem;
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 0.5rem;
   box-shadow: 0 1px 3px rgba(60, 35, 10, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
@@ -438,6 +445,11 @@ html.dark .nx-streak-cal {
   border: 1.5px dashed var(--bd);
   color: var(--mu);
   animation: none;
+}
+
+html.dark .nx-streak-s.l0 {
+  border-color: rgba(220, 180, 100, 0.35);
+  color: #9AA3B5;
 }
 
 .nx-streak-s.l0::after {

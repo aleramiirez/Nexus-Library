@@ -225,14 +225,15 @@ html.dark .dashboard-card-subtitle {
   margin: -0.25rem -0.5rem;
   border-radius: 6px;
   cursor: pointer;
-  text-decoration: none;
+  text-decoration: none !important;
   transition: color 0.15s ease, text-decoration 0.15s ease;
   margin-left: auto;
 }
 
-.dashboard-card-action:hover {
+.dashboard-card-action:hover,
+.dashboard-card-action:focus-visible {
   color: #78350f; /* amber-900 */
-  text-decoration: underline;
+  text-decoration: underline !important;
 }
 
 .dashboard-card-action:focus-visible {
@@ -244,7 +245,8 @@ html.dark .dashboard-card-action {
   color: #fbbf24; /* amber-400 */
 }
 
-html.dark .dashboard-card-action:hover {
+html.dark .dashboard-card-action:hover,
+html.dark .dashboard-card-action:focus-visible {
   color: #fde68a; /* amber-300 */
 }
 
