@@ -9,6 +9,8 @@ import {
   BookOpen
 } from 'lucide-react';
 import { Book, Saga } from '../../types/models';
+import { DashboardCard, DashboardCardHeader } from '../DashboardCard';
+import '../../dashboard-panels.css';
 
 interface SettingsBackupTabProps {
   books: Book[];
@@ -31,17 +33,12 @@ export const SettingsBackupTab: React.FC<SettingsBackupTabProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-6">
-        <div>
-          <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-            <HardDrive className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Copias de Seguridad y
-            Portabilidad
-          </h2>
-          <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Tus lecturas te pertenecen. Puedes guardar una copia completa de seguridad para conservarla
-            en tu ordenador o exportar tus libros para abrirlos en una hoja de cálculo.
-          </p>
-        </div>
+      <DashboardCard variant="base" className="space-y-6">
+        <DashboardCardHeader
+          icon={<HardDrive className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Copias de Seguridad y Portabilidad"
+          subtitle="Tus lecturas te pertenecen. Puedes guardar una copia completa de seguridad para conservarla en tu ordenador o exportar tus libros para abrirlos en una hoja de cálculo."
+        />
 
         {onOpenEpubImport && (
           <div className="rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-br from-amber-500/15 via-[#f4ebd6] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -172,7 +169,7 @@ export const SettingsBackupTab: React.FC<SettingsBackupTabProps> = ({
             </span>
           </div>
         </div>
-      </div>
+      </DashboardCard>
     </div>
   );
 };

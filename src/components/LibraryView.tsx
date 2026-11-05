@@ -38,6 +38,8 @@ import { LibrarySelect, LibrarySelectGroup } from './LibrarySelect';
 import { BookCard } from './BookCard';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
+import { DashboardCard, DashboardCardHeader } from './DashboardCard';
+import '../dashboard-panels.css';
 
 export interface LibraryViewProps {
   activeSection: NavigationSection;
@@ -400,7 +402,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       </div>
 
       {showFilters && (
-        <div className="rounded-2xl editorial-card-surface p-4 space-y-3">
+        <DashboardCard variant="base" className="space-y-4">
+          <DashboardCardHeader
+            icon={<SlidersHorizontal className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+            title="Filtros del Catálogo"
+            subtitle="Clasifica por género, subgénero, saga, estado de lectura y ordenación"
+            actionText="Limpiar filtros"
+            onAction={() => setFilters(initialFilters)}
+          />
           {/* Fila 1: Filtros de Clasificación Temática */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
@@ -528,7 +537,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </DashboardCard>
       )}
 
       {isSampleActive && (
@@ -637,7 +646,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           ))}
         </div>
       ) : viewMode === 'list' ? (
-        <div className="rounded-2xl editorial-card-surface overflow-hidden">
+        <div className="rounded-2xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 shadow-md overflow-hidden relative">
           <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
             {filteredBooks.map((book) => (
               <li
@@ -676,7 +685,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </ul>
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#f0e5cc] dark:bg-[#101520] text-stone-700 dark:text-slate-400 border-b border-amber-900/20 dark:border-[#242E42]">
+              <thead className="bg-[#ebdcb9] dark:bg-[#0e131d] text-stone-800 dark:text-slate-300 border-b border-amber-900/20 dark:border-amber-400/15 font-serif font-bold text-xs">
                 <tr>
                   <th className="p-3">Portada</th>
                   <th className="p-3">Título y Autor</th>

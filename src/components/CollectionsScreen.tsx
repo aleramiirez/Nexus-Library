@@ -473,7 +473,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                 </div>
               ) : (
                 /* ─── Modo Lista (Tabla idéntica a Mi Biblioteca) ─── */
-                <div className="rounded-2xl editorial-card-surface overflow-hidden">
+                <div className="rounded-2xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 shadow-md overflow-hidden relative">
                   <ul className="sm:hidden divide-y divide-amber-900/10 dark:divide-[#20293A]">
                     {activeCollectionBooks.map((book) => (
                       <li
@@ -520,7 +520,7 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
                   </ul>
                   <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-[#f0e5cc] dark:bg-[#101520] text-stone-700 dark:text-slate-400 border-b border-amber-900/20 dark:border-[#242E42]">
+                      <thead className="bg-[#ebdcb9] dark:bg-[#0e131d] text-stone-800 dark:text-slate-300 border-b border-amber-900/20 dark:border-amber-400/15 font-serif font-bold text-xs">
                         <tr>
                           <th className="p-3">Portada</th>
                           <th className="p-3">Título y Autor</th>

@@ -131,44 +131,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('library')}
-          className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
+          className="dashboard-quick-kpi"
         >
-          <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">Total de Libros</span>
-          <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.total}</p>
+          <span className="dashboard-quick-kpi-label">Total de Libros</span>
+          <p className="dashboard-quick-kpi-value">{metrics.total}</p>
         </button>
         <button
           type="button"
           onClick={() => onNavigate('shelf-reading')}
-          className="rounded-xl border border-amber-600/40 dark:border-amber-500/30 bg-amber-500/15 dark:bg-amber-500/10 p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-amber-600 dark:hover:border-amber-400 hover:shadow-[0_10px_24px_-6px_rgba(245,158,11,0.22)] transition-all duration-300"
+          className="dashboard-quick-kpi is-reading"
         >
-          <span className="text-[11px] sm:text-xs font-semibold text-amber-800 dark:text-amber-300">⏳ Leyendo</span>
-          <p className="font-serif text-xl sm:text-3xl font-bold text-amber-900 dark:text-amber-200 mt-0.5 sm:mt-1">
+          <span className="dashboard-quick-kpi-label">⏳ Leyendo</span>
+          <p className="dashboard-quick-kpi-value">
             {metrics.reading}
           </p>
         </button>
         <button
           type="button"
           onClick={() => onNavigate('shelf-unread')}
-          className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
+          className="dashboard-quick-kpi"
         >
-          <span className="text-[11px] sm:text-xs text-stone-600 dark:text-slate-400">❌ Por leer</span>
-          <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.unread}</p>
+          <span className="dashboard-quick-kpi-label">❌ Por leer</span>
+          <p className="dashboard-quick-kpi-value">{metrics.unread}</p>
         </button>
         <button
           type="button"
           onClick={() => onNavigate('shelf-paused')}
-          className="rounded-xl editorial-card-surface editorial-card-interactive p-3 sm:p-4 text-left active:scale-[0.98]"
+          className="dashboard-quick-kpi is-paused"
         >
-          <span className="text-[11px] sm:text-xs font-semibold text-rose-700 dark:text-rose-300">⏸️ Pausados</span>
-          <p className="font-serif text-xl sm:text-3xl font-bold mt-0.5 sm:mt-1">{metrics.paused}</p>
+          <span className="dashboard-quick-kpi-label">⏸️ Pausados</span>
+          <p className="dashboard-quick-kpi-value">{metrics.paused}</p>
         </button>
         <button
           type="button"
           onClick={() => onNavigate('shelf-read')}
-          className="rounded-xl border border-emerald-600/40 dark:border-emerald-500/30 bg-emerald-500/15 dark:bg-emerald-500/10 p-3 sm:p-4 text-left active:scale-[0.98] sm:hover:-translate-y-1 hover:border-emerald-600 dark:hover:border-emerald-400 hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.22)] transition-all duration-300 col-span-2 sm:col-span-1 flex sm:block items-center justify-between"
+          className="dashboard-quick-kpi is-read col-span-2 sm:col-span-1"
         >
-          <span className="text-[11px] sm:text-xs font-semibold text-emerald-800 dark:text-emerald-300">✅ Leídos</span>
-          <p className="font-serif text-xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-200 sm:mt-1">
+          <span className="dashboard-quick-kpi-label">✅ Leídos</span>
+          <p className="dashboard-quick-kpi-value">
             {metrics.read}
           </p>
         </button>

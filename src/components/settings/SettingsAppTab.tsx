@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { PwaInstallState } from '../../services/pwaInstallService';
 import { PushSubscriptionStatus } from '../../services/pushNotificationService';
+import { DashboardCard, DashboardCardHeader } from '../DashboardCard';
+import '../../dashboard-panels.css';
 
 interface SettingsAppTabProps {
   pwaState: PwaInstallState;
@@ -39,33 +41,28 @@ export const SettingsAppTab: React.FC<SettingsAppTabProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
-          <div>
-            <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-              <Smartphone className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Instalación y Aplicación
-            </h2>
-            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-              Usa Nexus Library en tu teléfono, tableta u ordenador como una app nativa independiente.
-            </p>
-          </div>
-
+      <DashboardCard variant="base" className="space-y-6">
+        <DashboardCardHeader
+          icon={<Smartphone className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Instalación y Aplicación"
+          subtitle="Usa Nexus Library en tu teléfono, tableta u ordenador como una app nativa independiente."
+        >
           {pwaState.isInstalled ? (
-            <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
+            <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto shadow-xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               Modo App Activo
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto">
+            <div className="inline-flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-600/30 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 text-xs font-semibold self-start sm:self-auto shadow-xs">
               <Globe className="w-4 h-4 text-amber-700 dark:text-amber-400" />
               Navegador Web
             </div>
           )}
-        </div>
+        </DashboardCardHeader>
 
         {/* Ventajas PWA */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+          <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-4 space-y-1.5 shadow-xs">
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
               <Sparkles className="w-4 h-4" />
             </div>
@@ -77,7 +74,7 @@ export const SettingsAppTab: React.FC<SettingsAppTabProps> = ({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+          <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-4 space-y-1.5 shadow-xs">
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
               <WifiOff className="w-4 h-4" />
             </div>
@@ -89,7 +86,7 @@ export const SettingsAppTab: React.FC<SettingsAppTabProps> = ({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 space-y-1.5">
+          <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-4 space-y-1.5 shadow-xs">
             <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
               <Flame className="w-4 h-4" />
             </div>
@@ -303,7 +300,7 @@ export const SettingsAppTab: React.FC<SettingsAppTabProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </DashboardCard>
     </div>
   );
 };

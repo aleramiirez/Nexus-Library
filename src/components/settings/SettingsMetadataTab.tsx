@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Book } from '../../types/models';
 import { BatchMetadataMode } from '../BatchMetadataModal';
+import { DashboardCard, DashboardCardHeader } from '../DashboardCard';
+import '../../dashboard-panels.css';
 
 interface SettingsMetadataTabProps {
   books: Book[];
@@ -51,21 +53,17 @@ export const SettingsMetadataTab: React.FC<SettingsMetadataTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
-        <div>
-          <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Portadas y Datos de Libros
-          </h2>
-          <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Completa automáticamente las portadas que falten y añade detalles como la sinopsis,
-            editorial, fecha de publicación e ISBN buscando en los catálogos bibliográficos oficiales.
-          </p>
-        </div>
+      <DashboardCard variant="base" className="space-y-5">
+        <DashboardCardHeader
+          icon={<Sparkles className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Portadas y Datos de Libros"
+          subtitle="Completa automáticamente las portadas que falten y añade detalles como la sinopsis, editorial, fecha de publicación e ISBN buscando en los catálogos bibliográficos oficiales."
+        />
 
         {/* Grid con las dos tarjetas asistidas: Portadas y Sinopsis */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Tarjeta 1: Portadas de Libros */}
-          <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col justify-between gap-4 shadow-sm">
+          <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-5 flex flex-col justify-between gap-4 shadow-xs">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
@@ -116,7 +114,7 @@ export const SettingsMetadataTab: React.FC<SettingsMetadataTabProps> = ({
           </div>
 
           {/* Tarjeta 2: Sinopsis & Argumentos */}
-          <div className="rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#fffcf5] dark:bg-[#0D1017] p-5 flex flex-col justify-between gap-4 shadow-sm">
+          <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/90 p-5 flex flex-col justify-between gap-4 shadow-xs">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-stone-600 dark:text-slate-400 flex items-center gap-1.5 font-semibold">
@@ -193,7 +191,7 @@ export const SettingsMetadataTab: React.FC<SettingsMetadataTabProps> = ({
         )}
 
         {/* Blindaje de almacenamiento en el navegador */}
-        <div className="rounded-xl border border-amber-900/15 dark:border-[#242E42] bg-[#f4ebd6]/70 dark:bg-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="rounded-xl border border-amber-900/20 dark:border-amber-400/20 bg-amber-950/5 dark:bg-[#121824]/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
               <ShieldCheck className="w-5 h-5" />
@@ -220,7 +218,7 @@ export const SettingsMetadataTab: React.FC<SettingsMetadataTabProps> = ({
             </button>
           )}
         </div>
-      </div>
+      </DashboardCard>
     </div>
   );
 };

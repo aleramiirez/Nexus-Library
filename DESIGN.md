@@ -161,6 +161,9 @@ La tridimensionalidad no se simula con sombras planas de software genérico, sin
   - Cifra protagonista en `Cormorant Garamond` de 36px/42px con `tabular-nums` en tono carmesí ceremonial (`#8E2434` / dark `#C2485A`).
   - Cabecera con etiqueta en mayúsculas seminegrita en ámbar cálido (`text-amber-900` / dark `text-amber-400`) e icono en el extremo opuesto.
   - Elevación interactiva suave al pasar el ratón (`translateY(-2px)` con resplandor dorado sutil).
+- **`.dashboard-quick-kpi` (Botones de Métrica Rápida Superior):** Fila de accesos directos bajo el saludo en el inicio:
+  - Textura de papel, marco interior biselado a 4px (radio 9px), cifras tabulares en Cormorant Garamond y estados semánticos discretos (`.is-reading`, `.is-unread`, `.is-paused`, `.is-read`).
+- **`.editorial-card-surface`:** Unificada con los tokens `--dashboard-card-*` (eliminado el glassmorphism traslúcido plano en favor de textura de pergamino cálido y bordes de latón).
 - **`.nx-heatmap-w` (Mapa Anual de Calor 365 Días):** Migrado a las variables y proporciones de `--dashboard-card-*`:
   - Contenedor con radio de 18px, borde exterior y marco interior fino biselado `::before` a 6px.
   - Cajas de estadísticas interiores (`.nx-heatmap-sx`) y retícula (`.nx-heatmap-cal`) con biseles interiores iluminados.

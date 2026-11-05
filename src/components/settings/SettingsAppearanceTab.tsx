@@ -13,6 +13,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { soundService, SoundPreferences } from '../../services/soundService';
+import { DashboardCard, DashboardCardHeader } from '../DashboardCard';
+import '../../dashboard-panels.css';
 
 interface SettingsAppearanceTabProps {
   darkMode: boolean;
@@ -42,18 +44,12 @@ export const SettingsAppearanceTab: React.FC<SettingsAppearanceTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
-        <div>
-          <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-            <Palette className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Tema Visual de la
-            Biblioteca
-          </h2>
-          <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Elige la estética en la que prefieres disfrutar de tu colección. Nexus Library está
-            diseñado especialmente para destacar en el tema claro de papel crema clásico, evocando
-            las páginas de un libro tradicional.
-          </p>
-        </div>
+      <DashboardCard variant="base" className="space-y-5">
+        <DashboardCardHeader
+          icon={<Palette className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Tema Visual de la Biblioteca"
+          subtitle="Elige la estética en la que prefieres disfrutar de tu colección. Nexus Library está diseñado especialmente para destacar en el tema claro de papel crema clásico, evocando las páginas de un libro tradicional."
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           {/* Opción Tema Claro */}
@@ -178,22 +174,15 @@ export const SettingsAppearanceTab: React.FC<SettingsAppearanceTabProps> = ({
             tu preferencia se recordará en este navegador para tus próximas visitas.
           </p>
         </div>
-      </div>
+      </DashboardCard>
 
       {/* Card: Efectos Sonoros y Ceremonias Bibliotecarias */}
-      <div className="rounded-2xl editorial-card-surface p-5 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#222B3C] pb-4">
-          <div>
-            <h2 className="font-serif text-xl font-bold flex items-center gap-2">
-              <Volume2 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              Efectos Sonoros y Ceremonias Bibliotecarias
-            </h2>
-            <p className="text-xs text-stone-600 dark:text-slate-400 mt-1 leading-relaxed">
-              Microinteracciones sonoras táctiles sintetizadas en tiempo real (0 latencia, sin descargas).
-              Añaden la textura acústica de una biblioteca histórica al completar obras y hojear páginas.
-            </p>
-          </div>
-
+      <DashboardCard variant="base" className="space-y-5">
+        <DashboardCardHeader
+          icon={<Volume2 className="w-5 h-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />}
+          title="Efectos Sonoros y Ceremonias Bibliotecarias"
+          subtitle="Microinteracciones sonoras táctiles sintetizadas en tiempo real (0 latencia, sin descargas). Añaden la textura acústica de una biblioteca histórica al completar obras y hojear páginas."
+        >
           {/* Interruptor maestro */}
           <button
             type="button"
@@ -213,7 +202,7 @@ export const SettingsAppearanceTab: React.FC<SettingsAppearanceTabProps> = ({
               {soundPrefs.enabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </span>
           </button>
-        </div>
+        </DashboardCardHeader>
 
         {/* Selector de volumen y ajustes */}
         {soundPrefs.enabled && (
@@ -386,7 +375,7 @@ export const SettingsAppearanceTab: React.FC<SettingsAppearanceTabProps> = ({
             </div>
           </div>
         )}
-      </div>
+      </DashboardCard>
     </div>
   );
 };
