@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft, Layers } from 'lucide-react';
 import { Book, Saga } from '../types/models';
 import {
   SagaVitrine,
@@ -71,6 +71,7 @@ export interface SagasScreenProps {
   onDeleteSaga: (saga: Saga) => void;
   onAssignBookToSaga: (bookId: string, saga: Saga, volume: number | null) => Promise<unknown>;
   onError?: (msg: string) => void;
+  onNavigate?: (section: any) => void;
 }
 
 export const SagasScreen: React.FC<SagasScreenProps> = ({
@@ -81,7 +82,8 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
   onSaveSaga,
   onDeleteSaga,
   onAssignBookToSaga,
-  onError
+  onError,
+  onNavigate
 }) => {
   const [sagaFormOpen, setSagaFormOpen] = useState(false);
   const [editingSaga, setEditingSaga] = useState<Saga | null>(null);
@@ -376,6 +378,19 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
 
   return (
     <div className="space-y-6">
+      {onNavigate && (
+        <div>
+          <button
+            type="button"
+            onClick={() => onNavigate('library')}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-200 transition cursor-pointer -mb-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver a Mi Biblioteca</span>
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
         <div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold">Colección de Sagas</h1>

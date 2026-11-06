@@ -15,8 +15,10 @@ import {
   X,
   Sparkles,
   Users,
-  ScanBarcode
+  ScanBarcode,
+  FileUp
 } from 'lucide-react';
+import { UserAvatar } from './components/UserAvatar';
 import { User } from '@supabase/supabase-js';
 import { triggerBackgroundFallbackNotification, syncPushSubscriptionWithDatabase } from './services/pushNotificationService';
 import {
@@ -300,6 +302,8 @@ export const App: React.FC = () => {
     setIsFirstLoginModalOpen,
     isAnyLibraryModalOpen
   } = modals;
+
+  const [isMobileQuickAddOpen, setIsMobileQuickAddOpen] = useState(false);
 
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -1334,14 +1338,14 @@ export const App: React.FC = () => {
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Abrir índice y menú lateral"
-            className="w-9 h-9 -ml-1 inline-flex items-center justify-center rounded-xl text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 active:scale-95 transition"
+            className="w-9 h-9 -ml-1 inline-flex items-center justify-center rounded-xl text-stone-700 dark:text-slate-200 hover:bg-amber-900/10 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
           <button
             type="button"
             onClick={() => handleNavigate('dashboard')}
-            className="flex items-center gap-2 min-w-0 text-left"
+            className="flex items-center gap-2 min-w-0 text-left cursor-pointer"
           >
             <img
               src="/logo.svg"
@@ -1353,52 +1357,60 @@ export const App: React.FC = () => {
             </span>
           </button>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Botón táctil para Añadir / Escanear / Importar */}
           <button
             type="button"
-            onClick={handleOpenCreateBook}
-            title="Añadir libro"
-            aria-label="Añadir libro"
-            className="w-9 h-9 inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold shadow-sm transition shrink-0 cursor-pointer"
+            onClick={() => setIsMobileQuickAddOpen(true)}
+            title="Añadir libro o escanear ISBN"
+            aria-label="Añadir libro o escanear ISBN"
+            className="h-9 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold shadow-xs transition shrink-0 cursor-pointer text-xs"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span className="hidden xs:inline font-serif">Añadir</span>
           </button>
-          <button
-            type="button"
-            onClick={modals.handleOpenBarcodeScanner}
-            title="Escanear código de barras (ISBN)"
-            aria-label="Escanear código de barras (ISBN)"
-            className="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition shrink-0 cursor-pointer"
-          >
-            <ScanBarcode className="w-4 h-4" />
-          </button>
+
+          {/* Buzón Literario */}
           <button
             type="button"
             onClick={() => setIsInboxOpen(true)}
-            className="relative w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition"
+            className="relative w-9 h-9 inline-flex items-center justify-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 active:scale-95 transition cursor-pointer"
             title="Buzón Literario"
             aria-label="Buzón Literario"
           >
             <Mail className="w-4 h-4" />
             {inboxUnreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] flex items-center justify-center shadow-sm">
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-bold text-[10px] flex items-center justify-center shadow-xs animate-pulse">
                 {inboxUnreadCount > 9 ? '9+' : inboxUnreadCount}
               </span>
             )}
           </button>
+
+          {/* Carnet & Perfil del Lector con Marco de la Orden */}
           <button
             type="button"
             onClick={() => handleNavigate('settings')}
-            aria-label="Ajustes y Perfil"
-            title="Ajustes y Perfil"
+            aria-label="Mi Carnet y Perfil de Lector"
+            title="Mi Carnet y Perfil de Lector"
             className={
-              'w-9 h-9 inline-flex items-center justify-center rounded-xl border transition active:scale-95 ' +
+              'relative p-0.5 rounded-full transition active:scale-95 cursor-pointer ' +
               (activeSection === 'settings'
-                ? 'border-amber-600 bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold'
-                : 'border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea]/80 dark:bg-[#151C28] text-stone-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400')
+                ? 'ring-2 ring-amber-500 shadow-sm'
+                : 'hover:ring-2 hover:ring-amber-500/50')
             }
           >
-            <Settings className="w-4 h-4" />
+            <UserAvatar
+              avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
+              displayName={currentUserProfile?.displayName || (!currentUser ? guestAlias : null) || 'Lector'}
+              username={currentUserProfile?.username}
+              frameRankId={currentUserProfile?.orderFrame}
+              level={readerLevelInfo?.level}
+              rank={readerLevelInfo?.rank}
+              size="sm"
+              shape="circle"
+              isCurrentUser={true}
+            />
           </button>
         </div>
       </header>
@@ -1535,6 +1547,7 @@ export const App: React.FC = () => {
               onDeleteSaga={setSagaToDelete}
               onAssignBookToSaga={assignBookToSagaRecord}
               onError={setGlobalError}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -1617,7 +1630,17 @@ export const App: React.FC = () => {
             id: 'library' as NavigationSection,
             label: 'Biblioteca',
             icon: Library,
-            isActive: activeSection === 'library' || activeSection === 'collections' || activeSection.startsWith('shelf-')
+            isActive:
+              activeSection === 'library' ||
+              activeSection === 'collections' ||
+              activeSection.startsWith('shelf-') ||
+              activeSection === 'sagas'
+          },
+          {
+            id: 'community' as NavigationSection,
+            label: 'Comunidad',
+            icon: Users,
+            isActive: activeSection === 'community'
           },
           {
             id: 'discover' as NavigationSection,
@@ -1626,14 +1649,8 @@ export const App: React.FC = () => {
             isActive: activeSection === 'discover'
           },
           {
-            id: 'sagas' as NavigationSection,
-            label: 'Sagas',
-            icon: Layers,
-            isActive: activeSection === 'sagas'
-          },
-          {
             id: 'stats' as NavigationSection,
-            label: 'Reto & Stats',
+            label: 'Reto',
             icon: Trophy,
             isActive: activeSection === 'stats'
           }
@@ -1645,7 +1662,7 @@ export const App: React.FC = () => {
               type="button"
               onClick={() => handleNavigate(item.id)}
               className={
-                'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition active:scale-95 ' +
+                'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition active:scale-95 cursor-pointer ' +
                 (item.isActive
                   ? 'text-amber-800 dark:text-amber-400 font-bold'
                   : 'text-stone-500 dark:text-slate-400 hover:text-stone-800 dark:hover:text-slate-200')
@@ -1653,19 +1670,141 @@ export const App: React.FC = () => {
             >
               <span
                 className={
-                  'inline-flex items-center justify-center rounded-full px-3 py-1 transition-all ' +
+                  'inline-flex items-center justify-center rounded-full px-3 py-1 transition-all relative ' +
                   (item.isActive
                     ? 'bg-amber-600/15 dark:bg-amber-500/20 border border-amber-600/30 text-amber-900 dark:text-amber-300 shadow-xs'
                     : 'bg-transparent border border-transparent')
                 }
               >
                 <Icon className="w-4 h-4" />
+                {item.id === 'community' && inboxUnreadCount > 0 && (
+                  <span className="absolute top-0.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                )}
               </span>
-              <span className="leading-tight tracking-tight">{item.label}</span>
+              <span className="leading-tight tracking-tight text-[11px]">{item.label}</span>
             </button>
           );
         })}
       </nav>
+
+      {/* Modal / Action Sheet de Acceso Rápido para Añadir Obra en Móvil */}
+      {isMobileQuickAddOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-quick-add-title"
+          >
+            <div
+              aria-hidden="true"
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs cursor-default"
+              onClick={() => setIsMobileQuickAddOpen(false)}
+            />
+            <div
+              className="catalog-card-panel relative w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom duration-200 z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="catalog-brass-tab">Incorporar Obra a la Biblioteca</div>
+
+              {/* Indicador táctil superior */}
+              <div className="w-12 h-1 rounded-full bg-amber-900/20 dark:bg-amber-400/20 mx-auto -mt-1 mb-2 sm:hidden" />
+
+              <div className="flex items-center justify-between pb-2 border-b border-amber-900/15 dark:border-[#242E42]">
+                <div>
+                  <h3 id="mobile-quick-add-title" className="font-serif text-lg font-bold text-stone-900 dark:text-slate-100">
+                    Añadir a tu Colección
+                  </h3>
+                  <p className="text-xs text-stone-600 dark:text-slate-400">
+                    Selecciona cómo deseas catalogar tu próxima obra.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileQuickAddOpen(false)}
+                  className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-amber-900/10 dark:hover:bg-slate-800 transition cursor-pointer"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Opción 1: Escanear código de barras */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileQuickAddOpen(false);
+                    modals.handleOpenBarcodeScanner();
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121824] hover:border-amber-500 hover:bg-amber-500/10 transition text-left group cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                    <ScanBarcode className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block">
+                      Escanear Código de Barras (ISBN)
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 block mt-0.5 leading-tight">
+                      Apunta la cámara al dorso del libro para obtener portada y datos al instante.
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">📷</span>
+                </button>
+
+                {/* Opción 2: Añadir manualmente */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileQuickAddOpen(false);
+                    handleOpenCreateBook();
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121824] hover:border-amber-500 hover:bg-amber-500/10 transition text-left group cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                    <Plus className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block">
+                      Añadir Obra Manualmente
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 block mt-0.5 leading-tight">
+                      Escribe título, autor o busca en el catálogo de Google Books y OpenLibrary.
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">✍️</span>
+                </button>
+
+                {/* Opción 3: Importar EPUB */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileQuickAddOpen(false);
+                    setInitialEpubFiles(undefined);
+                    setIsEpubImportOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-amber-900/20 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#121824] hover:border-amber-500 hover:bg-amber-500/10 transition text-left group cursor-pointer"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                    <FileUp className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block">
+                      Importar Archivo EPUB / Backup
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-slate-400 block mt-0.5 leading-tight">
+                      Carga un libro digital desde tu teléfono o restaura una copia de seguridad.
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">📥</span>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       <AppModals
         modals={modals}

@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Sparkles,
   Loader2,
-  ScanBarcode
+  ScanBarcode,
+  Layers
 } from 'lucide-react';
 import {
   Book,
@@ -346,6 +347,21 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               }
             >
               {collectionsCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate('sagas')}
+          className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]"
+        >
+          <Layers className="w-4 h-4 shrink-0" />
+          <span className="sm:hidden whitespace-nowrap">Sagas</span>
+          <span className="hidden sm:inline whitespace-nowrap">Series & Sagas</span>
+          {sagas.length > 0 && (
+            <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 bg-amber-500/20 text-amber-800 dark:text-amber-300">
+              {sagas.length}
             </span>
           )}
         </button>

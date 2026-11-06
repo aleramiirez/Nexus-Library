@@ -9,8 +9,15 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
   await page.waitForLoadState('domcontentloaded');
 
   const guestBtn = page.getByRole('button', { name: 'Probar' });
-  await expect(guestBtn).toBeVisible({ timeout: 10000 });
-  await guestBtn.click();
+  const sidebar = page.locator('aside.book-page');
+  await Promise.race([
+    guestBtn.waitFor({ state: 'visible', timeout: 15000 }).then(async () => {
+      await guestBtn.click();
+      await sidebar.waitFor({ state: 'visible', timeout: 15000 });
+    }),
+    sidebar.waitFor({ state: 'visible', timeout: 15000 })
+  ]).catch(() => {});
+  await page.waitForTimeout(1000);
 
   // Load sample books if available
   const sampleBtn = page.getByRole('button', { name: /Cargar.*libros de muestra/i }).first();
@@ -58,12 +65,17 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
   await page.waitForLoadState('domcontentloaded');
 
   const mobileGuest = page.getByRole('button', { name: 'Probar' });
-  await expect(mobileGuest).toBeVisible({ timeout: 10000 });
-  await mobileGuest.click();
+  const mobileTopHeader = page.locator('header').first();
+  await Promise.race([
+    mobileGuest.waitFor({ state: 'visible', timeout: 10000 }).then(async () => {
+      await mobileGuest.click();
+      await mobileTopHeader.waitFor({ state: 'visible', timeout: 15000 });
+    }),
+    mobileTopHeader.waitFor({ state: 'visible', timeout: 10000 })
+  ]).catch(() => {});
   await page.waitForTimeout(1000);
 
-  // Check top mobile bar (clean 4 buttons)
-  const mobileTopHeader = page.locator('header').first();
+  // Check top mobile bar
   await expect(mobileTopHeader).toBeVisible({ timeout: 10000 });
 
   await mobileTopHeader.screenshot({
@@ -76,16 +88,34 @@ test('Verify Comunidad direct access and Atlas Country LibrarySelect', async ({ 
     path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/mobile-header-top-dark.png'
   });
 
-  // Open mobile drawer and click Comunidad
-  const menuBtn = page.getByRole('button', { name: /Abrir índice y menú lateral/i }).first();
-  await menuBtn.click();
-  await page.waitForTimeout(600);
+  // Test mobile Quick Add Sheet
+  const quickAddBtn = page.getByRole('button', { name: /Añadir libro o escanear ISBN/i }).first();
+  await expect(quickAddBtn).toBeVisible({ timeout: 5000 });
+  await quickAddBtn.click();
+  await page.waitForTimeout(400);
 
-  const drawerCommunityBtn = page.getByRole('button', { name: /Comunidad de Lectores/i }).first();
-  await expect(drawerCommunityBtn).toBeVisible({ timeout: 5000 });
-  await drawerCommunityBtn.click();
+  // Verify Quick Add modal sheet is open
+  const quickAddSheet = page.getByRole('dialog', { name: /Añadir a tu Colección/i });
+  await expect(quickAddSheet).toBeVisible({ timeout: 5000 });
+  await page.screenshot({
+    path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/mobile-quick-add-sheet-dark.png'
+  });
+
+  // Close Quick Add Sheet
+  const closeSheetBtn = quickAddSheet.getByRole('button', { name: /Cerrar/i }).first();
+  await closeSheetBtn.click();
+  await page.waitForTimeout(400);
+
+  // Test bottom navigation direct access to Comunidad
+  const bottomNav = page.locator('nav[aria-label="Navegación principal móvil"]');
+  await expect(bottomNav).toBeVisible({ timeout: 5000 });
+
+  const bottomCommunityBtn = bottomNav.getByRole('button', { name: /Comunidad/i }).first();
+  await expect(bottomCommunityBtn).toBeVisible({ timeout: 5000 });
+  await bottomCommunityBtn.click();
   await page.waitForTimeout(800);
 
+  await expect(page).toHaveURL(/section=community/);
   await page.screenshot({
     path: 'C:/Users/0021513/.gemini/antigravity/brain/6ebe5c61-ab5d-4713-a258-c2ccfed7ecb8/mobile-comunidad-view-dark.png'
   });

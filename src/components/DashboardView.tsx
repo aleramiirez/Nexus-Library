@@ -1,5 +1,5 @@
 import React from 'react';
-import { Library, Compass } from 'lucide-react';
+import { Library, Compass, Users } from 'lucide-react';
 import { Book, Saga, UserProfile } from '../types/models';
 import type { User } from '@supabase/supabase-js';
 import { NavigationSection } from './BookSidebar';
@@ -103,16 +103,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('library')}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-black/50 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-lg shadow-black/50 transition cursor-pointer"
           >
             <Library className="w-4 h-4" /> Ver Mi Biblioteca
           </button>
           <button
             type="button"
-            onClick={() => onNavigate('discover')}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition"
+            onClick={() => onNavigate('community')}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300/60 dark:border-amber-400/50 bg-[#1e130a]/70 dark:bg-[#0B0E14]/75 hover:bg-amber-500/25 dark:hover:bg-amber-500/20 backdrop-blur-sm text-amber-100 dark:text-amber-200 font-semibold px-4 py-2.5 text-xs transition cursor-pointer"
           >
-            <Compass className="w-4 h-4" /> Explorar y Descubrir
+            <Users className="w-4 h-4" /> Comunidad de Lectores
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('discover')}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 dark:border-amber-400/30 bg-[#1e130a]/50 dark:bg-[#0B0E14]/50 hover:bg-amber-500/20 dark:hover:bg-amber-500/15 backdrop-blur-sm text-amber-200/90 dark:text-amber-300/90 font-medium px-3.5 py-2.5 text-xs transition cursor-pointer"
+          >
+            <Compass className="w-4 h-4" /> Descubrir
           </button>
         </div>
       </div>
