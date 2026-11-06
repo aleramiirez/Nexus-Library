@@ -24,10 +24,14 @@ test.describe('Sagas: Búsqueda interactiva al asignar libro', () => {
     await page.getByRole('button', { name: /Añadir a mi biblioteca/i }).click();
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
 
-    // 2. Navegar a la sección de Sagas
-    const sagasNavBtn = page.getByRole('button', { name: 'Sagas' }).first();
-    await expect(sagasNavBtn).toBeVisible({ timeout: 10000 });
-    await sagasNavBtn.click();
+    // 2. Navegar a Mi Biblioteca y abrir la pestaña de Sagas
+    const libraryNavBtn = page.getByRole('button', { name: /Mi Biblioteca/i }).first();
+    await expect(libraryNavBtn).toBeVisible({ timeout: 10000 });
+    await libraryNavBtn.click();
+
+    const sagasTabBtn = page.locator('main').getByRole('button', { name: /Sagas/i }).first();
+    await expect(sagasTabBtn).toBeVisible({ timeout: 10000 });
+    await sagasTabBtn.click();
 
     // 3. Crear una nueva saga
     const createSagaBtn = page.getByRole('button', { name: /Nueva Saga/i }).first();

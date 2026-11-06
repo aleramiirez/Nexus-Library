@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Library,
   Compass,
-  Layers,
   BarChart3,
   Trophy,
   Settings,
@@ -140,7 +139,6 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
   onLeaveGuestMode,
   metrics,
   collectionsCount = 0,
-  sagasCount,
   hasUser,
   userEmail,
   userDisplayName,
@@ -322,7 +320,11 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               label="Mi Biblioteca"
               icon={Library}
               count={metrics.total}
-              active={activeSection === 'library'}
+              active={
+                activeSection === 'library' ||
+                activeSection === 'collections' ||
+                activeSection === 'sagas'
+              }
               onSelect={handleSelectSection}
             />
             <NavItem
@@ -378,15 +380,7 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
               onSelect={handleSelectSection}
             />
 
-            <Chapter>Series y Análisis</Chapter>
-            <NavItem
-              id="sagas"
-              label="Sagas"
-              icon={Layers}
-              count={sagasCount}
-              active={activeSection === 'sagas'}
-              onSelect={handleSelectSection}
-            />
+            <Chapter>Metas y Análisis</Chapter>
             <NavItem
               id="stats"
               label="Reto & Estadísticas"
