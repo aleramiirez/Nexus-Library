@@ -378,19 +378,6 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
 
   return (
     <div className="space-y-6">
-      {onNavigate && (
-        <div>
-          <button
-            type="button"
-            onClick={() => onNavigate('library')}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-200 transition cursor-pointer -mb-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver a Mi Biblioteca</span>
-          </button>
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-4">
         <div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold">Colección de Sagas</h1>

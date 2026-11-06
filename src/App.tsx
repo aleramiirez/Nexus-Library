@@ -1456,12 +1456,17 @@ export const App: React.FC = () => {
             />
           )}
 
-          {(activeSection === 'library' || activeSection === 'collections' || activeSection.startsWith('shelf-')) && (
+          {(activeSection === 'library' || activeSection === 'collections' || activeSection === 'sagas' || activeSection.startsWith('shelf-')) && (
             <LibraryView
               activeSection={activeSection}
               books={books}
               filteredBooks={filteredBooks}
               sagas={sagas}
+              sagasWithBooks={sagasWithBooks}
+              onSaveSaga={upsertSaga}
+              onDeleteSaga={setSagaToDelete}
+              onAssignBookToSaga={assignBookToSagaRecord}
+              onSagasError={setGlobalError}
               filters={filters}
               setFilters={setFilters}
               showFilters={showFilters}
@@ -1535,20 +1540,6 @@ export const App: React.FC = () => {
                 onOpenBookDetail={handleOpenCardDetail}
               />
             </React.Suspense>
-          )}
-
-          {activeSection === 'sagas' && (
-            <SagasScreen
-              sagasWithBooks={sagasWithBooks}
-              books={books}
-              detailBookId={detailBookId}
-              onOpenBookDetail={handleOpenBookDetail}
-              onSaveSaga={upsertSaga}
-              onDeleteSaga={setSagaToDelete}
-              onAssignBookToSaga={assignBookToSagaRecord}
-              onError={setGlobalError}
-              onNavigate={handleNavigate}
-            />
           )}
 
           {activeSection === 'stats' && (

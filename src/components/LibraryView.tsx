@@ -43,10 +43,15 @@ import { BookCard } from './BookCard';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { DashboardCard, DashboardCardHeader } from './DashboardCard';
+import type { SagaWithBooksItem } from './SagasScreen';
 import '../dashboard-panels.css';
 
 const CollectionsScreen = React.lazy(() =>
   import('./CollectionsScreen').then((m) => ({ default: m.CollectionsScreen }))
+);
+
+const SagasScreen = React.lazy(() =>
+  import('./SagasScreen').then((m) => ({ default: m.SagasScreen }))
 );
 
 export interface LibraryViewProps {
@@ -54,6 +59,11 @@ export interface LibraryViewProps {
   books: Book[];
   filteredBooks: Book[];
   sagas: Saga[];
+  sagasWithBooks?: SagaWithBooksItem[];
+  onSaveSaga?: (name: string, description: string, sagaId?: string) => Promise<unknown>;
+  onDeleteSaga?: (saga: Saga) => void;
+  onAssignBookToSaga?: (bookId: string, saga: Saga, volume: number | null) => Promise<unknown>;
+  onSagasError?: (msg: string) => void;
   filters: LibraryFilters;
   setFilters: React.Dispatch<React.SetStateAction<LibraryFilters>>;
   showFilters: boolean;
@@ -95,6 +105,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   books,
   filteredBooks,
   sagas,
+  sagasWithBooks,
+  onSaveSaga,
+  onDeleteSaga,
+  onAssignBookToSaga,
+  onSagasError,
   filters,
   setFilters,
   showFilters,
@@ -124,14 +139,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onKeepSampleBooks,
   onOpenOracle
 }) => {
-  const [libraryTab, setLibraryTab] = useState<'books' | 'collections'>(() => {
+  const [libraryTab, setLibraryTab] = useState<'books' | 'collections' | 'sagas'>(() => {
     if (activeSection === 'collections') return 'collections';
+    if (activeSection === 'sagas') return 'sagas';
     if (typeof window !== 'undefined') {
       try {
         const urlTab = new URLSearchParams(window.location.search).get('tab');
-        if (urlTab === 'collections' || urlTab === 'books') return urlTab;
+        if (urlTab === 'collections' || urlTab === 'books' || urlTab === 'sagas') return urlTab;
         const stored = sessionStorage.getItem('nexus_library_tab');
-        if (stored === 'collections' || stored === 'books') return stored as 'books' | 'collections';
+        if (stored === 'collections' || stored === 'books' || stored === 'sagas') return stored as any;
       } catch {
         // ignorar
       }
@@ -142,12 +158,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   React.useEffect(() => {
     if (activeSection === 'collections') {
       setLibraryTab('collections');
+    } else if (activeSection === 'sagas') {
+      setLibraryTab('sagas');
     }
   }, [activeSection]);
 
-  const handleLibraryTabChange = (tab: 'books' | 'collections') => {
+  const handleLibraryTabChange = (tab: 'books' | 'collections' | 'sagas') => {
     setLibraryTab(tab);
-    if (tab === 'books' && activeSection === 'collections') {
+    if (tab === 'books' && (activeSection === 'collections' || activeSection === 'sagas')) {
       onNavigate('library');
     }
     try {
@@ -155,6 +173,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       const url = new URL(window.location.href);
       if (tab === 'collections') {
         url.searchParams.set('tab', 'collections');
+      } else if (tab === 'sagas') {
+        url.searchParams.set('tab', 'sagas');
       } else {
         url.searchParams.delete('tab');
       }
@@ -163,6 +183,45 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       // ignorar
     }
   };
+
+  const computedSagasWithBooks: SagaWithBooksItem[] = React.useMemo(() => {
+    if (sagasWithBooks) return sagasWithBooks;
+    const booksBySaga = new Map<string, Book[]>();
+    for (const b of books) {
+      if (b.sagaId) {
+        let list = booksBySaga.get(b.sagaId);
+        if (!list) {
+          list = [];
+          booksBySaga.set(b.sagaId, list);
+        }
+        list.push(b);
+      }
+    }
+
+    return sagas
+      .map((saga) => {
+        const sagaBooks = (booksBySaga.get(saga.id) || [])
+          .slice()
+          .sort((a, b) => (a.volumen ?? 999) - (b.volumen ?? 999));
+        let readCount = 0;
+        for (const b of sagaBooks) {
+          if (b.progreso === '✅ Leído') readCount++;
+        }
+        const pendingCount = sagaBooks.length - readCount;
+        const progressPercent =
+          sagaBooks.length > 0 ? Math.round((readCount / sagaBooks.length) * 100) : 0;
+
+        return {
+          saga,
+          books: sagaBooks,
+          registeredCount: sagaBooks.length,
+          readCount,
+          pendingCount,
+          progressPercent
+        };
+      })
+      .sort((a, b) => a.saga.nombre.localeCompare(b.saga.nombre, 'es'));
+  }, [sagasWithBooks, sagas, books]);
 
   const [viewMode, setViewMode] = useState<LibraryViewMode>(() => {
     if (typeof window !== 'undefined') {
@@ -297,13 +356,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* ─── Pestañas Principales: Todos los Libros vs Mis Colecciones ─── */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
+      {/* ─── Pestañas Principales: Libros vs Colecciones vs Sagas ─── */}
+      <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
         <button
           type="button"
           onClick={() => handleLibraryTabChange('books')}
           className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (libraryTab === 'books'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
@@ -328,7 +387,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           type="button"
           onClick={() => handleLibraryTabChange('collections')}
           className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
             (libraryTab === 'collections'
               ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
               : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
@@ -353,14 +412,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
         <button
           type="button"
-          onClick={() => onNavigate('sagas')}
-          className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]"
+          onClick={() => handleLibraryTabChange('sagas')}
+          className={
+            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
+            (libraryTab === 'sagas'
+              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+          }
         >
           <Layers className="w-4 h-4 shrink-0" />
           <span className="sm:hidden whitespace-nowrap">Sagas</span>
           <span className="hidden sm:inline whitespace-nowrap">Series & Sagas</span>
           {sagas.length > 0 && (
-            <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 bg-amber-500/20 text-amber-800 dark:text-amber-300">
+            <span
+              className={
+                'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+                (libraryTab === 'sagas'
+                  ? 'bg-slate-950/20 text-slate-950'
+                  : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+              }
+            >
               {sagas.length}
             </span>
           )}
@@ -388,6 +459,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             onEditBook={onOpenEditBook}
             onDeleteBook={onDeleteBook}
             onQuickStatusChange={onBookStatusChange}
+          />
+        </React.Suspense>
+      ) : libraryTab === 'sagas' ? (
+        <React.Suspense
+          fallback={
+            <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+              <Loader2 className="w-8 h-8 text-amber-600 dark:text-amber-400 animate-spin" />
+              <span className="font-serif text-sm">Cargando colección de sagas...</span>
+            </div>
+          }
+        >
+          <SagasScreen
+            sagasWithBooks={computedSagasWithBooks}
+            books={books}
+            detailBookId={detailBookId}
+            onOpenBookDetail={onOpenBookDetail}
+            onSaveSaga={onSaveSaga || (async () => {})}
+            onDeleteSaga={onDeleteSaga || (() => {})}
+            onAssignBookToSaga={onAssignBookToSaga || (async () => {})}
+            onError={onSagasError}
           />
         </React.Suspense>
       ) : (
