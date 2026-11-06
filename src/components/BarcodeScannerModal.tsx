@@ -497,34 +497,6 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                     </span>
                   </div>
                 )}
-
-                {/* Retícula de Encuadre con Esquinas Doradas y Línea Láser */}
-                {status === 'scanning' && (
-                  <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center p-4">
-                    {/* Caja de escaneo */}
-                    <div className="relative w-[85%] max-w-[320px] h-[160px] sm:h-[180px] rounded-xl border border-amber-400/30 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
-                      {/* Esquinas doradas ceremoniales */}
-                      <div className="absolute -top-1 -left-1 w-5 h-5 border-t-3 border-l-3 border-amber-400 rounded-tl" />
-                      <div className="absolute -top-1 -right-1 w-5 h-5 border-t-3 border-r-3 border-amber-400 rounded-tr" />
-                      <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-3 border-l-3 border-amber-400 rounded-bl" />
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-3 border-r-3 border-amber-400 rounded-br" />
-
-                      {/* Haz de luz láser animado */}
-                      <div className="nexus-scanner-laser" />
-
-                      {/* Guía central */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="px-2.5 py-1 rounded bg-black/60 text-[11px] font-mono text-amber-300 backdrop-blur-xs tracking-wider">
-                          ISBN / EAN-13
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="mt-3 text-xs text-amber-100/90 font-serif italic text-center drop-shadow-md">
-                      Centra el código de barras aquí
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* Barra de Controles Rápidos de la Cámara */}
