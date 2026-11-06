@@ -15,23 +15,23 @@ export const AppToast: React.FC<AppToastProps> = ({ toast, onDismiss }) => {
   const isError = toast.type === 'error';
 
   const borderClass = isSuccess
-    ? 'border-emerald-500/40'
+    ? 'border-emerald-600/35 dark:border-emerald-500/40'
     : isError
-    ? 'border-rose-500/40'
-    : 'border-amber-500/40';
+    ? 'border-rose-600/35 dark:border-rose-500/40'
+    : 'border-amber-700/30 dark:border-amber-500/40';
 
   const iconBadgeClass = isSuccess
-    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+    ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 border-emerald-600/25 dark:border-emerald-500/30'
     : isError
-    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-    : 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+    ? 'bg-rose-500/15 text-rose-800 dark:bg-rose-500/20 dark:text-rose-400 border-rose-600/25 dark:border-rose-500/30'
+    : 'bg-amber-500/15 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 border-amber-600/25 dark:border-amber-500/30';
 
   return createPortal(
     <div
       key={toast.id}
       role="status"
       aria-live="polite"
-      className={`fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] max-w-md flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border ${borderClass} bg-[#141A26]/95 text-stone-100 transition-all duration-200 animate-in fade-in slide-in-from-bottom-2`}
+      className={`fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] max-w-md flex items-start gap-3 px-4 py-3 rounded-2xl shadow-[0_12px_36px_-6px_rgba(0,0,0,0.18)] dark:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.6)] backdrop-blur-md border ${borderClass} bg-[#fffcf5]/98 text-stone-900 dark:bg-[#141A26]/95 dark:text-stone-100 transition-all duration-200 animate-in fade-in slide-in-from-bottom-2`}
     >
       <div
         className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${iconBadgeClass}`}
@@ -47,11 +47,11 @@ export const AppToast: React.FC<AppToastProps> = ({ toast, onDismiss }) => {
 
       <div className="flex-1 min-w-0 self-center text-xs sm:text-[13px]">
         {toast.title && (
-          <p className="font-bold font-serif text-sm text-stone-100 mb-0.5">
+          <p className="font-bold font-serif text-sm text-stone-900 dark:text-stone-100 mb-0.5">
             {toast.title}
           </p>
         )}
-        <p className="text-stone-200 leading-relaxed font-normal">{toast.message}</p>
+        <p className="text-stone-700 dark:text-stone-200 leading-relaxed font-normal">{toast.message}</p>
 
         {toast.action && (
           <div className="mt-2">
@@ -72,7 +72,7 @@ export const AppToast: React.FC<AppToastProps> = ({ toast, onDismiss }) => {
       <button
         type="button"
         onClick={onDismiss}
-        className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition shrink-0 cursor-pointer"
+        className="p-1 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-black/5 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10 transition shrink-0 cursor-pointer"
         aria-label="Cerrar notificación"
       >
         <X className="w-4 h-4" />
