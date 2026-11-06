@@ -834,6 +834,77 @@ html.dark .saga-vitrine.is-open .vit-empty {
   }
 }
 
+/* ---------- Móvil / columna única: apertura vertical ----------
+   En una sola columna la vitrina crece hacia abajo, así que las puertas
+   batientes laterales (rotateY) se estiraban con la altura y giraban en
+   un eje que no acompaña al movimiento. Aquí el cristal es una tapa
+   abatible con bisagra superior: se eleva (rotateX) y se desvanece
+   mientras el interior se despliega hacia abajo. Solo transform/opacity. */
+@media (max-width: 640px) {
+  .saga-vitrine .vit-door {
+    bottom: auto;
+    height: 132px; /* = VITRINE_CLOSED_H: no se estira al abrir */
+    transform-origin: center top;
+    transition:
+      transform 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.28s ease-out 0.14s;
+  }
+  /* Las dos hojas actúan como un único panel de cristal */
+  .saga-vitrine .vit-door-l {
+    transform-origin: center top;
+  }
+  .saga-vitrine .vit-door-r {
+    transform-origin: center top;
+  }
+  /* Tiradores: un único asa horizontal centrada abajo */
+  .saga-vitrine .vit-door::after {
+    top: auto;
+    bottom: 7px;
+    width: 30px;
+    height: 5px;
+    margin-top: 0;
+    background: linear-gradient(180deg, #f4db93, #b88b2e);
+  }
+  .saga-vitrine .vit-door-l::after {
+    right: -15px;
+    left: auto;
+  }
+  .saga-vitrine .vit-door-r::after {
+    left: -15px;
+  }
+
+  /* Pista de teclado: la tapa se entreabre hacia arriba */
+  .saga-vitrine:not(.is-open):has(.vit-toggle:focus-visible) .vit-door-l,
+  .saga-vitrine:not(.is-open):has(.vit-toggle:focus-visible) .vit-door-r {
+    transform: rotateX(14deg);
+  }
+  /* Feedback táctil inmediato al pulsar */
+  .saga-vitrine:not(.is-open) .vit-body:active .vit-door {
+    transform: rotateX(8deg);
+    transition-duration: 0.16s;
+  }
+
+  .saga-vitrine.is-open .vit-door-l,
+  .saga-vitrine.is-open .vit-door-r {
+    transform: rotateX(78deg) translateY(-12px);
+  }
+  /* Al cerrar: el cristal reaparece y baja hasta encajar */
+  .saga-vitrine:not(.is-open) .vit-door {
+    transition:
+      transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) 0.06s,
+      opacity 0.18s ease-out;
+  }
+
+  /* El interior se despliega algo más rápido para acompañar a la tapa */
+  .vit-body {
+    transition-duration: 0.55s;
+  }
+  /* Escalonado más corto: con muchas obras el último libro no llega tarde */
+  .saga-vitrine.is-open .vit-face {
+    transition-delay: calc(min(var(--i, 0), 8) * 28ms), calc(min(var(--i, 0), 8) * 28ms), 0s, 0s, 0s;
+  }
+}
+
 /* ---------- Movimiento reducido: solo mostrar / ocultar ---------- */
 @media (prefers-reduced-motion: reduce) {
   .saga-vitrine,
