@@ -898,11 +898,65 @@ html.dark .saga-vitrine.is-open .vit-empty {
   /* El interior se despliega algo más rápido para acompañar a la tapa */
   .vit-body {
     transition-duration: 0.55s;
+    contain: layout paint;
   }
-  /* Escalonado más corto: con muchas obras el último libro no llega tarde */
-  .saga-vitrine.is-open .vit-face {
-    transition-delay: calc(min(var(--i, 0), 8) * 28ms), calc(min(var(--i, 0), 8) * 28ms), 0s, 0s, 0s;
+
+  /* ── Sin parpadeo ──
+     En escritorio cada libro anima width/height (lomo → portada). En una
+     columna estrecha eso hace que la fila se re-envuelva varias veces a
+     mitad de transición (los libros saltan de línea → parpadeo). Aquí el
+     layout cambia de golpe al estado final, oculto, y solo se animan
+     transform/opacity/filter (compositor, 60fps). */
+  .saga-vitrine .vit-face,
+  .saga-vitrine .vit-book-plate.shelf-plate {
+    transition-property: transform, opacity, filter, box-shadow !important;
   }
+  .saga-vitrine .vit-books {
+    transition: none;
+  }
+  .saga-vitrine.is-open .vit-book {
+    animation: vit-book-in 0.42s cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation-delay: calc(0.12s + min(var(--i, 0), 8) * 40ms);
+  }
+  /* Lomo y portada no se cruzan: cambio instantáneo, la entrada del libro lo cubre */
+  .saga-vitrine .vit-spine,
+  .saga-vitrine .vit-cover,
+  .saga-vitrine .vit-chip,
+  .saga-vitrine .vit-seal {
+    transition: none;
+  }
+  /* Capas de fondo: un único fundido corto */
+  .saga-vitrine .vit-wood,
+  .saga-vitrine .vit-shelves,
+  .saga-vitrine .vit-plank {
+    transition-duration: 0.3s;
+  }
+  /* Cristal en su propia capa GPU: no repinta durante el giro */
+  .saga-vitrine .vit-door {
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  /* Al cerrar: los lomos aparecen con un fundido breve mientras baja la tapa */
+  .saga-vitrine:not(.is-open) .vit-book {
+    animation: vit-spine-in 0.28s ease-out both;
+  }
+}
+
+@keyframes vit-book-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes vit-spine-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ---------- Movimiento reducido: solo mostrar / ocultar ---------- */

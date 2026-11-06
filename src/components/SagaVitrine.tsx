@@ -125,7 +125,8 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
   const preloaded = useRef(false);
   const tones = useSpineTones(books);
 
-  useEffect(() => {
+  // useLayoutEffect: portadas montadas antes del primer frame abierto (sin destello)
+  useLayoutEffect(() => {
     if (isOpen) setCoversMounted(true);
   }, [isOpen]);
 
@@ -159,6 +160,8 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
     if (preloaded.current) return;
     preloaded.current = true;
     books.forEach((b) => preloadBookCover(b));
+    // En táctil no hay hover: montar portadas en pointerdown, antes del click
+    setCoversMounted(true);
   };
 
   const inProgressCount = books.filter((b) => {
@@ -187,6 +190,7 @@ const SagaVitrineComponent: React.FC<SagaVitrineProps> = ({
       className={'saga-vitrine' + (isOpen ? ' is-open' : '') + (isComplete ? ' is-complete' : '')}
       aria-labelledby={`vitrine-title-${saga.id}`}
       onPointerEnter={warmUp}
+      onPointerDown={warmUp}
     >
       {/* Barra superior: placa, resumen y acciones */}
       <header className="vit-rail vit-rail-top">
