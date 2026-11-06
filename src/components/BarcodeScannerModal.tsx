@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  SwitchCamera
 } from 'lucide-react';
 import { BibliographicCandidate } from '../types/models';
 import {
@@ -58,9 +59,14 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const [scannedIsbn, setScannedIsbn] = useState<string>('');
   const [foundCandidate, setFoundCandidate] = useState<BibliographicCandidate | null>(null);
 
-  // Cámara y hardware
-  const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  // Cámara y hardware: por defecto trasera (environment) para escanear libros
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const facingModeRef = useRef<'environment' | 'user'>('environment');
+  const [hasMultipleCameras, setHasMultipleCameras] = useState<boolean>(() => {
+    if (typeof navigator === 'undefined') return false;
+    return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  });
+  const [isFlippingCamera, setIsFlippingCamera] = useState<boolean>(false);
   const [hasTorch, setHasTorch] = useState<boolean>(false);
   const [isTorchOn, setIsTorchOn] = useState<boolean>(false);
 
@@ -166,113 +172,156 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   );
 
   // Iniciar el escáner de cámara con html5-qrcode
-  const startCamera = useCallback(async () => {
-    setStatus('starting');
-    setErrorMessage('');
-    setFoundCandidate(null);
-    setScannedIsbn('');
+  const startCamera = useCallback(
+    async (targetFacing?: 'environment' | 'user') => {
+      setStatus('starting');
+      setErrorMessage('');
+      setFoundCandidate(null);
+      setScannedIsbn('');
 
-    try {
-      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+      const mode = targetFacing || facingModeRef.current;
+      facingModeRef.current = mode;
+      setFacingMode(mode);
 
-      // Crear instancia si aún no existe
-      if (!html5QrCodeRef.current) {
-        html5QrCodeRef.current = new Html5Qrcode('nexus-barcode-reader', {
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E
-          ],
-          verbose: false
-        });
-      }
-
-      const scanner = html5QrCodeRef.current;
-      if (scanner.isScanning) {
-        await scanner.stop();
-      }
-
-      // Detectar cámaras disponibles
       try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          setCameras(devices);
-          if (!selectedCameraId) {
-            // Preferir cámara trasera ('back', 'rear', 'environment')
-            const backCam = devices.find((d) =>
-              /back|rear|environment|trasera/i.test(d.label)
-            );
-            setSelectedCameraId(backCam ? backCam.id : devices[0].id);
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+
+        // Crear instancia si aún no existe
+        if (!html5QrCodeRef.current) {
+          html5QrCodeRef.current = new Html5Qrcode('nexus-barcode-reader', {
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E
+            ],
+            verbose: false
+          });
+        }
+
+        const scanner = html5QrCodeRef.current;
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
+
+        // Comprobar si hay múltiples cámaras para ofrecer el botón de girar
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 1) {
+            setHasMultipleCameras(true);
           }
+        } catch {
+          // ignore
         }
-      } catch {
-        // Fallback si no enumera dispositivos
-      }
 
-      const cameraConfig = selectedCameraId
-        ? { deviceId: { exact: selectedCameraId } }
-        : { facingMode: 'environment' };
+        const cameraConfig = { facingMode: mode };
 
-      const config = {
-        fps: 12,
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const width = Math.min(320, Math.floor(viewfinderWidth * 0.88));
-          const height = Math.min(180, Math.floor(viewfinderHeight * 0.5));
-          return { width, height };
-        },
-        aspectRatio: 1.333333
-      };
+        const config = {
+          fps: 12,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const width = Math.min(320, Math.floor(viewfinderWidth * 0.88));
+            const height = Math.min(180, Math.floor(viewfinderHeight * 0.5));
+            return { width, height };
+          },
+          aspectRatio: 1.333333
+        };
 
-      await scanner.start(
-        cameraConfig,
-        config,
-        (decodedText: string) => {
-          processDetectedIsbn(decodedText);
-        },
-        () => {
-          // Frame sin código detectado, continuar
+        await scanner.start(
+          cameraConfig,
+          config,
+          (decodedText: string) => {
+            processDetectedIsbn(decodedText);
+          },
+          () => {
+            // Frame sin código detectado, continuar
+          }
+        );
+
+        setStatus('scanning');
+
+        // Tras otorgar permisos, re-comprobar si hay más de una cámara
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 1) {
+            setHasMultipleCameras(true);
+          }
+        } catch {
+          // ignore
         }
-      );
 
-      setStatus('scanning');
-
-      // Comprobar soporte de linterna (Torch)
-      try {
-        const videoElem = document.querySelector(
-          '#nexus-barcode-reader video'
-        ) as HTMLVideoElement | null;
-        if (videoElem && videoElem.srcObject instanceof MediaStream) {
-          const track = videoElem.srcObject.getVideoTracks()[0];
-          if (track) {
-            activeStreamTrackRef.current = track;
-            const capabilities: any = track.getCapabilities ? track.getCapabilities() : {};
-            if (capabilities.torch) {
-              setHasTorch(true);
+        // Comprobar soporte de linterna (Torch) solo en cámara trasera
+        try {
+          if (mode === 'environment') {
+            const videoElem = document.querySelector(
+              '#nexus-barcode-reader video'
+            ) as HTMLVideoElement | null;
+            if (videoElem && videoElem.srcObject instanceof MediaStream) {
+              const track = videoElem.srcObject.getVideoTracks()[0];
+              if (track) {
+                activeStreamTrackRef.current = track;
+                const capabilities: any = track.getCapabilities ? track.getCapabilities() : {};
+                if (capabilities.torch) {
+                  setHasTorch(true);
+                } else {
+                  setHasTorch(false);
+                }
+              }
             }
+          } else {
+            // La cámara frontal no dispone de flash hardware
+            setHasTorch(false);
           }
+        } catch {
+          setHasTorch(false);
         }
+      } catch (err: any) {
+        console.warn('No se pudo acceder a la cámara:', err);
+        const name = err?.name || '';
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+          setErrorMessage(
+            'Permiso de cámara denegado. Puedes conceder el permiso en los ajustes de tu navegador o usar las opciones alternativas abajo.'
+          );
+        } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+          setErrorMessage('No se encontró ninguna cámara disponible en este dispositivo.');
+        } else {
+          setErrorMessage(
+            'No se pudo inicializar la cámara. Puedes subir una foto del código de barras o escribir el ISBN a mano.'
+          );
+        }
+        setStatus('error');
+      }
+    },
+    [processDetectedIsbn]
+  );
+
+  // Girar cámara (delantera / trasera)
+  const handleFlipCamera = async () => {
+    if (isFlippingCamera) return;
+    setIsFlippingCamera(true);
+
+    // Apagar linterna si estaba activa antes de girar
+    if (isTorchOn && activeStreamTrackRef.current) {
+      try {
+        await (activeStreamTrackRef.current as any).applyConstraints({
+          advanced: [{ torch: false }]
+        });
       } catch {
-        setHasTorch(false);
+        // ignore
       }
-    } catch (err: any) {
-      console.warn('No se pudo acceder a la cámara:', err);
-      const name = err?.name || '';
-      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        setErrorMessage(
-          'Permiso de cámara denegado. Puedes conceder el permiso en los ajustes de tu navegador o usar las opciones alternativas abajo.'
-        );
-      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-        setErrorMessage('No se encontró ninguna cámara disponible en este dispositivo.');
-      } else {
-        setErrorMessage(
-          'No se pudo inicializar la cámara. Puedes subir una foto del código de barras o escribir el ISBN a mano.'
-        );
-      }
-      setStatus('error');
+      setIsTorchOn(false);
     }
-  }, [selectedCameraId, processDetectedIsbn]);
+    setHasTorch(false);
+
+    const nextMode = facingModeRef.current === 'environment' ? 'user' : 'environment';
+    try {
+      await startCamera(nextMode);
+    } catch (err) {
+      console.warn('Error al girar cámara:', err);
+    } finally {
+      setIsFlippingCamera(false);
+    }
+  };
 
   // Alternar linterna
   const toggleTorch = async () => {
@@ -351,7 +400,10 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   // Iniciar cámara al abrir el modal y detener al cerrar
   useEffect(() => {
     if (isOpen) {
-      startCamera();
+      // Iniciar siempre por defecto con cámara trasera
+      facingModeRef.current = 'environment';
+      setFacingMode('environment');
+      startCamera('environment');
     } else {
       stopCamera();
       setStatus('idle');
@@ -360,6 +412,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
       setErrorMessage('');
       setIsManualOpen(false);
       setManualIsbn('');
+      setIsFlippingCamera(false);
     }
     return () => {
       stopCamera();
@@ -477,11 +530,12 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
               {/* Barra de Controles Rápidos de la Cámara */}
               <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
                 {/* Linterna si está soportada */}
-                {hasTorch && (
+                {hasTorch ? (
                   <button
                     type="button"
                     onClick={toggleTorch}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium transition ${
+                    aria-label={isTorchOn ? 'Apagar linterna' : 'Encender linterna'}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium transition cursor-pointer ${
                       isTorchOn
                         ? 'bg-amber-600 text-slate-950 border-amber-500 shadow-xs'
                         : 'bg-white/60 dark:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-amber-900/15 dark:border-amber-400/20 hover:bg-amber-500/10'
@@ -499,24 +553,37 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                       </>
                     )}
                   </button>
+                ) : (
+                  <div />
                 )}
 
-                {/* Selector de cámara si hay más de una */}
-                {cameras.length > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    <select
-                      value={selectedCameraId}
-                      onChange={(e) => setSelectedCameraId(e.target.value)}
-                      className="text-xs bg-white/70 dark:bg-stone-800/70 border border-amber-900/15 dark:border-amber-400/20 rounded-lg px-2 py-1 text-stone-800 dark:text-stone-200 outline-none"
-                    >
-                      {cameras.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.label || `Cámara ${c.id.slice(0, 4)}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Botón táctil para Girar cámara (delantera / trasera) */}
+                {hasMultipleCameras && (
+                  <button
+                    type="button"
+                    onClick={handleFlipCamera}
+                    disabled={isFlippingCamera}
+                    title={
+                      facingMode === 'environment'
+                        ? 'Girar a cámara delantera'
+                        : 'Girar a cámara trasera'
+                    }
+                    aria-label={
+                      facingMode === 'environment'
+                        ? 'Girar a cámara delantera'
+                        : 'Girar a cámara trasera'
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-900/15 dark:border-amber-400/20 bg-white/70 dark:bg-stone-800/70 hover:bg-white dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200 hover:border-amber-500 font-medium transition cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    <SwitchCamera
+                      className={`w-3.5 h-3.5 text-amber-600 dark:text-amber-400 transition-transform duration-300 ${
+                        isFlippingCamera ? 'animate-spin' : ''
+                      }`}
+                    />
+                    <span>
+                      {facingMode === 'environment' ? 'Girar cámara' : 'Cámara trasera'}
+                    </span>
+                  </button>
                 )}
               </div>
             </div>
