@@ -434,6 +434,9 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
           username={profileUsername}
           onSaveAvatar={handleAvatarSelect}
           levelInfo={readerLevelInfo}
+          onShowToast={(msg, type) =>
+            onShowFeedback({ type: type ?? 'success', text: msg })
+          }
         />
 
         {/* Modal de Exportación Oficial de Carnet */}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { KeyRound, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { formatAuthErrorMessage } from '../utils/errorUtils';
+import { AppToast } from './AppToast';
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
@@ -42,6 +43,12 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 4000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
@@ -162,23 +169,14 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             Has accedido mediante un enlace de recuperación seguro. Por motivos de seguridad, debes establecer tu nueva contraseña para acceder a tu biblioteca.
           </p>
 
-          {feedback && (
-            <div
-              className={
-                'rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
-                (feedback.type === 'success'
-                  ? 'border-emerald-600/40 bg-emerald-500/15 text-emerald-900 dark:text-emerald-300'
-                  : 'border-rose-600/40 bg-rose-500/15 text-rose-900 dark:text-rose-300')
-              }
-            >
-              {feedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
-              )}
-              <span className="leading-relaxed">{feedback.text}</span>
-            </div>
-          )}
+          <AppToast
+            toast={
+              feedback
+                ? { id: 1, type: feedback.type, message: feedback.text }
+                : null
+            }
+            onDismiss={() => setFeedback(null)}
+          />
 
           {isTokenError ? (
             <div className="pt-2 text-center space-y-3">

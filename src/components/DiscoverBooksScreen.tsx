@@ -35,6 +35,8 @@ import { normalizeText } from '../constants/catalogs';
 import { BookDetailModal } from './BookDetailModal';
 import { LiteraryAtlasView } from './LiteraryAtlasView';
 import { literaryGeographyService } from '../services/literaryGeographyService';
+import { AppToast } from './AppToast';
+import { ToastData, ToastType, ToastOptions } from '../hooks/useAppNotifications';
 import '../dashboard-panels.css';
 
 interface DiscoverBooksScreenProps {
@@ -50,6 +52,7 @@ interface DiscoverBooksScreenProps {
   username?: string | null;
   avatarUrl?: string | null;
   onOpenBarcodeScanner?: () => void;
+  onShowToast?: (message: string, optionsOrType?: ToastType | ToastOptions) => void;
 }
 
 const QUICK_CHIPS = [
@@ -76,7 +79,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   userDisplayName,
   username,
   avatarUrl,
-  onOpenBarcodeScanner
+  onOpenBarcodeScanner,
+  onShowToast
 }) => {
   const [discoverTab, setDiscoverTab] = useState<'books' | 'atlas'>(() => {
     if (typeof window !== 'undefined') {
@@ -224,11 +228,12 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
   }, [selectedCandidate]);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [justAddedIds, setJustAddedIds] = useState<Set<string>>(new Set());
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [localToast, setLocalToast] = useState<ToastData | null>(null);
 
   const searchAbortRef = useRef<AbortController | null>(null);
   const recsAbortRef = useRef<AbortController | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+  const toastIdRef = useRef(0);
 
   const booksHash = useMemo(
     () => books.map((b) => b.id).sort().join(','),
@@ -349,7 +354,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     e.stopPropagation();
     dismissedRecommendationsService.dismiss(candidate.id);
     setDismissedCandidateIds((prev) => new Set(prev).add(candidate.id));
-    showToast(`Recomendación de «${candidate.nombre}» descartada.`);
+    showToast(`Recomendación de «${candidate.nombre}» descartada.`, 'info');
   };
 
   // Carga complementaria de obras temáticas desde Open Library
@@ -408,12 +413,24 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     );
   }, [recommendations, isCandidateInLibrary, dismissedCandidateIds]);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, optionsOrType: ToastType | ToastOptions = 'success') => {
+    if (onShowToast) {
+      onShowToast(msg, optionsOrType);
+      return;
+    }
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastMessage(msg);
+    const opts = typeof optionsOrType === 'string' ? { type: optionsOrType } : optionsOrType;
+    const nextId = ++toastIdRef.current;
+    setLocalToast({
+      id: nextId,
+      message: msg,
+      type: opts.type ?? 'success',
+      title: opts.title,
+      action: opts.action
+    });
     toastTimeoutRef.current = window.setTimeout(() => {
-      setToastMessage(null);
-    }, 3800);
+      setLocalToast((curr) => (curr?.id === nextId ? null : curr));
+    }, opts.duration ?? 4000);
   };
 
   const handleQuickAdd = async (candidate: BibliographicCandidate, e?: React.MouseEvent) => {
@@ -424,12 +441,12 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
     try {
       await onQuickAddBook(candidate);
       setJustAddedIds((prev) => new Set(prev).add(candidate.id));
-      showToast(`«${candidate.nombre}» añadido a tu biblioteca en "Por leer".`);
+      showToast(`«${candidate.nombre}» añadido a tu biblioteca en "Por leer".`, 'success');
       if (selectedCandidate?.id === candidate.id) {
         setSelectedCandidate(null);
       }
     } catch {
-      showToast('Ocurrió un error al guardar el libro en tu biblioteca.');
+      showToast('Ocurrió un error al guardar el libro en tu biblioteca.', 'error');
     } finally {
       setAddingId(null);
     }
@@ -446,20 +463,8 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Toast de confirmación */}
-      {toastMessage && (
-        <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-50 flex items-center justify-between sm:justify-start gap-2.5 rounded-2xl border border-emerald-500/40 bg-[#101520] text-emerald-200 px-4 py-3 shadow-2xl backdrop-blur-md animate-slide-up text-xs sm:text-sm font-medium">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            type="button"
-            onClick={() => setToastMessage(null)}
-            className="p-1 text-slate-400 hover:text-white rounded"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* Toast de confirmación unificado */}
+      <AppToast toast={localToast} onDismiss={() => setLocalToast(null)} />
 
       {/* ─── Pestañas de Descubrir (Catálogo de Libros vs Atlas Literario vs Comunidad de Lectores) ─── */}
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">

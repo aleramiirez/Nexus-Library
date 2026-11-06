@@ -71,6 +71,7 @@ import { formatFriendlyErrorMessage } from './utils/errorUtils';
 import './dashboard-panels.css';
 
 import { AppModals } from './components/AppModals';
+import { AppToast } from './components/AppToast';
 import { ReadingSessionModal } from './components/ReadingSessionModal';
 import { ReadingOracleModal } from './components/ReadingOracleModal';
 const DiscoverBooksScreen = React.lazy(() =>
@@ -334,7 +335,6 @@ export const App: React.FC = () => {
   const [offlineGuestMode, setOfflineGuestMode] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncMigrationResult | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
@@ -389,9 +389,18 @@ export const App: React.FC = () => {
     setInAppBanner,
     showInAppBanner,
     toast,
-    setToast,
-    showToast
+    showToast,
+    dismissToast
   } = useAppNotifications();
+
+  const setGlobalError = useCallback(
+    (msg: string | null) => {
+      if (msg) {
+        showToast(msg, 'error');
+      }
+    },
+    [showToast]
+  );
 
   const [isLoadingSample, setIsLoadingSample] = useState(false);
   const [isRemovingSample, setIsRemovingSample] = useState(false);
@@ -1417,21 +1426,6 @@ export const App: React.FC = () => {
 
       <main className="relative z-10 flex-1 min-w-0 lg:pl-64 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12">
         <div key={activeSection} className="book-turn max-w-7xl mx-auto px-3 py-4 sm:p-6 lg:p-8">
-          {globalError && (
-            <div className="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs text-rose-900 dark:text-rose-200 flex items-center justify-between gap-3 shadow-sm">
-              <span className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                {globalError}
-              </span>
-              <button
-                type="button"
-                onClick={() => setGlobalError(null)}
-                className="p-1 rounded hover:bg-rose-500/20"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
           {activeSection === 'dashboard' && (
             <DashboardView
               darkMode={darkMode}
@@ -1520,6 +1514,7 @@ export const App: React.FC = () => {
                 username={currentUserProfile?.username}
                 avatarUrl={currentUser ? currentUserProfile?.avatarUrl : guestAvatar}
                 onOpenBarcodeScanner={modals.handleOpenBarcodeScanner}
+                onShowToast={showToast}
               />
             </React.Suspense>
           )}
@@ -1600,6 +1595,7 @@ export const App: React.FC = () => {
                 onNavigateToLibrary={() => handleNavigate('library')}
                 onOpenBookDetail={handleOpenCardDetail}
                 onOpenOrderModal={() => setIsOrderModalOpen(true)}
+                onShowToast={showToast}
               />
             </React.Suspense>
           )}
@@ -1924,35 +1920,7 @@ export const App: React.FC = () => {
           document.body
         )}
 
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-[9999] flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-amber-500/30 text-xs sm:text-sm font-serif transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 bg-stone-900/95 text-amber-100 dark:bg-stone-950/95 dark:text-amber-200"
-        >
-          <span>{toast.message}</span>
-          {toast.action && (
-            <button
-              type="button"
-              onClick={() => {
-                toast.action?.onClick();
-                setToast(null);
-              }}
-              className="ml-2 px-2.5 py-1 rounded-lg text-xs font-sans font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 active:scale-95 transition"
-            >
-              {toast.action.label}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            className="text-stone-400 hover:text-white ml-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded p-0.5"
-            aria-label="Cerrar notificación"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      <AppToast toast={toast} onDismiss={dismissToast} />
     </div>
   );
 };

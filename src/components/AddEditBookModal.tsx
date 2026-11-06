@@ -166,6 +166,18 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
   }, [isSagaPickerOpen]);
 
   useEffect(() => {
+    if (!parsedFileBadge) return;
+    const timer = setTimeout(() => setParsedFileBadge(null), 4000);
+    return () => clearTimeout(timer);
+  }, [parsedFileBadge]);
+
+  useEffect(() => {
+    if (!formError) return;
+    const timer = setTimeout(() => setFormError(''), 4000);
+    return () => clearTimeout(timer);
+  }, [formError]);
+
+  useEffect(() => {
     if (!isOpen) return;
     setSearchQuery('');
     setCandidates([]);
@@ -301,6 +313,18 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, editingBook, initialCandidate, initialParsedEbook]);
+
+  useEffect(() => {
+    if (!coverBadgeMsg) return;
+    const timer = setTimeout(() => setCoverBadgeMsg(null), 4000);
+    return () => clearTimeout(timer);
+  }, [coverBadgeMsg]);
+
+  useEffect(() => {
+    if (!searchError) return;
+    const timer = setTimeout(() => setSearchError(''), 4000);
+    return () => clearTimeout(timer);
+  }, [searchError]);
 
   useEffect(() => {
     if (!isOpen) return;

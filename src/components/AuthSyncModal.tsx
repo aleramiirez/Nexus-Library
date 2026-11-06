@@ -23,6 +23,7 @@ import {
 } from '../services/supabaseClient';
 import { clearLocalCacheOnSignOut, SyncMigrationResult } from '../db/database';
 import { formatAuthErrorMessage, isValidEmail } from '../utils/errorUtils';
+import { AppToast } from './AppToast';
 
 interface AuthSyncModalProps {
   isOpen: boolean;
@@ -61,6 +62,12 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
       setMode('login');
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 4000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   if (!isOpen) return null;
 
@@ -243,25 +250,14 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
         </div>
 
         <div className="p-4 sm:p-6 space-y-5 max-h-[calc(92dvh-56px)] sm:max-h-[82vh] overflow-y-auto overscroll-contain">
-          {feedback && (
-            <div
-              className={
-                'rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
-                (feedback.type === 'success'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-                  : feedback.type === 'error'
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-300'
-                  : 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200')
-              }
-            >
-              {feedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              )}
-              <span>{feedback.text}</span>
-            </div>
-          )}
+          <AppToast
+            toast={
+              feedback
+                ? { id: 1, type: feedback.type, message: feedback.text }
+                : null
+            }
+            onDismiss={() => setFeedback(null)}
+          />
 
           {user ? (
             <div className="space-y-4">

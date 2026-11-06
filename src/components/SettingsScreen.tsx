@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useTransition, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useTransition, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Settings,
@@ -7,13 +7,12 @@ import {
   Sparkles,
   HardDrive,
   Smartphone,
-  CheckCircle2,
-  AlertTriangle,
-  Info,
   LogOut,
   Loader2
 } from 'lucide-react';
 import { BatchMetadataModal, BatchMetadataMode } from './BatchMetadataModal';
+import { AppToast } from './AppToast';
+import { ToastData, ToastType, ToastOptions } from '../hooks/useAppNotifications';
 import { SettingsAccountTab } from './settings/SettingsAccountTab';
 import { SettingsAppearanceTab } from './settings/SettingsAppearanceTab';
 import { SettingsMetadataTab } from './settings/SettingsMetadataTab';
@@ -68,6 +67,7 @@ interface SettingsScreenProps {
   onNavigateToLibrary?: () => void;
   onOpenBookDetail?: (book: Book) => void;
   onOpenOrderModal?: () => void;
+  onShowToast?: (message: string, optionsOrType?: ToastType | ToastOptions) => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
@@ -89,7 +89,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onOpenEpubImport,
   onNavigateToLibrary,
   onOpenBookDetail,
-  onOpenOrderModal
+  onOpenOrderModal,
+  onShowToast
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
     if (typeof window !== 'undefined') {
@@ -118,11 +119,42 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const readerLevelInfo = useMemo(() => calculateReaderLevel(books, sagas), [books, sagas]);
 
-  // Mensajes de estado / feedback
-  const [feedback, setFeedback] = useState<{
-    type: 'success' | 'error' | 'info';
-    text: string;
-  } | null>(null);
+  // Mensajes de estado / feedback temporales unificados
+  const [localToast, setLocalToast] = useState<ToastData | null>(null);
+  const localToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const localToastIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (localToastTimerRef.current) clearTimeout(localToastTimerRef.current);
+    };
+  }, []);
+
+  const setFeedback = useCallback(
+    (
+      fb: {
+        type: 'success' | 'error' | 'info';
+        text: string;
+      } | null
+    ) => {
+      if (!fb) {
+        if (localToastTimerRef.current) clearTimeout(localToastTimerRef.current);
+        setLocalToast(null);
+        return;
+      }
+      if (onShowToast) {
+        onShowToast(fb.text, fb.type);
+        return;
+      }
+      if (localToastTimerRef.current) clearTimeout(localToastTimerRef.current);
+      const nextId = ++localToastIdRef.current;
+      setLocalToast({ id: nextId, message: fb.text, type: fb.type });
+      localToastTimerRef.current = setTimeout(() => {
+        setLocalToast((curr) => (curr?.id === nextId ? null : curr));
+      }, 4000);
+    },
+    [onShowToast]
+  );
 
   const handleTabChange = useCallback((tab: SettingsTab) => {
     startTransition(() => {
@@ -133,7 +165,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     } catch {
       // ignorar
     }
-    setFeedback(null);
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -480,37 +511,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
       </div>
 
-      {/* ─── Mensaje de Feedback ─── */}
-      {feedback && (
-        <div
-          className={
-            'rounded-2xl border p-4 text-xs flex items-start justify-between gap-3 shadow-sm transition-all ' +
-            (feedback.type === 'success'
-              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-              : feedback.type === 'error'
-              ? 'border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-300'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200')
-          }
-        >
-          <div className="flex items-start gap-2.5">
-            {feedback.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-            ) : feedback.type === 'error' ? (
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
-            ) : (
-              <Info className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-            )}
-            <span className="leading-relaxed">{feedback.text}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            className="text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 font-bold px-1 cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* ─── Aviso Flotante Temporal Unificado (si no hay padre con onShowToast) ─── */}
+      <AppToast toast={localToast} onDismiss={() => setFeedback(null)} />
 
       {/* ════════════════════ TAB 1: CUENTA Y SINCRONIZACIÓN ════════════════════ */}
       {activeTab === 'account' && (

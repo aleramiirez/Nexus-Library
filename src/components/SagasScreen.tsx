@@ -91,6 +91,12 @@ export const SagasScreen: React.FC<SagasScreenProps> = ({
   const [sagaDescInput, setSagaDescInput] = useState('');
   const [sagaError, setSagaError] = useState('');
   const [assignBookId, setAssignBookId] = useState<string>('');
+
+  useEffect(() => {
+    if (!sagaError) return;
+    const timer = setTimeout(() => setSagaError(''), 4000);
+    return () => clearTimeout(timer);
+  }, [sagaError]);
   const [assignVolume, setAssignVolume] = useState<string>('1');
   const [activeSagaIdForAssign, setActiveSagaIdForAssign] = useState<string | null>(null);
   const [filter, setFilter] = useState<SagaFilter>('all');

@@ -22,6 +22,7 @@ import {
 } from '../services/supabaseClient';
 import { AnimatedBackground } from './AnimatedBackground';
 import { formatAuthErrorMessage, isValidEmail } from '../utils/errorUtils';
+import { AppToast } from './AppToast';
 
 interface AuthScreenProps {
   onContinueOffline: () => void;
@@ -43,6 +44,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
   useEffect(() => {
     fetchSupabaseAuthSettings().then(setAuthSettings);
   }, []);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 4000);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,25 +360,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               </div>
             )}
 
-            {feedback && (
-              <div
-                className={
-                  'mb-5 rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
-                  (feedback.type === 'success'
-                    ? 'border-emerald-600/40 bg-emerald-500/15 text-emerald-900 dark:text-emerald-300'
-                    : feedback.type === 'error'
-                    ? 'border-rose-600/40 bg-rose-500/15 text-rose-900 dark:text-rose-300'
-                    : 'border-amber-600/40 bg-amber-500/15 text-amber-900 dark:text-amber-200')
-                }
-              >
-                {feedback.type === 'success' ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                )}
-                <span className="leading-relaxed">{feedback.text}</span>
-              </div>
-            )}
+            <AppToast
+              toast={
+                feedback
+                  ? { id: 1, type: feedback.type, message: feedback.text }
+                  : null
+              }
+              onDismiss={() => setFeedback(null)}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

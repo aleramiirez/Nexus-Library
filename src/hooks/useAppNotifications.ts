@@ -17,13 +17,16 @@ export interface ToastAction {
 
 export interface ToastOptions {
   type?: ToastType;
+  title?: string;
   action?: ToastAction;
   duration?: number;
 }
 
 export interface ToastData {
+  id: number;
   message: string;
   type: ToastType;
+  title?: string;
   action?: ToastAction;
 }
 
@@ -54,7 +57,7 @@ export const useAppNotifications = (): UseAppNotificationsReturn => {
     setInAppBanner(banner);
     inAppBannerTimeoutRef.current = setTimeout(() => {
       setInAppBanner((curr) => (curr?.id === banner.id ? null : curr));
-    }, 7500);
+    }, 6500);
   }, []);
 
   const dismissInAppBanner = useCallback(() => {
@@ -67,6 +70,7 @@ export const useAppNotifications = (): UseAppNotificationsReturn => {
 
   const [toast, setToast] = useState<ToastData | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastIdCounterRef = useRef(0);
 
   const showToast = useCallback(
     (
@@ -75,18 +79,20 @@ export const useAppNotifications = (): UseAppNotificationsReturn => {
     ) => {
       const opts = typeof optionsOrType === 'string' ? { type: optionsOrType } : optionsOrType;
       const type = opts.type ?? 'info';
+      const title = opts.title;
       const action = opts.action;
-      const duration = opts.duration ?? 4500;
+      const duration = opts.duration ?? 4000;
 
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
         toastTimeoutRef.current = null;
       }
 
-      setToast({ message, type, action });
+      const nextId = ++toastIdCounterRef.current;
+      setToast({ id: nextId, message, type, title, action });
 
       toastTimeoutRef.current = setTimeout(() => {
-        setToast((curr) => (curr?.message === message ? null : curr));
+        setToast((curr) => (curr?.id === nextId ? null : curr));
       }, duration);
     },
     []

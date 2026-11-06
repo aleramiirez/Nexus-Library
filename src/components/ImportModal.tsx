@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Upload,
   Download,
   FileSpreadsheet,
   FileJson,
   Sparkles,
-  CheckCircle2,
-  AlertTriangle,
   Loader2,
   FileUp,
   X
 } from 'lucide-react';
+import { AppToast } from './AppToast';
 import { Book, Saga } from '../types/models';
 import {
   exportLibraryToCsv,
@@ -48,6 +47,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(
     null
   );
+
+  useEffect(() => {
+    if (!statusMessage) return;
+    const timer = setTimeout(() => setStatusMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, [statusMessage]);
 
   if (!isOpen) return null;
 
@@ -249,25 +254,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         </div>
 
         <div className="p-4 sm:p-6 max-h-[calc(92dvh-56px)] sm:max-h-[78vh] overflow-y-auto overscroll-contain space-y-5">
-          {statusMessage && (
-            <div
-              className={
-                'rounded-xl border p-3.5 text-xs flex items-start gap-2.5 ' +
-                (statusMessage.type === 'success'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-                  : statusMessage.type === 'error'
-                  ? 'border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-300'
-                  : 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200')
-              }
-            >
-              {statusMessage.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              )}
-              <span>{statusMessage.text}</span>
-            </div>
-          )}
+          <AppToast
+            toast={
+              statusMessage
+                ? { id: 1, type: statusMessage.type, message: statusMessage.text }
+                : null
+            }
+            onDismiss={() => setStatusMessage(null)}
+          />
 
           {onOpenEpubImport && (
             <div className="rounded-xl border border-amber-600/40 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-[#f4ead4] to-[#efe3c8] dark:from-amber-500/10 dark:via-[#161E2E] dark:to-[#101520] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

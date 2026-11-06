@@ -39,6 +39,12 @@ export const RecommendBookModal: React.FC<RecommendBookModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    if (!errorMsg) return;
+    const timer = setTimeout(() => setErrorMsg(''), 4000);
+    return () => clearTimeout(timer);
+  }, [errorMsg]);
+
+  useEffect(() => {
     if (!isOpen || !currentUserId) return;
 
     let active = true;

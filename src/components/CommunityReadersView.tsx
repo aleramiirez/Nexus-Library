@@ -52,6 +52,7 @@ import { StarRatingDisplay } from './StarRatingInteractive';
 import { BookDetailModal } from './BookDetailModal';
 import { SagaVitrine } from './SagaVitrine';
 import type { SagaWithBooksItem } from './SagasScreen';
+import { AppToast } from './AppToast';
 import '../book-detail.css';
 import '../dashboard-panels.css';
 import '../saga-vitrine.css';
@@ -406,7 +407,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 4500);
+    const timer = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -755,37 +756,19 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
     );
   }, [readerBooks]);
 
-  // Render del Toast
+  // Render del Toast unificado
   const renderToastNotification = () => {
     if (!toast) return null;
     return (
-      <div className="fixed bottom-20 inset-x-4 sm:inset-x-auto sm:bottom-6 sm:right-6 z-50 flex items-start gap-3 rounded-2xl border border-amber-900/30 dark:border-amber-500/30 bg-[#161D2B]/95 text-stone-100 px-4 py-3 shadow-2xl backdrop-blur-md animate-slide-up max-w-md">
-        {toast.type === 'success' ? (
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-            <Check className="w-4 h-4" />
-          </div>
-        ) : toast.type === 'info' ? (
-          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="w-4 h-4" />
-          </div>
-        ) : (
-          <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
-            <AlertCircle className="w-4 h-4" />
-          </div>
-        )}
-        <div className="flex-1 space-y-0.5 text-xs">
-          <p className="font-bold font-serif text-sm text-stone-100">{toast.title}</p>
-          <p className="text-stone-300 leading-relaxed font-normal">{toast.message}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setToast(null)}
-          aria-label="Cerrar aviso"
-          className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 transition"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      <AppToast
+        toast={{
+          id: 1,
+          type: toast.type,
+          title: toast.title,
+          message: toast.message
+        }}
+        onDismiss={() => setToast(null)}
+      />
     );
   };
 
