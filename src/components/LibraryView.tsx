@@ -165,7 +165,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   const handleLibraryTabChange = (tab: 'books' | 'collections' | 'sagas') => {
     setLibraryTab(tab);
-    if (tab === 'books' && (activeSection === 'collections' || activeSection === 'sagas')) {
+    if (activeSection !== 'library') {
       onNavigate('library');
     }
     try {
@@ -287,10 +287,94 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     );
   };
 
+  const renderMainLibraryTabs = () => (
+    <div className="flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible pb-2 sm:pb-3.5 border-b border-amber-900/15 dark:border-[#242E42] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <button
+        type="button"
+        onClick={() => handleLibraryTabChange('books')}
+        className={
+          'flex-auto sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition active:scale-95 shadow-xs sm:shadow-sm ' +
+          (libraryTab === 'books' && activeSection === 'library'
+            ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+            : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+        }
+      >
+        <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+        <span className="sm:hidden whitespace-nowrap">Libros</span>
+        <span className="hidden sm:inline whitespace-nowrap">Todos los Libros</span>
+        <span
+          className={
+            'ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+            (libraryTab === 'books' && activeSection === 'library'
+              ? 'bg-slate-950/20 text-slate-950'
+              : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+          }
+        >
+          {books.length}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleLibraryTabChange('collections')}
+        className={
+          'flex-auto sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition active:scale-95 shadow-xs sm:shadow-sm ' +
+          (libraryTab === 'collections'
+            ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+            : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+        }
+      >
+        <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+        <span className="sm:hidden whitespace-nowrap">Colecciones</span>
+        <span className="hidden sm:inline whitespace-nowrap">Mis Colecciones</span>
+        {collectionsCount !== undefined && (
+          <span
+            className={
+              'ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+              (libraryTab === 'collections'
+                ? 'bg-slate-950/20 text-slate-950'
+                : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+            }
+          >
+            {collectionsCount}
+          </span>
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleLibraryTabChange('sagas')}
+        className={
+          'flex-auto sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition active:scale-95 shadow-xs sm:shadow-sm ' +
+          (libraryTab === 'sagas'
+            ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
+            : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
+        }
+      >
+        <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+        <span className="sm:hidden whitespace-nowrap">Sagas</span>
+        <span className="hidden sm:inline whitespace-nowrap">Series & Sagas</span>
+        {sagas.length > 0 && (
+          <span
+            className={
+              'ml-0.5 sm:ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
+              (libraryTab === 'sagas'
+                ? 'bg-slate-950/20 text-slate-950'
+                : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
+            }
+          >
+            {sagas.length}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+
   const renderShelfSection = (status: ReadingStatus, title: string, subtitle: string) => {
     const shelfBooks = books.filter((b) => b.progreso === status);
     return (
       <div className="space-y-4 sm:space-y-6">
+        {renderMainLibraryTabs()}
         {renderMobileShelfTabs()}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-amber-900/20 dark:border-[#242E42] pb-3.5 sm:pb-4">
@@ -357,86 +441,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* ─── Pestañas Principales: Libros vs Colecciones vs Sagas ─── */}
-      <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2.5 border-b border-amber-900/15 dark:border-[#242E42] pb-3.5">
-        <button
-          type="button"
-          onClick={() => handleLibraryTabChange('books')}
-          className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
-            (libraryTab === 'books'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
-          }
-        >
-          <BookOpen className="w-4 h-4 shrink-0" />
-          <span className="sm:hidden whitespace-nowrap">Libros</span>
-          <span className="hidden sm:inline whitespace-nowrap">Todos los Libros</span>
-          <span
-            className={
-              'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
-              (libraryTab === 'books'
-                ? 'bg-slate-950/20 text-slate-950'
-                : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
-            }
-          >
-            {books.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleLibraryTabChange('collections')}
-          className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
-            (libraryTab === 'collections'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
-          }
-        >
-          <Bookmark className="w-4 h-4 shrink-0" />
-          <span className="sm:hidden whitespace-nowrap">Colecciones</span>
-          <span className="hidden sm:inline whitespace-nowrap">Mis Colecciones</span>
-          {collectionsCount !== undefined && (
-            <span
-              className={
-                'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
-                (libraryTab === 'collections'
-                  ? 'bg-slate-950/20 text-slate-950'
-                  : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
-              }
-            >
-              {collectionsCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleLibraryTabChange('sagas')}
-          className={
-            'inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold transition shadow-xs sm:shadow-sm ' +
-            (libraryTab === 'sagas'
-              ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-              : 'border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] text-stone-700 dark:text-slate-300 hover:border-amber-600/50 hover:bg-[#fffcf5] dark:hover:bg-[#1a2233]')
-          }
-        >
-          <Layers className="w-4 h-4 shrink-0" />
-          <span className="sm:hidden whitespace-nowrap">Sagas</span>
-          <span className="hidden sm:inline whitespace-nowrap">Series & Sagas</span>
-          {sagas.length > 0 && (
-            <span
-              className={
-                'ml-0.5 sm:ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold shrink-0 ' +
-                (libraryTab === 'sagas'
-                  ? 'bg-slate-950/20 text-slate-950'
-                  : 'bg-amber-500/20 text-amber-800 dark:text-amber-300')
-              }
-            >
-              {sagas.length}
-            </span>
-          )}
-        </button>
-      </div>
+      {renderMainLibraryTabs()}
 
       {libraryTab === 'collections' ? (
         <React.Suspense
