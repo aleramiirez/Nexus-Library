@@ -2343,36 +2343,49 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
       {/* ─── PESTAÑA: 🔍 EXPLORAR LECTORES ─── */}
       {directoryTab === 'explore' && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-amber-900/20 dark:border-[#253044] bg-[#fbf6ea]/95 dark:bg-[#141A26] p-6 shadow-sm space-y-4">
-            <div>
-              <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 dark:text-slate-100 flex items-center gap-2">
-                <Search className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Explorar Lectores
-              </h2>
-              <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
-                Busca a otros lectores por su nombre o su nombre de usuario para consultar sus estanterías o conectaros como amigos.
-              </p>
+          <div className="catalog-card-panel discover-hero-panel space-y-4">
+            <div className="catalog-brass-tab" aria-hidden="true">
+              Directorio de Lectores
             </div>
 
-            <div className="relative max-w-xl">
-              <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre o @usuario (ej: @lector o María)..."
-                className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition shadow-sm"
-              />
-              {isLoadingReaders ? (
-                <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
-              ) : searchQuery ? (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              ) : null}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
+                    <Search className="w-4 h-4" />
+                  </span>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 dark:text-white leading-tight">
+                    Explorar Lectores
+                  </h2>
+                </div>
+                <p className="text-xs text-stone-600 dark:text-slate-400 mt-1">
+                  Busca a otros lectores por su nombre o su @usuario para consultar sus estanterías o conectaros como amigos.
+                </p>
+              </div>
+
+              {/* Barra de búsqueda interactiva */}
+              <div className="relative w-full sm:w-80 md:w-96">
+                <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por nombre o @usuario (ej: @lector o María)..."
+                  className="discover-search-input w-full rounded-xl pl-10 pr-9 py-2.5 text-xs sm:text-sm placeholder-stone-400 dark:placeholder-slate-400 focus:outline-none transition shadow-sm"
+                />
+                {isLoadingReaders ? (
+                  <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                ) : searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 rounded-full text-stone-500 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white absolute right-2.5 top-1/2 -translate-y-1/2"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
 
