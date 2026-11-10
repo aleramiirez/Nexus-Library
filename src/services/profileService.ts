@@ -167,7 +167,7 @@ export const profileService = {
         return this.getCachedProfile(userId);
       }
 
-      const metaName = (userMetadata?.full_name || userMetadata?.name || '').trim();
+      const metaName = (userMetadata?.full_name || userMetadata?.name || userMetadata?.user_name || '').trim();
       const metaAvatar = (userMetadata?.avatar_url || userMetadata?.picture || null) as string | null;
 
       if (data) {

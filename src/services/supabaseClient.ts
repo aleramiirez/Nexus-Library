@@ -93,3 +93,23 @@ export async function signInWithGoogle(): Promise<{ error: Error | null }> {
     return { error };
   }
 }
+
+/**
+ * Inicia sesión o registro social mediante GitHub OAuth en Supabase Auth
+ */
+export async function signInWithGitHub(): Promise<{ error: Error | null }> {
+  try {
+    const redirectTo = getAuthRedirectUrl();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo
+      }
+    });
+    if (error) throw error;
+    return { error: null };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return { error };
+  }
+}
