@@ -3,12 +3,24 @@
  * Utiliza Web Audio API de forma procedimental (0 latencia, sin descarga de archivos externos, funciona 100% offline).
  */
 
+export type HapticFeedbackType =
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'waxSeal'
+  | 'bell'
+  | 'levelUp'
+  | 'stamp'
+  | 'scan'
+  | 'error';
+
 export interface SoundPreferences {
   enabled: boolean;
   volume: number; // 0.0 a 1.0 (0.75 por defecto)
   waxSeal: boolean; // Sonido de golpe sordo y resonancia al completar libro / reto
   pageTurn: boolean; // Susurro de pergamino al hojear fichas de libro
   brassBell: boolean; // Campanilla de latón de biblioteca al alcanzar hitos
+  haptics: boolean; // Feedback táctil vibratorio ceremonial en móviles
 }
 
 const DEFAULT_PREFERENCES: SoundPreferences = {
@@ -16,7 +28,8 @@ const DEFAULT_PREFERENCES: SoundPreferences = {
   volume: 0.55,
   waxSeal: true,
   pageTurn: true,
-  brassBell: true
+  brassBell: true,
+  haptics: true
 };
 
 const STORAGE_KEY = 'nexus_sound_preferences';
@@ -109,10 +122,65 @@ class SoundService {
   }
 
   /**
+   * Dispara una vibración háptica táctil en dispositivos móviles compatibles (0ms lag)
+   */
+  public triggerHaptic(type: HapticFeedbackType = 'light') {
+    if (!this.preferences.enabled || !this.preferences.haptics) return;
+    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+
+    try {
+      switch (type) {
+        case 'light':
+          navigator.vibrate(12);
+          break;
+        case 'medium':
+          navigator.vibrate(22);
+          break;
+        case 'heavy':
+          navigator.vibrate(40);
+          break;
+        case 'waxSeal':
+          // Golpe sordo de lacre ceremonial (impacto inicial + asentamiento de cera)
+          navigator.vibrate([18, 30, 22]);
+          break;
+        case 'bell':
+          // Campanilla de latón
+          navigator.vibrate([12, 35, 14]);
+          break;
+        case 'stamp':
+          // Sello consular ex libris
+          navigator.vibrate(28);
+          break;
+        case 'scan':
+          // Lectura de código de barras
+          navigator.vibrate([15, 30, 15]);
+          break;
+        case 'levelUp':
+          // Fanfarria ceremonial de ascenso en la Orden
+          navigator.vibrate([22, 40, 25, 40, 35]);
+          break;
+        case 'error':
+          navigator.vibrate([35, 40, 35]);
+          break;
+      }
+    } catch {
+      // Ignorar restricciones en entornos sin soporte de vibración
+    }
+  }
+
+  /**
+   * Informa si el dispositivo actual soporta la API de vibración háptica
+   */
+  public isHapticsSupported(): boolean {
+    return typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator;
+  }
+
+  /**
    * 1. Sello de Lacre Ceremonial (Impacto sordo sobre pergamino + resonancia de latón + chasquido de cera)
    */
   public playWaxSeal(force = false) {
     if (!force && (!this.preferences.enabled || !this.preferences.waxSeal)) return;
+    this.triggerHaptic('waxSeal');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -180,6 +248,7 @@ class SoundService {
    */
   public playPageTurn(force = false) {
     if (!force && (!this.preferences.enabled || !this.preferences.pageTurn)) return;
+    this.triggerHaptic('light');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -237,6 +306,7 @@ class SoundService {
    */
   public playBrassBell(force = false) {
     if (!force && (!this.preferences.enabled || !this.preferences.brassBell)) return;
+    this.triggerHaptic('bell');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -296,6 +366,7 @@ class SoundService {
    */
   public playInkStamp(force = false) {
     if (!force && !this.preferences.enabled) return;
+    this.triggerHaptic('stamp');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -349,6 +420,7 @@ class SoundService {
    */
   public playLevelUp(force = false) {
     if (!force && !this.preferences.enabled) return;
+    this.triggerHaptic('levelUp');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -396,6 +468,7 @@ class SoundService {
    */
   public playBarcodeScanSuccess(force = false) {
     if (!force && !this.preferences.enabled) return;
+    this.triggerHaptic('scan');
     const ctx = this.getContext();
     if (!ctx) return;
 

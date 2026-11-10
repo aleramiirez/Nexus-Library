@@ -10,7 +10,8 @@ import {
   Award,
   BookOpen,
   Bell,
-  Sparkles
+  Sparkles,
+  Vibrate
 } from 'lucide-react';
 import { soundService, SoundPreferences } from '../../services/soundService';
 import { DashboardCard, DashboardCardHeader } from '../DashboardCard';
@@ -370,6 +371,47 @@ export const SettingsAppearanceTab: React.FC<SettingsAppearanceTabProps> = ({
                 >
                   <Volume2 className="w-3.5 h-3.5" />
                   <span>Probar Sello Ex Libris</span>
+                </button>
+              </div>
+
+              {/* Respuesta Háptica Táctil */}
+              <div className="rounded-xl border border-amber-900/15 dark:border-[#232C3F] bg-white/60 dark:bg-[#111623] p-4 flex flex-col justify-between space-y-3 sm:col-span-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-2 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-600/20 shrink-0 mt-0.5">
+                      <Vibrate className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100">
+                          Respuesta Háptica Sensorial
+                        </h4>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-600/20">
+                          Móvil / PWA
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone-600 dark:text-slate-400 leading-snug mt-0.5">
+                        Microvibración física que aporta peso táctil y ceremonial a los sellos de lacre, el pase de hojas, el escaneo de ISBN y los ascensos de nivel en dispositivos compatibles.
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={soundPrefs.haptics}
+                    onChange={(e) => handleUpdateSoundPref('haptics', e.target.checked)}
+                    className="rounded border-amber-900/30 text-amber-600 focus:ring-amber-500/20 h-4 w-4 mt-1"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundService.triggerHaptic('waxSeal');
+                    soundService.playWaxSeal(true);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg border border-amber-900/20 dark:border-amber-400/20 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-serif font-bold text-amber-900 dark:text-amber-300 transition"
+                >
+                  <Vibrate className="w-3.5 h-3.5" />
+                  <span>Probar Vibración Háptica + Sello Ceremonial</span>
                 </button>
               </div>
             </div>

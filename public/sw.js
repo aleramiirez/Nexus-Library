@@ -1,5 +1,23 @@
 // Service Worker para Nexus Library (PWA + Push Notifications)
-const CACHE_NAME = 'nexus-library-v1.1.3';
+const CACHE_NAME = 'nexus-library-v1.1.4';
+const COVERS_CACHE_NAME = 'nexus-library-covers-v1';
+const MAX_CACHED_COVERS = 250;
+
+// Función para recortar la caché de portadas (FIFO / LRU aproximado) y evitar que crezca sin control
+async function pruneCache(cacheName, maxItems) {
+  try {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+    if (keys.length > maxItems) {
+      const itemsToDelete = keys.length - maxItems;
+      for (let i = 0; i < itemsToDelete; i++) {
+        await cache.delete(keys[i]);
+      }
+    }
+  } catch (err) {
+    // Ignorar errores de recorte en entornos con storage restringido
+  }
+}
 
 // Recursos críticos estáticos que deben estar disponibles offline
 const PRECACHE_ASSETS = [
@@ -50,7 +68,8 @@ self.addEventListener('activate', (event) => {
       .then((cacheNames) =>
         Promise.all(
           cacheNames.map((name) => {
-            if (name !== CACHE_NAME) {
+            // Preservar la caché estática activa y la caché persistente de portadas de libros
+            if (name !== CACHE_NAME && name !== COVERS_CACHE_NAME) {
               return caches.delete(name);
             }
             return null;
@@ -166,7 +185,38 @@ self.addEventListener('fetch', (event) => {
   // Ignorar peticiones de extensiones y esquemas no http/https
   if (!url.protocol.startsWith('http')) return;
 
-  // Supabase, APIs externas y webhooks siempre van directo a la red
+  // A. Portadas de libros e imágenes remotas (OpenLibrary, Google Books, Supabase Storage de avatares/portadas)
+  // Estrategia Stale-While-Revalidate con caché persistente para lectura 100% offline
+  const isCoverOrImageRequest =
+    request.destination === 'image' ||
+    url.hostname.includes('covers.openlibrary.org') ||
+    (url.hostname.includes('openlibrary.org') && url.pathname.includes('/b/')) ||
+    url.hostname.includes('books.google') ||
+    url.hostname.includes('googleusercontent.com') ||
+    (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/v1/object/public/')) ||
+    url.pathname.match(/\.(jpe?g|png|webp|avif|gif)$/i);
+
+  if (isCoverOrImageRequest) {
+    event.respondWith(
+      caches.open(COVERS_CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        const fetchPromise = fetch(request)
+          .then(async (networkResponse) => {
+            if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+              await cache.put(request, networkResponse.clone());
+              pruneCache(COVERS_CACHE_NAME, MAX_CACHED_COVERS);
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // Supabase Database/Auth APIs, consultas GraphQL y webhooks van siempre a la red
   if (
     url.hostname.includes('supabase.co') ||
     url.hostname.includes('googleapis.com') ||

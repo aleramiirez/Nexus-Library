@@ -59,11 +59,8 @@ import {
   Genre,
   ReadingStatus
 } from './constants/catalogs';
-import { AuthScreen } from './components/AuthScreen';
-import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { BookSidebar, NavigationSection } from './components/BookSidebar';
-import { SagasScreen } from './components/SagasScreen';
 import { DashboardView } from './components/DashboardView';
 import { LibraryView } from './components/LibraryView';
 import { candidateToBookInput } from './services/bookMetadataService';
@@ -72,8 +69,18 @@ import './dashboard-panels.css';
 
 import { AppModals } from './components/AppModals';
 import { AppToast } from './components/AppToast';
-import { ReadingSessionModal } from './components/ReadingSessionModal';
-import { ReadingOracleModal } from './components/ReadingOracleModal';
+const AuthScreen = React.lazy(() =>
+  import('./components/AuthScreen').then((m) => ({ default: m.AuthScreen }))
+);
+const ResetPasswordModal = React.lazy(() =>
+  import('./components/ResetPasswordModal').then((m) => ({ default: m.ResetPasswordModal }))
+);
+const ReadingSessionModal = React.lazy(() =>
+  import('./components/ReadingSessionModal').then((m) => ({ default: m.ReadingSessionModal }))
+);
+const ReadingOracleModal = React.lazy(() =>
+  import('./components/ReadingOracleModal').then((m) => ({ default: m.ReadingOracleModal }))
+);
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
@@ -1293,23 +1300,40 @@ export const App: React.FC = () => {
     return (
       <div className="min-h-screen relative flex items-center justify-center bg-[#f7f0df] dark:bg-[#080C15] p-4 overflow-hidden">
         <AnimatedBackground />
-        <ResetPasswordModal
-          isOpen={true}
-          onCancel={handleCancelRecovery}
-          onSuccess={handleSuccessRecovery}
-        />
+        <React.Suspense fallback={null}>
+          <ResetPasswordModal
+            isOpen={true}
+            onCancel={handleCancelRecovery}
+            onSuccess={handleSuccessRecovery}
+          />
+        </React.Suspense>
       </div>
     );
   }
 
   if (!currentUser && !offlineGuestMode) {
     return (
-      <AuthScreen
-        onContinueOffline={() => {
-          setOfflineGuestMode(true);
-          setActiveSection('dashboard');
-        }}
-      />
+      <React.Suspense
+        fallback={
+          <div className="min-h-screen bg-[#f7f0df] dark:bg-[#0d1117] flex flex-col items-center justify-center p-6 text-center select-none">
+            <img
+              src="/logo.svg"
+              alt="Nexus Library Logo"
+              className="w-20 h-20 shrink-0 drop-shadow-md animate-pulse"
+            />
+            <p className="font-serif text-lg text-amber-800 dark:text-amber-300 tracking-wide mt-4">
+              Cargando Nexus Library...
+            </p>
+          </div>
+        }
+      >
+        <AuthScreen
+          onContinueOffline={() => {
+            setOfflineGuestMode(true);
+            setActiveSection('dashboard');
+          }}
+        />
+      </React.Suspense>
     );
   }
 
@@ -1854,23 +1878,29 @@ export const App: React.FC = () => {
       />
 
       {sessionBook && (
-        <ReadingSessionModal
-          book={sessionBook}
-          isOpen={Boolean(sessionBook)}
-          onClose={() => setSessionBook(null)}
-          onSaveProgress={handleUpdateBookReadingProgress}
-          onShowToast={showToast}
-        />
+        <React.Suspense fallback={null}>
+          <ReadingSessionModal
+            book={sessionBook}
+            isOpen={Boolean(sessionBook)}
+            onClose={() => setSessionBook(null)}
+            onSaveProgress={handleUpdateBookReadingProgress}
+            onShowToast={showToast}
+          />
+        </React.Suspense>
       )}
 
-      <ReadingOracleModal
-        isOpen={isOracleOpen}
-        books={books}
-        sagas={sagas}
-        onClose={() => setIsOracleOpen(false)}
-        onSelectBookToRead={handleSelectOracleBook}
-        onOpenBookDetail={handleOpenBookDetail}
-      />
+      {isOracleOpen && (
+        <React.Suspense fallback={null}>
+          <ReadingOracleModal
+            isOpen={isOracleOpen}
+            books={books}
+            sagas={sagas}
+            onClose={() => setIsOracleOpen(false)}
+            onSelectBookToRead={handleSelectOracleBook}
+            onOpenBookDetail={handleOpenBookDetail}
+          />
+        </React.Suspense>
+      )}
 
       {/* ─── Banner Flotante In-App estilo Instagram / Notificación Nativa ─── */}
       {inAppBanner &&
