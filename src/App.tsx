@@ -1262,7 +1262,7 @@ export const App: React.FC = () => {
           className="w-20 h-20 shrink-0 drop-shadow-md animate-pulse"
         />
         <p className="font-serif text-lg text-amber-800 dark:text-amber-300 tracking-wide">
-          Cargando NEXUS LIBRARY...
+          Cargando Nexus Library...
         </p>
       </div>
     );
@@ -1392,8 +1392,8 @@ export const App: React.FC = () => {
               alt="Nexus Library Logo"
               className="w-7 h-7 shrink-0 drop-shadow-sm"
             />
-            <span className="font-serif text-base font-bold tracking-wide truncate">
-              <span className="text-amber-700 dark:text-amber-400">N</span>EXUS
+            <span className="font-serif text-base font-bold tracking-wide truncate text-stone-900 dark:text-slate-100">
+              <span className="text-amber-700 dark:text-amber-400">N</span>exus Library
             </span>
           </button>
         </div>

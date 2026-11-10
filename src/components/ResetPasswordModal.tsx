@@ -147,7 +147,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 Restablecer Contraseña
               </h2>
               <p className="text-xs text-stone-600 dark:text-slate-400">
-                Nexus Library · Seguridad
+                Nexus Library
               </p>
             </div>
           </div>

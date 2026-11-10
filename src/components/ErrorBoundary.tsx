@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <div className="space-y-2">
               <p className="font-mono text-[11px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest">
-                Nexus Library · Orden del Santuario
+                Nexus Library
               </p>
               <h2 className="font-serif text-2xl font-black text-stone-900 dark:text-amber-100 tracking-tight">
                 Un pergamino ilegible ha detenido el flujo

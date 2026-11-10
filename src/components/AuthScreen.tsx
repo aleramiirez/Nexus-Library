@@ -195,7 +195,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 <span className="text-xl">EXUS</span>
               </span>
               <span className="text-[11px] uppercase tracking-[0.28em] text-amber-700 dark:text-amber-400 font-semibold">
-                Personal Library
+                Library
               </span>
             </div>
           </div>

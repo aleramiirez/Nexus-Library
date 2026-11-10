@@ -586,7 +586,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <div className="rounded-2xl border border-amber-900/15 dark:border-[#222B3C] bg-[#fbf6ea]/70 dark:bg-[#111622] p-5 text-xs text-stone-600 dark:text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="font-serif font-bold text-stone-800 dark:text-slate-200 text-sm block">
-            NEXUS LIBRARY · Tu Biblioteca Personal
+            Nexus Library
           </span>
           <span className="text-[11px] mt-0.5 block">
             Organización de libros, estanterías temáticas y lectura sin distracciones.
