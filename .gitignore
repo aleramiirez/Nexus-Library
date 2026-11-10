@@ -53,3 +53,11 @@ supabase/.temp/
 test-results/
 playwright-report/
 blob-report/
+
+# Promo Video (Remotion)
+promo-video/
+nexus-library-promo.mp4
+
+# Agent scratch & local tools
+.codex/
+.impeccable/

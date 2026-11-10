@@ -50,11 +50,13 @@ export function extractMetadata(row: {
   bio?: string | null;
   order_frame?: string | null;
   level?: number | null;
+  total_xp?: number | null;
 }): {
   visibility: ProfileVisibility;
   cleanBio: string;
   orderFrame?: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII' | 'IX' | 'X';
   level?: number;
+  totalXp?: number;
 } {
   const { visibility } = extractVisibility(row);
   let cleanBio = row.bio ? row.bio.replace(/<!--vis:(public|friends|private)-->/g, '').trim() : '';
@@ -77,18 +79,27 @@ export function extractMetadata(row: {
     }
   }
 
+  let totalXp = typeof (row as any).total_xp === 'number' && !isNaN((row as any).total_xp) ? (row as any).total_xp : undefined;
+  if (totalXp === undefined && row.bio) {
+    const xpMatch = row.bio.match(/<!--xp:(\d+)-->/);
+    if (xpMatch) {
+      totalXp = parseInt(xpMatch[1], 10);
+    }
+  }
+
   if (row.bio) {
     cleanBio = cleanBio
       .replace(/<!--frame:[A-Za-z0-9]+-->/g, '')
       .replace(/<!--lvl:\d+-->/g, '')
+      .replace(/<!--xp:\d+-->/g, '')
       .trim();
   }
 
-  return { visibility, cleanBio, orderFrame, level };
+  return { visibility, cleanBio, orderFrame, level, totalXp };
 }
 
 export function mapRowToProfile(row: RawProfileRow): UserProfile {
-  const { visibility, cleanBio, orderFrame, level } = extractMetadata(row);
+  const { visibility, cleanBio, orderFrame, level, totalXp } = extractMetadata(row);
   return {
     id: row.id,
     username: row.username,
@@ -99,6 +110,7 @@ export function mapRowToProfile(row: RawProfileRow): UserProfile {
     visibility,
     orderFrame,
     level,
+    totalXp,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -210,10 +222,12 @@ export const profileService = {
 
     const targetOrderFrame = updates.orderFrame !== undefined ? updates.orderFrame : current?.orderFrame;
     const targetLevel = updates.level !== undefined ? updates.level : current?.level;
+    const targetTotalXp = updates.totalXp !== undefined ? updates.totalXp : current?.totalXp;
 
     rawBio = rawBio
       .replace(/<!--frame:[A-Za-z0-9]+-->/g, '')
       .replace(/<!--lvl:\d+-->/g, '')
+      .replace(/<!--xp:\d+-->/g, '')
       .trim();
 
     const metadataTags: string[] = [];
@@ -221,6 +235,7 @@ export const profileService = {
     else if (targetVisibility === 'private') metadataTags.push('<!--vis:private-->');
     if (targetOrderFrame) metadataTags.push(`<!--frame:${targetOrderFrame}-->`);
     if (typeof targetLevel === 'number') metadataTags.push(`<!--lvl:${targetLevel}-->`);
+    if (typeof targetTotalXp === 'number') metadataTags.push(`<!--xp:${targetTotalXp}-->`);
 
     let bioToSave: string | null = rawBio;
     if (metadataTags.length > 0) {
@@ -249,7 +264,10 @@ export const profileService = {
     if (updates.level !== undefined) {
       payload.level = updates.level;
     }
-    if (updates.bio !== undefined || updates.visibility !== undefined || updates.isPublic !== undefined || updates.orderFrame !== undefined || updates.level !== undefined) {
+    if (updates.totalXp !== undefined) {
+      payload.total_xp = updates.totalXp;
+    }
+    if (updates.bio !== undefined || updates.visibility !== undefined || updates.isPublic !== undefined || updates.orderFrame !== undefined || updates.level !== undefined || updates.totalXp !== undefined) {
       payload.bio = bioToSave;
     }
 
@@ -338,6 +356,7 @@ export const profileService = {
     updatedProfile.bio = rawBio;
     if (targetOrderFrame) updatedProfile.orderFrame = targetOrderFrame;
     if (typeof targetLevel === 'number') updatedProfile.level = targetLevel;
+    if (typeof targetTotalXp === 'number') updatedProfile.totalXp = targetTotalXp;
 
     this.setCachedProfile(updatedProfile);
     return updatedProfile;

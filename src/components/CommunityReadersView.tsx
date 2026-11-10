@@ -44,7 +44,7 @@ import { supabase } from '../services/supabaseClient';
 import { BookCover } from './BookCover';
 import { BookShelf } from './BookShelf';
 import { UserAvatar } from './UserAvatar';
-import { calculateGuardianProgress, ReaderLevelInfo } from '../services/levelingService';
+import { calculateGuardianProgress, ReaderLevelInfo, getRankForLevel, LEVEL_THRESHOLDS } from '../services/levelingService';
 import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats, literaryGeographyService } from '../services/literaryGeographyService';
 import { LiteraryAtlasMap, CountryMapNode, ContinentId } from './LiteraryAtlasMap';
 import { LiteraryPassportModal } from './LiteraryPassportModal';
@@ -174,7 +174,29 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
   // Rango e información de nivel del lector seleccionado
   const selectedReaderLevelInfo = useMemo<ReaderLevelInfo | null>(() => {
     if (!selectedReader) return null;
-    return calculateGuardianProgress(readerBooks);
+    const info = calculateGuardianProgress(readerBooks);
+
+    // Si el perfil público tiene un nivel registrado (e.g. sincronizado desde su cuenta)
+    // que es superior al recalculado en frío (por ejemplo, nivel máximo 50):
+    if (typeof selectedReader.level === 'number' && selectedReader.level > info.level) {
+      const officialLevel = Math.min(50, Math.max(1, Math.floor(selectedReader.level)));
+      const officialRank = getRankForLevel(officialLevel);
+      const isMax = officialLevel === 50;
+      const baseThreshold = LEVEL_THRESHOLDS[officialLevel - 1] || 0;
+      const nextThreshold = isMax ? baseThreshold : (LEVEL_THRESHOLDS[officialLevel] || baseThreshold + 400);
+      const effectiveXp = Math.max(selectedReader.totalXp ?? info.totalXp, baseThreshold);
+      return {
+        ...info,
+        level: officialLevel,
+        rank: officialRank,
+        totalXp: effectiveXp,
+        isMaxLevel: isMax,
+        currentLevelBaseXp: baseThreshold,
+        nextLevelXp: nextThreshold,
+        progressPercent: isMax ? 100 : Math.min(100, Math.max(0, Math.round(((effectiveXp - baseThreshold) / Math.max(1, nextThreshold - baseThreshold)) * 100)))
+      };
+    }
+    return info;
   }, [selectedReader, readerBooks]);
 
   // Estadísticas del Atlas del lector seleccionado

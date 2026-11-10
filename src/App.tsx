@@ -1077,6 +1077,37 @@ export const App: React.FC = () => {
     }
   }, [books, sagas]);
 
+  // Sincronizar nivel, experiencia y marco de la Orden con el perfil en Supabase
+  useEffect(() => {
+    if (!currentUser?.id || !currentUserProfile || !readerLevelInfo) return;
+    const currentProfileLevel = currentUserProfile.level;
+    const currentOrderFrame = currentUserProfile.orderFrame;
+    const currentTotalXp = currentUserProfile.totalXp;
+    const newLevel = readerLevelInfo.level;
+    const newFrame = readerLevelInfo.activeFrameRank.id;
+    const newTotalXp = readerLevelInfo.totalXp;
+
+    if (currentProfileLevel !== newLevel || currentOrderFrame !== newFrame || currentTotalXp !== newTotalXp) {
+      profileService.updateUserProfile(currentUser.id, {
+        level: newLevel,
+        orderFrame: newFrame,
+        totalXp: newTotalXp
+      }).then((updated) => {
+        setCurrentUserProfile(updated);
+      }).catch((err) => {
+        console.warn('[App] Error sincronizando nivel con el perfil:', err);
+      });
+    }
+  }, [
+    currentUser?.id,
+    currentUserProfile?.level,
+    currentUserProfile?.orderFrame,
+    currentUserProfile?.totalXp,
+    readerLevelInfo?.level,
+    readerLevelInfo?.activeFrameRank?.id,
+    readerLevelInfo?.totalXp
+  ]);
+
   const handleBookStatusChange = useCallback(
     async (bookId: string, nextStatus: ReadingStatus) => {
       const currentBook = books.find((b) => b.id === bookId);

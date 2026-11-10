@@ -142,6 +142,7 @@ export interface UserProfile {
   visibility?: ProfileVisibility;
   orderFrame?: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII' | 'IX' | 'X';
   level?: number;
+  totalXp?: number;
   createdAt?: string;
   updatedAt?: string;
 }

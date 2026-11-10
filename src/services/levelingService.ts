@@ -520,14 +520,67 @@ export function calculateReaderLevel(
     // 3. Sagas completadas (+300 XP por saga con >= 2 libros y 100% leídos)
     let completedSagasCount = 0;
     try {
-      if (safeSagas.length > 0) {
-        safeSagas.forEach((saga) => {
-          const sagaBooks = safeBooks.filter((b) => b.sagaId === saga.id);
-          if (sagaBooks.length >= 2 && sagaBooks.every((b) => isBookRead(b))) {
-            completedSagasCount++;
+      // Agrupamos libros por saga normalizada para que funcione idéntico tanto si se pasa safeSagas
+      // como si los libros tienen sagaNombre/sagaId directo (e.g. perfiles comunitarios o importaciones).
+      const sagaGroups = new Map<string, Book[]>();
+      const sagaIdToKey = new Map<string, string>();
+      const sagaNameToKey = new Map<string, string>();
+
+      // 1. Indexar sagas formales registradas en safeSagas
+      if (Array.isArray(safeSagas)) {
+        safeSagas.forEach((saga, idx) => {
+          if (!saga || typeof saga !== 'object') return;
+          const rawId = typeof saga.id === 'string' && saga.id.trim() ? saga.id.trim() : null;
+          const rawName = typeof saga.nombre === 'string' && saga.nombre.trim() ? saga.nombre.trim().toLowerCase() : null;
+          const canonicalKey = rawId || (rawName ? `named:${rawName}` : `saga_idx_${idx}`);
+
+          if (!sagaGroups.has(canonicalKey)) {
+            sagaGroups.set(canonicalKey, []);
           }
+          if (rawId) sagaIdToKey.set(rawId, canonicalKey);
+          if (rawName) sagaNameToKey.set(rawName, canonicalKey);
         });
       }
+
+      // 2. Distribuir libros en sus respectivas sagas (por id, por nombre, o por agrupación dinámica)
+      safeBooks.forEach((b) => {
+        const rawId = typeof b.sagaId === 'string' && b.sagaId.trim() ? b.sagaId.trim() : null;
+        const rawName = typeof b.sagaNombre === 'string' && b.sagaNombre.trim() ? b.sagaNombre.trim().toLowerCase() : null;
+
+        if (!rawId && !rawName) return;
+
+        let targetKey: string | undefined;
+
+        if (rawId && sagaIdToKey.has(rawId)) {
+          targetKey = sagaIdToKey.get(rawId);
+        } else if (rawName && sagaNameToKey.has(rawName)) {
+          targetKey = sagaNameToKey.get(rawName);
+        } else if (rawName) {
+          // Saga presente en los libros pero no en la tabla formal safeSagas
+          targetKey = `named:${rawName}`;
+          if (!sagaGroups.has(targetKey)) {
+            sagaGroups.set(targetKey, []);
+            sagaNameToKey.set(rawName, targetKey);
+          }
+        } else if (rawId) {
+          targetKey = `id:${rawId}`;
+          if (!sagaGroups.has(targetKey)) {
+            sagaGroups.set(targetKey, []);
+            sagaIdToKey.set(rawId, targetKey);
+          }
+        }
+
+        if (targetKey && sagaGroups.has(targetKey)) {
+          sagaGroups.get(targetKey)!.push(b);
+        }
+      });
+
+      // 3. Evaluar qué sagas están 100% completadas (al menos 2 libros y todos leídos)
+      sagaGroups.forEach((sagaBooks) => {
+        if (sagaBooks.length >= 2 && sagaBooks.every((b) => isBookRead(b))) {
+          completedSagasCount++;
+        }
+      });
     } catch (err) {
       console.warn('[levelingService] Error en sagas:', err);
     }
@@ -549,6 +602,14 @@ export function calculateReaderLevel(
           isChallengeCompleted = true;
           challengeXp = Math.min(1000, targetGoal * 50);
         }
+      }
+
+      // Si no se completó en el año actual (por ejemplo en perfiles comunitarios donde las fechas de fin
+      // no son de este año o la meta local del observador es distinta), comprobar si el lector ha completado
+      // un reto de lectura con >= 10 libros leídos
+      if (!isChallengeCompleted && booksReadCount >= 10) {
+        isChallengeCompleted = true;
+        challengeXp = Math.min(1000, Math.max(500, Math.min(20, booksReadCount) * 50));
       }
     } catch (err) {
       console.warn('[levelingService] Error en reto anual:', err);

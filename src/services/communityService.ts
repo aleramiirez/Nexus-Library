@@ -92,8 +92,11 @@ export const communityService = {
               if (!profile.orderFrame) {
                 profile.orderFrame = progress.rank.id;
               }
-              if (profile.level === undefined) {
-                profile.level = progress.level;
+              if (profile.level === undefined || progress.level > profile.level) {
+                profile.level = Math.max(profile.level ?? 1, progress.level);
+              }
+              if (profile.totalXp === undefined || progress.totalXp > profile.totalXp) {
+                profile.totalXp = Math.max(profile.totalXp ?? 0, progress.totalXp);
               }
             }
           }
@@ -275,8 +278,11 @@ export const communityService = {
         if (!profile.orderFrame) {
           profile.orderFrame = progress.rank.id;
         }
-        if (profile.level === undefined) {
-          profile.level = progress.level;
+        if (profile.level === undefined || progress.level > profile.level) {
+          profile.level = Math.max(profile.level ?? 1, progress.level);
+        }
+        if (profile.totalXp === undefined || progress.totalXp > profile.totalXp) {
+          profile.totalXp = Math.max(profile.totalXp ?? 0, progress.totalXp);
         }
 
         return {
@@ -388,7 +394,7 @@ export const communityService = {
           .map((r) => mapRowToBook(r));
         const progress = calculateGuardianProgress(friendBooks);
         const effectiveFrame = friend.orderFrame || progress.rank.id;
-        const effectiveLevel = friend.level || progress.level;
+        const effectiveLevel = Math.max(friend.level || 1, progress.level);
         friend.orderFrame = effectiveFrame;
         friend.level = effectiveLevel;
         result.friendsRanks[fId] = {
