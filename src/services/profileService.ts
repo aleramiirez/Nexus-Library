@@ -148,8 +148,13 @@ export const profileService = {
   /**
    * Carga el perfil desde Supabase. Si el usuario aún no tiene fila en la tabla profiles
    * (por ejemplo, cuentas creadas antes del trigger), crea automáticamente una fila por defecto.
+   * Contempla metadatos provenientes de OAuth (Google: full_name || name, avatar_url || picture).
    */
-  async fetchUserProfile(userId: string, emailFallback?: string): Promise<UserProfile | null> {
+  async fetchUserProfile(
+    userId: string,
+    emailFallback?: string,
+    userMetadata?: Record<string, any>
+  ): Promise<UserProfile | null> {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -162,21 +167,46 @@ export const profileService = {
         return this.getCachedProfile(userId);
       }
 
+      const metaName = (userMetadata?.full_name || userMetadata?.name || '').trim();
+      const metaAvatar = (userMetadata?.avatar_url || userMetadata?.picture || null) as string | null;
+
       if (data) {
-        const profile = mapRowToProfile(data as RawProfileRow);
+        let profile = mapRowToProfile(data as RawProfileRow);
+
+        // Si el perfil existente no tenía avatar o tenía nombre genérico y Google nos proporciona datos:
+        const needsAvatarUpdate = !profile.avatarUrl && Boolean(metaAvatar);
+        const isDefaultName =
+          !profile.displayName ||
+          profile.displayName === 'Lector' ||
+          profile.displayName === profile.username ||
+          /_[a-f0-9]{4}$/.test(profile.displayName);
+        const needsNameUpdate = isDefaultName && Boolean(metaName);
+
+        if (needsAvatarUpdate || needsNameUpdate) {
+          const patch: Partial<UserProfile> = {};
+          if (needsAvatarUpdate && metaAvatar) patch.avatarUrl = metaAvatar;
+          if (needsNameUpdate && metaName) patch.displayName = metaName;
+          try {
+            profile = await this.updateUserProfile(userId, patch);
+          } catch {
+            // Ignorar fallo de actualización en background
+          }
+        }
+
         this.setCachedProfile(profile);
         return profile;
       }
 
-      // Si no existe fila en profiles, crearla automáticamente
-      const baseName = emailFallback ? emailFallback.split('@')[0] : 'lector';
-      const cleanUsername = `${baseName.toLowerCase().replace(/[^a-z0-9_]/g, '')}_${userId.slice(0, 4)}`;
-      const displayName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+      // Si no existe fila en profiles, crearla automáticamente aprovechando metadatos de Google
+      const baseName = metaName || (emailFallback ? emailFallback.split('@')[0] : 'lector');
+      const cleanUsername = `${baseName.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 15) || 'lector'}_${userId.slice(0, 4)}`;
+      const displayName = metaName || (baseName.charAt(0).toUpperCase() + baseName.slice(1));
 
       const initialRow: Partial<RawProfileRow> = {
         id: userId,
         username: cleanUsername,
         display_name: displayName,
+        avatar_url: metaAvatar,
         bio: '',
         is_public: true
       };
@@ -199,6 +229,13 @@ export const profileService = {
       console.warn('Excepción al cargar perfil de Supabase:', err);
       return this.getCachedProfile(userId);
     }
+  },
+
+  /**
+   * Obtiene o crea el perfil del usuario autenticado actual contemplando metadatos de Google / OAuth
+   */
+  async getOrCreateMyProfile(user: { id: string; email?: string; user_metadata?: Record<string, any> }): Promise<UserProfile | null> {
+    return this.fetchUserProfile(user.id, user.email, user.user_metadata);
   },
 
   /**

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/models';
 import { profileService } from '../services/profileService';
+import { UserAvatar } from './UserAvatar';
+import { AVATAR_PRESETS } from '../constants/avatarPresets';
 import '../dashboard-panels.css';
 
 interface FirstLoginProfileModalProps {
@@ -34,6 +36,7 @@ export const FirstLoginProfileModal: React.FC<FirstLoginProfileModalProps> = ({
 }) => {
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bio, setBio] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export const FirstLoginProfileModal: React.FC<FirstLoginProfileModalProps> = ({
       const cleanSuggested = userProfile.username.replace(/_[a-f0-9]{4}$/, '');
       setUsername(cleanSuggested || userProfile.username || '');
       setBio(userProfile.bio || '');
+      setAvatarUrl(userProfile.avatarUrl || null);
     }
   }, [userProfile]);
 
@@ -107,6 +111,7 @@ export const FirstLoginProfileModal: React.FC<FirstLoginProfileModalProps> = ({
       await onUpdateProfile({
         displayName: displayName.trim(),
         username: username.trim().toLowerCase(),
+        avatarUrl,
         bio: bio.trim(),
         isPublic: true
       });
@@ -172,6 +177,65 @@ export const FirstLoginProfileModal: React.FC<FirstLoginProfileModalProps> = ({
 
         {/* Formulario rápido */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Selector de Avatar / Foto de Google */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-xl border border-amber-900/15 dark:border-[#232C3F] bg-[#fbf6ea]/70 dark:bg-[#101520]/60">
+            <div className="relative shrink-0">
+              <UserAvatar
+                avatarUrl={avatarUrl}
+                displayName={displayName}
+                username={username}
+                size="xl"
+              />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2 text-center sm:text-left">
+              <div>
+                <span className="text-xs font-serif font-bold text-stone-900 dark:text-slate-100 block">
+                  Retrato o Sello del Carnet
+                </span>
+                <p className="text-[11px] text-stone-500 dark:text-slate-400">
+                  {userProfile.avatarUrl && !userProfile.avatarUrl.startsWith('preset:')
+                    ? 'Hemos detectado tu foto de Google. Puedes conservarla o elegir un sello de la Orden.'
+                    : 'Elige tu sello heráldico o conserva tu imagen oficial.'}
+                </p>
+              </div>
+
+              {/* Botones de selección rápida */}
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-0.5">
+                {userProfile.avatarUrl && !userProfile.avatarUrl.startsWith('preset:') && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarUrl(userProfile.avatarUrl || null)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
+                      avatarUrl === userProfile.avatarUrl
+                        ? 'bg-amber-600 text-slate-950 border-amber-700 shadow-xs'
+                        : 'border-amber-900/20 dark:border-slate-700 hover:bg-amber-500/10 text-stone-700 dark:text-slate-300'
+                    }`}
+                  >
+                    Foto de Google
+                  </button>
+                )}
+                {AVATAR_PRESETS.slice(0, 5).map((preset) => {
+                  const isSelected = avatarUrl === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setAvatarUrl(preset.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-amber-600 text-slate-950 border-amber-700 shadow-xs'
+                          : 'border-amber-900/20 dark:border-slate-700 hover:bg-amber-500/10 text-stone-700 dark:text-slate-300'
+                      }`}
+                      title={preset.description}
+                    >
+                      <span>{preset.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-stone-800 dark:text-slate-200 mb-1">
               Nombre o Alias Visible *

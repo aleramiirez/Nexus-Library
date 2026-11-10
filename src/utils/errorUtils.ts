@@ -132,6 +132,24 @@ export function formatAuthErrorMessage(
     return 'Esta cuenta ha sido suspendida temporalmente por seguridad.';
   }
 
+  // Errores de OAuth / Google
+  if (
+    lower.includes('access_denied') ||
+    lower.includes('user cancelled') ||
+    lower.includes('user canceled') ||
+    lower.includes('popup closed') ||
+    lower.includes('window closed')
+  ) {
+    return 'Has cancelado el acceso con Google. Puedes volver a intentarlo cuando desees.';
+  }
+  if (
+    lower.includes('provider is not enabled') ||
+    lower.includes('oauth provider is not enabled') ||
+    lower.includes('unsupported provider')
+  ) {
+    return 'El inicio de sesión con Google no está habilitado actualmente en este proyecto de Supabase.';
+  }
+
   // Errores de red y conexión
   if (
     lower.includes('failed to fetch') ||
@@ -172,6 +190,11 @@ export function formatAuthErrorMessage(
 
   return fallbackMessage;
 }
+
+/**
+ * Alias de formatAuthErrorMessage para compatibilidad semántica con servicios de autenticación.
+ */
+export const translateAuthError = formatAuthErrorMessage;
 
 /**
  * Transforma errores técnicos generales o de base de datos en mensajes amigables para el usuario.

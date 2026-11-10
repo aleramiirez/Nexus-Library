@@ -834,6 +834,38 @@ export const App: React.FC = () => {
     requestPersistentStorage();
 
     let mounted = true;
+
+    // Limpia de la URL los parámetros residuales de redirección OAuth (?code=... o #access_token=...)
+    const cleanOAuthCallbackUrl = () => {
+      if (typeof window === 'undefined') return;
+      try {
+        const url = new URL(window.location.href);
+        let changed = false;
+
+        // Limpiar parámetros de consulta de OAuth PKCE (?code=... &error=...)
+        if (url.searchParams.has('code') || url.searchParams.has('error') || url.searchParams.has('error_description')) {
+          url.searchParams.delete('code');
+          url.searchParams.delete('error');
+          url.searchParams.delete('error_description');
+          changed = true;
+        }
+
+        // Limpiar fragmento hash de tokens implícitos (#access_token=... o #error=...)
+        if (url.hash && (url.hash.includes('access_token=') || url.hash.includes('error='))) {
+          url.hash = '';
+          changed = true;
+        }
+
+        if (changed) {
+          const cleanSearch = url.searchParams.toString();
+          const newPath = url.pathname + (cleanSearch ? `?${cleanSearch}` : '') + (url.hash || '');
+          window.history.replaceState({}, document.title, newPath);
+        }
+      } catch {
+        // Ignorar errores al manipular la URL
+      }
+    };
+
     const initAuthAndSync = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -847,7 +879,8 @@ export const App: React.FC = () => {
           const cached = profileService.getCachedProfile(user.id);
           if (cached) setCurrentUserProfile(cached);
           setAuthLoading(false);
-          profileService.fetchUserProfile(user.id, user.email).then((prof) => {
+          cleanOAuthCallbackUrl();
+          profileService.fetchUserProfile(user.id, user.email, user.user_metadata).then((prof) => {
             if (mounted && prof) setCurrentUserProfile(prof);
           });
           collectionService.syncFromCloud(user.id).catch(() => {});
@@ -951,9 +984,10 @@ export const App: React.FC = () => {
         // preservamos intacta la pantalla actual, el scroll y los modales abiertos.
         if (nextUser) {
           setOfflineGuestMode(false);
+          cleanOAuthCallbackUrl();
           const cached = profileService.getCachedProfile(nextUser.id);
           if (cached) setCurrentUserProfile(cached);
-          profileService.fetchUserProfile(nextUser.id, nextUser.email).then((prof) => {
+          profileService.fetchUserProfile(nextUser.id, nextUser.email, nextUser.user_metadata).then((prof) => {
             if (mounted && prof) setCurrentUserProfile(prof);
           });
           // Solo lanzar sincronización pesada en inicio de sesión real

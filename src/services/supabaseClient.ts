@@ -70,3 +70,26 @@ export function getAuthRedirectUrl(): string {
   }
   return 'http://localhost:5173';
 }
+
+/**
+ * Inicia sesión o registro social mediante Google OAuth en Supabase Auth
+ */
+export async function signInWithGoogle(): Promise<{ error: Error | null }> {
+  try {
+    const redirectTo = getAuthRedirectUrl();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: {
+          prompt: 'select_account'
+        }
+      }
+    });
+    if (error) throw error;
+    return { error: null };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return { error };
+  }
+}
