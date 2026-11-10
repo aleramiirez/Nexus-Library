@@ -347,29 +347,6 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
 
               {user.is_anonymous && (
                 <div className="space-y-3">
-                  <button
-                    type="button"
-                    disabled={isLoading || isGoogleLoading}
-                    onClick={handleGoogleSignIn}
-                    className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] hover:bg-amber-500/10 text-stone-800 dark:text-slate-100 font-semibold py-2.5 px-4 text-xs transition shadow-xs disabled:opacity-50"
-                  >
-                    {isGoogleLoading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
-                    ) : (
-                      <GoogleIcon className="w-4 h-4 shrink-0" />
-                    )}
-                    <span>{isGoogleLoading ? 'Conectando con Google...' : 'Vincular y continuar con Google'}</span>
-                  </button>
-
-                  <div className="relative flex items-center justify-center my-1">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-amber-900/15 dark:border-[#242E42]" />
-                    </div>
-                    <span className="relative bg-[#fbf6ea] dark:bg-[#141A26] px-2.5 font-serif italic text-[11px] text-stone-500 dark:text-slate-400">
-                      o con tu correo y contraseña
-                    </span>
-                  </div>
-
                   <form
                     onSubmit={handleEmailAuth}
                     className="rounded-xl border border-amber-600/30 dark:border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/5 p-4 space-y-3"
@@ -409,6 +386,32 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                       Guardar cuenta
                     </button>
                   </form>
+
+                  <div className="relative flex items-center justify-center my-1 pt-1">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-amber-900/15 dark:border-[#242E42]" />
+                    </div>
+                    <span className="relative bg-[#fbf6ea] dark:bg-[#141A26] px-2.5 font-serif italic text-[11px] text-stone-500 dark:text-slate-400">
+                      o vincula con
+                    </span>
+                  </div>
+
+                  <div className="flex justify-center items-center">
+                    <button
+                      type="button"
+                      disabled={isLoading || isGoogleLoading}
+                      onClick={handleGoogleSignIn}
+                      aria-label="Vincular con Google"
+                      title="Vincular con Google"
+                      className="w-11 h-11 rounded-full border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] hover:bg-amber-500/10 hover:border-amber-600/50 flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition disabled:opacity-50"
+                    >
+                      {isGoogleLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                      ) : (
+                        <GoogleIcon className="w-4 h-4 shrink-0" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -482,33 +485,6 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                 </div>
               )}
 
-              {mode !== 'forgot' && (
-                <div className="space-y-3 pt-1">
-                  <button
-                    type="button"
-                    disabled={isLoading || isGoogleLoading}
-                    onClick={handleGoogleSignIn}
-                    className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] hover:bg-amber-500/10 text-stone-800 dark:text-slate-100 font-semibold py-2.5 px-4 text-xs transition shadow-xs disabled:opacity-50"
-                  >
-                    {isGoogleLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
-                    ) : (
-                      <GoogleIcon className="w-4 h-4 shrink-0" />
-                    )}
-                    <span>{isGoogleLoading ? 'Conectando con Google...' : 'Continuar con Google'}</span>
-                  </button>
-
-                  <div className="relative flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-amber-900/15 dark:border-[#242E42]" />
-                    </div>
-                    <span className="relative bg-[#fbf6ea] dark:bg-[#141A26] px-2.5 font-serif italic text-[11px] text-stone-500 dark:text-slate-400">
-                      o con tu correo y contraseña
-                    </span>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 <div>
                   <label className="block text-xs font-semibold mb-1">Correo electrónico</label>
@@ -563,6 +539,36 @@ export const AuthSyncModal: React.FC<AuthSyncModalProps> = ({
                     : 'Enviar enlace de recuperación'}
                 </button>
               </form>
+
+              {mode !== 'forgot' && (
+                <div className="space-y-3 pt-1">
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-amber-900/15 dark:border-[#242E42]" />
+                    </div>
+                    <span className="relative bg-[#fbf6ea] dark:bg-[#141A26] px-2.5 font-serif italic text-[11px] text-stone-500 dark:text-slate-400">
+                      o continúa con
+                    </span>
+                  </div>
+
+                  <div className="flex justify-center items-center">
+                    <button
+                      type="button"
+                      disabled={isLoading || isGoogleLoading}
+                      onClick={handleGoogleSignIn}
+                      aria-label="Continuar con Google"
+                      title="Continuar con Google"
+                      className="w-11 h-11 rounded-full border border-amber-900/25 dark:border-[#283246] bg-[#fffcf5] dark:bg-[#0D1017] hover:bg-amber-500/10 hover:border-amber-600/50 flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition disabled:opacity-50"
+                    >
+                      {isGoogleLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
+                      ) : (
+                        <GoogleIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {authSettings?.anonymousEnabled ? (
                 <div className="pt-3 border-t border-amber-900/20 dark:border-[#242E42]">

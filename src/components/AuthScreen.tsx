@@ -410,33 +410,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
               onDismiss={() => setFeedback(null)}
             />
 
-            {mode !== 'forgot' && (
-              <div className="mb-5 space-y-4">
-                <button
-                  type="button"
-                  disabled={isLoading || isGoogleLoading}
-                  onClick={handleGoogleSignIn}
-                  className="w-full flex items-center justify-center gap-3 rounded-xl border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14] hover:bg-amber-500/10 dark:hover:bg-[#151D2A] text-stone-800 dark:text-slate-100 font-semibold py-3 px-4 text-sm shadow-xs hover:shadow-sm transition disabled:opacity-50"
-                >
-                  {isGoogleLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
-                  ) : (
-                    <GoogleIcon className="w-4 h-4 shrink-0" />
-                  )}
-                  <span>{isGoogleLoading ? 'Conectando con Google...' : 'Continuar con Google'}</span>
-                </button>
-
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-amber-900/15 dark:border-[#222B3C]" />
-                  </div>
-                  <span className="relative bg-[#fbf6ea] dark:bg-[#121824] px-3 font-serif italic text-xs text-stone-500 dark:text-slate-400">
-                    o con tu correo electrónico
-                  </span>
-                </div>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="auth-email" className="block text-xs font-semibold text-stone-700 dark:text-slate-300 mb-1.5">
@@ -542,6 +515,36 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onContinueOffline }) => 
                 )}
               </button>
             </form>
+
+            {mode !== 'forgot' && (
+              <div className="mt-6 space-y-4">
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-amber-900/15 dark:border-[#222B3C]" />
+                  </div>
+                  <span className="relative bg-[#fbf6ea] dark:bg-[#121824] px-3 font-serif italic text-xs text-stone-500 dark:text-slate-400">
+                    o continúa con
+                  </span>
+                </div>
+
+                <div className="flex justify-center items-center">
+                  <button
+                    type="button"
+                    disabled={isLoading || isGoogleLoading}
+                    onClick={handleGoogleSignIn}
+                    aria-label="Continuar con Google"
+                    title="Continuar con Google"
+                    className="w-12 h-12 rounded-full border border-amber-900/25 dark:border-[#2A354B] bg-[#fffcf5] dark:bg-[#0B0E14] hover:bg-amber-500/10 dark:hover:bg-[#151D2A] hover:border-amber-600/50 dark:hover:border-amber-400/50 flex items-center justify-center shadow-xs hover:shadow-md active:scale-95 transition disabled:opacity-50"
+                  >
+                    {isGoogleLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-600 dark:text-amber-400" />
+                    ) : (
+                      <GoogleIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
