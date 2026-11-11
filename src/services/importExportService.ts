@@ -19,6 +19,8 @@ export interface ParsedCsvBook {
   fechaFin: string;
   sinopsis: string;
   notasPersonales: string;
+  resena?: string;
+  vecesLeido?: number;
   sagaNombre: string;
   volumen: number | null;
   portadaUrl: string;
@@ -267,17 +269,26 @@ function parseStandardDateString(rawDate?: string): string {
   return '';
 }
 
-function cleanIsbn(raw?: string): string {
+export function cleanIsbn(raw?: string): string {
   if (!raw) return '';
-  const cleaned = raw.replace(/[^0-9Xx]/g, '').toUpperCase();
+  let str = raw.trim();
+  // Limpia formato raro de Goodreads o Excel como ="978..." o ="0441172717"
+  if (str.startsWith('=')) {
+    str = str.slice(1).trim();
+  }
+  if (str.startsWith('"') && str.endsWith('"')) {
+    str = str.slice(1, -1).trim();
+  }
+  const cleaned = str.replace(/[^0-9Xx]/g, '').toUpperCase();
   return cleaned;
 }
 
 /**
- * Parsea un archivo CSV exportado desde Goodreads o StoryGraph, extrayendo libros,
- * estados de lectura, puntuaciones, notas personales/reseñas, sagas y números de volumen.
+ * Parsea un archivo CSV exportado desde Goodreads, The StoryGraph o Nexus Library,
+ * extrayendo libros, estados de lectura, puntuaciones, notas personales, reseñas,
+ * número de veces leído, sagas y números de volumen.
  */
-export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseResult {
+export function importFromCSV(csvText: string): CsvLibraryParseResult {
   const rows = parseCsvRows(csvText);
   if (rows.length < 2) {
     throw new Error('El archivo CSV está vacío o no contiene filas de datos.');
@@ -296,31 +307,47 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
   };
 
   const titleIdx = findColIndex('title', 'título', 'titulo', 'nombre');
-  const authorIdx = findColIndex('author', 'autor', 'authors');
-  const isbn13Idx = findColIndex('isbn13', 'isbn 13');
+  const authorIdx = findColIndex('author', 'autor', 'authors', 'autores');
+  const isbn13Idx = findColIndex('isbn13', 'isbn 13', 'isbn-13');
   const isbnIdx = findColIndex('isbn/uid', 'isbn');
   const myRatingIdx = findColIndex('my rating', 'star rating', 'puntuacion', 'puntuación', 'rating');
-  const shelfIdx = findColIndex('exclusive shelf', 'status', 'progreso', 'shelf', 'bookshelves');
-  const dateReadIdx = findColIndex('date read', 'fecha fin', 'read dates', 'finished');
-  const dateAddedIdx = findColIndex('date added', 'fecha inicio', 'added');
-  const pagesIdx = findColIndex('number of pages', 'páginas', 'paginas', 'pages');
-  const yearIdx = findColIndex('year published', 'original publication year', 'publicación', 'year');
+  const shelfIdx = findColIndex('exclusive shelf', 'read status', 'status', 'progreso', 'shelf', 'bookshelves');
+  const readCountIdx = findColIndex('read count', 'read_count', 'veces leido', 'veces leído', 'veces_leido', 'times read');
+  const dateReadIdx = findColIndex('date read', 'fecha fin', 'read dates', 'finished', 'date finished');
+  const dateAddedIdx = findColIndex('date added', 'fecha inicio', 'added', 'date started');
+  const pagesIdx = findColIndex('number of pages', 'páginas', 'paginas', 'pages', 'page count');
+  const yearIdx = findColIndex('year published', 'original publication year', 'fecha de publicación', 'publicación', 'publicacion', 'year');
   const publisherIdx = findColIndex('publisher', 'editorial');
-  const reviewIdx = findColIndex('my review', 'review', 'reseña', 'resena', 'notas personales', 'private notes');
-  const privateNotesIdx = findColIndex('private notes');
+  const reviewIdx = findColIndex('my review', 'review', 'reseña', 'resena');
+  const privateNotesIdx = findColIndex('private notes', 'notas personales', 'notas');
+  const sagaIdx = findColIndex('saga', 'serie', 'series');
+  const volumenIdx = findColIndex('volumen', 'volume', 'tomo', 'libro');
+  const synopsisIdx = findColIndex('sinopsis', 'synopsis', 'description', 'resumen');
 
   if (titleIdx === -1 || authorIdx === -1) {
     throw new Error(
-      'El archivo CSV no contiene columnas válidas de "Title" y "Author". Asegúrate de exportar tu biblioteca desde Goodreads o StoryGraph.'
+      'El archivo CSV no contiene columnas válidas de "Title" y "Author". Asegúrate de exportar tu biblioteca desde Goodreads, The StoryGraph o Nexus Library.'
     );
   }
 
-  const isGoodreads = headers.some((h) => h.includes('goodreads') || h === 'book id' || h === 'exclusive shelf');
-  const isStorygraph = headers.some((h) => h === 'star rating' || h === 'read dates' || h.includes('storygraph'));
+  const isGoodreads = headers.some(
+    (h) => h.includes('goodreads') || h === 'book id' || h === 'exclusive shelf'
+  );
+  const isStorygraph = headers.some(
+    (h) => h === 'star rating' || h === 'read status' || h === 'read dates' || h.includes('storygraph')
+  );
+  const isNexus = headers.some(
+    (h) =>
+      h === 'subgénero' ||
+      h === 'subgenero' ||
+      h === 'lectura virtual' ||
+      h === 'tiempo de lectura'
+  );
 
   let source: CsvLibraryParseResult['source'] = 'generic';
   if (isGoodreads) source = 'goodreads';
   else if (isStorygraph) source = 'storygraph';
+  else if (isNexus) source = 'nexus';
 
   const parsedBooks: ParsedCsvBook[] = [];
   const sagasSet = new Set<string>();
@@ -332,22 +359,39 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
 
     if (!rawTitle.trim()) continue;
 
-    const { cleanTitle, sagaNombre, volumen } = parseBookTitleAndSeries(rawTitle, rawAuthor);
+    // Título y saga: extrae saga de títulos estilo Goodreads "El Imperio Final (Nacidos de la Bruma, #1)"
+    let cleanTitle = rawTitle.trim();
+    let sagaNombre = sagaIdx !== -1 ? (row[sagaIdx] || '').trim() : '';
+    let volumen = volumenIdx !== -1 ? parseInt(row[volumenIdx], 10) : null;
+    if (volumen !== null && Number.isNaN(volumen)) volumen = null;
+
+    const seriesExtracted = parseBookTitleAndSeries(rawTitle, rawAuthor);
+    if (seriesExtracted.cleanTitle) {
+      cleanTitle = seriesExtracted.cleanTitle;
+    }
+    if (!sagaNombre && seriesExtracted.sagaNombre) {
+      sagaNombre = seriesExtracted.sagaNombre;
+    }
+    if (volumen === null && seriesExtracted.volumen !== null) {
+      volumen = seriesExtracted.volumen;
+    }
+
     if (sagaNombre) {
       sagasSet.add(sagaNombre);
     }
 
-    // ISBN
+    // ISBN (limpiando ="...")
     let rawIsbnVal = (isbn13Idx !== -1 ? row[isbn13Idx] : '') || (isbnIdx !== -1 ? row[isbnIdx] : '');
     const isbn = cleanIsbn(rawIsbnVal);
 
-    // Rating
+    // Rating (Goodreads usa 1-5, StoryGraph soporta decimales ej. 4.5; si es 0 -> null)
     let puntuacion: StarRating = null;
     if (myRatingIdx !== -1) {
       const rawRating = parseFloat(row[myRatingIdx]);
       if (!Number.isNaN(rawRating) && rawRating > 0) {
-        const rounded = Math.max(1, Math.min(5, Math.round(rawRating)));
-        puntuacion = rounded as StarRating;
+        const halfRounded = Math.round(rawRating * 2) / 2;
+        const clamped = Math.max(0.5, Math.min(5, halfRounded));
+        puntuacion = clamped as StarRating;
       }
     }
 
@@ -359,21 +403,52 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
     let progreso: ReadingStatus = '❌ No Leído';
     const rawShelf = (shelfIdx !== -1 ? row[shelfIdx] : '').toLowerCase();
 
-    if (rawShelf.includes('currently-reading') || rawShelf.includes('leyendo')) {
+    if (
+      rawShelf.includes('currently-reading') ||
+      rawShelf.includes('currently reading') ||
+      rawShelf.includes('leyendo') ||
+      rawShelf.includes('reading')
+    ) {
       progreso = '⏳ Leyendo';
-    } else if (rawShelf.includes('to-read') || rawShelf.includes('no le') || rawShelf.includes('por leer') || rawShelf.includes('pendientes')) {
+    } else if (
+      rawShelf.includes('to-read') ||
+      rawShelf.includes('to read') ||
+      rawShelf.includes('no le') ||
+      rawShelf.includes('por leer') ||
+      rawShelf.includes('pendiente') ||
+      rawShelf.includes('pendientes')
+    ) {
       progreso = '❌ No Leído';
-    } else if (rawShelf === 'read' || rawShelf.includes('leído') || rawShelf.includes('leido')) {
+    } else if (
+      rawShelf === 'read' ||
+      rawShelf.includes('leído') ||
+      rawShelf.includes('leido') ||
+      rawShelf.includes('completed') ||
+      rawShelf.includes('finished')
+    ) {
       progreso = '✅ Leído';
-    } else if (rawShelf.includes('abandon') || rawShelf.includes('dnf') || rawShelf.includes('paus')) {
+    } else if (
+      rawShelf.includes('paused') ||
+      rawShelf.includes('paus') ||
+      rawShelf.includes('abandon') ||
+      rawShelf.includes('dnf')
+    ) {
       progreso = '⏸️ Pausado';
     } else if (fechaFin) {
       progreso = '✅ Leído';
     }
 
-    // Si está marcado como leído y no hay fecha de fin pero sí fecha de inicio, podemos ordenarlas
     if (progreso === '⏳ Leyendo' && !fechaInicio) {
       fechaInicio = new Date().toISOString().slice(0, 10);
+    }
+
+    // Veces leído (Read Count de Goodreads)
+    let vecesLeido = progreso === '✅ Leído' ? 1 : 0;
+    if (readCountIdx !== -1) {
+      const parsedCount = parseInt(row[readCountIdx], 10);
+      if (!Number.isNaN(parsedCount) && parsedCount >= 0) {
+        vecesLeido = parsedCount;
+      }
     }
 
     // Páginas
@@ -395,14 +470,15 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
     // Editorial
     const editorial = publisherIdx !== -1 ? (row[publisherIdx] || '').trim() : '';
 
-    // Reseña / Notas personales
-    let notasPersonales = reviewIdx !== -1 ? (row[reviewIdx] || '').trim() : '';
-    if (privateNotesIdx !== -1 && privateNotesIdx !== reviewIdx) {
-      const priv = (row[privateNotesIdx] || '').trim();
-      if (priv) {
-        notasPersonales = notasPersonales ? `${notasPersonales}\n\n[Notas privadas]: ${priv}` : priv;
-      }
+    // Reseña y notas personales (Goodreads: My Review -> resena, StoryGraph: Review -> resena)
+    const resena = reviewIdx !== -1 ? (row[reviewIdx] || '').trim() : '';
+    let notasPersonales = privateNotesIdx !== -1 ? (row[privateNotesIdx] || '').trim() : '';
+    if (!notasPersonales && resena) {
+      notasPersonales = resena;
     }
+
+    // Sinopsis
+    const sinopsis = synopsisIdx !== -1 ? (row[synopsisIdx] || '').trim() : '';
 
     // Portada inicial mediante ISBN si está disponible
     const portadaUrl = isbn ? buildOpenLibraryIsbnCover(isbn) : '';
@@ -418,8 +494,10 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
       editorial,
       fechaInicio,
       fechaFin,
-      sinopsis: '',
+      sinopsis,
       notasPersonales,
+      resena,
+      vecesLeido,
       sagaNombre,
       volumen,
       portadaUrl,
@@ -434,3 +512,5 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
     totalRows: rows.length - 1
   };
 }
+
+export const parseGoodreadsOrStorygraphCsv = importFromCSV;

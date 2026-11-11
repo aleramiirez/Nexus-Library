@@ -277,8 +277,8 @@ const BookSidebarComponent: React.FC<BookSidebarProps> = ({
                     onOpenCreateBook();
                     onCloseMobile?.();
                   }}
-                  title="Añadir libro"
-                  aria-label="Añadir libro"
+                  title="Añadir libro (Atajo: N)"
+                  aria-label="Añadir libro (Atajo: N)"
                   className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />

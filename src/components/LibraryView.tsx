@@ -163,6 +163,23 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     }
   }, [activeSection]);
 
+  // Listener para cambiar a la sub-pestaña 'books' desde atajo global de búsqueda
+  React.useEffect(() => {
+    const handleSetBooksTab = () => {
+      setLibraryTab('books');
+      try {
+        sessionStorage.setItem('nexus_library_tab', 'books');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tab');
+        window.history.replaceState({}, '', url.toString());
+      } catch {
+        // ignorar
+      }
+    };
+    window.addEventListener('nexus-set-library-tab-books', handleSetBooksTab);
+    return () => window.removeEventListener('nexus-set-library-tab-books', handleSetBooksTab);
+  }, []);
+
   const handleLibraryTabChange = (tab: 'books' | 'collections' | 'sagas') => {
     setLibraryTab(tab);
     if (activeSection !== 'library') {
@@ -503,13 +520,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           <div className="relative w-full sm:w-44 md:w-52 lg:w-60">
             <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              id="library-search-input"
               type="text"
               value={filters.search}
               onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
               placeholder="Buscar título, autor, ISBN..."
-              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-8 py-2.5 sm:py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
+              className="w-full rounded-xl border border-amber-900/25 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] pl-9 pr-14 py-2.5 sm:py-2 text-xs text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:border-amber-600 dark:focus:border-amber-400 focus:outline-none transition shadow-sm"
             />
-            {filters.search && (
+            {filters.search ? (
               <button
                 type="button"
                 onClick={() => setFilters((f) => ({ ...f, search: '' }))}
@@ -518,14 +536,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="hidden sm:inline-flex items-center gap-0.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] font-mono text-stone-400 dark:text-slate-500 px-1.5 py-0.5 rounded border border-amber-900/15 dark:border-slate-700 bg-amber-900/5 dark:bg-slate-800/60 select-none shadow-2xs"
+                title="Atajo de búsqueda: / o Ctrl+K"
+              >
+                <kbd className="font-sans">/</kbd>
+              </span>
             )}
           </div>
 
           <button
             type="button"
             onClick={onOpenCreateBook}
-            title="Añadir libro"
-            aria-label="Añadir libro"
+            title="Añadir libro (Atajo: N)"
+            aria-label="Añadir libro (Atajo: N)"
             className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm transition shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />

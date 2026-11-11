@@ -368,7 +368,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         parsed.source === 'goodreads'
           ? 'Goodreads'
           : parsed.source === 'storygraph'
-          ? 'StoryGraph'
+          ? 'The StoryGraph'
+          : parsed.source === 'nexus'
+          ? 'Nexus Library'
           : 'CSV';
 
       const { addedBooks, skippedDuplicates, sagasCreated } = await importCsvBooks(parsed.books);

@@ -13,6 +13,12 @@ interface BookFormEssentialTabProps {
   setNombre: (val: string) => void;
   autor: string;
   setAutor: (val: string) => void;
+  existingAuthors?: string[];
+  sagaNombre?: string;
+  onSagaChange?: (val: string) => void;
+  volumen?: string;
+  setVolumen?: (val: string) => void;
+  existingSagas?: string[];
   genero: Genre | '';
   setGenero: (val: Genre | '') => void;
   subgeneros: Subgenre[];
@@ -42,6 +48,12 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
   setNombre,
   autor,
   setAutor,
+  existingAuthors = [],
+  sagaNombre = '',
+  onSagaChange,
+  volumen = '',
+  setVolumen,
+  existingSagas = [],
   genero,
   setGenero,
   subgeneros,
@@ -137,13 +149,74 @@ export const BookFormEssentialTab: React.FC<BookFormEssentialTabProps> = ({
             </label>
             <input
               id="add-book-autor"
+              list="book-form-authors-datalist"
               type="text"
               value={autor}
               onChange={(e) => setAutor(e.target.value)}
               className={inputCls}
+              placeholder="Ej. Brandon Sanderson..."
+              autoComplete="off"
             />
+            <datalist id="book-form-authors-datalist">
+              {existingAuthors.map((authorName) => (
+                <option key={authorName} value={authorName} />
+              ))}
+            </datalist>
           </div>
         </div>
+
+        {/* Saga / Serie & Volumen (con autocompletado de sagas existentes) */}
+        {onSagaChange && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="add-book-saga" className={labelCls}>
+                  Saga o Serie (Opcional)
+                </label>
+                {sagaNombre && (
+                  <button
+                    type="button"
+                    onClick={() => onSagaChange('')}
+                    className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                  >
+                    Quitar saga
+                  </button>
+                )}
+              </div>
+              <input
+                id="add-book-saga"
+                list="book-form-sagas-datalist"
+                type="text"
+                value={sagaNombre}
+                onChange={(e) => onSagaChange(e.target.value)}
+                className={inputCls}
+                placeholder="Ej. Nacidos de la Bruma, Crónica del Asesino de Reyes..."
+                autoComplete="off"
+              />
+              <datalist id="book-form-sagas-datalist">
+                {existingSagas.map((sName) => (
+                  <option key={sName} value={sName} />
+                ))}
+              </datalist>
+            </div>
+            <div>
+              <label htmlFor="add-book-volumen" className={labelCls}>
+                Volumen (#)
+              </label>
+              <input
+                id="add-book-volumen"
+                type="number"
+                min="1"
+                max="999"
+                value={volumen}
+                onChange={(e) => setVolumen?.(e.target.value)}
+                disabled={!sagaNombre.trim()}
+                placeholder={sagaNombre.trim() ? 'Ej. 1, 2...' : 'Sin saga'}
+                className={inputCls + (!sagaNombre.trim() ? ' opacity-60 cursor-not-allowed' : '')}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Genre & Reading status */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -15,6 +15,7 @@ import {
   exportLibraryToCsv,
   exportLibraryToJson,
   parseBackupJson,
+  importFromCSV,
   parseGoodreadsOrStorygraphCsv
 } from '../services/importExportService';
 import {
@@ -194,13 +195,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     try {
       const text = await file.text();
       setIsProcessing(true);
-      const parsed = parseGoodreadsOrStorygraphCsv(text);
+      const parsed = importFromCSV(text);
 
       const sourceName =
         parsed.source === 'goodreads'
           ? 'Goodreads'
           : parsed.source === 'storygraph'
-          ? 'StoryGraph'
+          ? 'The StoryGraph'
+          : parsed.source === 'nexus'
+          ? 'Nexus Library'
           : 'CSV';
 
       const { addedBooks, skippedDuplicates, sagasCreated } = await importCsvBooks(
@@ -291,14 +294,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             <div className="space-y-1">
               <h3 className="font-serif text-lg font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5 text-amber-700 dark:text-amber-400" />
-                Importar desde Goodreads o StoryGraph (CSV)
+                Importar desde Goodreads, The StoryGraph o CSV
               </h3>
               <p className="text-xs text-stone-700 dark:text-slate-300 leading-relaxed">
-                ¿Tienes tus lecturas en <strong>Goodreads</strong> o <strong>StoryGraph</strong>? Sube tu archivo{' '}
+                Acepta directamente archivos exportados de <strong>Goodreads</strong> (ej.{' '}
                 <code className="px-1.5 py-0.5 rounded bg-amber-900/10 dark:bg-amber-400/10 font-mono text-[11px] text-amber-900 dark:text-amber-200">
                   goodreads_library_export.csv
                 </code>
-                . Traspasaremos todos tus libros, estados de lectura, puntuaciones (⭐), fechas, notas/reseñas personales y agruparemos tus sagas automáticamente.
+                ) y <strong>The StoryGraph</strong> (
+                <code className="px-1.5 py-0.5 rounded bg-amber-900/10 dark:bg-amber-400/10 font-mono text-[11px] text-amber-900 dark:text-amber-200">
+                  storygraph_library_export.csv
+                </code>
+                ), además del formato propio de <strong>Nexus Library</strong>. Traspasaremos todos tus libros, estados de lectura, puntuaciones con decimales (⭐), páginas, fechas, reseñas y agruparemos tus sagas automáticamente.
               </p>
             </div>
             <label className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-4 py-2.5 text-xs shadow-md transition shrink-0 cursor-pointer active:scale-95">

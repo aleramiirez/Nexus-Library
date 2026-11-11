@@ -26,9 +26,6 @@ const AddEditBookModal = React.lazy(() =>
 const ImportModal = React.lazy(() =>
   import('./ImportModal').then((m) => ({ default: m.ImportModal }))
 );
-const EpubImportModal = React.lazy(() =>
-  import('./EpubImportModal').then((m) => ({ default: m.EpubImportModal }))
-);
 const AuthSyncModal = React.lazy(() =>
   import('./AuthSyncModal').then((m) => ({ default: m.AuthSyncModal }))
 );
@@ -41,14 +38,26 @@ const FirstLoginProfileModal = React.lazy(() =>
 const BookFinishedCelebrationModal = React.lazy(() =>
   import('./BookFinishedCelebrationModal').then((m) => ({ default: m.BookFinishedCelebrationModal }))
 );
-const ShareBookCardModal = React.lazy(() =>
+export const ShareBookCardModal = React.lazy(() =>
   import('./ShareBookCardModal').then((m) => ({ default: m.ShareBookCardModal }))
 );
-const NexusOrderCodexModal = React.lazy(() =>
+export const NexusOrderCodexModal = React.lazy(() =>
   import('./NexusOrderCodexModal').then((m) => ({ default: m.NexusOrderCodexModal }))
 );
-const BarcodeScannerModal = React.lazy(() =>
+export const BarcodeScannerModal = React.lazy(() =>
   import('./BarcodeScannerModal').then((m) => ({ default: m.BarcodeScannerModal }))
+);
+export const EpubImportModal = React.lazy(() =>
+  import('./EpubImportModal').then((m) => ({ default: m.EpubImportModal }))
+);
+export const ReadingWrappedModal = React.lazy(() =>
+  import('./ReadingWrappedModal').then((m) => ({ default: m.ReadingWrappedModal }))
+);
+export const ShareReaderCardModal = React.lazy(() =>
+  import('./ShareReaderCardModal').then((m) => ({ default: m.ShareReaderCardModal }))
+);
+export const LiteraryPassportModal = React.lazy(() =>
+  import('./LiteraryPassportModal').then((m) => ({ default: m.LiteraryPassportModal }))
 );
 
 export interface AppModalsProps {

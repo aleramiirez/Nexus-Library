@@ -27,7 +27,9 @@ import {
   MonthCadence
 } from '../services/readingChallengeService';
 import { BookCover } from './BookCover';
-import { ReadingWrappedModal } from './ReadingWrappedModal';
+const ReadingWrappedModal = React.lazy(() =>
+  import('./ReadingWrappedModal').then((m) => ({ default: m.ReadingWrappedModal }))
+);
 import { formatStars } from '../constants/catalogs';
 import { ReadingHeatmapCalendar } from './ReadingHeatmapCalendar';
 import { AuthorsStatsPanel } from './AuthorsStatsPanel';
@@ -989,14 +991,16 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
 
       {/* ─── Modal Nexus Wrapped / Memoria Literaria ─── */}
       {isWrappedOpen && (
-        <ReadingWrappedModal
-          isOpen={isWrappedOpen}
-          onClose={() => setIsWrappedOpen(false)}
-          stats={stats}
-          userName={userName}
-          onShowToast={onShowToast}
-          darkMode={darkMode}
-        />
+        <React.Suspense fallback={null}>
+          <ReadingWrappedModal
+            isOpen={isWrappedOpen}
+            onClose={() => setIsWrappedOpen(false)}
+            stats={stats}
+            userName={userName}
+            onShowToast={onShowToast}
+            darkMode={darkMode}
+          />
+        </React.Suspense>
       )}
     </div>
   );

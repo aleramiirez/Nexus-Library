@@ -504,6 +504,64 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
     return getRecommendedSubgenres(genero);
   }, [genero]);
 
+  const existingAuthors = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of existingBooks) {
+      if (b.autor && b.autor.trim()) {
+        set.add(b.autor.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  }, [existingBooks]);
+
+  const existingSagas = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sagas) {
+      if (s.nombre && s.nombre.trim()) {
+        set.add(s.nombre.trim());
+      }
+    }
+    for (const b of existingBooks) {
+      if (b.sagaNombre && b.sagaNombre.trim()) {
+        set.add(b.sagaNombre.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  }, [existingBooks, sagas]);
+
+  const handleSagaNameChange = (val: string) => {
+    setNewSagaName(val);
+    const trimmed = val.trim();
+    if (!trimmed) {
+      setSelectedSagaId('');
+      setSagaMode('none');
+      return;
+    }
+    const matched = sagas.find(
+      (s) => s.nombre.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (matched) {
+      setSelectedSagaId(matched.id);
+      setSagaMode('existing');
+      if (!volumen) {
+        const booksInSaga = existingBooks.filter(
+          (b) =>
+            b.sagaId === matched.id ||
+            (b.sagaNombre && b.sagaNombre.trim().toLowerCase() === matched.nombre.trim().toLowerCase())
+        );
+        const maxVol = booksInSaga.reduce(
+          (max, b) => (typeof b.volumen === 'number' && b.volumen > max ? b.volumen : max),
+          0
+        );
+        const nextVol = Math.max(maxVol, booksInSaga.length) + 1;
+        setVolumen(String(nextVol));
+      }
+    } else {
+      setSelectedSagaId('');
+      setSagaMode('new');
+    }
+  };
+
   const sortedCountries = useMemo(() => {
     return Object.values(COUNTRIES_CATALOG).sort((a, b) => a.name.localeCompare(b.name));
   }, []);
@@ -946,6 +1004,12 @@ export const AddEditBookModal: React.FC<AddEditBookModalProps> = ({
                   setNombre={setNombre}
                   autor={autor}
                   setAutor={setAutor}
+                  existingAuthors={existingAuthors}
+                  sagaNombre={newSagaName}
+                  onSagaChange={handleSagaNameChange}
+                  volumen={volumen}
+                  setVolumen={setVolumen}
+                  existingSagas={existingSagas}
                   genero={genero}
                   setGenero={setGenero}
                   subgeneros={subgeneros}

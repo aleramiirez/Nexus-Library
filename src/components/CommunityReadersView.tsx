@@ -47,7 +47,9 @@ import { UserAvatar } from './UserAvatar';
 import { calculateGuardianProgress, ReaderLevelInfo, getRankForLevel, LEVEL_THRESHOLDS } from '../services/levelingService';
 import { calculateAtlasStats, COUNTRIES_CATALOG, isBookRead, AtlasStats, literaryGeographyService } from '../services/literaryGeographyService';
 import { LiteraryAtlasMap, CountryMapNode, ContinentId } from './LiteraryAtlasMap';
-import { LiteraryPassportModal } from './LiteraryPassportModal';
+const LiteraryPassportModal = React.lazy(() =>
+  import('./LiteraryPassportModal').then((m) => ({ default: m.LiteraryPassportModal }))
+);
 import { StarRatingDisplay } from './StarRatingInteractive';
 import { BookDetailModal } from './BookDetailModal';
 import { SagaVitrine } from './SagaVitrine';
@@ -909,16 +911,18 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
 
         {/* Pasaporte modal */}
         {isPassportModalOpen && (
-          <LiteraryPassportModal
-            isOpen={isPassportModalOpen}
-            onClose={() => setIsPassportModalOpen(false)}
-            books={readerBooks}
-            displayName={selectedReader.displayName}
-            username={selectedReader.username}
-            avatarUrl={selectedReader.avatarUrl}
-            memberId={selectedReader.id}
-            onOpenBookDetail={(book) => handleOpenBookModal(book)}
-          />
+          <React.Suspense fallback={null}>
+            <LiteraryPassportModal
+              isOpen={isPassportModalOpen}
+              onClose={() => setIsPassportModalOpen(false)}
+              books={readerBooks}
+              displayName={selectedReader.displayName}
+              username={selectedReader.username}
+              avatarUrl={selectedReader.avatarUrl}
+              memberId={selectedReader.id}
+              onOpenBookDetail={(book) => handleOpenBookModal(book)}
+            />
+          </React.Suspense>
         )}
 
         {/* Botón Volver */}
@@ -1219,6 +1223,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
                     <div className="relative flex-1 max-w-md">
                       <Search className="w-3.5 h-3.5 text-stone-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
+                        id="community-shelf-search-input"
                         type="text"
                         value={shelfSearchQuery}
                         onChange={(e) => setShelfSearchQuery(e.target.value)}
@@ -2367,6 +2372,7 @@ export const CommunityReadersView: React.FC<CommunityReadersViewProps> = ({
               <div className="relative w-full sm:w-80 md:w-96">
                 <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
+                  id="community-search-input"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

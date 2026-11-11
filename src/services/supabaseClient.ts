@@ -1,7 +1,13 @@
 import { createClient, Session, User } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseUrl =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+  ((globalThis as any).process?.env?.VITE_SUPABASE_URL as string | undefined) ||
+  '';
+const supabasePublishableKey =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  ((globalThis as any).process?.env?.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+  '';
 
 if (!supabaseUrl || !supabasePublishableKey) {
   console.warn(
@@ -9,7 +15,10 @@ if (!supabaseUrl || !supabasePublishableKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+const safeSupabaseUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const safeSupabaseKey = supabasePublishableKey || 'placeholder-anon-key';
+
+export const supabase = createClient(safeSupabaseUrl, safeSupabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

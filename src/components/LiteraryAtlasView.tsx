@@ -42,7 +42,9 @@ import {
 import { updateBookQuickCountry } from '../db/database';
 import { isBookAlreadyInLibrary } from '../services/bookMetadataService';
 import { BookCover } from './BookCover';
-import { LiteraryPassportModal } from './LiteraryPassportModal';
+const LiteraryPassportModal = React.lazy(() =>
+  import('./LiteraryPassportModal').then((m) => ({ default: m.LiteraryPassportModal }))
+);
 import { soundService } from '../services/soundService';
 import { LibrarySelect, LibrarySelectOption } from './LibrarySelect';
 import '../dashboard-panels.css';
@@ -898,16 +900,18 @@ export const LiteraryAtlasView: React.FC<LiteraryAtlasViewProps> = ({
           MODAL DE PASAPORTE COMPLETO (SI SE INVOCA LOCALMENTE)
          ===================================================================== */}
       {isPassportModalOpen && (
-        <LiteraryPassportModal
-          isOpen={isPassportModalOpen}
-          onClose={() => setIsPassportModalOpen(false)}
-          books={books}
-          displayName={userDisplayName}
-          username={username}
-          avatarUrl={avatarUrl}
-          memberId={memberId}
-          onOpenBookDetail={onOpenBookDetail}
-        />
+        <React.Suspense fallback={null}>
+          <LiteraryPassportModal
+            isOpen={isPassportModalOpen}
+            onClose={() => setIsPassportModalOpen(false)}
+            books={books}
+            displayName={userDisplayName}
+            username={username}
+            avatarUrl={avatarUrl}
+            memberId={memberId}
+            onOpenBookDetail={onOpenBookDetail}
+          />
+        </React.Suspense>
       )}
 
       {/* =====================================================================

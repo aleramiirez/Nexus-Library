@@ -160,7 +160,7 @@ export async function subscribeUserToPush(
   }
 
   // 2. Obtener clave pública VAPID
-  const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_VAPID_PUBLIC_KEY : undefined;
   if (!vapidPublicKey || vapidPublicKey.trim() === '' || vapidPublicKey === 'your_vapid_public_key_here') {
     return {
       success: false,

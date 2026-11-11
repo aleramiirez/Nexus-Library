@@ -33,7 +33,9 @@ import {
 import { BookCover } from './BookCover';
 import { normalizeText } from '../constants/catalogs';
 import { BookDetailModal } from './BookDetailModal';
-import { LiteraryAtlasView } from './LiteraryAtlasView';
+const LiteraryAtlasView = React.lazy(() =>
+  import('./LiteraryAtlasView').then((m) => ({ default: m.LiteraryAtlasView }))
+);
 import { literaryGeographyService } from '../services/literaryGeographyService';
 import { AppToast } from './AppToast';
 import { ToastData, ToastType, ToastOptions } from '../hooks/useAppNotifications';
@@ -540,6 +542,7 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
                 <div className="relative flex-1 sm:w-72 md:w-88">
                   <Search className="w-4 h-4 text-stone-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    id="discover-search-input"
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
@@ -1109,16 +1112,25 @@ export const DiscoverBooksScreen: React.FC<DiscoverBooksScreenProps> = ({
       {/* ─── Contenedor Atlas Literario Mundial: montaje perezoso y preservado ─── */}
       {hasVisitedAtlas && (
         <div className={discoverTab === 'atlas' ? 'block' : 'hidden'}>
-          <LiteraryAtlasView
-            books={books}
-            onQuickAddBook={onQuickAddBook}
-            onCustomizeBook={onCustomizeBook}
-            onOpenBookDetail={onOpenBookDetail}
-            userDisplayName={userDisplayName}
-            username={username}
-            avatarUrl={avatarUrl}
-            memberId={currentUserId}
-          />
+          <React.Suspense
+            fallback={
+              <div className="py-24 flex flex-col items-center justify-center gap-3 text-stone-500 dark:text-slate-400">
+                <div className="w-8 h-8 border-2 border-amber-600/30 border-t-amber-600 dark:border-amber-400/30 dark:border-t-amber-400 rounded-full animate-spin" />
+                <span className="font-serif text-sm">Cargando Atlas Literario Mundial...</span>
+              </div>
+            }
+          >
+            <LiteraryAtlasView
+              books={books}
+              onQuickAddBook={onQuickAddBook}
+              onCustomizeBook={onCustomizeBook}
+              onOpenBookDetail={onOpenBookDetail}
+              userDisplayName={userDisplayName}
+              username={username}
+              avatarUrl={avatarUrl}
+              memberId={currentUserId}
+            />
+          </React.Suspense>
         </div>
       )}
 

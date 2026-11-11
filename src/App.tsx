@@ -84,6 +84,9 @@ const ReadingOracleModal = React.lazy(() =>
 const DiscoverBooksScreen = React.lazy(() =>
   import('./components/DiscoverBooksScreen').then((m) => ({ default: m.DiscoverBooksScreen }))
 );
+const LiteraryAtlasView = React.lazy(() =>
+  import('./components/LiteraryAtlasView').then((m) => ({ default: m.LiteraryAtlasView }))
+);
 const CommunityReadersView = React.lazy(() =>
   import('./components/CommunityReadersView').then((m) => ({ default: m.CommunityReadersView }))
 );
@@ -102,6 +105,7 @@ import { calculateReaderLevel } from './services/levelingService';
 import { useLibraryFilters } from './hooks/useLibraryFilters';
 import { useLibraryModals } from './hooks/useLibraryModals';
 import { useAppNotifications } from './hooks/useAppNotifications';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 const VALID_NAVIGATION_SECTIONS = new Set<NavigationSection>([
   'dashboard',
@@ -312,6 +316,19 @@ export const App: React.FC = () => {
   } = modals;
 
   const [isMobileQuickAddOpen, setIsMobileQuickAddOpen] = useState(false);
+  const [discoverInitialTab, setDiscoverInitialTab] = useState<'books' | 'atlas'>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const urlTab = new URLSearchParams(window.location.search).get('tab');
+        if (urlTab === 'books' || urlTab === 'atlas') return urlTab;
+        const stored = sessionStorage.getItem('nexus_discover_tab') || localStorage.getItem('nexus_discover_tab');
+        if (stored === 'books' || stored === 'atlas') return stored as 'books' | 'atlas';
+      } catch {
+        // ignorar
+      }
+    }
+    return 'books';
+  });
 
   const [isRecoveryMode, setIsRecoveryMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -750,7 +767,11 @@ export const App: React.FC = () => {
 
   const isAnyModalOpen = Boolean(
     mobileMenuOpen ||
-    isAnyLibraryModalOpen
+    isAnyLibraryModalOpen ||
+    sessionBook ||
+    isOracleOpen ||
+    isMobileQuickAddOpen ||
+    detailBookId
   );
 
   // Bloquea el scroll del fondo mientras cualquier modal o menú móvil está abierto
@@ -763,54 +784,89 @@ export const App: React.FC = () => {
     };
   }, [isAnyModalOpen]);
 
-  // Soporte de tecla Escape para cerrar modales y paneles
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isInboxOpen) {
-          setIsInboxOpen(false);
-          refreshInboxCount();
-        } else if (bookToDelete) {
-          setBookToDelete(null);
-        } else if (sagaToDelete) {
-          setSagaToDelete(null);
-        } else if (isAddEditOpen) {
-          setIsAddEditOpen(false);
-          setSelectedInitialCandidate(null);
-          setSelectedParsedEbook(null);
-        } else if (detailBookId) {
-          // El cierre por Escape lo gestiona BookDetailModal para ejecutar la animación inversa (380ms)
-          return;
-        } else if (isEpubImportOpen) {
-          setIsEpubImportOpen(false);
-          setInitialEpubFiles(undefined);
-        } else if (isImportOpen) {
-          setIsImportOpen(false);
-        } else if (isAuthModalOpen) {
-          setIsAuthModalOpen(false);
-        } else if (isInstallModalOpen) {
-          setIsInstallModalOpen(false);
-        } else if (mobileMenuOpen) {
-          setMobileMenuOpen(false);
-        }
-      }
-    };
+  const handleTriggerReadingSession = useCallback(() => {
+    const readingBook = books.find((b) => b.progreso === '⏳ Leyendo');
+    if (readingBook) {
+      setSessionBook(readingBook);
+    } else if (books.length > 0) {
+      setSessionBook(books[0]);
+    } else {
+      showToast('No tienes ningún libro en tu biblioteca para iniciar una sesión de lectura.', 'info');
+    }
+  }, [books, showToast]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+  const handleCloseModalsByEscape = useCallback(() => {
+    if (isInboxOpen) {
+      setIsInboxOpen(false);
+      refreshInboxCount();
+    } else if (bookToDelete) {
+      setBookToDelete(null);
+    } else if (sagaToDelete) {
+      setSagaToDelete(null);
+    } else if (isAddEditOpen) {
+      setIsAddEditOpen(false);
+      setSelectedInitialCandidate(null);
+      setSelectedParsedEbook(null);
+    } else if (detailBookId) {
+      setDetailBookId(null);
+    } else if (isEpubImportOpen) {
+      setIsEpubImportOpen(false);
+      setInitialEpubFiles(undefined);
+    } else if (isImportOpen) {
+      setIsImportOpen(false);
+    } else if (isAuthModalOpen) {
+      setIsAuthModalOpen(false);
+    } else if (isInstallModalOpen) {
+      setIsInstallModalOpen(false);
+    } else if (sessionBook) {
+      setSessionBook(null);
+    } else if (isOracleOpen) {
+      setIsOracleOpen(false);
+    } else if (isMobileQuickAddOpen) {
+      setIsMobileQuickAddOpen(false);
+    } else if (mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
   }, [
     isInboxOpen,
+    refreshInboxCount,
     bookToDelete,
+    setBookToDelete,
     sagaToDelete,
+    setSagaToDelete,
     isAddEditOpen,
+    setIsAddEditOpen,
+    setSelectedInitialCandidate,
+    setSelectedParsedEbook,
     detailBookId,
-    isImportOpen,
+    setDetailBookId,
     isEpubImportOpen,
+    setIsEpubImportOpen,
+    setInitialEpubFiles,
+    isImportOpen,
+    setIsImportOpen,
     isAuthModalOpen,
+    setIsAuthModalOpen,
     isInstallModalOpen,
-    mobileMenuOpen,
-    refreshInboxCount
+    setIsInstallModalOpen,
+    sessionBook,
+    isOracleOpen,
+    isMobileQuickAddOpen,
+    mobileMenuOpen
   ]);
+
+  // Atajos de teclado globales integrados con la aplicación
+  useKeyboardShortcuts({
+    activeSection,
+    onNavigate: handleNavigate,
+    isAnyModalOpen,
+    onCloseModalsByEscape: handleCloseModalsByEscape,
+    onOpenCreateBook: handleOpenCreateBook,
+    onOpenOracle: () => setIsOracleOpen(true),
+    onStartReadingSession: handleTriggerReadingSession,
+    setDiscoverInitialTab,
+    onCloseBookDetail: () => setDetailBookId(null)
+  });
 
   const runCloudSync = async () => {
     setIsSyncing(true);
@@ -1461,8 +1517,8 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsMobileQuickAddOpen(true)}
-            title="Añadir libro o escanear ISBN"
-            aria-label="Añadir libro o escanear ISBN"
+            title="Añadir libro o escanear ISBN (Atajo: N)"
+            aria-label="Añadir libro o escanear ISBN (Atajo: N)"
             className="h-9 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold shadow-xs transition shrink-0 cursor-pointer text-xs"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -1595,6 +1651,8 @@ export const App: React.FC = () => {
             >
               <DiscoverBooksScreen
                 books={books}
+                initialTab={discoverInitialTab}
+                onTabChange={setDiscoverInitialTab}
                 onQuickAddBook={handleQuickAddFromDiscover}
                 onCustomizeBook={handleCustomizeFromDiscover}
                 currentUserId={currentUser?.id}

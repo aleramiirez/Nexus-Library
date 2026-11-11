@@ -27,8 +27,12 @@ import { isBookRead } from '../../services/literaryGeographyService';
 import { profileService } from '../../services/profileService';
 import { UserAvatar } from '../UserAvatar';
 import { AvatarPickerModal } from '../AvatarPickerModal';
-import { ShareReaderCardModal } from '../ShareReaderCardModal';
-import { LiteraryPassportModal } from '../LiteraryPassportModal';
+const ShareReaderCardModal = React.lazy(() =>
+  import('../ShareReaderCardModal').then((m) => ({ default: m.ShareReaderCardModal }))
+);
+const LiteraryPassportModal = React.lazy(() =>
+  import('../LiteraryPassportModal').then((m) => ({ default: m.LiteraryPassportModal }))
+);
 import { EditProfileModal } from './EditProfileModal';
 
 interface SettingsAccountTabProps {
@@ -440,37 +444,45 @@ export const SettingsAccountTab: React.FC<SettingsAccountTabProps> = ({
         />
 
         {/* Modal de Exportación Oficial de Carnet */}
-        <ShareReaderCardModal
-          isOpen={isExportCarnetOpen}
-          onClose={() => setIsExportCarnetOpen(false)}
-          displayName={profileDisplayName}
-          username={profileUsername}
-          avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
-          bio={profileBio}
-          memberId={currentUser?.id}
-          totalBooks={books.length}
-          readBooks={books.filter((b) => isBookRead(b)).length}
-          totalSagas={sagas.length}
-          levelInfo={readerLevelInfo}
-          onShowToast={(msg, type) =>
-            onShowFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
-          }
-        />
+        {isExportCarnetOpen && (
+          <React.Suspense fallback={null}>
+            <ShareReaderCardModal
+              isOpen={isExportCarnetOpen}
+              onClose={() => setIsExportCarnetOpen(false)}
+              displayName={profileDisplayName}
+              username={profileUsername}
+              avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+              bio={profileBio}
+              memberId={currentUser?.id}
+              totalBooks={books.length}
+              readBooks={books.filter((b) => isBookRead(b)).length}
+              totalSagas={sagas.length}
+              levelInfo={readerLevelInfo}
+              onShowToast={(msg, type) =>
+                onShowFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
+              }
+            />
+          </React.Suspense>
+        )}
 
         {/* Modal de Pasaporte Literario y Visados Consulares */}
-        <LiteraryPassportModal
-          isOpen={isPassportOpen}
-          onClose={() => setIsPassportOpen(false)}
-          books={books}
-          displayName={profileDisplayName}
-          username={profileUsername}
-          avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
-          memberId={currentUser?.id}
-          onOpenBookDetail={onOpenBookDetail}
-          onShowToast={(msg, type) =>
-            onShowFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
-          }
-        />
+        {isPassportOpen && (
+          <React.Suspense fallback={null}>
+            <LiteraryPassportModal
+              isOpen={isPassportOpen}
+              onClose={() => setIsPassportOpen(false)}
+              books={books}
+              displayName={profileDisplayName}
+              username={profileUsername}
+              avatarUrl={currentUser ? (userProfile?.avatarUrl ?? null) : guestAvatar}
+              memberId={currentUser?.id}
+              onOpenBookDetail={onOpenBookDetail}
+              onShowToast={(msg, type) =>
+                onShowFeedback({ type: type === 'error' ? 'error' : 'success', text: msg })
+              }
+            />
+          </React.Suspense>
+        )}
       </div>
     </div>
   );
