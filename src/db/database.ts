@@ -611,6 +611,14 @@ export function calculateReadingTimeLabel(
   return existingLabel || '';
 }
 
+function normalizeSagaComparisonKey(value: string): string {
+  return normalizeText(value)
+    .replace(/^(?:saga|serie|trilogia|ciclo|cronicas|cronica)\s+(?:de\s+|del\s+|la\s+|el\s+|los\s+|las\s+)?/i, '')
+    .replace(/^(?:el|la|los|las|the|a)\s+/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 export async function findOrCreateSagaByName(
   nombreRaw: string,
   descripcion = ''
@@ -619,8 +627,13 @@ export async function findOrCreateSagaByName(
   if (!cleanName) return null;
 
   const targetNorm = normalizeText(cleanName);
+  const targetLoose = normalizeSagaComparisonKey(cleanName);
   const allSagas = await db.sagas.toArray();
-  const existing = allSagas.find((s) => normalizeText(s.nombre) === targetNorm);
+  const existing =
+    allSagas.find((s) => normalizeText(s.nombre) === targetNorm) ||
+    (targetLoose.length >= 3
+      ? allSagas.find((s) => normalizeSagaComparisonKey(s.nombre) === targetLoose)
+      : undefined);
   if (existing) {
     return existing;
   }
@@ -632,9 +645,15 @@ export async function findOrCreateSagaByName(
       .select('*')
       .eq('user_id', user.id);
     if (Array.isArray(remoteExisting)) {
-      const match = (remoteExisting as SupabaseSagaRow[]).find(
-        (r) => normalizeText(r.nombre) === targetNorm
-      );
+      const match =
+        (remoteExisting as SupabaseSagaRow[]).find(
+          (r) => normalizeText(r.nombre) === targetNorm
+        ) ||
+        (targetLoose.length >= 3
+          ? (remoteExisting as SupabaseSagaRow[]).find(
+              (r) => normalizeSagaComparisonKey(r.nombre) === targetLoose
+            )
+          : undefined);
       if (match) {
         const mapped = mapRowToSaga(match);
         await db.sagas.put(mapped);

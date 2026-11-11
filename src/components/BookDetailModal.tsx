@@ -1049,60 +1049,6 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   </div>
                 )}
 
-                {/* Botón para pasar página a la Sinopsis en móvil */}
-                <button
-                  type="button"
-                  onClick={handleTurnToSynopsis}
-                  className="w-full p-3.5 rounded-2xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 text-left active:scale-[0.98] transition flex items-center justify-between gap-3 shadow-sm"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 shrink-0">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 block">
-                        Leer sinopsis de la obra
-                      </span>
-                      <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                        {currentSynopsis
-                          ? 'Pasa de página para ver el argumento'
-                          : 'Sin sinopsis registrada'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-amber-900 dark:text-amber-300 shrink-0">
-                    <span>Pasar página</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </div>
-                </button>
-
-                {/* Botón para abrir Diario de Lectura & Citas en móvil */}
-                <button
-                  type="button"
-                  onClick={handleTurnToNotes}
-                  className="w-full p-3.5 rounded-2xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-[#fbf5e6] via-[#f4ebd6] to-[#eddcc0] dark:from-[#171E2D] dark:via-[#141A26] dark:to-[#111622] text-left active:scale-[0.98] transition flex items-center justify-between gap-3 shadow-sm"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-xl bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/35 shrink-0">
-                      <PenLine className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-serif font-bold text-xs sm:text-sm text-stone-900 dark:text-slate-100 block">
-                        Diario de Lectura & Citas favoritas
-                      </span>
-                      <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                        {localQuotes.length > 0 || localNotes
-                          ? `${localQuotes.length} citas · Notas personales registradas`
-                          : 'Escribe tu reseña personal y guarda tus citas'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-amber-900 dark:text-amber-300 shrink-0">
-                    <span>fol. IV</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </div>
-                </button>
-
                 {/* Registro de Lectura (Fechas y Lectura Virtual) */}
                 <BookDetailReadingRecord
                   book={book}
@@ -1120,6 +1066,22 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   />
                   <BookDetailColophon items={colophonItems} variant="mobile" />
                 </div>
+
+                {/* Botón sutil para pasar página a la Sinopsis en móvil */}
+                <button
+                  type="button"
+                  onClick={handleTurnToSynopsis}
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-between shadow-2xs transition active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <BookOpen className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
+                    <span className="font-serif font-bold truncate">Pasar a la Sinopsis (fol. III)</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-amber-900 dark:text-amber-300 shrink-0">
+                    <span>Pasar página</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </button>
                   </div>
                 )}
               </div>
@@ -1206,15 +1168,15 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Bloque inferior fijado abajo (Puntuación y Registro de Lectura) */}
-                        <div className="w-full mt-auto shrink-0 flex flex-col gap-2 pt-2">
+                        {/* Bloque inferior fijado abajo (Puntuación y Registro de Lectura Unificados) */}
+                        <div className="w-full mt-auto shrink-0 pt-2">
                           {!readOnly ? (
-                            <>
-                              {/* Puntuación Personal (Estrellas) */}
-                              <div className="w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0 flex flex-col items-center">
-                                <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-1">
+                            <div className="w-full rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f5ebd7]/75 dark:bg-[#101520]/80 p-2.5 sm:p-3 text-center shadow-xs shrink-0 space-y-2">
+                              {/* Puntuación Personal */}
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="font-serif italic text-xs font-semibold text-amber-950/80 dark:text-amber-300/80 mb-1">
                                   Puntuación Personal
-                                </p>
+                                </span>
                                 <StarRatingInteractive
                                   value={book.puntuacion}
                                   onChange={(rating) => onRatingChange?.(book.id, rating)}
@@ -1224,20 +1186,24 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                 />
                               </div>
 
-                              {/* Sello / Ficha de Registro de Lectura Clásica (Fechas y Lectura Virtual) */}
+                              {/* Divisor sutil */}
+                              <div className="h-px w-full bg-gradient-to-r from-transparent via-amber-900/15 dark:via-amber-400/15 to-transparent" />
+
+                              {/* Sello / Ficha de Registro de Lectura (Fechas y Lectura Virtual) */}
                               <BookDetailReadingRecord
                                 book={book}
                                 onDatesChange={onDatesChange}
                                 readOnly={readOnly}
                                 variant="desktop"
+                                embedded={true}
                               />
-                            </>
+                            </div>
                           ) : (
                             <>
                               {readerName ? (
-                                <>
-                                  <div className="w-full rounded-xl border border-amber-900/20 dark:border-[#242E42] bg-[#f4ead4]/75 dark:bg-[#101520]/80 px-2.5 py-1.5 text-center shadow-inner shrink-0">
-                                    <p className="font-serif italic text-[11px] text-stone-700 dark:text-slate-300 mb-0.5">
+                                <div className="w-full rounded-2xl border border-amber-900/20 dark:border-[#242E42] bg-[#f5ebd7]/75 dark:bg-[#101520]/80 p-2.5 sm:p-3 text-center shadow-xs shrink-0 space-y-2">
+                                  <div>
+                                    <p className="font-serif italic text-xs font-semibold text-amber-950/80 dark:text-amber-300/80 mb-0.5">
                                       Valoración de {readerName}
                                     </p>
                                     <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-amber-700 dark:text-amber-400 font-bold">
@@ -1252,71 +1218,18 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                                     </div>
                                   </div>
 
-                                  <div className="w-full rounded-xl border border-dashed border-amber-900/30 dark:border-[#2B3750] bg-[#f3e7ce]/60 dark:bg-[#0f141f]/75 p-2 text-center text-xs shrink-0 shadow-sm">
-                                    <span className="text-[10px] uppercase font-semibold text-stone-500 dark:text-slate-400 block mb-1">
+                                  <div className="h-px w-full bg-gradient-to-r from-transparent via-amber-900/15 dark:via-amber-400/15 to-transparent" />
+
+                                  <div className="flex items-center justify-between text-xs px-1">
+                                    <span className="text-[10px] uppercase font-semibold text-stone-500 dark:text-slate-400">
                                       Estado en su estantería
                                     </span>
-                                    <span className="inline-flex items-center rounded-full border border-amber-600/35 bg-amber-500/15 px-3 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
+                                    <span className="inline-flex items-center rounded-full border border-amber-600/35 bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-950 dark:text-amber-200">
                                       {book.progreso}
                                     </span>
-                                    {typeof book.paginaActual === 'number' && book.paginas && book.paginas > 0 && (book.progreso === '⏳ Leyendo' || book.progreso === '⏸️ Pausado') && (
-                                      <div className="mt-2 w-full space-y-1 text-left">
-                                        <div className="flex justify-between text-[11px] font-mono text-stone-600 dark:text-slate-400">
-                                          <span>Pág. {book.paginaActual} / {book.paginas}</span>
-                                          <span className="font-semibold text-amber-700 dark:text-amber-400">{Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%</span>
-                                        </div>
-                                        <div className="h-1.5 w-full bg-amber-950/10 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                          <div
-                                            className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
-                                            style={{ width: `${Math.min(100, Math.round((book.paginaActual / book.paginas) * 100))}%` }}
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
-                                </>
-                              ) : recommendationReason ? (
-                                <div className="w-full rounded-xl border border-amber-600/35 dark:border-amber-500/30 bg-[#f4ead4]/80 dark:bg-[#141A26] p-2.5 text-center shrink-0 shadow-sm">
-                                  <span className="flex items-center justify-center gap-1 text-[10px] uppercase font-bold text-amber-800 dark:text-amber-300 mb-1">
-                                    <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                                    Por qué te gustará
-                                  </span>
-                                  <p className="text-xs text-stone-800 dark:text-slate-200 font-serif leading-snug">
-                                    {recommendationReason}
-                                  </p>
                                 </div>
-                              ) : (
-                                <div className="w-full rounded-xl border border-dashed border-amber-900/25 dark:border-[#283246] bg-[#f4ead4]/60 dark:bg-[#101520]/60 p-2.5 text-center shrink-0">
-                                  <span className="text-[10px] uppercase font-mono tracking-wider text-amber-800 dark:text-amber-400 block mb-0.5">
-                                    Catálogo NEXUS
-                                  </span>
-                                  <p className="text-xs text-stone-700 dark:text-slate-300 font-serif italic">
-                                    {book.genero ? `Género: ${book.genero}` : 'Ficha de obra recomendada'}
-                                  </p>
-                                </div>
-                              )}
-
-                              {book.lecturaVirtual && (
-                                <div className="w-full pt-1.5 border-t border-amber-900/15 dark:border-[#232D42] flex items-center justify-between gap-2 text-[11px]">
-                                  <span className="text-[10px] text-stone-600 dark:text-slate-400 shrink-0">
-                                    Formato
-                                  </span>
-                                  {isUrl ? (
-                                    <a
-                                      href={book.lecturaVirtual}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-amber-800 dark:text-amber-400 hover:underline font-semibold truncate text-[11px]"
-                                    >
-                                      Abrir recurso <ExternalLink className="w-3 h-3 shrink-0" />
-                                    </a>
-                                  ) : (
-                                    <span className="font-medium text-[11px] truncate text-stone-800 dark:text-slate-200">
-                                      {formatReadingType(book.lecturaVirtual)}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
+                              ) : null}
                             </>
                           )}
                         </div>
@@ -1620,59 +1533,23 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                       {/* Colofón bibliográfico sutil: Editorial · Idioma · ISBN */}
                       <BookDetailColophon items={colophonItems} variant="desktop" />
 
-                      {/* Botón interactivo para pasar página a la Sinopsis */}
-                      <button
-                        type="button"
-                        onClick={handleTurnToSynopsis}
-                        className="group w-full mt-1.5 sm:mt-2 p-2.5 sm:p-3 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-[#f5ead4] to-amber-500/20 dark:from-amber-500/10 dark:via-[#192231] dark:to-amber-500/15 hover:border-amber-600 dark:hover:border-amber-400 text-left transition-all duration-300 shadow-sm flex items-center justify-between gap-3 shrink-0"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="p-2 rounded-xl bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-600/35 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
-                            <BookOpen className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors">
-                              Leer sinopsis de la obra
-                            </span>
-                            <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                              {currentSynopsis
-                                ? 'Pasa la página para descubrir la trama y el argumento'
-                                : 'Sin sinopsis registrada todavía (pulsa para consultar)'}
-                            </span>
-                          </div>
+                      {/* Barra de navegación de página sutil (sustituye a los dos bloques gigantes) */}
+                      <div className="pt-3 sm:pt-4 mt-auto border-t border-amber-900/15 dark:border-[#242E42] flex items-center justify-between gap-3 shrink-0">
+                        <div className="flex items-center gap-1.5 text-[11px] font-serif italic text-stone-500 dark:text-slate-400">
+                          <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" />
+                          <span>fol. II · Ficha de Catálogo</span>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-xs font-bold text-amber-950 dark:text-amber-200 border border-amber-600/30 shrink-0 group-hover:translate-x-1 transition-transform">
-                          <span>Pasar página</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </div>
-                      </button>
 
-                      {/* Botón interactivo para abrir el Diario de Lectura & Citas */}
-                      <button
-                        type="button"
-                        onClick={handleTurnToNotes}
-                        className="group w-full mt-1.5 p-2.5 sm:p-3 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-gradient-to-r from-[#fbf5e6] via-[#f4ebd6] to-[#eddcc0] dark:from-[#171E2D] dark:via-[#141A26] dark:to-[#111622] hover:border-amber-600 dark:hover:border-amber-400 text-left transition-all duration-300 shadow-sm flex items-center justify-between gap-3 shrink-0 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/35 group-hover:scale-105 transition-transform shrink-0 shadow-sm">
-                            <PenLine className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="font-serif font-bold text-sm text-stone-900 dark:text-slate-100 block group-hover:text-amber-800 dark:group-hover:text-amber-300 transition-colors">
-                              Diario de Lectura & Citas favoritas
-                            </span>
-                            <span className="text-[11px] text-stone-600 dark:text-slate-400 block truncate">
-                              {localQuotes.length > 0 || localNotes
-                                ? `${localQuotes.length} citas guardadas · Notas y reflexiones registradas`
-                                : 'Escribe tu reseña personal y guarda fragmentos memorables'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-xs font-bold text-amber-950 dark:text-amber-200 border border-amber-600/30 shrink-0 group-hover:translate-x-1 transition-transform">
-                          <span>fol. IV</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </div>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={handleTurnToSynopsis}
+                          className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-amber-600/35 dark:border-amber-500/35 bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 text-xs font-semibold shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer"
+                          title="Pasar página a la Sinopsis de la obra (fol. III)"
+                        >
+                          <span>Pasar a Sinopsis</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
                     </div>
                   ) : activeTab === 'notes' ? (
                     <BookDetailNotesView

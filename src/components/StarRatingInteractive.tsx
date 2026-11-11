@@ -102,7 +102,7 @@ export const StarRatingInteractive: React.FC<StarRatingInteractiveProps> = ({
                   strokeLinejoin="round"
                   className={
                     !isFull && !isHalf
-                      ? 'text-stone-300 dark:text-slate-600'
+                      ? 'text-amber-900/30 dark:text-amber-400/30 transition-colors'
                       : ''
                   }
                 />
@@ -147,23 +147,19 @@ export const StarRatingInteractive: React.FC<StarRatingInteractiveProps> = ({
 
       {/* Texto de puntuación y selector rápido / toggle +0.5 para móviles */}
       {showScoreText && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-serif font-bold text-amber-900 dark:text-amber-300">
-            {value !== null ? `${value.toFixed(1)} / 5.0 ★` : 'Sin puntuar'}
+        <div className="flex items-center justify-center gap-2 text-xs">
+          <span className="font-serif font-bold text-amber-950 dark:text-amber-200">
+            {value !== null ? `${value.toFixed(1)} / 5 ★` : 'Sin puntuar'}
           </span>
 
-          {!readOnly && onChange && (
+          {!readOnly && onChange && value !== null && (
             <button
               type="button"
               onClick={() => {
-                if (value === null) {
-                  onChange(0.5);
-                } else if (value % 1 === 0) {
-                  // Si es entero, sumar 0.5 (o 5 si era 5)
+                if (value % 1 === 0) {
                   const next = Math.min(5, value + 0.5) as StarRating;
                   onChange(next);
                 } else {
-                  // Si ya tiene .5, redondear al entero superior
                   const next = Math.min(5, Math.ceil(value)) as StarRating;
                   onChange(next);
                 }
@@ -171,7 +167,7 @@ export const StarRatingInteractive: React.FC<StarRatingInteractiveProps> = ({
               className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-amber-600/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-950 dark:text-amber-200 transition cursor-pointer"
               title="Añadir o alternar media estrella"
             >
-              {value && value % 1 !== 0 ? 'Entero' : '+0.5 ★'}
+              {value % 1 !== 0 ? 'Entero' : '+0.5 ★'}
             </button>
           )}
         </div>

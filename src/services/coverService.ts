@@ -10,6 +10,17 @@ export function normalizeCoverUrl(rawUrl?: string | null): string {
   }
 
   url = url.replace('&edge=curl', '').replace('?edge=curl&', '?');
+
+  // Mejorar resolución de miniaturas de Apple Books / iTunes a 600x900
+  if (url.includes('mzstatic.com/image/thumb/')) {
+    url = url.replace(/\/\d+x\d+bb(\.[a-z]+)$/i, '/600x900bb$1');
+  }
+
+  // Asegurar al menos zoom=1 en miniaturas de Google Books si vienen con zoom=5 (smallThumbnail)
+  if (url.includes('books.google.') && url.includes('zoom=5')) {
+    url = url.replace('zoom=5', 'zoom=1');
+  }
+
   return url;
 }
 
@@ -231,19 +242,16 @@ export async function fetchEditionCovers({
             });
           }
 
-          if (Array.isArray(doc.isbn) && doc.isbn.length > 0) {
-            const firstIsbn = doc.isbn.find((i) => i.length === 13) || doc.isbn[0];
-            if (firstIsbn) {
-              registerOption({
-                id: `ol-isbn-${firstIsbn}`,
-                url: buildOpenLibraryIsbnCover(firstIsbn),
-                title: doc.title,
-                publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : undefined,
-                year: Array.isArray(doc.publish_year) ? doc.publish_year[0] : undefined,
-                isbn: firstIsbn,
-                source: 'openlibrary'
-              });
-            }
+          if (cleanIsbn && Array.isArray(doc.isbn) && doc.isbn.includes(cleanIsbn)) {
+            registerOption({
+              id: `ol-isbn-${cleanIsbn}`,
+              url: buildOpenLibraryIsbnCover(cleanIsbn),
+              title: doc.title,
+              publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : undefined,
+              year: Array.isArray(doc.publish_year) ? doc.publish_year[0] : undefined,
+              isbn: cleanIsbn,
+              source: 'openlibrary'
+            });
           }
         }
 
@@ -388,17 +396,78 @@ export async function fetchEditionCovers({
     })()
   );
 
+  // Tarea C: Apple Books / iTunes España (portadas comerciales de alta resolución 600x900)
+  tasks.push(
+    (async () => {
+      try {
+        const term = cleanIsbn || [cleanTitle, cleanAuthor].filter(Boolean).join(' ');
+        if (!term) return;
+
+        const params = new URLSearchParams({
+          term,
+          media: 'ebook',
+          entity: 'ebook',
+          country: 'es',
+          limit: '12'
+        });
+
+        const appleUrl = 'https://itunes.apple.com/search?' + params.toString();
+        const res = await fetchWithTimeout(appleUrl, { signal }, 4000);
+        if (!res.ok) return;
+
+        interface AppleBookItem {
+          trackId?: number;
+          trackName?: string;
+          artistName?: string;
+          releaseDate?: string;
+          artworkUrl100?: string;
+        }
+
+        const data = (await res.json()) as { results?: AppleBookItem[] };
+        const items = Array.isArray(data.results) ? data.results : [];
+
+        for (const item of items) {
+          if (!item.artworkUrl100) continue;
+          const appleCover = normalizeCoverUrl(item.artworkUrl100);
+          if (!appleCover) continue;
+
+          const isbnMatch = item.artworkUrl100.match(/\b(97[89]\d{10})\b/);
+          registerOption({
+            id: `ab-${item.trackId || appleCover}`,
+            url: appleCover,
+            title: item.trackName || cleanTitle,
+            publisher: 'Edición comercial (ES)',
+            year: parseYear(item.releaseDate),
+            isbn: isbnMatch ? isbnMatch[1] : undefined,
+            source: 'applebooks',
+            badge: 'HD'
+          });
+        }
+      } catch {
+        // Fallo suave de Apple Books
+      }
+    })()
+  );
+
   await Promise.allSettled(tasks);
 
   const finalOptions = Array.from(resultsMap.values());
 
   // Ordenar con prioridad:
   // 1. Candidatos seleccionados/encontrados
-  // 2. Portadas con editorial y año conocidos
-  // 3. Portadas más recientes
+  // 2. Portadas comerciales en alta resolución (Apple Books y Google Books)
+  // 3. Portadas con editorial y año conocidos
+  // 4. Portadas más recientes
   finalOptions.sort((a, b) => {
-    if (a.source === 'candidate' && b.source !== 'candidate') return -1;
-    if (b.source === 'candidate' && a.source !== 'candidate') return 1;
+    const sourceRank = (src: EditionCoverOption['source']) => {
+      if (src === 'candidate') return 4;
+      if (src === 'applebooks') return 3;
+      if (src === 'googlebooks') return 2;
+      return 1;
+    };
+    const rankA = sourceRank(a.source);
+    const rankB = sourceRank(b.source);
+    if (rankA !== rankB) return rankB - rankA;
 
     const hasInfoA = (a.publisher ? 2 : 0) + (a.year ? 1 : 0);
     const hasInfoB = (b.publisher ? 2 : 0) + (b.year ? 1 : 0);
@@ -439,39 +508,38 @@ export async function searchAlternativeCovers(
 
   const tasks: Promise<void>[] = [];
 
-  // Open Library
+  // Apple Books España
   tasks.push(
     (async () => {
       try {
         const params = new URLSearchParams({
-          q: clean,
-          fields: 'key,title,author_name,cover_i,isbn,publisher,publish_year',
-          limit: '15'
+          term: clean,
+          media: 'ebook',
+          entity: 'ebook',
+          country: 'es',
+          limit: '12'
         });
-        const res = await fetchWithTimeout('https://openlibrary.org/search.json?' + params.toString(), { signal }, 4000);
+        const res = await fetchWithTimeout(
+          'https://itunes.apple.com/search?' + params.toString(),
+          { signal },
+          4000
+        );
         if (!res.ok) return;
 
         const data = await res.json();
-        const docs = Array.isArray(data.docs) ? data.docs : [];
-        for (const doc of docs) {
-          if (doc.cover_i && doc.cover_i > 0) {
+        const items = Array.isArray(data.results) ? data.results : [];
+        for (const item of items) {
+          if (!item.artworkUrl100) continue;
+          const norm = normalizeCoverUrl(item.artworkUrl100);
+          if (norm) {
             registerOption({
-              id: `search-ol-id-${doc.cover_i}`,
-              url: buildOpenLibraryIdCover(doc.cover_i),
-              title: doc.title,
-              publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : undefined,
-              year: Array.isArray(doc.publish_year) ? doc.publish_year[0] : undefined,
-              source: 'openlibrary'
-            });
-          }
-          if (Array.isArray(doc.isbn) && doc.isbn[0]) {
-            registerOption({
-              id: `search-ol-isbn-${doc.isbn[0]}`,
-              url: buildOpenLibraryIsbnCover(doc.isbn[0]),
-              title: doc.title,
-              publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : undefined,
-              year: Array.isArray(doc.publish_year) ? doc.publish_year[0] : undefined,
-              source: 'openlibrary'
+              id: `search-ab-${item.trackId || norm}`,
+              url: norm,
+              title: item.trackName,
+              publisher: 'Edición comercial (ES)',
+              year: parseYear(item.releaseDate),
+              source: 'applebooks',
+              badge: 'HD'
             });
           }
         }
@@ -508,6 +576,38 @@ export async function searchAlternativeCovers(
               publisher: info.publisher,
               year: parseYear(info.publishedDate),
               source: 'googlebooks'
+            });
+          }
+        }
+      } catch {
+        // Ignorar
+      }
+    })()
+  );
+
+  // Open Library
+  tasks.push(
+    (async () => {
+      try {
+        const params = new URLSearchParams({
+          q: clean,
+          fields: 'key,title,author_name,cover_i,isbn,publisher,publish_year',
+          limit: '15'
+        });
+        const res = await fetchWithTimeout('https://openlibrary.org/search.json?' + params.toString(), { signal }, 4000);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const docs = Array.isArray(data.docs) ? data.docs : [];
+        for (const doc of docs) {
+          if (doc.cover_i && doc.cover_i > 0) {
+            registerOption({
+              id: `search-ol-id-${doc.cover_i}`,
+              url: buildOpenLibraryIdCover(doc.cover_i),
+              title: doc.title,
+              publisher: Array.isArray(doc.publisher) ? doc.publisher[0] : undefined,
+              year: Array.isArray(doc.publish_year) ? doc.publish_year[0] : undefined,
+              source: 'openlibrary'
             });
           }
         }

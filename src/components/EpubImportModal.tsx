@@ -7,9 +7,11 @@ import {
   Edit3,
   FileText,
   FileUp,
+  Image as ImageIcon,
   Layers,
   Loader2,
   Plus,
+  RefreshCw,
   Sparkles,
   Trash2,
   X
@@ -23,6 +25,7 @@ import {
 } from '../services/epubParserService';
 import { isDuplicateBook } from '../services/importExportService';
 import { BookCover } from './BookCover';
+import { BookCoverPickerModal, SelectedCoverPayload } from './BookCoverPickerModal';
 import { ReadingStatusControl } from './ReadingStatusControl';
 import { LibrarySelect } from './LibrarySelect';
 import '../dashboard-panels.css';
@@ -63,11 +66,13 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [autoEnrich, setAutoEnrich] = useState(true);
+  const [preferCatalogCover, setPreferCatalogCover] = useState(true);
   const [autoDetectSagas, setAutoDetectSagas] = useState(true);
   const [defaultStatus, setDefaultStatus] = useState<ReadingStatus>('❌ No Leído');
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
   const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
+  const [coverPickerItemId, setCoverPickerItemId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const processedInitialRef = useRef<File[] | undefined>(undefined);
@@ -93,6 +98,67 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
     return isDuplicateBook(candidate, existingBooks).duplicate;
   };
 
+  const normalizeSagaMatchKey = (value: string): string =>
+    value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/^(?:saga|serie|trilogia|ciclo|cronicas|cronica)\s+(?:de\s+|del\s+|la\s+|el\s+|los\s+|las\s+)?/i, '')
+      .replace(/^(?:el|la|los|las|the|a)\s+/i, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+
+  const reconcileBatchSagas = (batch: StagedEbookItem[]): StagedEbookItem[] => {
+    if (!autoDetectSagas) return batch;
+
+    // 1. Mapa de sagas existentes en la biblioteca del usuario
+    const existingSagaMap = new Map<string, string>();
+    for (const s of sagas) {
+      const key = normalizeSagaMatchKey(s.nombre);
+      if (key) existingSagaMap.set(key, s.nombre);
+    }
+
+    // 2. Agrupar sagas detectadas dentro del propio lote para unificar variantes (ej. "Archivo de las Tormentas" vs "El Archivo de las Tormentas")
+    const batchCounts = new Map<string, Map<string, number>>();
+    for (const item of batch) {
+      if (!item.sagaNombre) continue;
+      const key = normalizeSagaMatchKey(item.sagaNombre);
+      if (!key) continue;
+      if (!batchCounts.has(key)) batchCounts.set(key, new Map());
+      const variants = batchCounts.get(key)!;
+      variants.set(item.sagaNombre, (variants.get(item.sagaNombre) || 0) + 1);
+    }
+
+    const canonicalByKey = new Map<string, string>();
+    for (const [key, variants] of batchCounts.entries()) {
+      if (existingSagaMap.has(key)) {
+        canonicalByKey.set(key, existingSagaMap.get(key)!);
+        continue;
+      }
+      let bestVariant = '';
+      let bestScore = -1;
+      for (const [variant, count] of variants.entries()) {
+        // Preferimos la variante más frecuente y, a igualdad, la más descriptiva (p.ej. con artículo inicial mayúscula)
+        const score = count * 100 + variant.length;
+        if (score > bestScore) {
+          bestScore = score;
+          bestVariant = variant;
+        }
+      }
+      if (bestVariant) canonicalByKey.set(key, bestVariant);
+    }
+
+    return batch.map((item) => {
+      if (!item.sagaNombre) return item;
+      const key = normalizeSagaMatchKey(item.sagaNombre);
+      const canonical = canonicalByKey.get(key) || existingSagaMap.get(key);
+      if (canonical && canonical !== item.sagaNombre) {
+        return { ...item, sagaNombre: canonical };
+      }
+      return item;
+    });
+  };
+
   const handleFilesSelected = async (fileList: FileList | File[]) => {
     const filesArray = Array.from(fileList).filter((file) => {
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
@@ -104,49 +170,54 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
     setIsProcessingFiles(true);
     setImportSuccessCount(null);
 
-    const newStaged: StagedEbookItem[] = [];
+    const results: Array<StagedEbookItem | null> = new Array(filesArray.length).fill(null);
+    let completedCount = 0;
+    const concurrency = Math.min(4, filesArray.length);
+    let nextIndex = 0;
 
-    for (let i = 0; i < filesArray.length; i++) {
-      const file = filesArray[i];
-      setProcessingStatus(`Leyendo archivo ${i + 1} de ${filesArray.length}: ${file.name}...`);
-      try {
-        let parsed = await parseEbookFile(file);
+    const worker = async () => {
+      while (nextIndex < filesArray.length) {
+        const currentIndex = nextIndex++;
+        const file = filesArray[currentIndex];
+        setProcessingStatus(
+          `Analizando y buscando portada editorial (${completedCount + 1}/${filesArray.length}): ${file.name}...`
+        );
+        try {
+          let parsed = await parseEbookFile(file);
 
-        const needsEnrichment =
-          autoEnrich &&
-          (!parsed.portadaDataUrl ||
-            !parsed.sinopsis ||
-            !parsed.genero ||
-            !parsed.paginas ||
-            parsed.sourceFormat !== 'epub');
+          if (autoEnrich) {
+            parsed = await enrichParsedEbookFromCatalog(parsed, { preferCatalogCover });
+          }
 
-        if (needsEnrichment) {
+          const duplicate = checkDuplicate({
+            nombre: parsed.nombre,
+            autor: parsed.autor,
+            isbn: parsed.isbn
+          });
+
+          results[currentIndex] = {
+            ...parsed,
+            sagaNombre: autoDetectSagas ? parsed.sagaNombre : '',
+            volumen: autoDetectSagas ? parsed.volumen : null,
+            selected: !duplicate,
+            isDuplicate: duplicate,
+            progreso: defaultStatus
+          };
+        } catch {
+          // Ignore broken file and continue
+        } finally {
+          completedCount++;
           setProcessingStatus(
-            `Completando ficha de "${parsed.nombre}" (${i + 1}/${filesArray.length})...`
+            `Procesados ${completedCount} de ${filesArray.length} archivos...`
           );
-          parsed = await enrichParsedEbookFromCatalog(parsed);
         }
-
-        const duplicate = checkDuplicate({
-          nombre: parsed.nombre,
-          autor: parsed.autor,
-          isbn: parsed.isbn
-        });
-
-        newStaged.push({
-          ...parsed,
-          sagaNombre: autoDetectSagas ? parsed.sagaNombre : '',
-          volumen: autoDetectSagas ? parsed.volumen : null,
-          selected: !duplicate,
-          isDuplicate: duplicate,
-          progreso: defaultStatus
-        });
-      } catch {
-        // Ignore broken file and continue
       }
-    }
+    };
 
-    setItems((prev) => [...prev, ...newStaged]);
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+    const validStaged = results.filter((item): item is StagedEbookItem => item !== null);
+    setItems((prev) => reconcileBatchSagas([...prev, ...validStaged]));
     setIsProcessingFiles(false);
     setProcessingStatus('');
   };
@@ -194,7 +265,7 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
 
     updateItem(id, { enriching: true });
     try {
-      const enriched = await enrichParsedEbookFromCatalog(target);
+      const enriched = await enrichParsedEbookFromCatalog(target, { preferCatalogCover });
       updateItem(id, {
         ...enriched,
         enriching: false
@@ -202,6 +273,46 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
     } catch {
       updateItem(id, { enriching: false });
     }
+  };
+
+  const handleTogglePreferCatalogCover = (checked: boolean) => {
+    setPreferCatalogCover(checked);
+    setItems((prev) =>
+      prev.map((item) => {
+        const embedded = item.epubEmbeddedCoverDataUrl || item.portadaDataUrl;
+        if (checked && item.portadaUrl) {
+          return {
+            ...item,
+            epubEmbeddedCoverDataUrl: embedded,
+            portadaDataUrl: undefined
+          };
+        }
+        if (!checked && embedded) {
+          return {
+            ...item,
+            epubEmbeddedCoverDataUrl: embedded,
+            portadaDataUrl: embedded
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleToggleItemCoverSource = (id: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const embedded = item.epubEmbeddedCoverDataUrl || item.portadaDataUrl;
+        if (!embedded || !item.portadaUrl) return item;
+        const usingEmbeddedNow = Boolean(item.portadaDataUrl);
+        return {
+          ...item,
+          epubEmbeddedCoverDataUrl: embedded,
+          portadaDataUrl: usingEmbeddedNow ? undefined : embedded
+        };
+      })
+    );
   };
 
   const handleApplyDefaultStatus = (status: ReadingStatus) => {
@@ -399,10 +510,10 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                 <div className="text-xs">
                   <span className="font-semibold flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    Completar datos faltantes con el catálogo
+                    Enriquecer con catálogo oficial (Apple Books, Google Books y Open Library)
                   </span>
                   <span className="text-stone-600 dark:text-slate-400 block">
-                    Si al archivo le falta género, páginas o portada, se rellenan solos.
+                    Busca portadas editoriales HD en español, sinopsis limpia, ISBN, año y saga oficial.
                   </span>
                 </div>
               </label>
@@ -418,7 +529,25 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-2.5 border-t border-amber-900/10 dark:border-[#242E42]/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="pt-2.5 border-t border-amber-900/10 dark:border-[#242E42]/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={preferCatalogCover}
+                  onChange={(e) => handleTogglePreferCatalogCover(e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-900/30 text-amber-600 focus:ring-amber-500"
+                />
+                <div className="text-xs">
+                  <span className="font-semibold flex items-center gap-1.5 text-stone-800 dark:text-slate-200">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Priorizar portada editorial HD sobre la del .epub
+                  </span>
+                  <span className="text-stone-600 dark:text-slate-400 block">
+                    Sustituye carátulas genéricas de Calibre/ePubLibre por la portada comercial limpia.
+                  </span>
+                </div>
+              </label>
+
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -437,20 +566,15 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                 <div className="text-xs">
                   <span className="font-semibold flex items-center gap-1.5 text-stone-800 dark:text-slate-200">
                     <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    Detectar sagas automáticamente
+                    Detectar sagas y volúmenes automáticamente
                   </span>
                   <span className="text-stone-600 dark:text-slate-400 block">
                     {autoDetectSagas
-                      ? 'Extrae sagas y volúmenes de los archivos (descarta títulos repetidos como en libros sueltos).'
+                      ? 'Reconoce sagas literarias reales y descarta colecciones editoriales (Booket, Andanzas...).'
                       : 'Desactivado: todos los libros entrarán sin saga para que los vincules tú a mano.'}
                   </span>
                 </div>
               </label>
-              {!autoDetectSagas && (
-                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
-                  Control manual activado
-                </span>
-              )}
             </div>
           </div>
 
@@ -561,7 +685,12 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
 
                       {/* Miniatura de portada */}
                       <div className="shrink-0 flex flex-col items-center gap-1.5 w-16 sm:w-20">
-                        <div className="w-16 sm:w-20">
+                        <button
+                          type="button"
+                          onClick={() => setCoverPickerItemId(item.id)}
+                          className="group relative w-16 sm:w-20 rounded-xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          title="Haz clic para elegir otra portada de diferentes ediciones"
+                        >
                           <BookCover
                             nombre={item.nombre || 'Sin título'}
                             autor={item.autor || 'Autor'}
@@ -570,10 +699,19 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                             portadaDataUrl={item.portadaDataUrl}
                             size="sm"
                           />
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#fffcf5] dark:bg-[#141A26] border border-amber-900/20 dark:border-[#283246] text-stone-600 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                          .{item.sourceFormat}
-                        </span>
+                          <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-0.5 text-white text-[9px] font-bold px-1 text-center">
+                            <ImageIcon className="w-3.5 h-3.5 text-amber-300" />
+                            Cambiar
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCoverPickerItemId(item.id)}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-[#fffcf5] dark:bg-[#141A26] hover:bg-amber-500/15 border border-amber-900/20 dark:border-[#283246] text-stone-700 dark:text-slate-300 font-semibold transition-colors"
+                          title="Elegir portada entre ediciones oficiales"
+                        >
+                          Portadas
+                        </button>
                       </div>
 
                       {/* Campos editables en línea */}
@@ -586,10 +724,26 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
                               <span className="truncate">{item.fileName}</span>
                             </span>
 
-                            {item.portadaDataUrl && (
+                            {item.portadaUrl && !item.portadaDataUrl ? (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
-                                Portada original extraída
+                                Portada editorial HD
                               </span>
+                            ) : item.portadaDataUrl ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30">
+                                Portada del .epub
+                              </span>
+                            ) : null}
+
+                            {item.portadaUrl && (item.epubEmbeddedCoverDataUrl || item.portadaDataUrl) && (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleItemCoverSource(item.id)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 transition-colors"
+                                title="Alternar entre la portada editorial HD del catálogo y la incrustada dentro del archivo .epub"
+                              >
+                                <RefreshCw className="w-2.5 h-2.5" />
+                                {item.portadaDataUrl ? 'Usar portada HD' : 'Usar portada .epub'}
+                              </button>
                             )}
 
                             {item.isDuplicate && (
@@ -855,6 +1009,37 @@ export const EpubImportModal: React.FC<EpubImportModalProps> = ({
             <option key={s.id} value={s.nombre} />
           ))}
         </datalist>
+
+        {/* Selector de portadas entre ediciones para el ítem seleccionado */}
+        {(() => {
+          const activeCoverItem = items.find((i) => i.id === coverPickerItemId);
+          if (!activeCoverItem) return null;
+          return (
+            <BookCoverPickerModal
+              isOpen={true}
+              onClose={() => setCoverPickerItemId(null)}
+              bookTitle={activeCoverItem.nombre}
+              bookAuthor={activeCoverItem.autor}
+              isbn={activeCoverItem.isbn}
+              currentCoverUrl={activeCoverItem.portadaUrl || ''}
+              currentCoverFallbackUrl={activeCoverItem.portadaFallbackUrl}
+              currentCoverDataUrl={activeCoverItem.portadaDataUrl}
+              onSelectCover={(payload: SelectedCoverPayload) => {
+                updateItem(activeCoverItem.id, {
+                  portadaUrl: payload.portadaUrl || '',
+                  portadaFallbackUrl: payload.portadaFallbackUrl || '',
+                  portadaDataUrl: payload.portadaDataUrl,
+                  editorial: payload.editionInfo?.publisher || activeCoverItem.editorial,
+                  fechaPublicacion:
+                    payload.editionInfo?.year != null
+                      ? Number(payload.editionInfo.year) || activeCoverItem.fechaPublicacion
+                      : activeCoverItem.fechaPublicacion
+                });
+                setCoverPickerItemId(null);
+              }}
+            />
+          );
+        })()}
       </div>
     </div>
   );

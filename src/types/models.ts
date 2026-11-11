@@ -60,7 +60,7 @@ export interface Saga {
 
 export interface BibliographicCandidate {
   id: string;
-  source: 'openlibrary' | 'googlebooks';
+  source: 'openlibrary' | 'googlebooks' | 'applebooks';
   nombre: string;
   autor: string;
   fechaPublicacion: number | null;
@@ -78,6 +78,8 @@ export interface BibliographicCandidate {
   rawCategories: string[];
   suggestedGenre: Genre | '';
   suggestedSubgenres: Subgenre[];
+  suggestedSaga?: string;
+  suggestedVolume?: number | null;
   recommendationReason?: string;
   pais?: string;
 }
@@ -91,7 +93,7 @@ export interface EditionCoverOption {
   year?: string | number | null;
   language?: string;
   isbn?: string;
-  source: 'openlibrary' | 'googlebooks' | 'candidate' | 'custom' | 'upload';
+  source: 'openlibrary' | 'googlebooks' | 'applebooks' | 'candidate' | 'custom' | 'upload';
   badge?: string;
 }
 

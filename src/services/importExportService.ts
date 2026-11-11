@@ -4,6 +4,7 @@ import { getUserReadingSpeedPph } from '../utils/readingTime';
 import { BackupPayload, Book, Saga, StarRating } from '../types/models';
 import { normalizeText, ReadingStatus } from '../constants/catalogs';
 import { buildOpenLibraryIsbnCover } from './coverService';
+import { extractSeriesAndVolumeFromText } from './bookMetadataService';
 
 export interface ParsedCsvBook {
   nombre: string;
@@ -224,38 +225,19 @@ function cleanRawCell(val: string): string {
  * Extrae título limpio, nombre de saga y número de volumen desde títulos de Goodreads
  * como "The Way of Kings (The Stormlight Archive, #1)" o "Dune (Dune #1)".
  */
-export function parseBookTitleAndSeries(rawTitle: string): {
+export function parseBookTitleAndSeries(
+  rawTitle: string,
+  author?: string
+): {
   cleanTitle: string;
   sagaNombre: string;
   volumen: number | null;
 } {
-  const trimmed = rawTitle.trim();
-  const match = trimmed.match(
-    /^(.*?)\s*\(([^()]+?)(?:,\s*#?\s*([0-9]+(?:\.[0-9]+)?)|(?:,\s*|\s+)(?:#|Book|Vol\.?|Libro|Parte)\s*([0-9]+(?:\.[0-9]+)?))?\)$/i
-  );
-
-  if (match) {
-    const clean = match[1].trim();
-    const seriesCandidate = match[2].trim().replace(/,+$/, '').trim();
-    const rawVol = match[3] || match[4];
-    const vol = rawVol ? parseFloat(rawVol) : null;
-
-    const nonSeriesKeywords =
-      /\b(hardcover|paperback|ebook|kindle|audiobook|mass market|edici[oó]n|edition|tapa dura|tapa blanda|c[oó]mic|graphic novel|ilustrado|illustrated|volumen|volume)\b/i;
-
-    if (!nonSeriesKeywords.test(seriesCandidate)) {
-      return {
-        cleanTitle: clean || trimmed,
-        sagaNombre: seriesCandidate,
-        volumen: vol !== null && !Number.isNaN(vol) ? vol : null
-      };
-    }
-  }
-
+  const extracted = extractSeriesAndVolumeFromText(rawTitle, { author });
   return {
-    cleanTitle: trimmed,
-    sagaNombre: '',
-    volumen: null
+    cleanTitle: extracted.cleanTitle || rawTitle.trim(),
+    sagaNombre: extracted.sagaNombre,
+    volumen: extracted.volumen
   };
 }
 
@@ -350,7 +332,7 @@ export function parseGoodreadsOrStorygraphCsv(csvText: string): CsvLibraryParseR
 
     if (!rawTitle.trim()) continue;
 
-    const { cleanTitle, sagaNombre, volumen } = parseBookTitleAndSeries(rawTitle);
+    const { cleanTitle, sagaNombre, volumen } = parseBookTitleAndSeries(rawTitle, rawAuthor);
     if (sagaNombre) {
       sagasSet.add(sagaNombre);
     }

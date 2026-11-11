@@ -17,8 +17,13 @@ import {
   StopCircle
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
-import { bookMetadataService } from '../services/bookMetadataService';
-import { updateBookPartialRecord } from '../db/database';
+import {
+  bookMetadataService,
+  extractSeriesAndVolumeFromText,
+  resolveKnownSagaAndVolume,
+  sanitizeSagaCandidate
+} from '../services/bookMetadataService';
+import { findOrCreateSagaByName, updateBookPartialRecord } from '../db/database';
 import { BookCover } from './BookCover';
 
 export type BatchMetadataMode = 'covers' | 'synopsis';
@@ -211,6 +216,62 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
           isbn: book.isbn
         });
 
+        // Verificar si podemos completar o reparar la saga del libro
+        const currentSagaName = book.sagaId
+          ? sagasMap.get(book.sagaId) || book.sagaNombre || ''
+          : book.sagaNombre || '';
+        const currentSagaValid = currentSagaName
+          ? Boolean(
+              sanitizeSagaCandidate(currentSagaName, {
+                bookTitle: book.nombre,
+                author: book.autor,
+                publisher: book.editorial,
+                volume: book.volumen
+              })
+            )
+          : false;
+
+        let nextSagaId = currentSagaValid ? book.sagaId : null;
+        let nextSagaNombre = currentSagaValid ? currentSagaName : '';
+        let nextVolumen = currentSagaValid ? book.volumen : null;
+
+        if (!currentSagaValid) {
+          const fromTitle = extractSeriesAndVolumeFromText(book.nombre, {
+            author: book.autor,
+            publisher: book.editorial,
+            synopsis: match?.sinopsis || book.sinopsis || ''
+          });
+          const fromKnown = resolveKnownSagaAndVolume({
+            title: book.nombre,
+            author: book.autor,
+            synopsis: match?.sinopsis || book.sinopsis || ''
+          });
+          const candidateSaga =
+            match?.suggestedSaga || fromTitle.sagaNombre || fromKnown?.sagaNombre || '';
+          const candidateVolume =
+            match?.suggestedVolume ?? fromTitle.volumen ?? fromKnown?.volumen ?? null;
+
+          if (candidateSaga) {
+            const sagaRecord = await findOrCreateSagaByName(candidateSaga);
+            if (sagaRecord) {
+              nextSagaId = sagaRecord.id;
+              nextSagaNombre = sagaRecord.nombre;
+              nextVolumen = candidateVolume;
+            }
+          }
+        } else if (nextVolumen == null) {
+          const fromKnown = resolveKnownSagaAndVolume({
+            title: book.nombre,
+            author: book.autor,
+            rawSaga: nextSagaNombre
+          });
+          if (match?.suggestedVolume != null) {
+            nextVolumen = match.suggestedVolume;
+          } else if (fromKnown?.volumen != null) {
+            nextVolumen = fromKnown.volumen;
+          }
+        }
+
         if (mode === 'covers') {
           if (match) {
             const hasNewCover = Boolean(match.portadaUrl || match.portadaFallbackUrl);
@@ -218,6 +279,9 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
               await updateBookPartialRecord(book.id, {
                 portadaUrl: match.portadaUrl || book.portadaUrl,
                 portadaFallbackUrl: match.portadaFallbackUrl || book.portadaFallbackUrl,
+                // Al actualizar portada desde el catálogo oficial, limpiamos portadaDataUrl
+                // para que la carátula incrustada del .epub no tape la nueva portada HD
+                portadaDataUrl: match.portadaUrl ? undefined : book.portadaDataUrl,
                 isbn: book.isbn || match.isbn,
                 paginas: book.paginas ?? match.paginas,
                 fechaPublicacion: book.fechaPublicacion ?? match.fechaPublicacion,
@@ -226,7 +290,10 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
                 sinopsis: book.sinopsis || match.sinopsis,
                 genero: book.genero || match.suggestedGenre,
                 subgeneros:
-                  book.subgeneros.length > 0 ? book.subgeneros : match.suggestedSubgenres
+                  book.subgeneros.length > 0 ? book.subgeneros : match.suggestedSubgenres,
+                sagaId: nextSagaId,
+                sagaNombre: nextSagaNombre,
+                volumen: nextVolumen
               });
               updatedCount++;
             } else {
@@ -260,7 +327,10 @@ export const BatchMetadataModal: React.FC<BatchMetadataModalProps> = ({
               idioma: book.idioma || match?.idioma,
               genero: book.genero || match?.suggestedGenre,
               subgeneros:
-                book.subgeneros.length > 0 ? book.subgeneros : (match?.suggestedSubgenres || [])
+                book.subgeneros.length > 0 ? book.subgeneros : (match?.suggestedSubgenres || []),
+              sagaId: nextSagaId,
+              sagaNombre: nextSagaNombre,
+              volumen: nextVolumen
             });
             updatedCount++;
           } else {

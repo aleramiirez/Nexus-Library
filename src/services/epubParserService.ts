@@ -1,5 +1,11 @@
 import { Genre, Subgenre, inferCatalogFromCategories, normalizeText } from '../constants/catalogs';
-import { bookMetadataService, extractCleanIsbn } from './bookMetadataService';
+import {
+  bookMetadataService,
+  extractCleanIsbn,
+  extractSeriesAndVolumeFromText,
+  resolveKnownSagaAndVolume,
+  sanitizeSagaCandidate
+} from './bookMetadataService';
 
 export interface ParsedEbookFile {
   id: string;
@@ -22,6 +28,7 @@ export interface ParsedEbookFile {
   sagaNombre: string;
   volumen: number | null;
   portadaDataUrl?: string;
+  epubEmbeddedCoverDataUrl?: string;
   portadaUrl: string;
   portadaFallbackUrl: string;
   enrichedFromCatalog?: boolean;
@@ -234,7 +241,8 @@ async function extractZipEntryBytes(
 }
 
 /**
- * Redimensiona una imagen en bytes (portada incrustada en EPUB/FB2) a un Data URL ligero.
+ * Redimensiona una imagen en bytes (portada incrustada en EPUB/FB2) a un Data URL nítido,
+ * validando que tenga dimensiones y proporción de portada (descarta logos o separadores).
  */
 async function resizeImageBytesToDataUrl(
   bytes: Uint8Array,
@@ -252,10 +260,22 @@ async function resizeImageBytesToDataUrl(
       el.src = objectUrl;
     });
 
-    const maxW = 360;
-    const maxH = 540;
-    let width = img.naturalWidth || img.width || 300;
-    let height = img.naturalHeight || img.height || 450;
+    const natW = img.naturalWidth || img.width || 0;
+    const natH = img.naturalHeight || img.height || 0;
+
+    // Descartar iconos, logotipos editoriales pequeños o banners horizontales
+    if (natW < 140 || natH < 180) {
+      return undefined;
+    }
+    const aspect = natH / natW;
+    if (aspect < 0.95 || aspect > 2.6) {
+      return undefined;
+    }
+
+    const maxW = 600;
+    const maxH = 900;
+    let width = natW;
+    let height = natH;
 
     if (width > maxW || height > maxH) {
       const ratio = Math.min(maxW / width, maxH / height);
@@ -270,11 +290,11 @@ async function resizeImageBytesToDataUrl(
     if (!ctx) return undefined;
     ctx.drawImage(img, 0, 0, width, height);
 
-    const webp = canvas.toDataURL('image/webp', 0.84);
+    const webp = canvas.toDataURL('image/webp', 0.88);
     if (webp.startsWith('data:image/webp')) {
       return webp;
     }
-    return canvas.toDataURL('image/jpeg', 0.84);
+    return canvas.toDataURL('image/jpeg', 0.88);
   } catch {
     return undefined;
   } finally {
@@ -286,7 +306,8 @@ async function resizeImageBytesToDataUrl(
  * Extrae Título, Autor, Saga y Volumen a partir del nombre del archivo cuando faltan metadatos.
  * Soporta patrones habituales como:
  * - "Autor - Título [Saga 01].epub"
- * - "Título (Autor).epub"
+ * - "Autor - Saga 01 - Título.epub"
+ * - "Título (Saga, #1) (Autor).epub"
  * - "[Saga 02] Autor - Título.epub"
  */
 export function parseFilenameMetadata(fileName: string): {
@@ -296,10 +317,12 @@ export function parseFilenameMetadata(fileName: string): {
   volumen: number | null;
 } {
   let base = fileName.replace(/\.[^.]+$/, '').trim();
-  // Eliminar sufijos comunes de descarga como (Z-Library), _epub, etc.
+  // Eliminar sufijos comunes de descarga como (Z-Library), ePubLibre, v1.0, etc.
   base = base
-    .replace(/\((?:z-lib\.org|z-library|annas-archive|epub|español|spanish)\)/gi, '')
-    .replace(/\[(?:epub|esp|spa|eng)\]/gi, '')
+    .replace(
+      /[\[(](?:z-lib\.org|z-library|annas-archive|epublibre|lectulandia|bajaebooks|epub|ebook|español|spanish|esp|spa|eng|v\d+(?:\.\d+)?|r\d+(?:\.\d+)?)[\])]/gi,
+      ''
+    )
     .replace(/_/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -307,35 +330,126 @@ export function parseFilenameMetadata(fileName: string): {
   let sagaNombre = '';
   let volumen: number | null = null;
 
-  // Detectar [Saga #1] o (Saga 01)
-  const bracketMatch = base.match(/\[([^\]]+?)\s+#?(\d+(?:\.\d+)?)\]/);
-  if (bracketMatch) {
-    sagaNombre = bracketMatch[1].trim();
-    volumen = Math.floor(Number(bracketMatch[2])) || null;
-    base = base.replace(bracketMatch[0], '').trim();
+  // 1. Detectar [Saga #1], [Saga - 01], (Saga 01) o (Saga, #1)
+  const bracketOrParenRegex =
+    /[\[(]([^[\]()]+?)(?:,\s*|\s+-\s+|\s+)(?:#|vol(?:umen|\.)?\s*|libro\s*|book\s*|tomo\s*)?(\d+(?:\.\d+)?)[\])]/i;
+  const seriesGroupMatch = base.match(bracketOrParenRegex);
+  if (seriesGroupMatch) {
+    const rawSaga = seriesGroupMatch[1].trim();
+    const rawVol = Math.floor(Number(seriesGroupMatch[2])) || null;
+    const validSaga = sanitizeSagaCandidate(rawSaga, { volume: rawVol });
+    if (validSaga && rawVol !== null) {
+      sagaNombre = validSaga;
+      volumen = rawVol;
+      base = base
+        .replace(seriesGroupMatch[0], '')
+        .replace(/\s+-\s+-\s+/g, ' - ')
+        .replace(/^-\s+|\s+-$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
   }
 
   let autor = '';
   let nombre = base;
 
   if (base.includes(' - ')) {
-    const parts = base.split(' - ').map((p) => p.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      autor = normalizeAuthorName(parts[0]);
-      nombre = parts.slice(1).join(' - ');
+    const parts = base
+      .split(' - ')
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 3 && !sagaNombre) {
+      // Patrón "Autor - Saga 01 - Título" o "Saga 01 - Título - Autor"
+      const middleSeriesMatch = parts[1].match(
+        /^(.+?)\s+(?:#|vol(?:umen|\.)?\s*|libro\s*)?0*(\d{1,2})$/i
+      );
+      const firstSeriesMatch = parts[0].match(
+        /^(.+?)\s+(?:#|vol(?:umen|\.)?\s*|libro\s*)?0*(\d{1,2})$/i
+      );
+
+      if (middleSeriesMatch) {
+        const candSaga = sanitizeSagaCandidate(middleSeriesMatch[1], {
+          author: parts[0],
+          bookTitle: parts.slice(2).join(' - '),
+          volume: Number(middleSeriesMatch[2])
+        });
+        if (candSaga) {
+          autor = normalizeAuthorName(parts[0]);
+          sagaNombre = candSaga;
+          volumen = Number(middleSeriesMatch[2]) || null;
+          nombre = parts.slice(2).join(' - ');
+        }
+      } else if (firstSeriesMatch) {
+        const candSaga = sanitizeSagaCandidate(firstSeriesMatch[1], {
+          bookTitle: parts[1],
+          author: parts[2],
+          volume: Number(firstSeriesMatch[2])
+        });
+        if (candSaga) {
+          sagaNombre = candSaga;
+          volumen = Number(firstSeriesMatch[2]) || null;
+          nombre = parts[1];
+          autor = normalizeAuthorName(parts.slice(2).join(' - '));
+        }
+      }
+    }
+
+    if (!nombre || nombre === base) {
+      if (parts.length >= 2) {
+        // Si la primera parte es solo un número ("01 - El camino de los reyes - Brandon Sanderson")
+        if (/^0*\d{1,2}$/.test(parts[0]) && parts.length >= 3) {
+          if (volumen === null) volumen = Number(parts[0]);
+          autor = normalizeAuthorName(parts[1]);
+          nombre = parts.slice(2).join(' - ');
+        } else if (/^0*\d{1,2}$/.test(parts[0]) && parts.length === 2) {
+          if (volumen === null) volumen = Number(parts[0]);
+          nombre = parts[1];
+        } else {
+          autor = normalizeAuthorName(parts[0]);
+          nombre = parts.slice(1).join(' - ');
+        }
+      }
     }
   } else {
-    const parenAuthor = base.match(/^(.+?)\s*\(([^0-9)]+)\)$/);
+    const parenAuthor = base.match(/^(.+?)\s*\(([^0-9()]+)\)$/);
     if (parenAuthor) {
-      nombre = parenAuthor[1].trim();
-      autor = normalizeAuthorName(parenAuthor[2].trim());
+      const candidateAuthor = parenAuthor[2].trim();
+      const validAsSaga = sanitizeSagaCandidate(candidateAuthor);
+      // Si lo que hay entre paréntesis no es una edición ni saga, tratarlo como autor
+      if (candidateAuthor.split(/\s+/).length <= 4 && !/edici[oó]n|saga|trilog[ií]a/i.test(candidateAuthor)) {
+        nombre = parenAuthor[1].trim();
+        autor = normalizeAuthorName(candidateAuthor);
+      } else if (validAsSaga) {
+        nombre = parenAuthor[1].trim();
+      }
     }
   }
 
-  // Si la saga detectada en el archivo es idéntica al título del libro, se descarta
-  if (sagaNombre && nombre && normalizeText(sagaNombre) === normalizeText(nombre)) {
-    sagaNombre = '';
-    volumen = null;
+  // Extraer o refinar serie desde el título resultante y el diccionario de sagas conocidas
+  const extracted = extractSeriesAndVolumeFromText(nombre, { author: autor });
+  nombre = extracted.cleanTitle || nombre;
+  if (!sagaNombre && extracted.sagaNombre) {
+    sagaNombre = extracted.sagaNombre;
+    volumen = volumen ?? extracted.volumen;
+  } else if (sagaNombre) {
+    const known = resolveKnownSagaAndVolume({
+      title: nombre,
+      author: autor,
+      rawSaga: sagaNombre,
+      rawVolume: volumen
+    });
+    if (known) {
+      sagaNombre = known.sagaNombre;
+      volumen = known.volumen ?? volumen;
+    } else {
+      sagaNombre = sanitizeSagaCandidate(sagaNombre, {
+        bookTitle: nombre,
+        author: autor,
+        volume: volumen
+      });
+      if (!sagaNombre) volumen = null;
+    }
   }
 
   return {
@@ -432,25 +546,38 @@ async function parseEpubBuffer(
   }
 
   // Detectar Saga y Volumen (Calibre meta o EPUB 3 belongs-to-collection)
-  let sagaNombre = '';
-  let volumen: number | null = null;
+  let calibreSaga = '';
+  let calibreVol: number | null = null;
+  let epub3Saga = '';
+  let epub3Vol: number | null = null;
 
   const metaEls = Array.from(opfDoc.querySelectorAll('meta'));
   for (const meta of metaEls) {
     const nameAttr = (meta.getAttribute('name') || '').toLowerCase();
     const propAttr = (meta.getAttribute('property') || '').toLowerCase();
-    const contentAttr = meta.getAttribute('content') || meta.textContent || '';
+    const contentAttr = (meta.getAttribute('content') || meta.textContent || '').trim();
 
-    if (nameAttr === 'calibre:series' && contentAttr.trim()) {
-      sagaNombre = contentAttr.trim();
-    } else if (nameAttr === 'calibre:series_index' && contentAttr.trim()) {
-      const n = Math.floor(Number(contentAttr.trim()));
-      if (n > 0) volumen = n;
-    } else if (propAttr === 'belongs-to-collection' && contentAttr.trim()) {
-      sagaNombre = contentAttr.trim();
-    } else if (propAttr === 'group-position' && contentAttr.trim()) {
-      const n = Math.floor(Number(contentAttr.trim()));
-      if (n > 0) volumen = n;
+    if (nameAttr === 'calibre:series' && contentAttr) {
+      calibreSaga = contentAttr;
+    } else if (nameAttr === 'calibre:series_index' && contentAttr) {
+      const n = Math.floor(Number(contentAttr));
+      if (n > 0 && n < 200) calibreVol = n;
+    } else if (propAttr === 'belongs-to-collection' && contentAttr) {
+      const metaId = meta.getAttribute('id');
+      const isSetType =
+        metaId &&
+        metaEls.some(
+          (m) =>
+            m.getAttribute('refines') === `#${metaId}` &&
+            (m.getAttribute('property') || '').toLowerCase() === 'collection-type' &&
+            (m.textContent || '').trim().toLowerCase() === 'set'
+        );
+      if (!isSetType) {
+        epub3Saga = contentAttr;
+      }
+    } else if (propAttr === 'group-position' && contentAttr) {
+      const n = Math.floor(Number(contentAttr));
+      if (n > 0 && n < 200) epub3Vol = n;
     }
   }
 
@@ -461,7 +588,7 @@ async function parseEpubBuffer(
   const estimatedPages =
     htmlBytesTotal > 15000 ? Math.max(30, Math.min(2500, Math.round(htmlBytesTotal / 2150))) : null;
 
-  // Localizar la portada incrustada en el <manifest>
+  // Localizar la portada incrustada en el <manifest> (sin usar la primera imagen arbitraria como fallback)
   const manifestItems = Array.from(opfDoc.getElementsByTagNameNS('*', 'item'));
   let coverId = '';
   for (const meta of metaEls) {
@@ -490,12 +617,12 @@ async function parseEpubBuffer(
       return (
         id.includes('cover') ||
         id.includes('portada') ||
+        id.includes('cubierta') ||
         href.includes('cover') ||
         href.includes('portada') ||
         href.includes('cubierta')
       );
-    }) ||
-    manifestItems.find(isImageItem);
+    });
 
   let portadaDataUrl: string | undefined;
   if (coverItem) {
@@ -508,7 +635,7 @@ async function parseEpubBuffer(
         entries.find((e) => e.fileName.toLowerCase().endsWith('/' + href.toLowerCase()));
       if (imageEntry && imageEntry.uncompressedSize < 15 * 1024 * 1024) {
         const imgBytes = await extractZipEntryBytes(buffer, imageEntry);
-        if (imgBytes && imgBytes.byteLength > 200) {
+        if (imgBytes && imgBytes.byteLength > 1500) {
           portadaDataUrl = await resizeImageBytesToDataUrl(imgBytes, mimeType);
         }
       }
@@ -516,9 +643,74 @@ async function parseEpubBuffer(
   }
 
   const cleanSynopsis = stripHtmlToText(rawDescription);
+  const resolvedAuthor = creators.join(', ') || fallbackMeta.autor;
+
+  // Extraer posible saga desde <dc:title> y sinopsis, limpiando el título si traía "(Saga 1)"
+  const titleSeries = extractSeriesAndVolumeFromText(rawTitle || fallbackMeta.nombre, {
+    synopsis: cleanSynopsis,
+    author: resolvedAuthor,
+    publisher: rawPublisher
+  });
+
+  const resolvedTitle = titleSeries.cleanTitle || rawTitle || fallbackMeta.nombre;
+
+  // Validar candidatos de saga de Calibre y EPUB3 descartando colecciones editoriales
+  const validCalibreSaga = sanitizeSagaCandidate(calibreSaga, {
+    bookTitle: resolvedTitle,
+    author: resolvedAuthor,
+    publisher: rawPublisher,
+    volume: calibreVol
+  });
+
+  // En EPUB3 comerciales, belongs-to-collection sin group-position suele ser la colección editorial ("Andanzas", "Booket")
+  const validEpub3Saga =
+    epub3Vol !== null || resolveKnownSagaAndVolume({ title: resolvedTitle, author: resolvedAuthor, rawSaga: epub3Saga })
+      ? sanitizeSagaCandidate(epub3Saga, {
+          bookTitle: resolvedTitle,
+          author: resolvedAuthor,
+          publisher: rawPublisher,
+          volume: epub3Vol
+        })
+      : '';
+
+  let finalSagaNombre =
+    validCalibreSaga ||
+    titleSeries.sagaNombre ||
+    validEpub3Saga ||
+    sanitizeSagaCandidate(fallbackMeta.sagaNombre, {
+      bookTitle: resolvedTitle,
+      author: resolvedAuthor,
+      publisher: rawPublisher,
+      volume: fallbackMeta.volumen
+    });
+
+  let finalVolumen =
+    (validCalibreSaga ? calibreVol : null) ??
+    titleSeries.volumen ??
+    (validEpub3Saga ? epub3Vol : null) ??
+    fallbackMeta.volumen;
+
+  // Canonizar mediante el diccionario de sagas conocidas si aplica
+  const knownResolution = resolveKnownSagaAndVolume({
+    title: resolvedTitle,
+    author: resolvedAuthor,
+    rawSaga: finalSagaNombre,
+    rawVolume: finalVolumen,
+    synopsis: cleanSynopsis
+  });
+
+  if (knownResolution) {
+    finalSagaNombre = knownResolution.sagaNombre;
+    finalVolumen = knownResolution.volumen ?? finalVolumen;
+  }
+
+  if (!finalSagaNombre) {
+    finalVolumen = null;
+  }
+
   const catalogInference = inferCatalogFromCategories([
     ...subjects,
-    rawTitle || fallbackMeta.nombre,
+    resolvedTitle,
     cleanSynopsis
   ]);
 
@@ -528,24 +720,9 @@ async function parseEpubBuffer(
     if (pubYear) break;
   }
 
-  const resolvedTitle = rawTitle || fallbackMeta.nombre;
-  let finalSagaNombre = sagaNombre || fallbackMeta.sagaNombre;
-  let finalVolumen = volumen ?? fallbackMeta.volumen;
-
-  // Si la saga detectada es idéntica o prácticamente idéntica al título del libro, se descarta
-  // para evitar que libros independientes con metadatos de serie redundantes creen sagas falsas
-  if (
-    finalSagaNombre &&
-    resolvedTitle &&
-    normalizeText(finalSagaNombre) === normalizeText(resolvedTitle)
-  ) {
-    finalSagaNombre = '';
-    finalVolumen = null;
-  }
-
   return {
     nombre: resolvedTitle,
-    autor: creators.join(', ') || fallbackMeta.autor,
+    autor: resolvedAuthor,
     isbn: detectedIsbn,
     editorial: rawPublisher,
     idioma: normalizeLanguage(rawLanguage),
@@ -556,7 +733,8 @@ async function parseEpubBuffer(
     subgeneros: catalogInference.subgenres,
     sagaNombre: finalSagaNombre,
     volumen: finalVolumen,
-    portadaDataUrl
+    portadaDataUrl,
+    epubEmbeddedCoverDataUrl: portadaDataUrl
   };
 }
 
@@ -592,8 +770,8 @@ async function parseFb2File(
       titleInfo.querySelector('date')?.textContent ||
       '';
     const sequence = titleInfo.querySelector('sequence');
-    const sagaNombre = sequence?.getAttribute('name')?.trim() || '';
-    const volumen = Number(sequence?.getAttribute('number')) || null;
+    const rawSeqSaga = sequence?.getAttribute('name')?.trim() || '';
+    const rawSeqVol = Number(sequence?.getAttribute('number')) || null;
     const publisher = doc.querySelector('publish-info > publisher')?.textContent?.trim() || '';
     const isbnRaw = doc.querySelector('publish-info > isbn')?.textContent?.trim() || '';
     const isbn = extractCleanIsbn(isbnRaw) || '';
@@ -614,24 +792,44 @@ async function parseFb2File(
       portadaDataUrl = await resizeImageBytesToDataUrl(bytes, mime);
     }
 
-    const catalogInference = inferCatalogFromCategories([...genres, bookTitle, annotation]);
+    const resolvedAuthor = authors.join(', ') || fallbackMeta.autor;
+    const titleSeries = extractSeriesAndVolumeFromText(bookTitle || fallbackMeta.nombre, {
+      synopsis: annotation,
+      author: resolvedAuthor,
+      publisher
+    });
 
-    const resolvedTitle = bookTitle || fallbackMeta.nombre;
-    let finalSagaNombre = sagaNombre || fallbackMeta.sagaNombre;
-    let finalVolumen = volumen ?? fallbackMeta.volumen;
+    const resolvedTitle = titleSeries.cleanTitle || bookTitle || fallbackMeta.nombre;
+    const validSeqSaga = sanitizeSagaCandidate(rawSeqSaga, {
+      bookTitle: resolvedTitle,
+      author: resolvedAuthor,
+      publisher,
+      volume: rawSeqVol
+    });
 
-    if (
-      finalSagaNombre &&
-      resolvedTitle &&
-      normalizeText(finalSagaNombre) === normalizeText(resolvedTitle)
-    ) {
-      finalSagaNombre = '';
-      finalVolumen = null;
+    let finalSagaNombre = validSeqSaga || titleSeries.sagaNombre || fallbackMeta.sagaNombre;
+    let finalVolumen =
+      (validSeqSaga ? rawSeqVol : null) ?? titleSeries.volumen ?? fallbackMeta.volumen;
+
+    const known = resolveKnownSagaAndVolume({
+      title: resolvedTitle,
+      author: resolvedAuthor,
+      rawSaga: finalSagaNombre,
+      rawVolume: finalVolumen,
+      synopsis: annotation
+    });
+
+    if (known) {
+      finalSagaNombre = known.sagaNombre;
+      finalVolumen = known.volumen ?? finalVolumen;
     }
+    if (!finalSagaNombre) finalVolumen = null;
+
+    const catalogInference = inferCatalogFromCategories([...genres, resolvedTitle, annotation]);
 
     return {
       nombre: resolvedTitle,
-      autor: authors.join(', ') || fallbackMeta.autor,
+      autor: resolvedAuthor,
       isbn,
       editorial: publisher,
       idioma: lang,
@@ -641,7 +839,8 @@ async function parseFb2File(
       subgeneros: catalogInference.subgenres,
       sagaNombre: finalSagaNombre,
       volumen: finalVolumen,
-      portadaDataUrl
+      portadaDataUrl,
+      epubEmbeddedCoverDataUrl: portadaDataUrl
     };
   } catch {
     return {};
@@ -699,6 +898,7 @@ export async function parseEbookFile(file: File): Promise<ParsedEbookFile> {
     sagaNombre: extracted.sagaNombre || fallbackMeta.sagaNombre,
     volumen: extracted.volumen ?? fallbackMeta.volumen,
     portadaDataUrl: extracted.portadaDataUrl,
+    epubEmbeddedCoverDataUrl: extracted.epubEmbeddedCoverDataUrl ?? extracted.portadaDataUrl,
     portadaUrl: '',
     portadaFallbackUrl: '',
     enrichedFromCatalog: false
@@ -706,11 +906,16 @@ export async function parseEbookFile(file: File): Promise<ParsedEbookFile> {
 }
 
 /**
- * Completa los campos que falten en el archivo extraído consultando el catálogo bibliográfico online.
+ * Completa y mejora los campos del archivo extraído consultando el catálogo bibliográfico online:
+ * - Obtiene portadas editoriales limpias de alta resolución (Apple Books / Google Books / Open Library)
+ * - Detecta o corrige el nombre de la saga y el número de volumen
+ * - Completa sinopsis, género, editorial, ISBN y número de páginas
  */
 export async function enrichParsedEbookFromCatalog(
-  item: ParsedEbookFile
+  item: ParsedEbookFile,
+  options?: { preferCatalogCover?: boolean }
 ): Promise<ParsedEbookFile> {
+  const preferCatalogCover = options?.preferCatalogCover ?? true;
   try {
     const match = await bookMetadataService.findBestMatchForBook({
       nombre: item.nombre,
@@ -720,21 +925,75 @@ export async function enrichParsedEbookFromCatalog(
 
     if (!match) return item;
 
+    const embeddedCover = item.epubEmbeddedCoverDataUrl ?? item.portadaDataUrl;
+    const hasCatalogCover = Boolean(match.portadaUrl && match.portadaUrl.trim());
+    const catalogCoverUrl = match.portadaUrl || item.portadaUrl;
+    const catalogFallbackUrl = match.portadaFallbackUrl || item.portadaFallbackUrl;
+
+    // Si preferimos la portada limpia del catálogo y existe una disponible, dejamos portadaDataUrl vacío
+    // para que BookCover muestre la portada editorial oficial (conservando epubEmbeddedCoverDataUrl por si quiere alternar)
+    const activeDataUrl =
+      preferCatalogCover && hasCatalogCover ? undefined : embeddedCover;
+
+    const resolvedTitle = item.nombre || match.nombre;
+    const resolvedAuthor = item.autor || match.autor;
+    const resolvedPublisher = item.editorial || match.editorial;
+    const resolvedSynopsis = item.sinopsis || match.sinopsis;
+
+    let finalSaga = item.sagaNombre || match.suggestedSaga || '';
+    let finalVol = item.volumen ?? match.suggestedVolume ?? null;
+
+    if (!finalSaga && resolvedSynopsis) {
+      const fromSyn = extractSeriesAndVolumeFromText(resolvedTitle, {
+        synopsis: resolvedSynopsis,
+        author: resolvedAuthor,
+        publisher: resolvedPublisher
+      });
+      if (fromSyn.sagaNombre) {
+        finalSaga = fromSyn.sagaNombre;
+        finalVol = finalVol ?? fromSyn.volumen;
+      }
+    }
+
+    const known = resolveKnownSagaAndVolume({
+      title: resolvedTitle,
+      author: resolvedAuthor,
+      rawSaga: finalSaga,
+      rawVolume: finalVol,
+      synopsis: resolvedSynopsis
+    });
+    if (known) {
+      finalSaga = known.sagaNombre;
+      finalVol = known.volumen ?? finalVol;
+    } else if (finalSaga) {
+      finalSaga = sanitizeSagaCandidate(finalSaga, {
+        bookTitle: resolvedTitle,
+        author: resolvedAuthor,
+        publisher: resolvedPublisher,
+        volume: finalVol
+      });
+      if (!finalSaga) finalVol = null;
+    }
+
     return {
       ...item,
-      nombre: item.nombre || match.nombre,
-      autor: item.autor || match.autor,
+      nombre: resolvedTitle,
+      autor: resolvedAuthor,
       isbn: item.isbn || match.isbn,
-      editorial: item.editorial || match.editorial,
+      editorial: resolvedPublisher,
       idioma: item.idioma || match.idioma,
       fechaPublicacion: item.fechaPublicacion ?? match.fechaPublicacion,
       paginas: match.paginas ?? item.paginas,
-      sinopsis: item.sinopsis || match.sinopsis,
+      sinopsis: resolvedSynopsis,
       genero: item.genero || match.suggestedGenre,
       subgeneros:
         item.subgeneros.length > 0 ? item.subgeneros : match.suggestedSubgenres,
-      portadaUrl: match.portadaUrl || item.portadaUrl,
-      portadaFallbackUrl: match.portadaFallbackUrl || item.portadaFallbackUrl,
+      sagaNombre: finalSaga,
+      volumen: finalVol,
+      portadaDataUrl: activeDataUrl,
+      epubEmbeddedCoverDataUrl: embeddedCover,
+      portadaUrl: catalogCoverUrl,
+      portadaFallbackUrl: catalogFallbackUrl,
       enrichedFromCatalog: true
     };
   } catch {
