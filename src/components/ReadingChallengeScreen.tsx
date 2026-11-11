@@ -18,7 +18,8 @@ import {
   Plus,
   Minus,
   X,
-  Users
+  Users,
+  ScrollText
 } from 'lucide-react';
 import { Book, Saga } from '../types/models';
 import {
@@ -27,6 +28,7 @@ import {
   MonthCadence
 } from '../services/readingChallengeService';
 import { BookCover } from './BookCover';
+import { ReadingTimeline } from './ReadingTimeline';
 const ReadingWrappedModal = React.lazy(() =>
   import('./ReadingWrappedModal').then((m) => ({ default: m.ReadingWrappedModal }))
 );
@@ -105,6 +107,7 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<MonthCadence | null>(null);
   const [showAllCompleted, setShowAllCompleted] = useState(false);
+  const [challengeView, setChallengeView] = useState<'metrics' | 'timeline'>('metrics');
 
   // Meta sobreescrita en memoria para respuesta reactiva instantánea (0ms)
   const activeYearNum = selectedYear === 'all' ? currentYear : selectedYear;
@@ -319,9 +322,20 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
                 <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 Obras terminadas en {selectedYear === 'all' ? 'tu colección' : selectedYear}:
               </span>
-              <span className="text-stone-500 dark:text-slate-400 text-[11px] font-medium">
-                Mostrando {displayedCompletedBooks.length} de {stats.completedBooks.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setChallengeView('timeline')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-800/20 dark:border-amber-400/25 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-900 dark:text-amber-300 transition cursor-pointer"
+                  title="Ver en formato cronológico interactivo"
+                >
+                  <ScrollText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Ver en Línea de Tiempo</span>
+                </button>
+                <span className="text-stone-500 dark:text-slate-400 text-[11px] font-medium hidden sm:inline">
+                  {displayedCompletedBooks.length} de {stats.completedBooks.length}
+                </span>
+              </div>
             </div>
 
             {/* Vitrina editorial cálida (integrada con el estilo del catálogo) */}
@@ -388,8 +402,54 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
         )}
       </section>
 
-      {/* ─── Cuadrícula de 4 Métricas Clave ─── */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
+      {/* ─── Selector de Vista: Métricas & Análisis vs Cronología Literaria ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-900/15 dark:border-[#242E42] pb-3 pt-1">
+        <div className="inline-flex items-center rounded-xl border border-amber-900/20 dark:border-[#283246] bg-[#fbf6ea] dark:bg-[#141A26] p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setChallengeView('metrics')}
+            className={
+              'rounded-lg px-3.5 py-1.5 font-semibold transition inline-flex items-center gap-1.5 ' +
+              (challengeView === 'metrics'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                : 'text-stone-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300')
+            }
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>Reto & Métricas</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setChallengeView('timeline')}
+            className={
+              'rounded-lg px-3.5 py-1.5 font-semibold transition inline-flex items-center gap-1.5 ' +
+              (challengeView === 'timeline'
+                ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                : 'text-stone-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300')
+            }
+          >
+            <ScrollText className="w-3.5 h-3.5" />
+            <span>Línea de Tiempo ({stats.completedBooks.length})</span>
+          </button>
+        </div>
+
+        <span className="text-xs text-stone-500 dark:text-slate-400">
+          {challengeView === 'metrics'
+            ? 'Ritmo anual, mapa de calor y análisis de lectura'
+            : 'Pergamino cronológico ordenado mes a mes'}
+        </span>
+      </div>
+
+      {challengeView === 'timeline' ? (
+        <ReadingTimeline
+          books={books}
+          selectedYear={selectedYear}
+          onOpenBookDetail={onOpenBookDetail}
+        />
+      ) : (
+        <>
+          {/* ─── Cuadrícula de 4 Métricas Clave ─── */}
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
         <div className="dashboard-metric-card">
           <div className="dashboard-metric-card-header">
             <span className="dashboard-metric-card-label">Libros Leídos</span>
@@ -834,6 +894,8 @@ export const ReadingChallengeScreen: React.FC<ReadingChallengeScreenProps> = ({
             </div>
           </div>
         </section>
+      )}
+        </>
       )}
 
       {/* ─── Modal para Modificar Meta Anual ─── */}
